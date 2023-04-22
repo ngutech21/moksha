@@ -1,3 +1,5 @@
+[![Rust](https://github.com/ngutech21/cashu-rs/actions/workflows/rust.yml/badge.svg?branch=master)](https://github.com/ngutech21/cashu-rs/actions/workflows/rust.yml)
+
 # cashu-rs
 cashu-rs is a Chaumian Ecash library written in Rust.
 
