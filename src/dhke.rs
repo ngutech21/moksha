@@ -1,24 +1,29 @@
 #![allow(dead_code)]
 use bitcoin_hashes::{sha256, Hash};
-use secp256k1::{Error, PublicKey, Scalar, Secp256k1, SecretKey};
+use secp256k1::{PublicKey, Scalar, Secp256k1, SecretKey};
 
-pub fn hash_to_curve(message: String) -> Result<PublicKey, Error> {
-    let mut point = None;
-    let mut msg_to_hash = message;
+fn get_hash(message: &[u8]) -> Vec<u8> {
+    let hash = sha256::Hash::hash(message);
+    hash.as_byte_array().to_vec()
+}
+
+pub fn hash_to_curve(message: &[u8]) -> PublicKey {
+    let mut point: Option<PublicKey> = None;
+    let mut msg_to_hash = message.to_vec();
     while point.is_none() {
-        let hash = sha256::Hash::hash(msg_to_hash.as_bytes());
-        let hash_array = hash.as_byte_array();
-
+        let hash = get_hash(&msg_to_hash);
         let input = &[0x02]
             .iter()
-            .chain(hash_array.iter())
+            .chain(hash.iter())
             .cloned()
             .collect::<Vec<u8>>();
 
-        point = PublicKey::from_slice(input).ok();
-        msg_to_hash = hash.to_string();
+        match PublicKey::from_slice(input) {
+            Ok(p) => point = Some(p),
+            Err(_) => msg_to_hash = hash,
+        }
     }
-    Ok(point.unwrap())
+    point.unwrap()
 }
 
 pub fn step1_alice(
@@ -28,7 +33,7 @@ pub fn step1_alice(
     let mut rng = rand::thread_rng();
     let secp = Secp256k1::new();
 
-    let y = hash_to_curve(secret_msg).unwrap();
+    let y = hash_to_curve(secret_msg.as_bytes());
     let secret_key = match blinding_factor {
         Some(f) => SecretKey::from_slice(f).unwrap(),
         None => SecretKey::new(&mut rng),
@@ -54,20 +59,43 @@ fn step2_bob(b: PublicKey, a: SecretKey) -> PublicKey {
 mod tests {
     use crate::dhke::{hash_to_curve, step1_alice};
 
-    #[test]
-    fn test_hash_to_curve() {
-        // let sh = sha256::Hash::hash("test".as_bytes());
-        // let b = sh.as_byte_array();
-        // println!("sh {b:?}");
+    fn hex_to_string(hex: &str) -> String {
+        use hex::FromHex;
+        let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
+        String::from_utf8(input_vec).expect("Invalid UTF-8 String")
+    }
 
-        // let pubkey = PublicKey::from_slice(&[
-        //     2, 29, 21, 35, 7, 198, 183, 43, 14, 208, 65, 139, 14, 112, 205, 128, 231, 245, 41, 91, 141,
-        //     134, 245, 114, 45, 63, 82, 19, 251, 210, 57, 79, 54,
-        // ])
-        // .unwrap();
-        // println!(">{:?}<", pubkey);
-        let pk = hash_to_curve("test".to_string());
-        println!("hash {pk:?}");
+    #[test]
+    fn test_hash_to_curve_zero() -> anyhow::Result<()> {
+        let input_str =
+            hex_to_string("0000000000000000000000000000000000000000000000000000000000000000");
+        let expected_result = "0266687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925";
+
+        let pk = hash_to_curve(input_str.as_bytes()).to_string();
+        assert_eq!(pk, expected_result);
+        Ok(())
+    }
+
+    #[test]
+    fn test_hash_to_curve_zero_one() -> anyhow::Result<()> {
+        let input_str =
+            hex_to_string("0000000000000000000000000000000000000000000000000000000000000001");
+        let expected_result = "02ec4916dd28fc4c10d78e287ca5d9cc51ee1ae73cbfde08c6b37324cbfaac8bc5";
+
+        let pk = hash_to_curve(input_str.as_bytes()).to_string();
+        assert_eq!(pk, expected_result);
+        Ok(())
+    }
+
+    #[test]
+    fn test_hash_to_curve_iterate() -> anyhow::Result<()> {
+        let input_str =
+            hex_to_string("0000000000000000000000000000000000000000000000000000000000000002");
+        let expected_result = "02076c988b353fcbb748178ecb286bc9d0b4acf474d4ba31ba62334e46c97c416a";
+
+        let pk = hash_to_curve(input_str.as_bytes()).to_string();
+        assert_eq!(pk, expected_result);
+        Ok(())
     }
 
     #[test]
