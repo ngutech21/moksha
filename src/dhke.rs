@@ -49,11 +49,11 @@ fn step2_bob(b: PublicKey, a: SecretKey) -> PublicKey {
     b.mul_tweak(&secp, &Scalar::from(a)).unwrap()
 }
 
-// fn step3_alice(C_: PublicKey, r: SecretKey, A: PublicKey) -> PublicKey {
-//     let secp = Secp256k1::new();
-//     let C: PublicKey = C_.(secp)  - A.mul_tweak(&secp, &Scalar::from(r));
-//     return C;
-// }
+fn step3_alice(c_: PublicKey, r: SecretKey, a: PublicKey) -> PublicKey {
+    let secp = Secp256k1::new();
+    c_.combine(&a.mul_tweak(&secp, &Scalar::from(r)).unwrap().negate(&secp))
+        .unwrap()
+}
 
 fn verify(a: SecretKey, c: PublicKey, secret_msg: String) -> bool {
     let secp = Secp256k1::new();
@@ -63,17 +63,25 @@ fn verify(a: SecretKey, c: PublicKey, secret_msg: String) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use crate::dhke::{hash_to_curve, step1_alice, step2_bob, step3_alice};
     use anyhow::Ok;
-    use secp256k1::SecretKey;
-
-    use crate::dhke::{hash_to_curve, step1_alice};
-
-    use super::step2_bob;
 
     fn hex_to_string(hex: &str) -> String {
         use hex::FromHex;
         let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
         String::from_utf8(input_vec).expect("Invalid UTF-8 String")
+    }
+
+    fn public_key_from_hex(hex: &str) -> secp256k1::PublicKey {
+        use hex::FromHex;
+        let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
+        secp256k1::PublicKey::from_slice(&input_vec).expect("Invalid Public Key")
+    }
+
+    fn private_key_from_hex(hex: &str) -> secp256k1::SecretKey {
+        use hex::FromHex;
+        let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
+        secp256k1::SecretKey::from_slice(&input_vec).expect("Invalid SecretKey")
     }
 
     #[test]
@@ -136,9 +144,9 @@ mod tests {
         let (pub_key, _) =
             step1_alice("test_message".to_string(), Some(blinding_factor.as_bytes())).unwrap();
 
-        let secret =
-            hex_to_string("0000000000000000000000000000000000000000000000000000000000000001");
-        let a = SecretKey::from_slice(secret.as_bytes()).unwrap();
+        let a = private_key_from_hex(
+            "0000000000000000000000000000000000000000000000000000000000000001",
+        );
 
         let c = step2_bob(pub_key, a);
         let c_str = c.to_string();
@@ -147,6 +155,28 @@ mod tests {
             c_str
         );
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_step3_alice() -> anyhow::Result<()> {
+        let c_ = public_key_from_hex(
+            "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2",
+        );
+
+        let r = private_key_from_hex(
+            "0000000000000000000000000000000000000000000000000000000000000001",
+        );
+
+        let a = public_key_from_hex(
+            "020000000000000000000000000000000000000000000000000000000000000001",
+        );
+
+        let result = step3_alice(c_, r, a);
+        assert_eq!(
+            "03c724d7e6a5443b39ac8acf11f40420adc4f99a02e7cc1b57703d9391f6d129cd".to_string(),
+            result.to_string()
+        );
         Ok(())
     }
 }
