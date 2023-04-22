@@ -58,8 +58,11 @@ fn step2_bob(b: PublicKey, a: SecretKey) -> PublicKey {
 #[cfg(test)]
 mod tests {
     use anyhow::Ok;
+    use secp256k1::SecretKey;
 
     use crate::dhke::{hash_to_curve, step1_alice};
+
+    use super::step2_bob;
 
     fn hex_to_string(hex: &str) -> String {
         use hex::FromHex;
@@ -119,4 +122,44 @@ mod tests {
         );
         Ok(())
     }
+
+    #[test]
+    fn test_step2_bob() -> anyhow::Result<()> {
+        let blinding_factor =
+            hex_to_string("0000000000000000000000000000000000000000000000000000000000000001");
+        let (pub_key, _) =
+            step1_alice("test_message".to_string(), Some(blinding_factor.as_bytes())).unwrap();
+
+        let secret =
+            hex_to_string("0000000000000000000000000000000000000000000000000000000000000001");
+        let a = SecretKey::from_slice(secret.as_bytes()).unwrap();
+
+        let c = step2_bob(pub_key, a);
+        let c_str = c.to_string();
+        assert_eq!(
+            "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2".to_string(),
+            c_str
+        );
+
+        Ok(())
+    }
+
+    // def test_step2():
+    // B_, _ = step1_alice(
+    //     "test_message",
+    //     blinding_factor=bytes.fromhex(
+    //         "0000000000000000000000000000000000000000000000000000000000000001"
+    //     ),  # 32 bytes
+    // )
+    // a = PrivateKey(
+    //     privkey=bytes.fromhex(
+    //         "0000000000000000000000000000000000000000000000000000000000000001"
+    //     ),
+    //     raw=True,
+    // )
+    // C_ = step2_bob(B_, a)
+    // assert (
+    //     C_.serialize().hex()
+    //     == "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2"
+    // )
 }
