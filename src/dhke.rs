@@ -55,6 +55,12 @@ fn step2_bob(b: PublicKey, a: SecretKey) -> PublicKey {
 //     return C;
 // }
 
+fn verify(a: SecretKey, c: PublicKey, secret_msg: String) -> bool {
+    let secp = Secp256k1::new();
+    let y = hash_to_curve(secret_msg.as_bytes());
+    c == y.mul_tweak(&secp, &Scalar::from(a)).unwrap()
+}
+
 #[cfg(test)]
 mod tests {
     use anyhow::Ok;
@@ -143,23 +149,4 @@ mod tests {
 
         Ok(())
     }
-
-    // def test_step2():
-    // B_, _ = step1_alice(
-    //     "test_message",
-    //     blinding_factor=bytes.fromhex(
-    //         "0000000000000000000000000000000000000000000000000000000000000001"
-    //     ),  # 32 bytes
-    // )
-    // a = PrivateKey(
-    //     privkey=bytes.fromhex(
-    //         "0000000000000000000000000000000000000000000000000000000000000001"
-    //     ),
-    //     raw=True,
-    // )
-    // C_ = step2_bob(B_, a)
-    // assert (
-    //     C_.serialize().hex()
-    //     == "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2"
-    // )
 }
