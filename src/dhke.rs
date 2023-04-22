@@ -57,6 +57,8 @@ fn step2_bob(b: PublicKey, a: SecretKey) -> PublicKey {
 
 #[cfg(test)]
 mod tests {
+    use anyhow::Ok;
+
     use crate::dhke::{hash_to_curve, step1_alice};
 
     fn hex_to_string(hex: &str) -> String {
@@ -99,8 +101,22 @@ mod tests {
     }
 
     #[test]
-    fn test_step1_alice() {
-        let pk = step1_alice("test".to_string(), None);
-        println!("hash {pk:?}");
+    fn test_step1_alice() -> anyhow::Result<()> {
+        let blinding_factor =
+            hex_to_string("0000000000000000000000000000000000000000000000000000000000000001");
+        let (pub_key, secret_key) =
+            step1_alice("test_message".to_string(), Some(blinding_factor.as_bytes())).unwrap();
+        let pub_key_str = pub_key.to_string();
+
+        assert_eq!(
+            pub_key_str,
+            "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2"
+        );
+
+        assert_eq!(
+            hex::encode(secret_key.secret_bytes()),
+            "0000000000000000000000000000000000000000000000000000000000000001"
+        );
+        Ok(())
     }
 }
