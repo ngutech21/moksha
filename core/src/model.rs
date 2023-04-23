@@ -1,6 +1,12 @@
 use base64::{engine::general_purpose, Engine as _};
+use secp256k1::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
-use std::io::{self};
+use std::{
+    collections::HashMap,
+    io::{self},
+};
+
+use crate::crypto::{derive_keys, derive_keyset_id, derive_pubkeys};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlindedMessage {
@@ -75,6 +81,24 @@ impl Tokens {
 }
 
 pub type Proofs = Vec<Proof>;
+
+pub struct MintKeyset {
+    pub private_keys: HashMap<u64, SecretKey>,
+    pub public_keys: HashMap<u64, PublicKey>,
+    pub keyset_id: String,
+}
+
+impl MintKeyset {
+    pub fn new(seed: String) -> MintKeyset {
+        let priv_keys = derive_keys(&seed, "derivation_path"); // FIXME extract derivation path
+        let pub_keys = derive_pubkeys(&priv_keys);
+        MintKeyset {
+            private_keys: priv_keys,
+            keyset_id: derive_keyset_id(&pub_keys),
+            public_keys: pub_keys,
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

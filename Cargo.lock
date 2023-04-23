@@ -127,7 +127,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "cashurs-core",
  "hyper",
+ "secp256k1",
  "serde",
  "serde_derive",
  "serde_json",

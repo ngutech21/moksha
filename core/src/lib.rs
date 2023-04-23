@@ -1,3 +1,3 @@
-mod crypto;
-mod dhke;
-mod model;
+pub mod crypto;
+pub mod dhke;
+pub mod model;
