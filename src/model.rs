@@ -29,15 +29,22 @@ pub struct Proof {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct P2SHScript {}
 
+const TOKEN_PREFIX_V3: &str = "cashuA";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Token {
     mint: Option<String>,
     proofs: Proofs,
 }
 
-const TOKEN_PREFIX_V3: &str = "cashuA";
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Tokens {
+    #[serde(rename = "token")]
+    pub tokens: Vec<Token>,
+    pub memo: Option<String>,
+}
 
-impl Token {
+impl Tokens {
     pub fn serialize(&self) -> io::Result<String> {
         let json = serde_json::to_string(&self)?;
         Ok(format!(
@@ -47,7 +54,7 @@ impl Token {
         ))
     }
 
-    pub fn deserialize(data: String) -> io::Result<Token> {
+    pub fn deserialize(data: String) -> io::Result<Tokens> {
         if !data.starts_with(TOKEN_PREFIX_V3) {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -55,24 +62,23 @@ impl Token {
             ));
         }
 
-        let json = general_purpose::URL_SAFE_NO_PAD
+        let json = general_purpose::URL_SAFE
             .decode(
                 data.strip_prefix(TOKEN_PREFIX_V3)
                     .expect("Token does not contain prefix")
                     .as_bytes(),
             )
             .unwrap(); // FIXME: handle error
-        let token = serde_json::from_slice::<Token>(&json)?;
+        let token = serde_json::from_slice::<Tokens>(&json)?;
         Ok(token)
     }
 }
 
 pub type Proofs = Vec<Proof>;
-pub type Tokens = Vec<Token>;
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{Proof, Token};
+    use crate::model::{Proof, Token, Tokens};
     use serde_json::json;
 
     #[test]
@@ -125,7 +131,7 @@ mod tests {
     }
 
     #[test]
-    fn test_token_serialize() -> anyhow::Result<()> {
+    fn test_tokens_serialize() -> anyhow::Result<()> {
         let token = Token {
             mint: Some("mymint".to_string()),
             proofs: vec![Proof {
@@ -136,18 +142,22 @@ mod tests {
                 script: None,
             }],
         };
+        let tokens = super::Tokens {
+            tokens: vec![token],
+            memo: Some("my memo".to_string()),
+        };
 
-        let serialized = token.serialize()?;
-        println!("{}", serialized);
+        let serialized = tokens.serialize()?;
+        assert!(serialized.starts_with("cashuA"));
         Ok(())
     }
 
     #[test]
-    fn test_token_deserialize() -> anyhow::Result<()> {
-        let input = "cashuAeyJtaW50IjoibXltaW50IiwicHJvb2ZzIjpbeyJhbW91bnQiOjIxLCJzZWNyZXQiOiJzZWNyZXQiLCJDIjoiYyIsImlkIjpudWxsLCJzY3JpcHQiOm51bGx9XX0";
-        let token = Token::deserialize(input.to_string())?;
-        assert_eq!(token.mint, Some("mymint".to_string()),);
-        assert_eq!(token.proofs.len(), 1);
+    fn test_tokens_deserialize() -> anyhow::Result<()> {
+        let input = "cashuAeyJ0b2tlbiI6W3sibWludCI6Imh0dHBzOi8vODMzMy5zcGFjZTozMzM4IiwicHJvb2ZzIjpbeyJpZCI6IkRTQWw5bnZ2eWZ2YSIsImFtb3VudCI6Miwic2VjcmV0IjoiRWhwZW5uQzlxQjNpRmxXOEZaX3BadyIsIkMiOiIwMmMwMjAwNjdkYjcyN2Q1ODZiYzMxODNhZWNmOTdmY2I4MDBjM2Y0Y2M0NzU5ZjY5YzYyNmM5ZGI1ZDhmNWI1ZDQifSx7ImlkIjoiRFNBbDludnZ5ZnZhIiwiYW1vdW50Ijo4LCJzZWNyZXQiOiJUbVM2Q3YwWVQ1UFVfNUFUVktudWt3IiwiQyI6IjAyYWM5MTBiZWYyOGNiZTVkNzMyNTQxNWQ1YzI2MzAyNmYxNWY5Yjk2N2EwNzljYTk3NzlhYjZlNWMyZGIxMzNhNyJ9XX1dLCJtZW1vIjoiVGhhbmt5b3UuIn0=";
+        let tokens = Tokens::deserialize(input.to_string())?;
+        assert_eq!(tokens.memo, Some("Thankyou.".to_string()),);
+        assert_eq!(tokens.tokens.len(), 1);
         Ok(())
     }
 }
