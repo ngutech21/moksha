@@ -1,4 +1,6 @@
+use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
+use std::io::{self};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlindedMessage {
@@ -33,12 +35,44 @@ pub struct Token {
     proofs: Proofs,
 }
 
+const TOKEN_PREFIX_V3: &str = "cashuA";
+
+impl Token {
+    pub fn serialize(&self) -> io::Result<String> {
+        let json = serde_json::to_string(&self)?;
+        Ok(format!(
+            "{}{}",
+            TOKEN_PREFIX_V3,
+            general_purpose::URL_SAFE_NO_PAD.encode(json.as_bytes())
+        ))
+    }
+
+    pub fn deserialize(data: String) -> io::Result<Token> {
+        if !data.starts_with(TOKEN_PREFIX_V3) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Invalid token prefix",
+            ));
+        }
+
+        let json = general_purpose::URL_SAFE_NO_PAD
+            .decode(
+                data.strip_prefix(TOKEN_PREFIX_V3)
+                    .expect("Token does not contain prefix")
+                    .as_bytes(),
+            )
+            .unwrap(); // FIXME: handle error
+        let token = serde_json::from_slice::<Token>(&json)?;
+        Ok(token)
+    }
+}
+
 pub type Proofs = Vec<Proof>;
 pub type Tokens = Vec<Token>;
 
 #[cfg(test)]
 mod tests {
-    use crate::model::Proof;
+    use crate::model::{Proof, Token};
     use serde_json::json;
 
     #[test]
@@ -87,6 +121,33 @@ mod tests {
         let token = serde_json::from_value::<super::Token>(js)?;
         assert_eq!(token.mint, Some("https://8333.space:3338".to_string()));
         assert_eq!(token.proofs.len(), 2);
+        Ok(())
+    }
+
+    #[test]
+    fn test_token_serialize() -> anyhow::Result<()> {
+        let token = Token {
+            mint: Some("mymint".to_string()),
+            proofs: vec![Proof {
+                amount: 21,
+                secret: "secret".to_string(),
+                c: "c".to_string(),
+                id: None,
+                script: None,
+            }],
+        };
+
+        let serialized = token.serialize()?;
+        println!("{}", serialized);
+        Ok(())
+    }
+
+    #[test]
+    fn test_token_deserialize() -> anyhow::Result<()> {
+        let input = "cashuAeyJtaW50IjoibXltaW50IiwicHJvb2ZzIjpbeyJhbW91bnQiOjIxLCJzZWNyZXQiOiJzZWNyZXQiLCJDIjoiYyIsImlkIjpudWxsLCJzY3JpcHQiOm51bGx9XX0";
+        let token = Token::deserialize(input.to_string())?;
+        assert_eq!(token.mint, Some("mymint".to_string()),);
+        assert_eq!(token.proofs.len(), 1);
         Ok(())
     }
 }
