@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use axum::extract::State;
+use axum::extract::{Query, RawQuery, State};
 use axum::Router;
 use axum::{routing::get, Json};
 use cashurs_core::model::MintKeyset;
 use hyper::Method;
 use secp256k1::PublicKey;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Error;
 use tower_http::{
     cors::{Any, CorsLayer},
@@ -51,8 +51,28 @@ fn app() -> Router {
     Router::new()
         .route("/keys", get(get_keys))
         .route("/keysets", get(get_keysets))
+        .route("/mint", get(get_mint))
         .with_state(keyset)
         .layer(TraceLayer::new_for_http())
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct RequestMintResponse {
+    pr: String,
+    hash: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MintQuery {
+    pub amount: Option<u64>,
+}
+
+async fn get_mint(RawQuery(query): RawQuery) -> Result<Json<RequestMintResponse>, ()> {
+    println!("amount: {:#?}", query);
+    Ok(Json(RequestMintResponse {
+        pr: "pr".to_string(),
+        hash: "hash".to_string(),
+    }))
 }
 
 async fn get_keys(State(keyset): State<MintKeyset>) -> Result<Json<HashMap<u64, PublicKey>>, ()> {
