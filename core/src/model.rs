@@ -82,6 +82,7 @@ impl Tokens {
 
 pub type Proofs = Vec<Proof>;
 
+#[derive(Debug, Clone)]
 pub struct MintKeyset {
     pub private_keys: HashMap<u64, SecretKey>,
     pub public_keys: HashMap<u64, PublicKey>,

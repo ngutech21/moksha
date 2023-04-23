@@ -1,10 +1,13 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
+use axum::extract::State;
 use axum::Router;
 use axum::{routing::get, Json};
 use cashurs_core::model::MintKeyset;
 use hyper::Method;
 use secp256k1::PublicKey;
+use serde::Serialize;
 use serde_json::Error;
 use tower_http::{
     cors::{Any, CorsLayer},
@@ -14,6 +17,10 @@ use tracing::{event, Level};
 
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+
+//type LocalKeyset = HashMap<u64, PublicKey>;
+
+//type DBState = State<Arc<Box<dyn DB + Send + Sync>>>;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -40,23 +47,25 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn app() -> Router {
+    let keyset = MintKeyset::new("mysecret".to_string());
     Router::new()
         .route("/keys", get(get_keys))
         .route("/keysets", get(get_keysets))
+        .with_state(keyset)
         .layer(TraceLayer::new_for_http())
 }
 
-//{
-//  "1": "03a40f20667ed53513075dc51e715ff2046cad64eb68960632269ba7f0210e38bc",//
-//  "2": "03fd4ce5a16b65576145949e6f99f445f8249fee17c606b688b504a849cdc452de",
-//  "4": "02648eccfa4c026960966276fa5a4cae46ce0fd432211a4f449bf84f13aa5f8303",
-//  "8": "02fdfd6796bfeac490cbee12f778f867f0a2c68f6508d17c649759ea0dc3547528",
-
-async fn get_keys() -> Result<Json<HashMap<u64, PublicKey>>, ()> {
-    let keys = MintKeyset::new("foo".to_string());
-    Ok(Json(keys.public_keys))
+async fn get_keys(State(keyset): State<MintKeyset>) -> Result<Json<HashMap<u64, PublicKey>>, ()> {
+    Ok(Json(keyset.public_keys))
 }
 
-async fn get_keysets() -> &'static str {
-    "get keysets"
+#[derive(Clone, Debug, Serialize)]
+struct Keyset {
+    keysets: Vec<String>,
+}
+
+async fn get_keysets(State(keyset): State<MintKeyset>) -> Result<Json<Keyset>, ()> {
+    Ok(Json(Keyset {
+        keysets: vec![keyset.keyset_id],
+    }))
 }
