@@ -50,7 +50,7 @@ impl Tokens {
         Ok(format!(
             "{}{}",
             TOKEN_PREFIX_V3,
-            general_purpose::URL_SAFE_NO_PAD.encode(json.as_bytes())
+            general_purpose::URL_SAFE.encode(json.as_bytes())
         ))
     }
 
