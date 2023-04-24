@@ -4,7 +4,10 @@ use axum::extract::{Query, State};
 use axum::Router;
 use axum::{routing::get, Json};
 use bitcoin_hashes::{sha256, Hash};
-use cashurs_core::model::{Keysets, MintKeyset, PaymentRequest};
+use cashurs_core::dhke;
+use cashurs_core::model::{
+    BlindedMessage, BlindedSignature, Keysets, MintKeyset, PaymentRequest, PostMintResponse,
+};
 use hyper::Method;
 use model::MintQuery;
 use secp256k1::PublicKey;
@@ -34,7 +37,7 @@ async fn main() -> anyhow::Result<()> {
                 .layer(
                     CorsLayer::new()
                         .allow_origin(Any)
-                        .allow_methods([Method::GET]),
+                        .allow_methods([Method::GET, Method::POST]),
                 )
                 .into_make_service(),
         )
@@ -48,7 +51,7 @@ fn app() -> Router {
     Router::new()
         .route("/keys", get(get_keys))
         .route("/keysets", get(get_keysets))
-        .route("/mint", get(get_mint))
+        .route("/mint", get(get_mint).post(post_mint))
         .with_state(keyset)
         .layer(TraceLayer::new_for_http())
 }
@@ -59,6 +62,28 @@ async fn get_mint(Query(mint_query): Query<MintQuery>) -> Result<Json<PaymentReq
     Ok(Json(PaymentRequest {
         pr: pr.to_string(),
         hash: sha256::Hash::hash(pr.as_bytes()).to_string(),
+    }))
+}
+
+async fn post_mint(
+    State(keyset): State<MintKeyset>,
+    Query(mint_query): Query<MintQuery>,
+    Json(blinded_messages): Json<Vec<BlindedMessage>>,
+) -> Result<Json<PostMintResponse>, ()> {
+    println!("post_mint: {:#?} {:#?}", mint_query, blinded_messages);
+
+    let private_key = keyset.private_keys.get(&2).unwrap();
+    let pub_key = dhke::public_key_from_hex(&blinded_messages[0].b_);
+    let blinded_sig = dhke::step2_bob(pub_key, private_key);
+
+    let result = BlindedSignature {
+        id: Some("keyset.".to_string()),
+        amount: 2,
+        c_: blinded_sig.to_string(),
+    };
+
+    Ok(Json(PostMintResponse {
+        promises: vec![result],
     }))
 }
 

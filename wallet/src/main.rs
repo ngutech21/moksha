@@ -1,5 +1,9 @@
 use std::env;
 
+use cashurs_core::{
+    dhke,
+    model::{BlindedMessage, Proof, Proofs, Token},
+};
 use clap::{Parser, Subcommand};
 use dotenvy::dotenv;
 
@@ -39,7 +43,42 @@ async fn main() -> anyhow::Result<()> {
     match cli.command {
         Command::Invoice { amount } => {
             let payment_request = client.get_mint_payment_request(amount).await;
-            println!("Send {amount} {payment_request:?}");
+            let payment_hash = payment_request.clone().unwrap().hash;
+
+            let my_secret = "my secret".to_string();
+            let (b_, alice_secret_key) = dhke::step1_alice(my_secret, None).unwrap();
+
+            let msg = BlindedMessage {
+                amount: 1,
+                b_: b_.to_string(),
+            };
+            let blinded_messages = vec![msg];
+            let post_mint_resp = client
+                .post_mint_payment_request(payment_hash, blinded_messages)
+                .await
+                .unwrap();
+
+            // unblind signatures
+            println!("Send {amount} {payment_request:?} {post_mint_resp:?}");
+
+            let pubs = dhke::public_key_from_hex(&post_mint_resp.promises[0].c_);
+
+            dhke::step3_alice(pubs, alice_secret_key, b_);
+
+            let proof = Proof {
+                amount: post_mint_resp.promises[0].amount,
+                c: pubs.to_string(),
+                secret: "my secret".to_string(),
+                id: Some(keysets.unwrap().keysets[0].clone()),
+                script: None,
+            };
+
+            let token = Token {
+                mint: Some("my mint".to_string()), // FIXME
+                proofs: vec![proof],
+            };
+
+            println!("token {:?}", token);
         }
         Command::Pay { invoice } => {
             println!("Pay {invoice}");

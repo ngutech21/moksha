@@ -39,10 +39,11 @@ const TOKEN_PREFIX_V3: &str = "cashuA";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Token {
-    mint: Option<String>,
-    proofs: Proofs,
+    pub mint: Option<String>,
+    pub proofs: Proofs,
 }
 
+// FIXME rename to TokenV3
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tokens {
     #[serde(rename = "token")]
@@ -110,6 +111,11 @@ pub struct Keysets {
 pub struct PaymentRequest {
     pub pr: String,
     pub hash: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PostMintResponse {
+    pub promises: Vec<BlindedSignature>,
 }
 
 #[cfg(test)]

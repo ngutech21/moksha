@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use bitcoin_hashes::{sha256, Hash};
 use secp256k1::{PublicKey, Scalar, Secp256k1, SecretKey};
 
@@ -44,38 +43,38 @@ pub fn step1_alice(
     Ok((b, secret_key))
 }
 
-fn step2_bob(b: PublicKey, a: SecretKey) -> PublicKey {
+pub fn step2_bob(b: PublicKey, a: &SecretKey) -> PublicKey {
     let secp = Secp256k1::new();
-    b.mul_tweak(&secp, &Scalar::from(a)).unwrap()
+    b.mul_tweak(&secp, &Scalar::from(*a)).unwrap()
 }
 
-fn step3_alice(c_: PublicKey, r: SecretKey, a: PublicKey) -> PublicKey {
+pub fn step3_alice(c_: PublicKey, r: SecretKey, a: PublicKey) -> PublicKey {
     let secp = Secp256k1::new();
     c_.combine(&a.mul_tweak(&secp, &Scalar::from(r)).unwrap().negate(&secp))
         .unwrap()
 }
 
-fn verify(a: SecretKey, c: PublicKey, secret_msg: String) -> bool {
+pub fn verify(a: SecretKey, c: PublicKey, secret_msg: String) -> bool {
     let secp = Secp256k1::new();
     let y = hash_to_curve(secret_msg.as_bytes());
     c == y.mul_tweak(&secp, &Scalar::from(a)).unwrap()
 }
 
+pub fn public_key_from_hex(hex: &str) -> secp256k1::PublicKey {
+    use hex::FromHex;
+    let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
+    secp256k1::PublicKey::from_slice(&input_vec).expect("Invalid Public Key")
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::dhke::{hash_to_curve, step1_alice, step2_bob, step3_alice};
+    use crate::dhke::{hash_to_curve, public_key_from_hex, step1_alice, step2_bob, step3_alice};
     use anyhow::Ok;
 
     fn hex_to_string(hex: &str) -> String {
         use hex::FromHex;
         let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
         String::from_utf8(input_vec).expect("Invalid UTF-8 String")
-    }
-
-    fn public_key_from_hex(hex: &str) -> secp256k1::PublicKey {
-        use hex::FromHex;
-        let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
-        secp256k1::PublicKey::from_slice(&input_vec).expect("Invalid Public Key")
     }
 
     fn private_key_from_hex(hex: &str) -> secp256k1::SecretKey {
@@ -148,7 +147,7 @@ mod tests {
             "0000000000000000000000000000000000000000000000000000000000000001",
         );
 
-        let c = step2_bob(pub_key, a);
+        let c = step2_bob(pub_key, &a);
         let c_str = c.to_string();
         assert_eq!(
             "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2".to_string(),
