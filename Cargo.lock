@@ -176,6 +176,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "bitcoin_hashes",
  "cashurs-core",
  "hyper",
  "secp256k1",

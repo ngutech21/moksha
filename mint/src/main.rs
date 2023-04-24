@@ -1,14 +1,13 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 
-use axum::extract::{Query, RawQuery, State};
+use axum::extract::{Query, State};
 use axum::Router;
 use axum::{routing::get, Json};
+use bitcoin_hashes::{sha256, Hash};
 use cashurs_core::model::MintKeyset;
 use hyper::Method;
+use model::{Keyset, MintQuery};
 use secp256k1::PublicKey;
-use serde::{Deserialize, Serialize};
-use serde_json::Error;
 use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
@@ -18,9 +17,8 @@ use tracing::{event, Level};
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-//type LocalKeyset = HashMap<u64, PublicKey>;
-
-//type DBState = State<Arc<Box<dyn DB + Send + Sync>>>;
+use crate::model::RequestMintResponse;
+mod model;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -56,32 +54,17 @@ fn app() -> Router {
         .layer(TraceLayer::new_for_http())
 }
 
-#[derive(Clone, Debug, Serialize)]
-struct RequestMintResponse {
-    pr: String,
-    hash: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct MintQuery {
-    pub amount: Option<u64>,
-}
-
-async fn get_mint(RawQuery(query): RawQuery) -> Result<Json<RequestMintResponse>, ()> {
-    println!("amount: {:#?}", query);
+async fn get_mint(Query(mint_query): Query<MintQuery>) -> Result<Json<RequestMintResponse>, ()> {
+    println!("amount: {:#?}", mint_query); // FIXME use amount and generate a real invoice
+    let pr = "lnbc2500u1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdq5xysxxatsyp3k7enxv4jsxqzpuaztrnwngzn3kdzw5hydlzf03qdgm2hdq27cqv3agm2awhz5se903vruatfhq77w3ls4evs3ch9zw97j25emudupq63nyw24cg27h2rspfj9srp";
     Ok(Json(RequestMintResponse {
-        pr: "pr".to_string(),
-        hash: "hash".to_string(),
+        pr: pr.to_string(),
+        hash: sha256::Hash::hash(pr.as_bytes()).to_string(),
     }))
 }
 
 async fn get_keys(State(keyset): State<MintKeyset>) -> Result<Json<HashMap<u64, PublicKey>>, ()> {
     Ok(Json(keyset.public_keys))
-}
-
-#[derive(Clone, Debug, Serialize)]
-struct Keyset {
-    keysets: Vec<String>,
 }
 
 async fn get_keysets(State(keyset): State<MintKeyset>) -> Result<Json<Keyset>, ()> {
