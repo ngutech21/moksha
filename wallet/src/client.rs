@@ -3,10 +3,16 @@ use std::collections::HashMap;
 use cashurs_core::model::{BlindedMessage, Keysets, PaymentRequest, PostMintResponse};
 use reqwest::header::{HeaderValue, CONTENT_TYPE};
 use secp256k1::PublicKey;
+use serde::{Deserialize, Serialize};
 
 pub struct Client {
     mint_url: String,
     request_client: reqwest::Client,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Outputs {
+    outputs: Vec<BlindedMessage>,
 }
 
 impl Client {
@@ -44,7 +50,12 @@ impl Client {
         blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMintResponse, ()> {
         let url = format!("{}/mint?payment_hash={}", self.mint_url, payment_hash);
-        let body = serde_json::to_string(&blinded_messages).unwrap();
+        let body = serde_json::to_string(&Outputs {
+            outputs: blinded_messages,
+        })
+        .unwrap();
+
+        println!("body: {}", body);
 
         let resp = self
             .request_client
@@ -57,7 +68,10 @@ impl Client {
             .send()
             .await
             .unwrap();
+        let response = resp.text().await.unwrap();
+        dbg!(&response);
+        Ok(serde_json::from_str::<PostMintResponse>(&response).unwrap())
 
-        Ok(resp.json::<PostMintResponse>().await.unwrap())
+        //Ok(resp.json::<PostMintResponse>().await.unwrap())
     }
 }

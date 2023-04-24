@@ -25,12 +25,32 @@ enum Command {
     Info,
 }
 
+fn read_env() -> (String, String) {
+    dotenv().expect(".env file not found");
+    let mint_url = env::var("MINT_URL").expect("MINT_URL not found");
+    // TODO generate wallet secret
+    let wallet_secret = env::var("WALLET_SECRET").expect("WALLET_SECRET not found");
+    (mint_url, wallet_secret)
+}
+
+fn wait_for_payment(invoice: String) {
+    println!(">> press return after invoice is paid: {invoice:?}");
+    loop {
+        let mut line = String::new();
+        std::io::stdin()
+            .read_line(&mut line)
+            .expect("Error: Could not read a line");
+        if line == "\n" {
+            break;
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    dotenv().expect(".env file not found");
-    let mint_url = env::var("MINT_URL");
+    let (mint_url, wallet_secret) = read_env();
 
-    let client = client::Client::new(mint_url.unwrap());
+    let client = client::Client::new(mint_url.clone());
     let keys = client.get_mint_keys().await;
     let keysets = client.get_mint_keysets().await;
 
@@ -41,8 +61,13 @@ async fn main() -> anyhow::Result<()> {
             let payment_request = client.get_mint_payment_request(amount).await;
             let payment_hash = payment_request.clone().unwrap().hash;
 
-            let my_secret = "my secret".to_string();
-            let (b_, alice_secret_key) = dhke::step1_alice(my_secret, None).unwrap();
+            let invoice = payment_request.unwrap().pr;
+
+            println!(">> invoice: {payment_hash:?}");
+            wait_for_payment(invoice);
+            println!(">> invoice paid");
+
+            let (b_, alice_secret_key) = dhke::step1_alice(wallet_secret.clone(), None).unwrap();
 
             let msg = BlindedMessage {
                 amount: 1,
@@ -62,13 +87,13 @@ async fn main() -> anyhow::Result<()> {
 
             let proof = Proof::new(
                 post_mint_resp.promises[0].amount,
-                "my secret".to_string(),
+                wallet_secret.to_string(), // FIXME which secret?
                 c_,
                 keysets.unwrap().keysets[0].clone(),
             );
 
             let token = Token {
-                mint: Some("my mint".to_string()), // FIXME
+                mint: Some(mint_url.to_string()), // FIXME
                 proofs: vec![proof],
             };
 
@@ -78,8 +103,6 @@ async fn main() -> anyhow::Result<()> {
             };
 
             let serialized_tokens = tokens.serialize();
-
-            //println!("token {:?}", tokens);
             println!("minted tokens {:?}", serialized_tokens.unwrap());
         }
         Command::Pay { invoice } => {
