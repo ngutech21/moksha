@@ -86,12 +86,11 @@ async fn main() -> anyhow::Result<()> {
 
             // FIXME use split_amount
             let msg = BlindedMessage {
-                amount: 1,
+                amount: 2,
                 b_: b_.to_string(),
             };
-            let blinded_messages = vec![msg];
             let post_mint_resp = client
-                .post_mint_payment_request(payment_hash, blinded_messages)
+                .post_mint_payment_request(payment_hash, vec![msg])
                 .await
                 .unwrap();
 
@@ -99,7 +98,7 @@ async fn main() -> anyhow::Result<()> {
             //println!("Send {amount} {payment_request:?} {post_mint_resp:?}");
             let c_ = dhke::public_key_from_hex(&post_mint_resp.promises[0].c_);
             let key = dhke::public_key_from_hex(&keys.unwrap().get(&2).unwrap().to_string());
-            dhke::step3_alice(c_, alice_secret_key, key);
+            let pub_alice = dhke::step3_alice(c_, alice_secret_key, key);
 
             let keysets = keysets.unwrap().keysets;
 
@@ -108,7 +107,7 @@ async fn main() -> anyhow::Result<()> {
             let proof = Proof::new(
                 post_mint_resp.promises[0].amount,
                 wallet_secret.to_string(), // FIXME which secret?
-                c_,
+                pub_alice,
                 keysets[1].clone(), // FIXME choose correct keyset
             );
 

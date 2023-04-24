@@ -55,8 +55,6 @@ impl Client {
         })
         .unwrap();
 
-        println!("body: {}", body);
-
         let resp = self
             .request_client
             .post(url)
@@ -69,9 +67,6 @@ impl Client {
             .await
             .unwrap();
         let response = resp.text().await.unwrap();
-        dbg!(&response);
         Ok(serde_json::from_str::<PostMintResponse>(&response).unwrap())
-
-        //Ok(resp.json::<PostMintResponse>().await.unwrap())
     }
 }
