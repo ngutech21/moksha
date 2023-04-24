@@ -47,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn app() -> Router {
-    let keyset = MintKeyset::new("mysecret".to_string());
+    let keyset = MintKeyset::new("supersecretprivatekey".to_string());
     Router::new()
         .route("/keys", get(get_keys))
         .route("/keysets", get(get_keysets))

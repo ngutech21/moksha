@@ -46,6 +46,21 @@ fn wait_for_payment(invoice: String) {
     }
 }
 
+/// split a decimal amount into a vector of powers of 2
+fn amount_split(amount: u64) -> Vec<u64> {
+    format!("{:b}", amount)
+        .chars()
+        .rev()
+        .enumerate()
+        .filter_map(|(i, c)| {
+            if c == '1' {
+                return Some(2_u64.pow(i as u32));
+            }
+            None
+        })
+        .collect::<Vec<u64>>()
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let (mint_url, wallet_secret) = read_env();
@@ -69,6 +84,7 @@ async fn main() -> anyhow::Result<()> {
 
             let (b_, alice_secret_key) = dhke::step1_alice(wallet_secret.clone(), None).unwrap();
 
+            // FIXME use split_amount
             let msg = BlindedMessage {
                 amount: 1,
                 b_: b_.to_string(),
@@ -85,20 +101,24 @@ async fn main() -> anyhow::Result<()> {
             let key = dhke::public_key_from_hex(&keys.unwrap().get(&2).unwrap().to_string());
             dhke::step3_alice(c_, alice_secret_key, key);
 
+            let keysets = keysets.unwrap().keysets;
+
+            dbg!(&keysets);
+
             let proof = Proof::new(
                 post_mint_resp.promises[0].amount,
                 wallet_secret.to_string(), // FIXME which secret?
                 c_,
-                keysets.unwrap().keysets[0].clone(),
+                keysets[1].clone(), // FIXME choose correct keyset
             );
 
             let token = Token {
-                mint: Some(mint_url.to_string()), // FIXME
+                mint: Some(mint_url.to_string()),
                 proofs: vec![proof],
             };
 
             let tokens = Tokens {
-                memo: None,
+                memo: Some("my memo".to_string()),
                 tokens: vec![token],
             };
 
@@ -120,4 +140,16 @@ async fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn test_split() -> anyhow::Result<()> {
+        let amount = 13;
+        let bits = super::amount_split(amount);
+        assert_eq!(bits, vec![1, 4, 8]);
+        Ok(())
+    }
 }

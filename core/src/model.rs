@@ -1,6 +1,7 @@
 use base64::{engine::general_purpose, Engine as _};
 use secp256k1::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
+use serde_with::skip_serializing_none;
 use std::{
     collections::HashMap,
     io::{self},
@@ -23,6 +24,7 @@ pub struct BlindedSignature {
     pub id: Option<String>,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Proof {
     pub amount: u64,
@@ -51,12 +53,14 @@ pub struct P2SHScript {}
 const TOKEN_PREFIX_V3: &str = "cashuA";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[skip_serializing_none]
 pub struct Token {
     pub mint: Option<String>,
     pub proofs: Proofs,
 }
 
 // FIXME rename to TokenV3
+#[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tokens {
     #[serde(rename = "token")]
@@ -65,6 +69,7 @@ pub struct Tokens {
 }
 
 impl Tokens {
+    // FIXME ignore None values
     pub fn serialize(&self) -> io::Result<String> {
         let json = serde_json::to_string(&self)?;
         Ok(format!(
@@ -203,6 +208,7 @@ mod tests {
         };
 
         let serialized = tokens.serialize()?;
+        dbg!(&serialized);
         assert!(serialized.starts_with("cashuA"));
         Ok(())
     }
