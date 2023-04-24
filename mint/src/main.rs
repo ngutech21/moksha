@@ -70,12 +70,12 @@ async fn post_mint(
     Query(mint_query): Query<MintQuery>,
     Json(blinded_messages): Json<Vec<BlindedMessage>>,
 ) -> Result<Json<PostMintResponse>, ()> {
-    println!("post_mint: {:#?} {:#?}", mint_query, blinded_messages);
+    println!("post_mint: {mint_query:#?} {blinded_messages:#?}");
 
     let private_key = keyset.private_keys.get(&2).unwrap();
-    let pub_key = dhke::public_key_from_hex(&blinded_messages[0].b_);
-    let blinded_sig = dhke::step2_bob(pub_key, private_key);
+    let blinded_sig = dhke::step2_bob(blinded_messages[0].b_, private_key);
 
+    // FIXME return correct values for keyset and amount
     let result = BlindedSignature {
         id: Some("keyset.".to_string()),
         amount: 2,

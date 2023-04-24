@@ -9,11 +9,13 @@ use std::{
 
 use crate::crypto::{derive_keys, derive_keyset_id, derive_pubkeys};
 
+const TOKEN_PREFIX_V3: &str = "cashuA";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlindedMessage {
     pub amount: u64,
     #[serde(rename = "B_")]
-    pub b_: String,
+    pub b_: PublicKey,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -30,7 +32,7 @@ pub struct Proof {
     pub amount: u64,
     pub secret: String,
     #[serde(rename = "C")]
-    pub c: String,
+    pub c: PublicKey,
     pub id: Option<String>,
     pub script: Option<P2SHScript>,
 }
@@ -40,7 +42,7 @@ impl Proof {
         Self {
             amount,
             secret,
-            c: c.to_string(),
+            c,
             id: Some(id),
             script: None,
         }
@@ -49,8 +51,6 @@ impl Proof {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct P2SHScript {}
-
-const TOKEN_PREFIX_V3: &str = "cashuA";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[skip_serializing_none]
@@ -69,7 +69,6 @@ pub struct Tokens {
 }
 
 impl Tokens {
-    // FIXME ignore None values
     pub fn serialize(&self) -> io::Result<String> {
         let json = serde_json::to_string(&self)?;
         Ok(format!(
@@ -138,7 +137,10 @@ pub struct PostMintResponse {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{Proof, Token, Tokens};
+    use crate::{
+        dhke,
+        model::{Proof, Token, Tokens},
+    };
     use serde_json::json;
 
     #[test]
@@ -157,7 +159,7 @@ mod tests {
         assert_eq!(proof.id, Some("DSAl9nvvyfva".to_string()));
         assert_eq!(proof.secret, "EhpennC9qB3iFlW8FZ_pZw".to_string());
         assert_eq!(
-            proof.c,
+            proof.c.to_string(),
             "02c020067db727d586bc3183aecf97fcb800c3f4cc4759f69c626c9db5d8f5b5d4".to_string()
         );
         Ok(())
@@ -197,7 +199,9 @@ mod tests {
             proofs: vec![Proof {
                 amount: 21,
                 secret: "secret".to_string(),
-                c: "c".to_string(),
+                c: dhke::public_key_from_hex(
+                    "02c020067db727d586bc3183aecf97fcb800c3f4cc4759f69c626c9db5d8f5b5d4",
+                ),
                 id: None,
                 script: None,
             }],

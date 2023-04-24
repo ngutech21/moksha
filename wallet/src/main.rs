@@ -63,6 +63,7 @@ fn amount_split(amount: u64) -> Vec<u64> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    println!("start");
     let (mint_url, wallet_secret) = read_env();
 
     let client = client::Client::new(mint_url.clone());
@@ -85,10 +86,7 @@ async fn main() -> anyhow::Result<()> {
             let (b_, alice_secret_key) = dhke::step1_alice(wallet_secret.clone(), None).unwrap();
 
             // FIXME use split_amount
-            let msg = BlindedMessage {
-                amount: 2,
-                b_: b_.to_string(),
-            };
+            let msg = BlindedMessage { amount: 2, b_ };
             let post_mint_resp = client
                 .post_mint_payment_request(payment_hash, vec![msg])
                 .await
