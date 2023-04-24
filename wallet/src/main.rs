@@ -29,8 +29,10 @@ async fn main() -> anyhow::Result<()> {
 
     let client = client::Client::new(mint_url.unwrap());
     let keys = client.get_mint_keys().await;
+    let keysets = client.get_mint_keysets().await;
 
     println!("{:?}", keys);
+    println!("{:?}", keysets);
 
     let cli = Opts::parse();
 

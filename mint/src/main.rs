@@ -4,9 +4,9 @@ use axum::extract::{Query, State};
 use axum::Router;
 use axum::{routing::get, Json};
 use bitcoin_hashes::{sha256, Hash};
-use cashurs_core::model::MintKeyset;
+use cashurs_core::model::{Keysets, MintKeyset};
 use hyper::Method;
-use model::{Keyset, MintQuery};
+use model::MintQuery;
 use secp256k1::PublicKey;
 use tower_http::{
     cors::{Any, CorsLayer},
@@ -67,8 +67,8 @@ async fn get_keys(State(keyset): State<MintKeyset>) -> Result<Json<HashMap<u64, 
     Ok(Json(keyset.public_keys))
 }
 
-async fn get_keysets(State(keyset): State<MintKeyset>) -> Result<Json<Keyset>, ()> {
-    Ok(Json(Keyset {
+async fn get_keysets(State(keyset): State<MintKeyset>) -> Result<Json<Keysets>, ()> {
+    Ok(Json(Keysets {
         keysets: vec![keyset.keyset_id],
     }))
 }

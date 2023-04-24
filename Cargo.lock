@@ -200,6 +200,7 @@ name = "cashurs-wallet"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cashurs-core",
  "clap",
  "dotenvy",
  "reqwest",

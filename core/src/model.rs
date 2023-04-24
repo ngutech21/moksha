@@ -101,6 +101,11 @@ impl MintKeyset {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Keysets {
+    pub keysets: Vec<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::model::{Proof, Token, Tokens};

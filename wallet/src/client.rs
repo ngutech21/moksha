@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use cashurs_core::model::Keysets;
 use secp256k1::PublicKey;
 
 pub struct Client {
@@ -20,6 +21,12 @@ impl Client {
         let resp = self.request_client.get(url).send().await.unwrap();
 
         Ok(resp.json::<HashMap<u64, PublicKey>>().await.unwrap())
-        //Ok(HashMap::new())
+    }
+
+    pub async fn get_mint_keysets(&self) -> Result<Keysets, ()> {
+        let url = format!("{}/keysets", self.mint_url);
+        let resp = self.request_client.get(url).send().await.unwrap();
+
+        Ok(resp.json::<Keysets>().await.unwrap())
     }
 }

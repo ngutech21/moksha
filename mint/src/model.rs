@@ -10,8 +10,3 @@ pub struct RequestMintResponse {
 pub struct MintQuery {
     pub amount: Option<u64>,
 }
-
-#[derive(Clone, Debug, Serialize)]
-pub struct Keyset {
-    pub keysets: Vec<String>,
-}
