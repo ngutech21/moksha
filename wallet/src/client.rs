@@ -44,10 +44,7 @@ impl Client {
         blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMintResponse, ()> {
         let url = format!("{}/mint?payment_hash={}", self.mint_url, payment_hash);
-        //let url = format!("{}/mint", self.mint_url);
-
         let body = serde_json::to_string(&blinded_messages).unwrap();
-        dbg!(body.clone());
 
         let resp = self
             .request_client

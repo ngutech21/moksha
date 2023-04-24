@@ -32,6 +32,19 @@ pub struct Proof {
     pub id: Option<String>,
     pub script: Option<P2SHScript>,
 }
+
+impl Proof {
+    pub fn new(amount: u64, secret: String, c: PublicKey, id: String) -> Self {
+        Self {
+            amount,
+            secret,
+            c: c.to_string(),
+            id: Some(id),
+            script: None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct P2SHScript {}
 

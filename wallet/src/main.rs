@@ -2,7 +2,7 @@ use std::env;
 
 use cashurs_core::{
     dhke,
-    model::{BlindedMessage, Proof, Proofs, Token},
+    model::{BlindedMessage, Proof, Token, Tokens},
 };
 use clap::{Parser, Subcommand};
 use dotenvy::dotenv;
@@ -29,14 +29,10 @@ enum Command {
 async fn main() -> anyhow::Result<()> {
     dotenv().expect(".env file not found");
     let mint_url = env::var("MINT_URL");
-    print!("{:?}", mint_url);
 
     let client = client::Client::new(mint_url.unwrap());
     let keys = client.get_mint_keys().await;
     let keysets = client.get_mint_keysets().await;
-
-    println!("{:?}", keys);
-    println!("{:?}", keysets);
 
     let cli = Opts::parse();
 
@@ -58,27 +54,33 @@ async fn main() -> anyhow::Result<()> {
                 .await
                 .unwrap();
 
-            // unblind signatures
-            println!("Send {amount} {payment_request:?} {post_mint_resp:?}");
+            // step 3: unblind signatures
+            //println!("Send {amount} {payment_request:?} {post_mint_resp:?}");
+            let c_ = dhke::public_key_from_hex(&post_mint_resp.promises[0].c_);
+            let key = dhke::public_key_from_hex(&keys.unwrap().get(&2).unwrap().to_string());
+            dhke::step3_alice(c_, alice_secret_key, key);
 
-            let pubs = dhke::public_key_from_hex(&post_mint_resp.promises[0].c_);
-
-            dhke::step3_alice(pubs, alice_secret_key, b_);
-
-            let proof = Proof {
-                amount: post_mint_resp.promises[0].amount,
-                c: pubs.to_string(),
-                secret: "my secret".to_string(),
-                id: Some(keysets.unwrap().keysets[0].clone()),
-                script: None,
-            };
+            let proof = Proof::new(
+                post_mint_resp.promises[0].amount,
+                "my secret".to_string(),
+                c_,
+                keysets.unwrap().keysets[0].clone(),
+            );
 
             let token = Token {
                 mint: Some("my mint".to_string()), // FIXME
                 proofs: vec![proof],
             };
 
-            println!("token {:?}", token);
+            let tokens = Tokens {
+                memo: None,
+                tokens: vec![token],
+            };
+
+            let serialized_tokens = tokens.serialize();
+
+            //println!("token {:?}", tokens);
+            println!("minted tokens {:?}", serialized_tokens.unwrap());
         }
         Command::Pay { invoice } => {
             println!("Pay {invoice}");
