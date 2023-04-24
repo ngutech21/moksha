@@ -4,7 +4,7 @@ use axum::extract::{Query, State};
 use axum::Router;
 use axum::{routing::get, Json};
 use bitcoin_hashes::{sha256, Hash};
-use cashurs_core::model::{Keysets, MintKeyset};
+use cashurs_core::model::{Keysets, MintKeyset, PaymentRequest};
 use hyper::Method;
 use model::MintQuery;
 use secp256k1::PublicKey;
@@ -17,7 +17,6 @@ use tracing::{event, Level};
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use crate::model::RequestMintResponse;
 mod model;
 
 #[tokio::main]
@@ -54,10 +53,10 @@ fn app() -> Router {
         .layer(TraceLayer::new_for_http())
 }
 
-async fn get_mint(Query(mint_query): Query<MintQuery>) -> Result<Json<RequestMintResponse>, ()> {
+async fn get_mint(Query(mint_query): Query<MintQuery>) -> Result<Json<PaymentRequest>, ()> {
     println!("amount: {:#?}", mint_query); // FIXME use amount and generate a real invoice
     let pr = "lnbc2500u1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdq5xysxxatsyp3k7enxv4jsxqzpuaztrnwngzn3kdzw5hydlzf03qdgm2hdq27cqv3agm2awhz5se903vruatfhq77w3ls4evs3ch9zw97j25emudupq63nyw24cg27h2rspfj9srp";
-    Ok(Json(RequestMintResponse {
+    Ok(Json(PaymentRequest {
         pr: pr.to_string(),
         hash: sha256::Hash::hash(pr.as_bytes()).to_string(),
     }))

@@ -1,10 +1,4 @@
-use serde::{Deserialize, Serialize};
-
-#[derive(Clone, Debug, Serialize)]
-pub struct RequestMintResponse {
-    pub pr: String,
-    pub hash: String,
-}
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct MintQuery {

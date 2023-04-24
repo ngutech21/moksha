@@ -38,7 +38,8 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Command::Invoice { amount } => {
-            println!("Send {amount}");
+            let payment_request = client.get_mint_payment_request(amount).await;
+            println!("Send {amount} {payment_request:?}");
         }
         Command::Pay { invoice } => {
             println!("Pay {invoice}");

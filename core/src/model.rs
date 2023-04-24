@@ -106,6 +106,12 @@ pub struct Keysets {
     pub keysets: Vec<String>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PaymentRequest {
+    pub pr: String,
+    pub hash: String,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::model::{Proof, Token, Tokens};

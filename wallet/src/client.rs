@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use cashurs_core::model::Keysets;
+use cashurs_core::model::{Keysets, PaymentRequest};
 use secp256k1::PublicKey;
 
 pub struct Client {
@@ -28,5 +28,12 @@ impl Client {
         let resp = self.request_client.get(url).send().await.unwrap();
 
         Ok(resp.json::<Keysets>().await.unwrap())
+    }
+
+    pub async fn get_mint_payment_request(&self, amount: u64) -> Result<PaymentRequest, ()> {
+        let url = format!("{}/mint?amount={}", self.mint_url, amount);
+        let resp = self.request_client.get(url).send().await.unwrap();
+
+        Ok(resp.json::<PaymentRequest>().await.unwrap())
     }
 }
