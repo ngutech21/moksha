@@ -1,4 +1,9 @@
+use std::env;
+
 use clap::{Parser, Subcommand};
+use dotenvy::dotenv;
+
+mod client;
 
 #[derive(Parser)]
 #[command(version)]
@@ -16,7 +21,17 @@ enum Command {
     Info,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    dotenv().expect(".env file not found");
+    let mint_url = env::var("MINT_URL");
+    print!("{:?}", mint_url);
+
+    let client = client::Client::new(mint_url.unwrap());
+    let keys = client.get_mint_keys().await;
+
+    println!("{:?}", keys);
+
     let cli = Opts::parse();
 
     match cli.command {
@@ -36,4 +51,6 @@ fn main() {
             println!("Send {amount}");
         }
     }
+
+    Ok(())
 }
