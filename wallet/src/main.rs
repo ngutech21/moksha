@@ -11,6 +11,7 @@ use secp256k1::SecretKey;
 
 mod client;
 mod error;
+mod wallet;
 
 #[derive(Parser)]
 #[command(version)]
@@ -21,11 +22,8 @@ struct Opts {
 
 #[derive(Subcommand, Clone)]
 enum Command {
-    Balance,
-    Invoice { amount: u64 },
-    Send { amount: u64 },
-    Pay { invoice: String },
-    Info,
+    Mint { amount: u64 },
+    Melt { token: String },
 }
 
 fn generate_random_string() -> String {
@@ -77,13 +75,20 @@ async fn main() -> anyhow::Result<()> {
     let keys = client.get_mint_keys().await?;
     let keysets = client.get_mint_keysets().await?;
 
+    let wallet = wallet::Wallet::new(client.clone(), keys.clone(), keysets.clone());
+
     let cli = Opts::parse();
     // let cli = Opts {
-    //     command: Command::Invoice { amount: 100 },
+    //     command: Command::Mint { amount: 100 },
     // };
 
     match cli.command {
-        Command::Invoice { amount } => {
+        Command::Melt { token } => {
+            println!("melt tokens");
+            let deserialized = Tokens::deserialize(token).unwrap();
+            wallet.melt_token(deserialized);
+        }
+        Command::Mint { amount } => {
             let payment_request = client.get_mint_payment_request(amount).await?;
             let payment_hash = payment_request.clone().hash;
 
@@ -148,20 +153,7 @@ async fn main() -> anyhow::Result<()> {
 
             println!("Minted tokens:\n\n{serialized_tokens}");
         }
-        Command::Pay { invoice } => {
-            println!("Pay {invoice}");
-        }
-        Command::Info => {
-            println!("Info");
-        }
-        Command::Balance => {
-            println!("Balance");
-        }
-        Command::Send { amount } => {
-            println!("Send {amount}");
-        }
     }
-
     Ok(())
 }
 

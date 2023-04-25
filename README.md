@@ -44,7 +44,7 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 ```
 git clone https://github.com/ngutech21/cashu-rs.git
 cd cashu-rs
-cargo run --bin cashurs-wallet invoice 42
+cargo run --bin cashurs-wallet mint 42
 ```
 
 ## Config

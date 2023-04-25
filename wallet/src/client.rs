@@ -8,6 +8,7 @@ use secp256k1::PublicKey;
 
 use crate::error::CashuWalletError;
 
+#[derive(Debug, Clone)]
 pub struct Client {
     mint_url: String,
     request_client: reqwest::Client,
