@@ -26,15 +26,17 @@ fn read_env() -> String {
     env::var("MINT_URL").expect("MINT_URL not found")
 }
 
-fn wait_for_payment(invoice: String) {
-    println!("Pay invoice to mint sats. Press return after invoice is paid:\n\n{invoice}");
+fn wait_for_user_input(prompt: String) -> String {
+    println!("{prompt}");
+    let mut result = String::new();
     loop {
         let mut line = String::new();
         std::io::stdin()
             .read_line(&mut line)
             .expect("Error: Could not read a line");
+        result.push_str(&line);
         if line == "\n" {
-            break;
+            return result;
         }
     }
 }
@@ -58,13 +60,23 @@ async fn main() -> anyhow::Result<()> {
         Command::Melt { token } => {
             println!("melt tokens");
             let deserialized = Tokens::deserialize(token)?;
-            wallet.melt_token(deserialized);
+
+            let prompt = "Enter invoice:\n\n".to_string();
+            let pr = wait_for_user_input(prompt);
+
+            println!(">> {}", pr);
+
+            wallet.melt_token(pr, deserialized).await?;
         }
         Command::Mint { amount } => {
             let payment_request = client.get_mint_payment_request(amount).await?;
             let payment_hash = payment_request.clone().hash;
+            let invoice = payment_request.clone().pr;
 
-            wait_for_payment(payment_request.pr);
+            let prompt = format!(
+                "Pay invoice to mint sats. Press return after invoice is paid:\n\n{invoice}"
+            );
+            wait_for_user_input(prompt);
 
             let proofs = wallet.mint_tokens(amount, payment_hash).await?;
 

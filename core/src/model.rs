@@ -76,6 +76,13 @@ impl Tokens {
         }
     }
 
+    pub fn get_proofs(&self) -> Vec<Proof> {
+        self.tokens
+            .iter()
+            .flat_map(|token| token.proofs.clone())
+            .collect()
+    }
+
     pub fn serialize(&self) -> io::Result<String> {
         let json = serde_json::to_string(&self)?;
         Ok(format!(

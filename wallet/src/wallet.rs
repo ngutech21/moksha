@@ -24,7 +24,13 @@ impl Wallet {
         }
     }
 
-    pub fn melt_token(&self, _tokens: Tokens) {}
+    pub async fn melt_token(&self, pr: String, tokens: Tokens) -> Result<(), CashuWalletError> {
+        let fees = self.client.post_checkfees(pr.clone()).await.unwrap();
+        // TODO get tokens for fee amount
+        let proofs = tokens.get_proofs();
+        let melt_response = self.client.post_melt_tokens(proofs, pr).await?;
+        Ok(())
+    }
 
     pub async fn mint_tokens(
         &self,

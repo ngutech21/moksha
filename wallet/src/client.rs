@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use cashurs_core::model::{
-    BlindedMessage, Keysets, PaymentRequest, PostMintRequest, PostMintResponse,
+    BlindedMessage, CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
+    PostMeltResponse, PostMintRequest, PostMintResponse, Proof,
 };
 use reqwest::header::{HeaderValue, CONTENT_TYPE};
 use secp256k1::PublicKey;
@@ -20,6 +21,46 @@ impl Client {
             mint_url,
             request_client: reqwest::Client::new(),
         }
+    }
+
+    pub async fn post_melt_tokens(
+        &self,
+        proofs: Vec<Proof>,
+        pr: String,
+    ) -> Result<PostMeltResponse, CashuWalletError> {
+        let url = format!("{}/melt", self.mint_url);
+        let body = serde_json::to_string(&PostMeltRequest { pr, proofs })?;
+
+        let resp = self
+            .request_client
+            .post(url)
+            .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
+            .body(body)
+            .send()
+            .await?;
+        let response = resp.text().await?;
+        Ok(serde_json::from_str::<PostMeltResponse>(&response)?)
+    }
+
+    pub async fn post_checkfees(&self, pr: String) -> Result<CheckFeesResponse, CashuWalletError> {
+        let url = format!("{}/checkfees", self.mint_url);
+        let body = serde_json::to_string(&CheckFeesRequest { pr }).unwrap();
+
+        dbg!(&body);
+
+        let resp = self
+            .request_client
+            .post(url)
+            .header(
+                CONTENT_TYPE,
+                HeaderValue::from_str("application/json").unwrap(),
+            )
+            .body(body)
+            .send()
+            .await?;
+        let response = resp.text().await.unwrap();
+        dbg!(&response);
+        Ok(serde_json::from_str::<CheckFeesResponse>(&response).unwrap())
     }
 
     pub async fn get_mint_keys(&self) -> Result<HashMap<u64, PublicKey>, CashuWalletError> {
