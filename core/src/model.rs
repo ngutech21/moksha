@@ -147,6 +147,28 @@ pub struct PostMintRequest {
     pub outputs: Vec<BlindedMessage>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CheckFeesRequest {
+    pub pr: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CheckFeesResponse {
+    pub fee: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PostMeltRequest {
+    pub proofs: Proofs,
+    pub pr: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PostMeltResponse {
+    pub paid: bool,
+    pub preimage: String,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{

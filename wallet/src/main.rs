@@ -77,10 +77,10 @@ async fn main() -> anyhow::Result<()> {
     let keys = client.get_mint_keys().await?;
     let keysets = client.get_mint_keysets().await?;
 
-    //let cli = Opts::parse();
-    let cli = Opts {
-        command: Command::Invoice { amount: 100 },
-    };
+    let cli = Opts::parse();
+    // let cli = Opts {
+    //     command: Command::Invoice { amount: 100 },
+    // };
 
     match cli.command {
         Command::Invoice { amount } => {

@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 
 use axum::extract::{Query, State};
+use axum::routing::post;
 use axum::Router;
 use axum::{routing::get, Json};
 use bitcoin_hashes::{sha256, Hash};
 use cashurs_core::dhke;
 use cashurs_core::model::{
-    BlindedSignature, Keysets, MintKeyset, PaymentRequest, PostMintRequest, PostMintResponse,
+    BlindedSignature, CheckFeesRequest, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest,
+    PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse,
 };
 use hyper::Method;
 use model::MintQuery;
@@ -52,8 +54,23 @@ fn app() -> Router {
         .route("/keys", get(get_keys))
         .route("/keysets", get(get_keysets))
         .route("/mint", get(get_mint).post(post_mint))
+        .route("/checkfees", post(post_check_fees))
+        .route("/melt", post(post_melt))
         .with_state(keyset)
         .layer(TraceLayer::new_for_http())
+}
+
+async fn post_melt(Json(_check_fees): Json<PostMeltRequest>) -> Result<Json<PostMeltResponse>, ()> {
+    Ok(Json(PostMeltResponse {
+        paid: true,
+        preimage: "dummy preimage".to_string(), // FIXME connect to lightning
+    }))
+}
+
+async fn post_check_fees(
+    Json(_check_fees): Json<CheckFeesRequest>,
+) -> Result<Json<CheckFeesResponse>, ()> {
+    Ok(Json(CheckFeesResponse { fee: 1 }))
 }
 
 async fn get_mint(Query(mint_query): Query<MintQuery>) -> Result<Json<PaymentRequest>, ()> {
