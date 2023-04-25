@@ -69,6 +69,13 @@ pub struct Tokens {
 }
 
 impl Tokens {
+    pub fn new(token: Token) -> Self {
+        Self {
+            tokens: vec![token],
+            memo: None,
+        }
+    }
+
     pub fn serialize(&self) -> io::Result<String> {
         let json = serde_json::to_string(&self)?;
         Ok(format!(

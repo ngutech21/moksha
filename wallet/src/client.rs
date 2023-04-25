@@ -55,6 +55,8 @@ impl Client {
         })
         .unwrap();
 
+        dbg!(&body);
+
         let resp = self
             .request_client
             .post(url)

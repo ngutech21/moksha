@@ -2,11 +2,12 @@ use std::env;
 
 use cashurs_core::{
     dhke,
-    model::{BlindedMessage, Proof, Token, Tokens},
+    model::{BlindedMessage, BlindedSignature, Proof, Token, Tokens},
 };
 use clap::{Parser, Subcommand};
 use dotenvy::dotenv;
 use rand::{distributions::Alphanumeric, Rng};
+use secp256k1::SecretKey;
 
 mod client;
 
@@ -53,7 +54,7 @@ fn wait_for_payment(invoice: String) {
 }
 
 /// split a decimal amount into a vector of powers of 2
-fn amount_split(amount: u64) -> Vec<u64> {
+fn split_amount(amount: u64) -> Vec<u64> {
     format!("{:b}", amount)
         .chars()
         .rev()
@@ -69,7 +70,6 @@ fn amount_split(amount: u64) -> Vec<u64> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    generate_random_string();
     let mint_url = read_env();
 
     let client = client::Client::new(mint_url.clone());
@@ -86,43 +86,64 @@ async fn main() -> anyhow::Result<()> {
             let invoice = payment_request.unwrap().pr;
             wait_for_payment(invoice);
 
-            let token_secret = generate_random_string();
+            let split_amount = split_amount(amount);
 
-            let (b_, alice_secret_key) = dhke::step1_alice(token_secret.clone(), None).unwrap();
+            let secrets = (0..split_amount.len())
+                .map(|_| generate_random_string())
+                .collect::<Vec<String>>();
 
-            // FIXME use split_amount
-            let _split_amount = amount_split(amount);
-            let msg = BlindedMessage { amount: 2, b_ };
+            let blinded_messages = split_amount
+                .into_iter()
+                .zip(secrets.clone())
+                .map(|(amount, secret)| {
+                    let (b_, alice_secret_key) = dhke::step1_alice(secret, None).unwrap();
+                    (BlindedMessage { amount, b_ }, alice_secret_key)
+                })
+                .collect::<Vec<(BlindedMessage, SecretKey)>>();
+
             let post_mint_resp = client
-                .post_mint_payment_request(payment_hash, vec![msg])
+                .post_mint_payment_request(
+                    payment_hash,
+                    blinded_messages
+                        .clone()
+                        .into_iter()
+                        .map(|(msg, _)| msg)
+                        .collect::<Vec<BlindedMessage>>(),
+                )
                 .await
                 .unwrap();
 
             // step 3: unblind signatures
-            let c_ = post_mint_resp.promises[0].c_;
-            let key = keys.get(&2).unwrap();
-            let pub_alice = dhke::step3_alice(c_, alice_secret_key, *key);
-
             let keysets = keysets.unwrap().keysets;
+            let current_keyset = keysets[keysets.len() - 1].clone();
 
-            let proof = Proof::new(
-                post_mint_resp.promises[0].amount,
-                token_secret.to_string(),
-                pub_alice,
-                keysets[1].clone(), // FIXME choose correct keyset
-            );
+            let private_keys = blinded_messages
+                .clone()
+                .into_iter()
+                .map(|(_, secret)| secret)
+                .collect::<Vec<SecretKey>>();
 
-            let token = Token {
+            let proofs = post_mint_resp
+                .promises
+                .iter()
+                .zip(private_keys)
+                .zip(secrets)
+                .map(|((p, priv_key), secret)| {
+                    let key = keys
+                        .get(&p.amount)
+                        .expect("msg amount not found in mint keys");
+                    let pub_alice = dhke::step3_alice(p.c_, priv_key, *key);
+                    Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
+                })
+                .collect::<Vec<Proof>>();
+
+            let serialized_tokens = Tokens::new(Token {
                 mint: Some(mint_url.to_string()),
-                proofs: vec![proof],
-            };
+                proofs,
+            })
+            .serialize()
+            .unwrap();
 
-            let tokens = Tokens {
-                memo: Some("my memo".to_string()),
-                tokens: vec![token],
-            };
-
-            let serialized_tokens = tokens.serialize().unwrap();
             println!("Minted tokens:\n\n{serialized_tokens}");
         }
         Command::Pay { invoice } => {
@@ -148,7 +169,7 @@ mod tests {
     #[test]
     fn test_split() -> anyhow::Result<()> {
         let amount = 13;
-        let bits = super::amount_split(amount);
+        let bits = super::split_amount(amount);
         assert_eq!(bits, vec![1, 4, 8]);
         Ok(())
     }
