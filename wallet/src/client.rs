@@ -56,8 +56,6 @@ impl Client {
             outputs: blinded_messages,
         })?;
 
-        println!("{}", &body.clone());
-
         let resp = self
             .request_client
             .post(url)
