@@ -219,6 +219,7 @@ dependencies = [
  "cashurs-core",
  "clap",
  "dotenvy",
+ "rand",
  "reqwest",
  "secp256k1",
  "serde",

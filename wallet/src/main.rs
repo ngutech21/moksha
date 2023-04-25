@@ -6,6 +6,7 @@ use cashurs_core::{
 };
 use clap::{Parser, Subcommand};
 use dotenvy::dotenv;
+use rand::{distributions::Alphanumeric, Rng};
 
 mod client;
 
@@ -25,12 +26,17 @@ enum Command {
     Info,
 }
 
-fn read_env() -> (String, String) {
+fn generate_random_string() -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(24)
+        .map(char::from)
+        .collect()
+}
+
+fn read_env() -> String {
     dotenv().expect(".env file not found");
-    let mint_url = env::var("MINT_URL").expect("MINT_URL not found");
-    // TODO generate wallet secret
-    let wallet_secret = env::var("WALLET_SECRET").expect("WALLET_SECRET not found");
-    (mint_url, wallet_secret)
+    env::var("MINT_URL").expect("MINT_URL not found")
 }
 
 fn wait_for_payment(invoice: String) {
@@ -63,8 +69,9 @@ fn amount_split(amount: u64) -> Vec<u64> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    generate_random_string();
     println!("start");
-    let (mint_url, wallet_secret) = read_env();
+    let mint_url = read_env();
 
     let client = client::Client::new(mint_url.clone());
     let keys = client.get_mint_keys().await;
@@ -82,8 +89,9 @@ async fn main() -> anyhow::Result<()> {
             println!(">> invoice: {payment_hash:?}");
             wait_for_payment(invoice);
             println!(">> invoice paid");
+            let token_secret = generate_random_string();
 
-            let (b_, alice_secret_key) = dhke::step1_alice(wallet_secret.clone(), None).unwrap();
+            let (b_, alice_secret_key) = dhke::step1_alice(token_secret.clone(), None).unwrap();
 
             // FIXME use split_amount
             let msg = BlindedMessage { amount: 2, b_ };
@@ -104,7 +112,7 @@ async fn main() -> anyhow::Result<()> {
 
             let proof = Proof::new(
                 post_mint_resp.promises[0].amount,
-                wallet_secret.to_string(), // FIXME which secret?
+                token_secret.to_string(),
                 pub_alice,
                 keysets[1].clone(), // FIXME choose correct keyset
             );
