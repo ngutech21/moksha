@@ -73,7 +73,7 @@ async fn post_mint(
     println!("post_mint: {mint_query:#?} {blinded_messages:#?}");
 
     let private_key = keyset.private_keys.get(&2).unwrap();
-    let blinded_sig = dhke::step2_bob(blinded_messages[0].b_, private_key);
+    let blinded_sig = dhke::step2_bob(blinded_messages[0].b_, private_key).unwrap(); // FIXME
 
     // FIXME return correct values for keyset and amount
     let result = BlindedSignature {

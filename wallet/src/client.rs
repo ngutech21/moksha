@@ -53,9 +53,7 @@ impl Client {
         let body = serde_json::to_string(&Outputs {
             outputs: blinded_messages,
         })
-        .unwrap();
-
-        dbg!(&body);
+        .unwrap(); // FIXME
 
         let resp = self
             .request_client

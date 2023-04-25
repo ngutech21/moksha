@@ -1,6 +1,8 @@
 use bitcoin_hashes::{sha256, Hash};
 use secp256k1::{PublicKey, Scalar, Secp256k1, SecretKey};
 
+use crate::error::CashuCoreError;
+
 /*
 Implementation of https://gist.github.com/RubenSomsen/be7a4760dd4596d06963d67baf140406
 
@@ -58,36 +60,41 @@ pub fn hash_to_curve(message: &[u8]) -> PublicKey {
 pub fn step1_alice(
     secret_msg: String,
     blinding_factor: Option<&[u8]>,
-) -> Result<(PublicKey, SecretKey), ()> {
+) -> Result<(PublicKey, SecretKey), CashuCoreError> {
     let mut rng = rand::thread_rng();
     let secp = Secp256k1::new();
 
     let y = hash_to_curve(secret_msg.as_bytes());
     let secret_key = match blinding_factor {
-        Some(f) => SecretKey::from_slice(f).unwrap(),
+        Some(f) => SecretKey::from_slice(f)?,
         None => SecretKey::new(&mut rng),
     };
-    let b = y
-        .combine(&PublicKey::from_secret_key(&secp, &secret_key))
-        .unwrap();
+    let b = y.combine(&PublicKey::from_secret_key(&secp, &secret_key))?;
     Ok((b, secret_key))
 }
 
-pub fn step2_bob(b: PublicKey, a: &SecretKey) -> PublicKey {
+pub fn step2_bob(b: PublicKey, a: &SecretKey) -> Result<PublicKey, CashuCoreError> {
     let secp = Secp256k1::new();
-    b.mul_tweak(&secp, &Scalar::from(*a)).unwrap()
+    b.mul_tweak(&secp, &Scalar::from(*a))
+        .map_err(CashuCoreError::Secp256k1Error)
 }
 
-pub fn step3_alice(c_: PublicKey, r: SecretKey, a: PublicKey) -> PublicKey {
+pub fn step3_alice(c_: PublicKey, r: SecretKey, a: PublicKey) -> Result<PublicKey, CashuCoreError> {
     let secp = Secp256k1::new();
-    c_.combine(&a.mul_tweak(&secp, &Scalar::from(r)).unwrap().negate(&secp))
-        .unwrap()
+    c_.combine(
+        &a.mul_tweak(&secp, &Scalar::from(r))
+            .map_err(CashuCoreError::Secp256k1Error)?
+            .negate(&secp),
+    )
+    .map_err(CashuCoreError::Secp256k1Error)
 }
 
-pub fn verify(a: SecretKey, c: PublicKey, secret_msg: String) -> bool {
+pub fn verify(a: SecretKey, c: PublicKey, secret_msg: String) -> Result<bool, CashuCoreError> {
     let secp = Secp256k1::new();
     let y = hash_to_curve(secret_msg.as_bytes());
-    c == y.mul_tweak(&secp, &Scalar::from(a)).unwrap()
+    Some(c == y.mul_tweak(&secp, &Scalar::from(a))?).ok_or(CashuCoreError::Secp256k1Error(
+        secp256k1::Error::InvalidPublicKey,
+    ))
 }
 
 pub fn public_key_from_hex(hex: &str) -> secp256k1::PublicKey {
@@ -151,7 +158,7 @@ mod tests {
         let blinding_factor =
             hex_to_string("0000000000000000000000000000000000000000000000000000000000000001");
         let (pub_key, secret_key) =
-            step1_alice("test_message".to_string(), Some(blinding_factor.as_bytes())).unwrap();
+            step1_alice("test_message".to_string(), Some(blinding_factor.as_bytes()))?;
         let pub_key_str = pub_key.to_string();
 
         assert_eq!(
@@ -177,7 +184,7 @@ mod tests {
             "0000000000000000000000000000000000000000000000000000000000000001",
         );
 
-        let c = step2_bob(pub_key, &a);
+        let c = step2_bob(pub_key, &a)?;
         let c_str = c.to_string();
         assert_eq!(
             "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2".to_string(),
@@ -201,7 +208,7 @@ mod tests {
             "020000000000000000000000000000000000000000000000000000000000000001",
         );
 
-        let result = step3_alice(c_, r, a);
+        let result = step3_alice(c_, r, a)?;
         assert_eq!(
             "03c724d7e6a5443b39ac8acf11f40420adc4f99a02e7cc1b57703d9391f6d129cd".to_string(),
             result.to_string()

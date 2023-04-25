@@ -2,7 +2,7 @@ use std::env;
 
 use cashurs_core::{
     dhke,
-    model::{BlindedMessage, BlindedSignature, Proof, Token, Tokens},
+    model::{BlindedMessage, Proof, Token, Tokens},
 };
 use clap::{Parser, Subcommand};
 use dotenvy::dotenv;
@@ -96,7 +96,7 @@ async fn main() -> anyhow::Result<()> {
                 .into_iter()
                 .zip(secrets.clone())
                 .map(|(amount, secret)| {
-                    let (b_, alice_secret_key) = dhke::step1_alice(secret, None).unwrap();
+                    let (b_, alice_secret_key) = dhke::step1_alice(secret, None).unwrap(); // FIXME
                     (BlindedMessage { amount, b_ }, alice_secret_key)
                 })
                 .collect::<Vec<(BlindedMessage, SecretKey)>>();
@@ -132,7 +132,7 @@ async fn main() -> anyhow::Result<()> {
                     let key = keys
                         .get(&p.amount)
                         .expect("msg amount not found in mint keys");
-                    let pub_alice = dhke::step3_alice(p.c_, priv_key, *key);
+                    let pub_alice = dhke::step3_alice(p.c_, priv_key, *key).unwrap();
                     Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
                 })
                 .collect::<Vec<Proof>>();
