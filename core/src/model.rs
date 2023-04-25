@@ -142,6 +142,11 @@ pub struct PostMintResponse {
     pub promises: Vec<BlindedSignature>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PostMingRequest {
+    pub outputs: Vec<BlindedMessage>,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{

@@ -10,6 +10,7 @@ use rand::{distributions::Alphanumeric, Rng};
 use secp256k1::SecretKey;
 
 mod client;
+mod error;
 
 #[derive(Parser)]
 #[command(version)]
@@ -73,18 +74,20 @@ async fn main() -> anyhow::Result<()> {
     let mint_url = read_env();
 
     let client = client::Client::new(mint_url.clone());
-    let keys = client.get_mint_keys().await.unwrap();
-    let keysets = client.get_mint_keysets().await;
+    let keys = client.get_mint_keys().await?;
+    let keysets = client.get_mint_keysets().await?;
 
     let cli = Opts::parse();
+    // let cli = Opts {
+    //     command: Command::Invoice { amount: 100 },
+    // };
 
     match cli.command {
         Command::Invoice { amount } => {
-            let payment_request = client.get_mint_payment_request(amount).await;
-            let payment_hash = payment_request.clone().unwrap().hash;
+            let payment_request = client.get_mint_payment_request(amount).await?;
+            let payment_hash = payment_request.clone().hash;
 
-            let invoice = payment_request.unwrap().pr;
-            wait_for_payment(invoice);
+            wait_for_payment(payment_request.pr);
 
             let split_amount = split_amount(amount);
 
@@ -110,11 +113,10 @@ async fn main() -> anyhow::Result<()> {
                         .map(|(msg, _)| msg)
                         .collect::<Vec<BlindedMessage>>(),
                 )
-                .await
-                .unwrap();
+                .await?;
 
             // step 3: unblind signatures
-            let keysets = keysets.unwrap().keysets;
+            let keysets = keysets.keysets;
             let current_keyset = keysets[keysets.len() - 1].clone();
 
             let private_keys = blinded_messages
