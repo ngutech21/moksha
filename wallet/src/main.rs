@@ -40,7 +40,7 @@ fn read_env() -> String {
 }
 
 fn wait_for_payment(invoice: String) {
-    println!(">> press return after invoice is paid: {invoice:?}");
+    println!("Pay invoice to mint sats. Press return after invoice is paid:\n\n{invoice}");
     loop {
         let mut line = String::new();
         std::io::stdin()
@@ -70,7 +70,6 @@ fn amount_split(amount: u64) -> Vec<u64> {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     generate_random_string();
-    println!("start");
     let mint_url = read_env();
 
     let client = client::Client::new(mint_url.clone());
@@ -85,15 +84,14 @@ async fn main() -> anyhow::Result<()> {
             let payment_hash = payment_request.clone().unwrap().hash;
 
             let invoice = payment_request.unwrap().pr;
-
-            println!(">> invoice: {payment_hash:?}");
             wait_for_payment(invoice);
-            println!(">> invoice paid");
+
             let token_secret = generate_random_string();
 
             let (b_, alice_secret_key) = dhke::step1_alice(token_secret.clone(), None).unwrap();
 
             // FIXME use split_amount
+            let _split_amount = amount_split(amount);
             let msg = BlindedMessage { amount: 2, b_ };
             let post_mint_resp = client
                 .post_mint_payment_request(payment_hash, vec![msg])
@@ -101,7 +99,6 @@ async fn main() -> anyhow::Result<()> {
                 .unwrap();
 
             // step 3: unblind signatures
-            //println!("Send {amount} {payment_request:?} {post_mint_resp:?}");
             let c_ = post_mint_resp.promises[0].c_;
             let key = keys.get(&2).unwrap();
             let pub_alice = dhke::step3_alice(c_, alice_secret_key, *key);
@@ -125,8 +122,8 @@ async fn main() -> anyhow::Result<()> {
                 tokens: vec![token],
             };
 
-            let serialized_tokens = tokens.serialize();
-            println!("minted tokens {:?}", serialized_tokens.unwrap());
+            let serialized_tokens = tokens.serialize().unwrap();
+            println!("Minted tokens:\n\n{serialized_tokens}");
         }
         Command::Pay { invoice } => {
             println!("Pay {invoice}");
