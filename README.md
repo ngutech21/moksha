@@ -1,5 +1,7 @@
 [![Rust](https://github.com/ngutech21/cashu-rs/actions/workflows/rust.yml/badge.svg?branch=master)](https://github.com/ngutech21/cashu-rs/actions/workflows/rust.yml)
 
+⚠️ **Don't be reckless:** This project is in early development, it does however work with real sats! Always use amounts you don't mind loosing. 
+
 # cashu-rs
 cashu-rs is a Chaumian Ecash library written in Rust.
 
@@ -12,6 +14,18 @@ Please read the [Cashu](https://github.com/callebtc/cashu) documentation for mor
 This project aims to replicate the python mint implementation of cashu.
 
 ## Progress
+Wallet Features:
+
+At the moment the wallet doesn't use a database, but prints the tokens to stdout. 
+
+- [x] connect to mint (load keys)
+- [x] request minting tokens
+- [x] minting tokens
+- [] sending tokens (get encoded token for chosen value)
+- [] receiving tokens
+- [] melting tokens
+- [] check if tokens are spent
+
 
 Implemented [NUTs](https://github.com/cashubtc/nuts/):
 
@@ -27,4 +41,12 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 - [] [NUT-09](https://github.com/cashubtc/nuts/blob/main/09.md)
 
 ## Usage
+```
+git clone https://github.com/ngutech21/cashu-rs.git
+cd cashu-rs
+cargo run --bin cashurs-wallet invoice 42
+```
+
+## Config
+The default config file .env is located in the root directory of the project and is using the 8333.space mint on mainnet.
 
