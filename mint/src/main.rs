@@ -79,7 +79,7 @@ async fn post_mint(
     let result = BlindedSignature {
         id: Some("keyset.".to_string()),
         amount: 2,
-        c_: blinded_sig.to_string(),
+        c_: blinded_sig,
     };
 
     Ok(Json(PostMintResponse {

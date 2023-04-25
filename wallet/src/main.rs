@@ -74,7 +74,7 @@ async fn main() -> anyhow::Result<()> {
     let mint_url = read_env();
 
     let client = client::Client::new(mint_url.clone());
-    let keys = client.get_mint_keys().await;
+    let keys = client.get_mint_keys().await.unwrap();
     let keysets = client.get_mint_keysets().await;
 
     let cli = Opts::parse();
@@ -102,13 +102,11 @@ async fn main() -> anyhow::Result<()> {
 
             // step 3: unblind signatures
             //println!("Send {amount} {payment_request:?} {post_mint_resp:?}");
-            let c_ = dhke::public_key_from_hex(&post_mint_resp.promises[0].c_);
-            let key = dhke::public_key_from_hex(&keys.unwrap().get(&2).unwrap().to_string());
-            let pub_alice = dhke::step3_alice(c_, alice_secret_key, key);
+            let c_ = post_mint_resp.promises[0].c_;
+            let key = keys.get(&2).unwrap();
+            let pub_alice = dhke::step3_alice(c_, alice_secret_key, *key);
 
             let keysets = keysets.unwrap().keysets;
-
-            dbg!(&keysets);
 
             let proof = Proof::new(
                 post_mint_resp.promises[0].amount,

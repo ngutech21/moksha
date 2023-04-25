@@ -22,7 +22,7 @@ pub struct BlindedMessage {
 pub struct BlindedSignature {
     pub amount: u64,
     #[serde(rename = "C_")]
-    pub c_: String,
+    pub c_: PublicKey,
     pub id: Option<String>,
 }
 
