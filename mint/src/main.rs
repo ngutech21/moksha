@@ -6,8 +6,7 @@ use axum::{routing::get, Json};
 use bitcoin_hashes::{sha256, Hash};
 use cashurs_core::dhke;
 use cashurs_core::model::{
-    BlindedMessage, BlindedSignature, Keysets, MintKeyset, PaymentRequest, PostMingRequest,
-    PostMintResponse,
+    BlindedSignature, Keysets, MintKeyset, PaymentRequest, PostMintRequest, PostMintResponse,
 };
 use hyper::Method;
 use model::MintQuery;
@@ -69,23 +68,27 @@ async fn get_mint(Query(mint_query): Query<MintQuery>) -> Result<Json<PaymentReq
 async fn post_mint(
     State(keyset): State<MintKeyset>,
     Query(mint_query): Query<MintQuery>,
-    Json(blinded_messages): Json<PostMingRequest>,
+    Json(blinded_messages): Json<PostMintRequest>,
 ) -> Result<Json<PostMintResponse>, ()> {
-    println!("post_mint: {mint_query:#?} {blinded_messages:#?}");
+    event!(
+        Level::INFO,
+        "post_mint: {mint_query:#?} {blinded_messages:#?}"
+    );
 
-    let private_key = keyset.private_keys.get(&2).unwrap();
-    let blinded_sig = dhke::step2_bob(blinded_messages.outputs[0].b_, private_key).unwrap(); // FIXME
-
-    // FIXME return correct values for keyset and amount
-    let result = BlindedSignature {
-        id: Some("keyset.".to_string()),
-        amount: 2,
-        c_: blinded_sig,
-    };
-
-    Ok(Json(PostMintResponse {
-        promises: vec![result],
-    }))
+    let promises = blinded_messages
+        .outputs
+        .iter()
+        .map(|blinded_msg| {
+            let private_key = keyset.private_keys.get(&blinded_msg.amount).unwrap(); // FIXME unwrap
+            let blinded_sig = dhke::step2_bob(blinded_messages.outputs[0].b_, private_key).unwrap();
+            BlindedSignature {
+                id: Some(keyset.keyset_id.clone()),
+                amount: blinded_msg.amount,
+                c_: blinded_sig,
+            }
+        })
+        .collect::<Vec<BlindedSignature>>();
+    Ok(Json(PostMintResponse { promises }))
 }
 
 async fn get_keys(State(keyset): State<MintKeyset>) -> Result<Json<HashMap<u64, PublicKey>>, ()> {

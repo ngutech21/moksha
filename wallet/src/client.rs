@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use cashurs_core::model::{
-    BlindedMessage, Keysets, PaymentRequest, PostMingRequest, PostMintResponse,
+    BlindedMessage, Keysets, PaymentRequest, PostMintRequest, PostMintResponse,
 };
 use reqwest::header::{HeaderValue, CONTENT_TYPE};
 use secp256k1::PublicKey;
@@ -51,7 +51,7 @@ impl Client {
         blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMintResponse, CashuWalletError> {
         let url = format!("{}/mint?payment_hash={}", self.mint_url, payment_hash);
-        let body = serde_json::to_string(&PostMingRequest {
+        let body = serde_json::to_string(&PostMintRequest {
             outputs: blinded_messages,
         })?;
 

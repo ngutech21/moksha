@@ -143,7 +143,7 @@ pub struct PostMintResponse {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PostMingRequest {
+pub struct PostMintRequest {
     pub outputs: Vec<BlindedMessage>,
 }
 
