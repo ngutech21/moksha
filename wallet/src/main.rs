@@ -80,7 +80,7 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            print!("first_amount: {}", split_amount);
+            print!("first_amount: {split_amount}");
             let first_secrets = wallet.create_secrets(&wallet::split_amount(split_amount));
             let first_outputs =
                 wallet.create_blinded_messages(split_amount, first_secrets.clone())?;
@@ -88,7 +88,7 @@ async fn main() -> anyhow::Result<()> {
             // ############################################################################
 
             let second_amount = total_token_amount - split_amount;
-            print!("second_amount: {}", second_amount);
+            print!("second_amount: {second_amount}");
             let second_secrets = wallet.create_secrets(&wallet::split_amount(second_amount));
             let second_outputs =
                 wallet.create_blinded_messages(second_amount, second_secrets.clone())?;
@@ -101,7 +101,7 @@ async fn main() -> anyhow::Result<()> {
                 .post_split_tokens(split_amount, tokens.get_proofs(), total_outputs)
                 .await?;
 
-            println!("split result:\n\n{:?}", split_result);
+            println!("split result:\n\n{split_result:?}");
 
             let first_proofs = wallet.create_proofs_from_blinded_signatures(
                 split_result.fst,
