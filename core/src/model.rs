@@ -168,12 +168,14 @@ pub struct CheckFeesResponse {
 pub struct PostMeltRequest {
     pub proofs: Proofs,
     pub pr: String,
+    pub outputs: Vec<BlindedMessage>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PostMeltResponse {
     pub paid: bool,
     pub preimage: String,
+    pub change: Vec<BlindedSignature>,
 }
 
 #[cfg(test)]

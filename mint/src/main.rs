@@ -64,6 +64,7 @@ async fn post_melt(Json(_check_fees): Json<PostMeltRequest>) -> Result<Json<Post
     Ok(Json(PostMeltResponse {
         paid: true,
         preimage: "dummy preimage".to_string(), // FIXME connect to lightning
+        change: vec![],
     }))
 }
 

@@ -29,7 +29,11 @@ impl Client {
         pr: String,
     ) -> Result<PostMeltResponse, CashuWalletError> {
         let url = format!("{}/melt", self.mint_url);
-        let body = serde_json::to_string(&PostMeltRequest { pr, proofs })?;
+        let body = serde_json::to_string(&PostMeltRequest {
+            pr,
+            proofs,
+            outputs: vec![],
+        })?;
 
         let resp = self
             .request_client
@@ -39,28 +43,23 @@ impl Client {
             .send()
             .await?;
         let response = resp.text().await?;
+        // FIXME check for error
         Ok(serde_json::from_str::<PostMeltResponse>(&response)?)
     }
 
     pub async fn post_checkfees(&self, pr: String) -> Result<CheckFeesResponse, CashuWalletError> {
         let url = format!("{}/checkfees", self.mint_url);
-        let body = serde_json::to_string(&CheckFeesRequest { pr }).unwrap();
-
-        dbg!(&body);
+        let body = serde_json::to_string(&CheckFeesRequest { pr })?;
 
         let resp = self
             .request_client
             .post(url)
-            .header(
-                CONTENT_TYPE,
-                HeaderValue::from_str("application/json").unwrap(),
-            )
+            .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
             .body(body)
             .send()
             .await?;
-        let response = resp.text().await.unwrap();
-        dbg!(&response);
-        Ok(serde_json::from_str::<CheckFeesResponse>(&response).unwrap())
+        let response = resp.text().await?;
+        Ok(serde_json::from_str::<CheckFeesResponse>(&response)?)
     }
 
     pub async fn get_mint_keys(&self) -> Result<HashMap<u64, PublicKey>, CashuWalletError> {

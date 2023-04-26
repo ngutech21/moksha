@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use cashurs_core::{
     dhke,
-    model::{BlindedMessage, Keysets, Proof, Tokens},
+    model::{BlindedMessage, Keysets, PostMeltResponse, Proof, Tokens},
 };
 use secp256k1::{PublicKey, SecretKey};
 
@@ -24,12 +24,16 @@ impl Wallet {
         }
     }
 
-    pub async fn melt_token(&self, pr: String, tokens: Tokens) -> Result<(), CashuWalletError> {
-        let fees = self.client.post_checkfees(pr.clone()).await.unwrap();
+    pub async fn melt_token(
+        &self,
+        pr: String,
+        tokens: Tokens,
+    ) -> Result<PostMeltResponse, CashuWalletError> {
+        let _fees = self.client.post_checkfees(pr.clone()).await.unwrap();
         // TODO get tokens for fee amount
         let proofs = tokens.get_proofs();
         let melt_response = self.client.post_melt_tokens(proofs, pr).await?;
-        Ok(())
+        Ok(melt_response)
     }
 
     pub async fn mint_tokens(

@@ -36,7 +36,7 @@ fn wait_for_user_input(prompt: String) -> String {
             .expect("Error: Could not read a line");
         result.push_str(&line);
         if line == "\n" {
-            return result;
+            return result.trim().to_string();
         }
     }
 }
@@ -66,7 +66,13 @@ async fn main() -> anyhow::Result<()> {
 
             println!(">> {}", pr);
 
-            wallet.melt_token(pr, deserialized).await?;
+            let response = wallet.melt_token(pr, deserialized).await?;
+            if response.paid {
+                println!("Invoice has been paid: Tokens melted successfully");
+                // TODO create tokens from change
+            } else {
+                println!("Tokens not melted");
+            }
         }
         Command::Mint { amount } => {
             let payment_request = client.get_mint_payment_request(amount).await?;
