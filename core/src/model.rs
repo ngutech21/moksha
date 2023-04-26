@@ -76,6 +76,24 @@ impl Tokens {
         }
     }
 
+    // FIXME use From<Proofs> instead
+    pub fn new_from_proofs(mint: String, proofs: Proofs) -> Self {
+        Self {
+            tokens: vec![Token {
+                mint: Some(mint),
+                proofs,
+            }],
+            memo: None,
+        }
+    }
+
+    pub fn get_total_amount(&self) -> u64 {
+        self.tokens
+            .iter()
+            .map(|token| token.proofs.iter().map(|proof| proof.amount).sum::<u64>())
+            .sum()
+    }
+
     pub fn get_proofs(&self) -> Vec<Proof> {
         self.tokens
             .iter()
@@ -109,6 +127,18 @@ impl Tokens {
             .unwrap(); // FIXME: handle error
         let token = serde_json::from_slice::<Tokens>(&json)?;
         Ok(token)
+    }
+}
+
+impl From<(String, Proofs)> for Tokens {
+    fn from(from: (String, Proofs)) -> Self {
+        Self {
+            tokens: vec![Token {
+                mint: Some(from.0),
+                proofs: from.1,
+            }],
+            memo: None,
+        }
     }
 }
 
@@ -176,6 +206,19 @@ pub struct PostMeltResponse {
     pub paid: bool,
     pub preimage: String,
     pub change: Vec<BlindedSignature>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PostSplitRequest {
+    pub proofs: Proofs,
+    pub outputs: Vec<BlindedMessage>,
+    pub amount: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PostSplitResponse {
+    pub fst: Vec<BlindedSignature>,
+    pub snd: Vec<BlindedSignature>,
 }
 
 #[cfg(test)]

@@ -8,7 +8,8 @@ use bitcoin_hashes::{sha256, Hash};
 use cashurs_core::dhke;
 use cashurs_core::model::{
     BlindedSignature, CheckFeesRequest, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest,
-    PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse,
+    PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest,
+    PostSplitResponse, Proofs,
 };
 use hyper::Method;
 use model::MintQuery;
@@ -56,8 +57,18 @@ fn app() -> Router {
         .route("/mint", get(get_mint).post(post_mint))
         .route("/checkfees", post(post_check_fees))
         .route("/melt", post(post_melt))
+        .route("/split", post(post_split))
         .with_state(keyset)
         .layer(TraceLayer::new_for_http())
+}
+
+async fn post_split(
+    Json(_check_fees): Json<PostSplitRequest>,
+) -> Result<Json<PostSplitResponse>, ()> {
+    Ok(Json(PostSplitResponse {
+        fst: vec![],
+        snd: vec![],
+    }))
 }
 
 async fn post_melt(Json(_check_fees): Json<PostMeltRequest>) -> Result<Json<PostMeltResponse>, ()> {

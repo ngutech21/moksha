@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use cashurs_core::model::{
     BlindedMessage, CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
-    PostMeltResponse, PostMintRequest, PostMintResponse, Proof,
+    PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+    Proof,
 };
 use reqwest::header::{HeaderValue, CONTENT_TYPE};
 use secp256k1::PublicKey;
@@ -21,6 +22,35 @@ impl Client {
             mint_url,
             request_client: reqwest::Client::new(),
         }
+    }
+
+    pub async fn post_split_tokens(
+        &self,
+        amount: u64,
+        proofs: Vec<Proof>,
+        output: Vec<BlindedMessage>,
+    ) -> Result<PostSplitResponse, CashuWalletError> {
+        let url = format!("{}/split", self.mint_url);
+        let body = serde_json::to_string(&PostSplitRequest {
+            amount,
+            proofs,
+            outputs: output,
+        })?;
+
+        println!("body: {}", &body);
+
+        let resp = self
+            .request_client
+            .post(url)
+            .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
+            .body(body)
+            .send()
+            .await?;
+        let response = resp.text().await?;
+
+        println!("response: {}", &response);
+        // FIXME check for error
+        Ok(serde_json::from_str::<PostSplitResponse>(&response)?)
     }
 
     pub async fn post_melt_tokens(

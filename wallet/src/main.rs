@@ -1,8 +1,9 @@
 use std::env;
 
-use cashurs_core::model::{Token, Tokens};
+use cashurs_core::model::{BlindedMessage, Proofs, Token, Tokens};
 use clap::{Parser, Subcommand};
 use dotenvy::dotenv;
+use secp256k1::SecretKey;
 
 mod client;
 mod error;
@@ -19,6 +20,7 @@ struct Opts {
 enum Command {
     Mint { amount: u64 },
     Melt { token: String },
+    Split { amount: u64 },
 }
 
 fn read_env() -> String {
@@ -41,6 +43,13 @@ fn wait_for_user_input(prompt: String) -> String {
     }
 }
 
+fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, SecretKey)>) -> Vec<BlindedMessage> {
+    blinded_messages
+        .into_iter()
+        .map(|(msg, _)| msg)
+        .collect::<Vec<BlindedMessage>>()
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let mint_url = read_env();
@@ -53,10 +62,73 @@ async fn main() -> anyhow::Result<()> {
 
     let cli = Opts::parse();
     // let cli = Opts {
-    //     command: Command::Mint { amount: 100 },
+    //     command: Command::Split { amount: 6 },
     // };
 
     match cli.command {
+        Command::Split {
+            amount: split_amount,
+        } => {
+            let prompt = "Enter Token:\n\n".to_string();
+            let serialized_token = wait_for_user_input(prompt);
+
+            let tokens = Tokens::deserialize(serialized_token)?;
+            // FIXME check if token is correct handle error
+            let total_token_amount = tokens.get_total_amount();
+            if total_token_amount < split_amount {
+                println!("Not enough tokens");
+                return Ok(());
+            }
+
+            print!("first_amount: {}", split_amount);
+            let first_secrets = wallet.create_secrets(&wallet::split_amount(split_amount));
+            let first_outputs =
+                wallet.create_blinded_messages(split_amount, first_secrets.clone())?;
+
+            // ############################################################################
+
+            let second_amount = total_token_amount - split_amount;
+            print!("second_amount: {}", second_amount);
+            let second_secrets = wallet.create_secrets(&wallet::split_amount(second_amount));
+            let second_outputs =
+                wallet.create_blinded_messages(second_amount, second_secrets.clone())?;
+
+            let mut total_outputs = vec![];
+            total_outputs.extend(get_blinded_msg(first_outputs.clone()));
+            total_outputs.extend(get_blinded_msg(second_outputs.clone()));
+
+            let split_result = client
+                .post_split_tokens(split_amount, tokens.get_proofs(), total_outputs)
+                .await?;
+
+            println!("split result:\n\n{:?}", split_result);
+
+            let first_proofs = wallet.create_proofs_from_blinded_signatures(
+                split_result.fst,
+                first_secrets,
+                first_outputs,
+                split_amount,
+            )?;
+            let first_tokens = Tokens::from((mint_url.clone(), first_proofs));
+            println!(
+                "Split tokens {} sats:\n\n{:?}",
+                split_amount,
+                first_tokens.serialize()?
+            );
+
+            let second_proofs = wallet.create_proofs_from_blinded_signatures(
+                split_result.snd,
+                second_secrets,
+                second_outputs,
+                second_amount,
+            )?;
+            let second_tokens = Tokens::from((mint_url.clone(), second_proofs));
+            println!(
+                "Remaining tokens {} sats:\n\n{:?}",
+                second_amount,
+                second_tokens.serialize()?
+            );
+        }
         Command::Melt { token } => {
             println!("melt tokens");
             let deserialized = Tokens::deserialize(token)?;
@@ -69,7 +141,7 @@ async fn main() -> anyhow::Result<()> {
             let response = wallet.melt_token(pr, deserialized).await?;
             if response.paid {
                 println!("Invoice has been paid: Tokens melted successfully");
-                // TODO create tokens from change
+                // TODO NUT-08 create tokens from change
             } else {
                 println!("Tokens not melted");
             }

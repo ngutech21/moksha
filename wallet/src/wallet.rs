@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use cashurs_core::{
     dhke,
-    model::{BlindedMessage, Keysets, PostMeltResponse, Proof, Tokens},
+    model::{
+        BlindedMessage, BlindedSignature, Keysets, PostMeltResponse, PostSplitResponse, Proof,
+        Proofs, Tokens,
+    },
 };
 use secp256k1::{PublicKey, SecretKey};
 
@@ -24,6 +27,19 @@ impl Wallet {
         }
     }
 
+    pub async fn split_tokens(
+        &self,
+        amount: u64,
+        tokens: Tokens,
+        outputs: Vec<BlindedMessage>,
+    ) -> Result<PostSplitResponse, CashuWalletError> {
+        let response = PostSplitResponse {
+            fst: vec![],
+            snd: vec![],
+        };
+        Ok(response)
+    }
+
     pub async fn melt_token(
         &self,
         pr: String,
@@ -36,16 +52,19 @@ impl Wallet {
         Ok(melt_response)
     }
 
+    pub fn create_secrets(&self, split_amount: &Vec<u64>) -> Vec<String> {
+        (0..split_amount.len())
+            .map(|_| generate_random_string())
+            .collect::<Vec<String>>()
+    }
+
     pub async fn mint_tokens(
         &self,
         amount: u64,
         payment_hash: String,
     ) -> Result<Vec<Proof>, CashuWalletError> {
         let split_amount = split_amount(amount);
-
-        let secrets = (0..split_amount.len())
-            .map(|_| generate_random_string())
-            .collect::<Vec<String>>();
+        let secrets = self.create_secrets(&split_amount);
 
         let blinded_messages = split_amount
             .into_iter()
@@ -94,6 +113,55 @@ impl Wallet {
             .collect::<Vec<Proof>>();
         Ok(result)
     }
+
+    pub fn create_blinded_messages(
+        &self,
+        amount: u64,
+        secrets: Vec<String>,
+    ) -> Result<Vec<(BlindedMessage, SecretKey)>, CashuWalletError> {
+        let split_amount = split_amount(amount);
+
+        Ok(split_amount
+            .into_iter()
+            .zip(secrets)
+            .map(|(amount, secret)| {
+                let (b_, alice_secret_key) = dhke::step1_alice(secret, None).unwrap(); // FIXME
+                (BlindedMessage { amount, b_ }, alice_secret_key)
+            })
+            .collect::<Vec<(BlindedMessage, SecretKey)>>())
+    }
+
+    pub fn create_proofs_from_blinded_signatures(
+        &self,
+        signatures: Vec<BlindedSignature>,
+        secrets: Vec<String>,
+        outputs: Vec<(BlindedMessage, SecretKey)>,
+        amount: u64,
+    ) -> Result<Proofs, CashuWalletError> {
+        let keysets = &self.keysets.keysets;
+        let current_keyset = keysets[keysets.len() - 1].clone();
+
+        let private_keys = outputs
+            .clone()
+            .into_iter()
+            .map(|(_, secret)| secret)
+            .collect::<Vec<SecretKey>>();
+
+        let result: Vec<Proof> = signatures
+            .iter()
+            .zip(private_keys)
+            .zip(secrets)
+            .map(|((p, priv_key), secret)| {
+                let key = self
+                    .mint_keys
+                    .get(&p.amount)
+                    .expect("msg amount not found in mint keys");
+                let pub_alice = dhke::step3_alice(p.c_, priv_key, *key).unwrap();
+                Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
+            })
+            .collect::<Vec<Proof>>();
+        Ok(result)
+    }
 }
 
 fn generate_random_string() -> String {
@@ -105,7 +173,7 @@ fn generate_random_string() -> String {
 }
 
 /// split a decimal amount into a vector of powers of 2
-fn split_amount(amount: u64) -> Vec<u64> {
+pub fn split_amount(amount: u64) -> Vec<u64> {
     format!("{amount:b}")
         .chars()
         .rev()
