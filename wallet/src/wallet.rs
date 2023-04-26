@@ -2,10 +2,7 @@ use std::collections::HashMap;
 
 use cashurs_core::{
     dhke,
-    model::{
-        BlindedMessage, BlindedSignature, Keysets, PostMeltResponse, PostSplitResponse, Proof,
-        Proofs, Tokens,
-    },
+    model::{BlindedMessage, BlindedSignature, Keysets, PostMeltResponse, Proof, Proofs, Tokens},
 };
 use secp256k1::{PublicKey, SecretKey};
 
@@ -25,19 +22,6 @@ impl Wallet {
             mint_keys,
             keysets,
         }
-    }
-
-    pub async fn split_tokens(
-        &self,
-        amount: u64,
-        tokens: Tokens,
-        outputs: Vec<BlindedMessage>,
-    ) -> Result<PostSplitResponse, CashuWalletError> {
-        let response = PostSplitResponse {
-            fst: vec![],
-            snd: vec![],
-        };
-        Ok(response)
     }
 
     pub async fn melt_token(
@@ -136,13 +120,11 @@ impl Wallet {
         signatures: Vec<BlindedSignature>,
         secrets: Vec<String>,
         outputs: Vec<(BlindedMessage, SecretKey)>,
-        amount: u64,
     ) -> Result<Proofs, CashuWalletError> {
         let keysets = &self.keysets.keysets;
         let current_keyset = keysets[keysets.len() - 1].clone();
 
         let private_keys = outputs
-            .clone()
             .into_iter()
             .map(|(_, secret)| secret)
             .collect::<Vec<SecretKey>>();

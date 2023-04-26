@@ -9,7 +9,7 @@ use cashurs_core::dhke;
 use cashurs_core::model::{
     BlindedSignature, CheckFeesRequest, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest,
     PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest,
-    PostSplitResponse, Proofs,
+    PostSplitResponse,
 };
 use hyper::Method;
 use model::MintQuery;

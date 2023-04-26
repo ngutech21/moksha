@@ -1,6 +1,6 @@
 use std::env;
 
-use cashurs_core::model::{BlindedMessage, Proofs, Token, Tokens};
+use cashurs_core::model::{BlindedMessage, Token, Tokens};
 use clap::{Parser, Subcommand};
 use dotenvy::dotenv;
 use secp256k1::SecretKey;
@@ -107,7 +107,6 @@ async fn main() -> anyhow::Result<()> {
                 split_result.fst,
                 first_secrets,
                 first_outputs,
-                split_amount,
             )?;
             let first_tokens = Tokens::from((mint_url.clone(), first_proofs));
             println!(
@@ -120,7 +119,6 @@ async fn main() -> anyhow::Result<()> {
                 split_result.snd,
                 second_secrets,
                 second_outputs,
-                second_amount,
             )?;
             let second_tokens = Tokens::from((mint_url.clone(), second_proofs));
             println!(

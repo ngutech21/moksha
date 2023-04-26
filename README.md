@@ -21,9 +21,9 @@ At the moment the wallet doesn't use a database, but prints the tokens to stdout
 - [x] connect to mint (load keys)
 - [x] request minting tokens
 - [x] minting tokens
-- [] sending tokens (get encoded token for chosen value)
-- [] receiving tokens
-- [] melting tokens
+- [x] sending tokens (get encoded token for chosen value)
+- [x] receiving tokens
+- [x] melting tokens
 - [] check if tokens are spent
 
 
