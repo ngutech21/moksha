@@ -48,5 +48,11 @@ cargo run --bin cashurs-wallet mint 42
 ```
 
 ## Config
-The default config file .env is located in the root directory of the project and is using the 8333.space mint on mainnet.
+```bash
+mv .env.example .env
+# edit .env file
+vim .env
+```
+
+
 
