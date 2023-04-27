@@ -1,4 +1,7 @@
-use cashurs_core::model::{BlindedSignature, MintKeyset, Proofs};
+use cashurs_core::{
+    dhke::Dhke,
+    model::{BlindedSignature, MintKeyset, Proofs},
+};
 
 use crate::{database::Database, error::CashuMintError, lightning::Lightning};
 
@@ -7,6 +10,7 @@ pub struct Mint {
     pub lightning: Lightning,
     pub keyset: MintKeyset,
     pub db: Database,
+    pub dhke: Dhke,
 }
 
 impl Mint {
@@ -15,6 +19,7 @@ impl Mint {
             lightning,
             keyset: MintKeyset::new(secret),
             db: Database::new(db_path),
+            dhke: Dhke::new(),
         }
     }
 

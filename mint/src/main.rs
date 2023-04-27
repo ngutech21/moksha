@@ -4,7 +4,6 @@ use axum::extract::{Query, State};
 use axum::routing::post;
 use axum::Router;
 use axum::{routing::get, Json};
-use cashurs_core::dhke;
 use cashurs_core::model::{
     BlindedSignature, CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest,
     PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest,
@@ -147,7 +146,10 @@ async fn post_mint(
         .iter()
         .map(|blinded_msg| {
             let private_key = mint.keyset.private_keys.get(&blinded_msg.amount).unwrap(); // FIXME unwrap
-            let blinded_sig = dhke::step2_bob(blinded_messages.outputs[0].b_, private_key).unwrap();
+            let blinded_sig = mint
+                .dhke
+                .step2_bob(blinded_messages.outputs[0].b_, private_key)
+                .unwrap();
             BlindedSignature {
                 id: Some(mint.keyset.keyset_id.clone()),
                 amount: blinded_msg.amount,

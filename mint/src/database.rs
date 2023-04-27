@@ -64,6 +64,8 @@ impl Database {
         }
     }
 
+    //FIXME error handling
+
     pub fn read_used_proofs(&self) -> Result<Proofs, CashuMintError> {
         match self.get_serialized::<Proofs>(DbKeyPrefix::UsedProofs) {
             Ok(opt) => match opt {

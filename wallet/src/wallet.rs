@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use cashurs_core::{
-    dhke,
+    dhke::Dhke,
     model::{BlindedMessage, BlindedSignature, Keysets, PostMeltResponse, Proof, Proofs, Tokens},
 };
 use secp256k1::{PublicKey, SecretKey};
@@ -13,6 +13,7 @@ pub struct Wallet {
     client: Client,
     mint_keys: HashMap<u64, PublicKey>, // FIXME use specific type
     keysets: Keysets,
+    dhke: Dhke,
 }
 
 impl Wallet {
@@ -21,6 +22,7 @@ impl Wallet {
             client,
             mint_keys,
             keysets,
+            dhke: Dhke::new(),
         }
     }
 
@@ -54,7 +56,7 @@ impl Wallet {
             .into_iter()
             .zip(secrets.clone())
             .map(|(amount, secret)| {
-                let (b_, alice_secret_key) = dhke::step1_alice(secret, None).unwrap(); // FIXME
+                let (b_, alice_secret_key) = self.dhke.step1_alice(secret, None).unwrap(); // FIXME
                 (BlindedMessage { amount, b_ }, alice_secret_key)
             })
             .collect::<Vec<(BlindedMessage, SecretKey)>>();
@@ -91,7 +93,7 @@ impl Wallet {
                     .mint_keys
                     .get(&p.amount)
                     .expect("msg amount not found in mint keys");
-                let pub_alice = dhke::step3_alice(p.c_, priv_key, *key).unwrap();
+                let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
                 Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
             })
             .collect::<Vec<Proof>>();
@@ -109,7 +111,7 @@ impl Wallet {
             .into_iter()
             .zip(secrets)
             .map(|(amount, secret)| {
-                let (b_, alice_secret_key) = dhke::step1_alice(secret, None).unwrap(); // FIXME
+                let (b_, alice_secret_key) = self.dhke.step1_alice(secret, None).unwrap(); // FIXME
                 (BlindedMessage { amount, b_ }, alice_secret_key)
             })
             .collect::<Vec<(BlindedMessage, SecretKey)>>())
@@ -138,7 +140,7 @@ impl Wallet {
                     .mint_keys
                     .get(&p.amount)
                     .expect("msg amount not found in mint keys");
-                let pub_alice = dhke::step3_alice(p.c_, priv_key, *key).unwrap();
+                let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
                 Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
             })
             .collect::<Vec<Proof>>();
