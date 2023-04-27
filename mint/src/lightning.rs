@@ -1,7 +1,9 @@
 use lnbits_rust::{
-    api::invoice::{CreateInvoiceParams, CreateInvoiceResult},
+    api::invoice::{CreateInvoiceParams, CreateInvoiceResult, DecodedInvoice, PayInvoiceResult},
     LNBitsClient,
 };
+
+use crate::error::CashuMintError;
 
 #[derive(Clone)]
 pub struct Lightning {
@@ -16,14 +18,8 @@ impl Lightning {
         url: String,
     ) -> Self {
         Self {
-            client: LNBitsClient::new(
-                &wallet_id,        // wallet-id
-                &admin_key,        // admin-key
-                &invoice_read_key, // invoice-read-key
-                &url,              // url
-                None,
-            )
-            .expect("Can not create Lnbits client"),
+            client: LNBitsClient::new(&wallet_id, &admin_key, &invoice_read_key, &url, None)
+                .expect("Can not create Lnbits client"),
         }
     }
 
@@ -39,5 +35,20 @@ impl Lightning {
             })
             .await
             .unwrap()
+    }
+
+    pub async fn pay_invoice(
+        &self,
+        payment_request: String,
+    ) -> Result<PayInvoiceResult, CashuMintError> {
+        Ok(self.client.pay_invoice(&payment_request).await?)
+    }
+
+    pub async fn decode_invoice(
+        &self,
+        payment_request: String,
+    ) -> Result<DecodedInvoice, CashuMintError> {
+        // TODO use lightning_invoice from LDK instead of calling the API
+        Ok(self.client.decode_invoice(&payment_request).await?)
     }
 }
