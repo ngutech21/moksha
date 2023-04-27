@@ -7,7 +7,10 @@ use std::{
     io::{self},
 };
 
-use crate::crypto::{derive_keys, derive_keyset_id, derive_pubkeys};
+use crate::{
+    crypto::{derive_keys, derive_keyset_id, derive_pubkeys},
+    error::CashuCoreError,
+};
 
 const TOKEN_PREFIX_V3: &str = "cashuA";
 
@@ -101,7 +104,7 @@ impl Tokens {
             .collect()
     }
 
-    pub fn serialize(&self) -> io::Result<String> {
+    pub fn serialize(&self) -> Result<String, CashuCoreError> {
         let json = serde_json::to_string(&self)?;
         Ok(format!(
             "{}{}",
@@ -110,21 +113,16 @@ impl Tokens {
         ))
     }
 
-    pub fn deserialize(data: String) -> io::Result<Tokens> {
+    pub fn deserialize(data: String) -> Result<Tokens, CashuCoreError> {
         if !data.starts_with(TOKEN_PREFIX_V3) {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "Invalid token prefix",
-            ));
+            return Err(CashuCoreError::InvalidTokenPrefix);
         }
 
-        let json = general_purpose::URL_SAFE
-            .decode(
-                data.strip_prefix(TOKEN_PREFIX_V3)
-                    .expect("Token does not contain prefix")
-                    .as_bytes(),
-            )
-            .unwrap(); // FIXME: handle error
+        let json = general_purpose::URL_SAFE.decode(
+            data.strip_prefix(TOKEN_PREFIX_V3)
+                .expect("Token does not contain prefix")
+                .as_bytes(),
+        )?;
         let token = serde_json::from_slice::<Tokens>(&json)?;
         Ok(token)
     }

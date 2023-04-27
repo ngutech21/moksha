@@ -113,7 +113,9 @@ impl Client {
         let url = format!("{}/mint?amount={}", self.mint_url, amount);
         let resp = self.request_client.get(url).send().await?;
 
-        Ok(resp.json::<PaymentRequest>().await?)
+        let response = resp.text().await?;
+        println!("response: {}", &response);
+        Ok(serde_json::from_str::<PaymentRequest>(&response)?)
     }
 
     pub async fn post_mint_payment_request(
@@ -134,6 +136,7 @@ impl Client {
             .send()
             .await?;
         let response = resp.text().await?;
+        println!("response: {}", &response);
         Ok(serde_json::from_str::<PostMintResponse>(&response)?)
     }
 }
