@@ -24,4 +24,7 @@ secp256k1 = {version="0.27.0", features = [ "rand", "serde" ]}
 lnbits_rust = "0.2.1"
 thiserror = "1.0.40"
 cashurs-core = { path = "../core" }
+rocksdb = "0.20.1"
 
+[dev-dependencies]
+tempdir = "0.3.7"

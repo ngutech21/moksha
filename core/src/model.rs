@@ -27,7 +27,7 @@ pub struct BlindedSignature {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Proof {
     pub amount: u64,
     pub secret: String,
@@ -49,7 +49,7 @@ impl Proof {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct P2SHScript {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
