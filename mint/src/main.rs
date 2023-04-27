@@ -26,6 +26,8 @@ use std::env;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
+mod database;
+mod error;
 mod lightning;
 mod mint;
 mod model;
@@ -93,13 +95,18 @@ async fn post_split(
 }
 
 async fn post_melt(
-    State(_mint): State<Mint>,
-    Json(_check_fees): Json<PostMeltRequest>,
+    State(mint): State<Mint>,
+    Json(melt_request): Json<PostMeltRequest>,
 ) -> Result<Json<PostMeltResponse>, ()> {
+    let (paid, preimage, change) = mint
+        .melt(melt_request.pr, melt_request.proofs)
+        .await
+        .unwrap(); // FIXME handle error
+
     Ok(Json(PostMeltResponse {
-        paid: true,
-        preimage: "dummy preimage".to_string(), // FIXME connect to lightning
-        change: vec![],
+        paid,
+        preimage,
+        change,
     }))
 }
 
@@ -114,10 +121,9 @@ async fn get_mint(
     Query(mint_query): Query<MintQuery>,
 ) -> Result<Json<PaymentRequest>, ()> {
     println!("amount: {mint_query:#?}",);
-    // FIXME return error of amount is None
+    // FIXME return error if amount is None
     let amount: i64 = mint_query.amount.unwrap().try_into().unwrap(); // FIXME use u64
     let invoice = mint.lightning.create_invoice(amount).await;
-    //let pr = "lnbc2500u1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqdq5xysxxatsyp3k7enxv4jsxqzpuaztrnwngzn3kdzw5hydlzf03qdgm2hdq27cqv3agm2awhz5se903vruatfhq77w3ls4evs3ch9zw97j25emudupq63nyw24cg27h2rspfj9srp";
     Ok(Json(PaymentRequest {
         pr: invoice.payment_request,
         hash: invoice.payment_hash,
