@@ -82,7 +82,10 @@ impl Database {
 
 #[cfg(test)]
 mod tests {
-    use cashurs_core::{dhke, model::Proof};
+    use cashurs_core::{
+        dhke,
+        model::{Proof, Proofs},
+    };
     use tempdir::TempDir;
 
     #[test]
@@ -94,7 +97,7 @@ mod tests {
             .to_string();
         let db = super::Database::new(tmp_dir);
 
-        let proofs = vec![Proof {
+        let proofs = Proofs::new(vec![Proof {
             amount: 21,
             secret: "secret".to_string(),
             c: dhke::public_key_from_hex(
@@ -102,7 +105,7 @@ mod tests {
             ),
             id: None,
             script: None,
-        }];
+        }]);
 
         db.write_used_proofs(proofs.clone());
         let new_proofs = db.read_used_proofs()?;

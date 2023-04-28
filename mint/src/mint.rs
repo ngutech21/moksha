@@ -33,6 +33,19 @@ impl Mint {
             .decode_invoice(payment_request.clone())
             .await?;
 
+        let proofs_amount = proofs.get_total_amount();
+
+        // TODO verify proofs
+
+        // TODO check for fees
+
+        if invoice.amount_msat < (proofs_amount / 1000) as i64 {
+            return Err(CashuMintError::InvoiceAmountTooLow(format!(
+                "Invoice amount is too low: {}",
+                invoice.amount_msat
+            )));
+        }
+
         self.db.write_used_proofs(proofs.clone());
         // TODO check invoice
 

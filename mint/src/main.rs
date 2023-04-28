@@ -10,6 +10,7 @@ use cashurs_core::model::{
     PostSplitResponse,
 };
 use dotenvy::dotenv;
+use error::CashuMintError;
 use hyper::Method;
 use mint::Mint;
 use model::MintQuery;
@@ -98,11 +99,8 @@ async fn post_split(
 async fn post_melt(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltRequest>,
-) -> Result<Json<PostMeltResponse>, ()> {
-    let (paid, preimage, change) = mint
-        .melt(melt_request.pr, melt_request.proofs)
-        .await
-        .unwrap(); // FIXME handle error
+) -> Result<Json<PostMeltResponse>, CashuMintError> {
+    let (paid, preimage, change) = mint.melt(melt_request.pr, melt_request.proofs).await?;
 
     Ok(Json(PostMeltResponse {
         paid,
@@ -113,14 +111,14 @@ async fn post_melt(
 
 async fn post_check_fees(
     Json(_check_fees): Json<CheckFeesRequest>,
-) -> Result<Json<CheckFeesResponse>, ()> {
+) -> Result<Json<CheckFeesResponse>, CashuMintError> {
     Ok(Json(CheckFeesResponse { fee: 1 }))
 }
 
 async fn get_mint(
     State(mint): State<Mint>,
     Query(mint_query): Query<MintQuery>,
-) -> Result<Json<PaymentRequest>, ()> {
+) -> Result<Json<PaymentRequest>, CashuMintError> {
     println!("amount: {mint_query:#?}",);
     // FIXME return error if amount is None
     let amount: i64 = mint_query.amount.unwrap().try_into().unwrap(); // FIXME use u64
@@ -135,7 +133,7 @@ async fn post_mint(
     State(mint): State<Mint>,
     Query(mint_query): Query<MintQuery>,
     Json(blinded_messages): Json<PostMintRequest>,
-) -> Result<Json<PostMintResponse>, ()> {
+) -> Result<Json<PostMintResponse>, CashuMintError> {
     event!(
         Level::INFO,
         "post_mint: {mint_query:#?} {blinded_messages:#?}"
@@ -149,7 +147,7 @@ async fn post_mint(
             let blinded_sig = mint
                 .dhke
                 .step2_bob(blinded_messages.outputs[0].b_, private_key)
-                .unwrap();
+                .unwrap(); // FIXME unwrap
             BlindedSignature {
                 id: Some(mint.keyset.keyset_id.clone()),
                 amount: blinded_msg.amount,
@@ -160,11 +158,13 @@ async fn post_mint(
     Ok(Json(PostMintResponse { promises }))
 }
 
-async fn get_keys(State(mint): State<Mint>) -> Result<Json<HashMap<u64, PublicKey>>, ()> {
+async fn get_keys(
+    State(mint): State<Mint>,
+) -> Result<Json<HashMap<u64, PublicKey>>, CashuMintError> {
     Ok(Json(mint.keyset.public_keys))
 }
 
-async fn get_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, ()> {
+async fn get_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, CashuMintError> {
     Ok(Json(Keysets {
         keysets: vec![mint.keyset.keyset_id],
     }))

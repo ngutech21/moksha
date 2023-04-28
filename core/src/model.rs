@@ -2,7 +2,7 @@ use base64::{engine::general_purpose, Engine as _};
 use secp256k1::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::{
     crypto::{derive_keys, derive_keyset_id, derive_pubkeys},
@@ -90,14 +90,21 @@ impl Tokens {
     pub fn get_total_amount(&self) -> u64 {
         self.tokens
             .iter()
-            .map(|token| token.proofs.iter().map(|proof| proof.amount).sum::<u64>())
+            .map(|token| {
+                token
+                    .proofs
+                    .get_proofs()
+                    .iter()
+                    .map(|proof| proof.amount)
+                    .sum::<u64>()
+            })
             .sum()
     }
 
     pub fn get_proofs(&self) -> Vec<Proof> {
         self.tokens
             .iter()
-            .flat_map(|token| token.proofs.clone())
+            .flat_map(|token| token.proofs.get_proofs().clone())
             .collect()
     }
 
@@ -137,7 +144,35 @@ impl From<(String, Proofs)> for Tokens {
     }
 }
 
-pub type Proofs = Vec<Proof>;
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Proofs(pub(super) Vec<Proof>);
+
+impl Proofs {
+    pub fn new(proofs: Vec<Proof>) -> Self {
+        Self(proofs)
+    }
+
+    pub fn get_total_amount(&self) -> u64 {
+        self.0.iter().map(|proof| proof.amount).sum()
+    }
+
+    pub fn get_proofs(&self) -> Vec<Proof> {
+        self.0.clone()
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn _verify_no_duplicate_proofs(proofs: Vec<Proof>) -> bool {
+        let secrets: Vec<String> = proofs.into_iter().map(|x| x.secret).collect();
+        secrets.len() == secrets.into_iter().collect::<HashSet<_>>().len()
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct MintKeyset {
@@ -220,7 +255,7 @@ pub struct PostSplitResponse {
 mod tests {
     use crate::{
         dhke,
-        model::{Proof, Token, Tokens},
+        model::{Proof, Proofs, Token, Tokens},
     };
     use serde_json::json;
 
@@ -277,7 +312,7 @@ mod tests {
     fn test_tokens_serialize() -> anyhow::Result<()> {
         let token = Token {
             mint: Some("mymint".to_string()),
-            proofs: vec![Proof {
+            proofs: Proofs::new(vec![Proof {
                 amount: 21,
                 secret: "secret".to_string(),
                 c: dhke::public_key_from_hex(
@@ -285,7 +320,7 @@ mod tests {
                 ),
                 id: None,
                 script: None,
-            }],
+            }]),
         };
         let tokens = super::Tokens {
             tokens: vec![token],
