@@ -170,9 +170,13 @@ impl Proofs {
         self.0.is_empty()
     }
 
-    pub fn _verify_no_duplicate_proofs(proofs: Vec<Proof>) -> bool {
-        let secrets: Vec<String> = proofs.into_iter().map(|x| x.secret).collect();
-        secrets.len() == secrets.into_iter().collect::<HashSet<_>>().len()
+    pub fn has_duplicate_proofs(&self) -> bool {
+        let secrets = self
+            .get_proofs()
+            .into_iter()
+            .map(|x| x.secret)
+            .collect::<Vec<String>>();
+        secrets.len() != secrets.into_iter().collect::<HashSet<_>>().len()
     }
 }
 
