@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use cashurs_core::model::{
     BlindedMessage, CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
     PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
-    Proof, Proofs,
+    Proofs,
 };
 use reqwest::header::{HeaderValue, CONTENT_TYPE};
 use secp256k1::PublicKey;

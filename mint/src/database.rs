@@ -28,56 +28,37 @@ impl Database {
         &self,
         key: DbKeyPrefix,
         value: &T,
-    ) -> Result<(), String> {
+    ) -> Result<(), CashuMintError> {
         match serde_json::to_string(&value) {
             Ok(serialized) => self
                 .db
                 .put(vec![key as u8], serialized.into_bytes())
-                .map_err(|err| format!("Failed to put in db:{:?}", err)),
-            Err(err) => Err(format!(
-                "Failed to serialize to String. T: {:?}, err: {:?}",
-                value, err
-            )),
+                .map_err(CashuMintError::from),
+            Err(err) => Err(CashuMintError::from(err)),
         }
     }
 
-    fn get_serialized<T: DeserializeOwned>(&self, key: DbKeyPrefix) -> Result<Option<T>, String> {
-        match self.db.get(vec![key as u8]) {
-            Ok(opt) => match opt {
-                Some(found) => match String::from_utf8(found) {
-                    Ok(s) => match serde_json::from_str::<T>(&s) {
-                        Ok(t) => Ok(Some(t)),
-                        Err(err) => Err(format!("Failed to deserialize: {:?}", err)),
-                    },
-                    Err(err) => Err(format!("Failed to convert to String: {:?}", err)),
-                },
-                None => Ok(None),
-            },
-            Err(err) => Err(format!("Failed to get DB: {:?}", err)),
-            // FIXME improve error handling
+    fn get_serialized<T: DeserializeOwned>(
+        &self,
+        key: DbKeyPrefix,
+    ) -> Result<Option<T>, CashuMintError> {
+        let entry = self.db.get(vec![key as u8])?;
+        match entry {
+            Some(found) => {
+                let found = String::from_utf8(found)?;
+                Ok(Some(serde_json::from_str::<T>(&found)?))
+            }
+            None => Ok(None),
         }
     }
 
-    pub fn write_used_proofs(&self, proofs: Proofs) {
-        match self.put_serialized(DbKeyPrefix::UsedProofs, &proofs) {
-            Ok(_) => (),
-            Err(err) => println!("Failed to write proofs to db: {:?}", err),
-        }
+    pub fn write_used_proofs(&self, proofs: Proofs) -> Result<(), CashuMintError> {
+        self.put_serialized(DbKeyPrefix::UsedProofs, &proofs)
     }
-
-    //FIXME error handling
 
     pub fn read_used_proofs(&self) -> Result<Proofs, CashuMintError> {
-        match self.get_serialized::<Proofs>(DbKeyPrefix::UsedProofs) {
-            Ok(opt) => match opt {
-                Some(proofs) => Ok(proofs),
-                None => Ok(Proofs::new(vec![])),
-            },
-            Err(err) => Err(CashuMintError::Db(format!(
-                "Failed to read proofs from db: {:?}",
-                err
-            ))),
-        }
+        self.get_serialized::<Proofs>(DbKeyPrefix::UsedProofs)
+            .map(|maybe_proofs| maybe_proofs.unwrap_or_else(Proofs::empty))
     }
 }
 
@@ -89,7 +70,7 @@ mod tests {
     };
 
     #[test]
-    fn test_database() -> anyhow::Result<()> {
+    fn test_write_proofs() -> anyhow::Result<()> {
         let tmp = tempfile::tempdir()?;
         let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
 
@@ -105,9 +86,20 @@ mod tests {
             script: None,
         }]);
 
-        db.write_used_proofs(proofs.clone());
+        db.write_used_proofs(proofs.clone())?;
         let new_proofs = db.read_used_proofs()?;
         assert_eq!(proofs, new_proofs);
+        Ok(())
+    }
+
+    #[test]
+    fn test_read_empty_proofs() -> anyhow::Result<()> {
+        let tmp = tempfile::tempdir()?;
+        let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
+        let db = super::Database::new(tmp_dir.to_owned());
+
+        let new_proofs = db.read_used_proofs()?;
+        assert!(new_proofs.is_empty());
         Ok(())
     }
 }
