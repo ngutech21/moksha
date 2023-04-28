@@ -54,6 +54,7 @@ impl Database {
                 None => Ok(None),
             },
             Err(err) => Err(format!("Failed to get DB: {:?}", err)),
+            // FIXME improve error handling
         }
     }
 
@@ -70,7 +71,7 @@ impl Database {
         match self.get_serialized::<Proofs>(DbKeyPrefix::UsedProofs) {
             Ok(opt) => match opt {
                 Some(proofs) => Ok(proofs),
-                None => Err(CashuMintError::Db("No proofs found".to_string())),
+                None => Ok(Proofs::new(vec![])),
             },
             Err(err) => Err(CashuMintError::Db(format!(
                 "Failed to read proofs from db: {:?}",

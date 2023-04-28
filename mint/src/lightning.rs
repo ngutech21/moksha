@@ -41,7 +41,10 @@ impl Lightning {
         &self,
         payment_request: String,
     ) -> Result<PayInvoiceResult, CashuMintError> {
-        Ok(self.client.pay_invoice(&payment_request).await?)
+        self.client
+            .pay_invoice(&payment_request)
+            .await
+            .map_err(|err| CashuMintError::PayInvoice(payment_request, err))
     }
 
     pub async fn decode_invoice(
@@ -49,6 +52,9 @@ impl Lightning {
         payment_request: String,
     ) -> Result<DecodedInvoice, CashuMintError> {
         // TODO use lightning_invoice from LDK instead of calling the API
-        Ok(self.client.decode_invoice(&payment_request).await?)
+        self.client
+            .decode_invoice(&payment_request)
+            .await
+            .map_err(|err| CashuMintError::DecodeInvoice(payment_request, err))
     }
 }
