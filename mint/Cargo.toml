@@ -27,4 +27,4 @@ cashurs-core = { path = "../core" }
 rocksdb = "0.20.1"
 
 [dev-dependencies]
-tempdir = "0.3.7"
+tempfile = "3.5.0"

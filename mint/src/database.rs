@@ -86,16 +86,13 @@ mod tests {
         dhke,
         model::{Proof, Proofs},
     };
-    use tempdir::TempDir;
 
     #[test]
     fn test_database() -> anyhow::Result<()> {
-        let tmp_dir = TempDir::new("db-test")?
-            .path()
-            .to_str()
-            .unwrap()
-            .to_string();
-        let db = super::Database::new(tmp_dir);
+        let tmp = tempfile::tempdir()?;
+        let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
+
+        let db = super::Database::new(tmp_dir.to_owned());
 
         let proofs = Proofs::new(vec![Proof {
             amount: 21,
