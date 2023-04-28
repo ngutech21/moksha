@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use cashurs_core::model::{
     BlindedMessage, CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
     PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
-    Proof,
+    Proof, Proofs,
 };
 use reqwest::header::{HeaderValue, CONTENT_TYPE};
 use secp256k1::PublicKey;
@@ -27,7 +27,7 @@ impl Client {
     pub async fn post_split_tokens(
         &self,
         amount: u64,
-        proofs: Vec<Proof>,
+        proofs: Proofs,
         output: Vec<BlindedMessage>,
     ) -> Result<PostSplitResponse, CashuWalletError> {
         let url = format!("{}/split", self.mint_url);
@@ -55,7 +55,7 @@ impl Client {
 
     pub async fn post_melt_tokens(
         &self,
-        proofs: Vec<Proof>,
+        proofs: Proofs,
         pr: String,
     ) -> Result<PostMeltResponse, CashuWalletError> {
         let url = format!("{}/melt", self.mint_url);

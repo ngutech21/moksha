@@ -101,11 +101,13 @@ impl Tokens {
             .sum()
     }
 
-    pub fn get_proofs(&self) -> Vec<Proof> {
-        self.tokens
-            .iter()
-            .flat_map(|token| token.proofs.get_proofs().clone())
-            .collect()
+    pub fn get_proofs(&self) -> Proofs {
+        Proofs::new(
+            self.tokens
+                .iter()
+                .flat_map(|token| token.proofs.get_proofs())
+                .collect(),
+        )
     }
 
     pub fn serialize(&self) -> Result<String, CashuCoreError> {

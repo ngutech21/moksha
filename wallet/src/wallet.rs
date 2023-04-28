@@ -48,7 +48,7 @@ impl Wallet {
         &self,
         amount: u64,
         payment_hash: String,
-    ) -> Result<Vec<Proof>, CashuWalletError> {
+    ) -> Result<Proofs, CashuWalletError> {
         let split_amount = split_amount(amount);
         let secrets = self.create_secrets(&split_amount);
 
@@ -83,21 +83,22 @@ impl Wallet {
             .map(|(_, secret)| secret)
             .collect::<Vec<SecretKey>>();
 
-        let result: Vec<Proof> = post_mint_resp
-            .promises
-            .iter()
-            .zip(private_keys)
-            .zip(secrets)
-            .map(|((p, priv_key), secret)| {
-                let key = self
-                    .mint_keys
-                    .get(&p.amount)
-                    .expect("msg amount not found in mint keys");
-                let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
-                Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
-            })
-            .collect::<Vec<Proof>>();
-        Ok(result)
+        Ok(Proofs::new(
+            post_mint_resp
+                .promises
+                .iter()
+                .zip(private_keys)
+                .zip(secrets)
+                .map(|((p, priv_key), secret)| {
+                    let key = self
+                        .mint_keys
+                        .get(&p.amount)
+                        .expect("msg amount not found in mint keys");
+                    let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
+                    Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
+                })
+                .collect::<Vec<Proof>>(),
+        ))
     }
 
     pub fn create_blinded_messages(
@@ -131,20 +132,21 @@ impl Wallet {
             .map(|(_, secret)| secret)
             .collect::<Vec<SecretKey>>();
 
-        let result: Vec<Proof> = signatures
-            .iter()
-            .zip(private_keys)
-            .zip(secrets)
-            .map(|((p, priv_key), secret)| {
-                let key = self
-                    .mint_keys
-                    .get(&p.amount)
-                    .expect("msg amount not found in mint keys");
-                let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
-                Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
-            })
-            .collect::<Vec<Proof>>();
-        Ok(result)
+        Ok(Proofs::new(
+            signatures
+                .iter()
+                .zip(private_keys)
+                .zip(secrets)
+                .map(|((p, priv_key), secret)| {
+                    let key = self
+                        .mint_keys
+                        .get(&p.amount)
+                        .expect("msg amount not found in mint keys");
+                    let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
+                    Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
+                })
+                .collect::<Vec<Proof>>(),
+        ))
     }
 }
 
