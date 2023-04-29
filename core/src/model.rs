@@ -154,6 +154,10 @@ impl Proofs {
         Self(proofs)
     }
 
+    pub fn empty() -> Self {
+        Self(vec![])
+    }
+
     pub fn get_total_amount(&self) -> u64 {
         self.0.iter().map(|proof| proof.amount).sum()
     }

@@ -46,7 +46,7 @@ impl Mint {
             )));
         }
 
-        self.db.write_used_proofs(proofs.clone());
+        self.db.write_used_proofs(proofs.clone())?;
         // TODO check invoice
 
         let result = self.lightning.pay_invoice(payment_request).await?;

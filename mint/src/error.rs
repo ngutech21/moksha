@@ -1,3 +1,5 @@
+use std::string::FromUtf8Error;
+
 use axum::{
     response::{IntoResponse, Response},
     Json,
@@ -14,34 +16,30 @@ pub enum CashuMintError {
     #[error("Failed to pay invoice {0} - Error {1}")]
     PayInvoice(String, lnbits_rust::LNBitsError),
 
-    // FIXME replace DB error with specific errors
-    #[error("{0}")]
-    Db(String),
+    #[error("DB Error {0}")]
+    Db(#[from] rocksdb::Error),
+
+    #[error("Utf8 Error {0}")]
+    Utf8(#[from] FromUtf8Error),
+
+    #[error("Serde Error {0}")]
+    Serialization(#[from] serde_json::Error),
+
     #[error("Invoice amount is too low {0}")]
     InvoiceAmountTooLow(String),
 }
 
 impl IntoResponse for CashuMintError {
     fn into_response(self) -> Response {
-        let (status, error_message) = (StatusCode::INTERNAL_SERVER_ERROR, self.to_string());
+        let status = match self {
+            CashuMintError::Db(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            _ => StatusCode::BAD_REQUEST,
+        };
 
         let body = Json(json!({
-            "error": error_message,
+            "error": self.to_string(),
         }));
 
         (status, body).into_response()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::CashuMintError;
-
-    #[test]
-    fn test_proof() -> anyhow::Result<()> {
-        let error = CashuMintError::InvoiceAmountTooLow("test".to_string());
-        println!("error: {}", error);
-
-        Ok(())
     }
 }
