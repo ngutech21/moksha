@@ -69,6 +69,10 @@ impl Client {
             .body(body)
             .send()
             .await?;
+
+        if !resp.status().is_success() {
+            return Err(CashuWalletError::MintError(resp.text().await?));
+        }
         let response = resp.text().await?;
         // FIXME check for error
         Ok(serde_json::from_str::<PostMeltResponse>(&response)?)

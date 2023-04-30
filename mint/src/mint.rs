@@ -79,6 +79,13 @@ impl Mint {
 
         // TODO verify proofs
 
+        let used_proofs = self.db.get_used_proofs()?;
+        for used_proof in used_proofs.get_proofs() {
+            if proofs.get_proofs().contains(&used_proof) {
+                return Err(CashuMintError::ProofAlreadyUsed(format!("{used_proof:?}")));
+            }
+        }
+
         // TODO check for fees
         let amount_msat = invoice
             .amount_milli_satoshis()
