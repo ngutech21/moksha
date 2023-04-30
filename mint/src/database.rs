@@ -54,7 +54,18 @@ impl Database {
     }
 
     pub fn add_used_proofs(&self, proofs: Proofs) -> Result<(), CashuMintError> {
-        self.put_serialized(DbKeyPrefix::UsedProofs, &proofs)
+        let used_proofs = self.get_used_proofs()?;
+
+        let insert = Proofs::new(
+            used_proofs
+                .get_proofs()
+                .into_iter()
+                .chain(proofs.get_proofs().into_iter())
+                .collect(),
+        );
+        self.put_serialized(DbKeyPrefix::UsedProofs, &insert)?;
+
+        Ok(())
     }
 
     pub fn get_used_proofs(&self) -> Result<Proofs, CashuMintError> {
@@ -131,6 +142,21 @@ mod tests {
         db.add_used_proofs(proofs.clone())?;
         let new_proofs = db.get_used_proofs()?;
         assert_eq!(proofs, new_proofs);
+
+        let proofs2 = Proofs::new(vec![Proof {
+            amount: 42,
+            secret: "secret 2".to_string(),
+            c: dhke::public_key_from_hex(
+                "02c020067db727d586bc3183aecf97fcb800c3f4cc4759f69c626c9db5d8f5b5d4",
+            ),
+            id: None,
+            script: None,
+        }]);
+
+        db.add_used_proofs(proofs2)?;
+        let result_proofs = db.get_used_proofs()?;
+        assert!(result_proofs.len() == 2);
+
         Ok(())
     }
 

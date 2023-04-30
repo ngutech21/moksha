@@ -48,17 +48,21 @@ impl Mint {
         proofs: Proofs,
         blinded_messages: Vec<BlindedMessage>,
     ) -> Result<(Vec<BlindedSignature>, Vec<BlindedSignature>), CashuMintError> {
+        self.check_used_proofs(&proofs)?;
+
         let sum_proofs = proofs.get_total_amount();
-        let sum_frst = split_amount(sum_proofs - amount).len();
+        let sum_first = split_amount(sum_proofs - amount).len();
 
         // TODO check: "split amount is higher than the total sum."
         // TODO check: "duplicate promises."
         // TODO check: "split of promises is not as expected."
 
-        let first_slice = blinded_messages[0..sum_frst].to_vec();
+        let first_slice = blinded_messages[0..sum_first].to_vec();
         let first_sigs = self.create_blinded_signatures(first_slice).await?;
-        let second_slice = blinded_messages[sum_frst..blinded_messages.len()].to_vec();
+        let second_slice = blinded_messages[sum_first..blinded_messages.len()].to_vec();
         let second_sigs = self.create_blinded_signatures(second_slice).await?;
+
+        self.db.add_used_proofs(proofs)?;
 
         // TODO check: # verify amounts in produced proofs
 
@@ -79,12 +83,7 @@ impl Mint {
 
         // TODO verify proofs
 
-        let used_proofs = self.db.get_used_proofs()?;
-        for used_proof in used_proofs.get_proofs() {
-            if proofs.get_proofs().contains(&used_proof) {
-                return Err(CashuMintError::ProofAlreadyUsed(format!("{used_proof:?}")));
-            }
-        }
+        self.check_used_proofs(&proofs)?;
 
         // TODO check for fees
         let amount_msat = invoice
@@ -98,11 +97,21 @@ impl Mint {
             )));
         }
 
-        self.db.add_used_proofs(proofs.clone())?;
+        self.db.add_used_proofs(proofs)?;
         // TODO check invoice
 
         let result = self.lightning.pay_invoice(payment_request).await?;
 
         Ok((true, result.payment_hash, vec![]))
+    }
+
+    pub fn check_used_proofs(&self, proofs: &Proofs) -> Result<(), CashuMintError> {
+        let used_proofs = self.db.get_used_proofs()?.get_proofs();
+        for used_proof in used_proofs {
+            if proofs.get_proofs().contains(&used_proof) {
+                return Err(CashuMintError::ProofAlreadyUsed(format!("{used_proof:?}")));
+            }
+        }
+        Ok(())
     }
 }

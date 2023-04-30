@@ -69,7 +69,7 @@ async fn main() -> anyhow::Result<()> {
         Command::Split {
             amount: splt_amount,
         } => {
-            let prompt = "Enter Token:\n\n".to_string();
+            let prompt = "Enter Token:\n".to_string();
             let serialized_token = wait_for_user_input(prompt);
 
             let tokens = Tokens::deserialize(serialized_token)?;
@@ -80,7 +80,6 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            print!("first_amount: {splt_amount}");
             let first_secrets = wallet.create_secrets(&split_amount(splt_amount));
             let first_outputs =
                 wallet.create_blinded_messages(splt_amount, first_secrets.clone())?;
@@ -88,7 +87,6 @@ async fn main() -> anyhow::Result<()> {
             // ############################################################################
 
             let second_amount = total_token_amount - splt_amount;
-            print!("second_amount: {second_amount}");
             let second_secrets = wallet.create_secrets(&split_amount(second_amount));
             let second_outputs =
                 wallet.create_blinded_messages(second_amount, second_secrets.clone())?;
@@ -101,8 +99,6 @@ async fn main() -> anyhow::Result<()> {
                 .post_split_tokens(splt_amount, tokens.get_proofs(), total_outputs)
                 .await?;
 
-            println!("split result:\n\n{split_result:?}");
-
             let first_proofs = wallet.create_proofs_from_blinded_signatures(
                 split_result.fst,
                 first_secrets,
@@ -110,7 +106,7 @@ async fn main() -> anyhow::Result<()> {
             )?;
             let first_tokens = Tokens::from((mint_url.clone(), first_proofs));
             println!(
-                "Split tokens {} sats:\n\n{:?}",
+                "\nSplit tokens ({:?} sats):\n{}",
                 splt_amount,
                 first_tokens.serialize()?
             );
@@ -122,7 +118,7 @@ async fn main() -> anyhow::Result<()> {
             )?;
             let second_tokens = Tokens::from((mint_url.clone(), second_proofs));
             println!(
-                "Remaining tokens {} sats:\n\n{:?}",
+                "\nRemaining tokens ({:?} sats):\n{}",
                 second_amount,
                 second_tokens.serialize()?
             );
@@ -138,7 +134,7 @@ async fn main() -> anyhow::Result<()> {
                 println!("Invoice has been paid: Tokens melted successfully");
                 // TODO NUT-08 create tokens from change
             } else {
-                println!("Tokens not melted");
+                println!("Error: Tokens not melted");
             }
         }
         Command::Mint { amount } => {
