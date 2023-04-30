@@ -115,7 +115,6 @@ impl Client {
         let resp = self.request_client.get(url).send().await?;
 
         let response = resp.text().await?;
-        println!("response: {}", &response);
         Ok(serde_json::from_str::<PaymentRequest>(&response)?)
     }
 
@@ -137,7 +136,6 @@ impl Client {
             .send()
             .await?;
         let response = resp.text().await?;
-        println!("response: {}", &response);
         Ok(serde_json::from_str::<PostMintResponse>(&response)?)
     }
 }

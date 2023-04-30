@@ -128,7 +128,6 @@ async fn main() -> anyhow::Result<()> {
             );
         }
         Command::Melt { token } => {
-            println!("melt tokens");
             let deserialized = Tokens::deserialize(token)?;
 
             let prompt = "Enter invoice:\n\n".to_string();
