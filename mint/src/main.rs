@@ -131,7 +131,7 @@ async fn get_mint(
     let key = crypto::generate_hash();
     debug!("amount: {mint_query:#?} {key:#?}");
     mint.db
-        .write_pending_invoice(key.clone(), Invoice::new(mint_query.amount, pr.clone()))?;
+        .add_pending_invoice(key.clone(), Invoice::new(mint_query.amount, pr.clone()))?;
 
     // FIXME return error if amount is zero
 
@@ -148,7 +148,7 @@ async fn post_mint(
         "post_mint: {mint_query:#?} {blinded_messages:#?}"
     );
 
-    let invoice = mint.db.read_pending_invoice(mint_query.hash.clone())?;
+    let invoice = mint.db.get_pending_invoice(mint_query.hash.clone())?;
 
     let is_paid = mint
         .lightning

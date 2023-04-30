@@ -53,21 +53,21 @@ impl Database {
         }
     }
 
-    pub fn write_used_proofs(&self, proofs: Proofs) -> Result<(), CashuMintError> {
+    pub fn add_used_proofs(&self, proofs: Proofs) -> Result<(), CashuMintError> {
         self.put_serialized(DbKeyPrefix::UsedProofs, &proofs)
     }
 
-    pub fn read_used_proofs(&self) -> Result<Proofs, CashuMintError> {
+    pub fn get_used_proofs(&self) -> Result<Proofs, CashuMintError> {
         self.get_serialized::<Proofs>(DbKeyPrefix::UsedProofs)
             .map(|maybe_proofs| maybe_proofs.unwrap_or_else(Proofs::empty))
     }
 
-    pub fn read_pending_invoices(&self) -> Result<HashMap<String, Invoice>, CashuMintError> {
+    pub fn get_pending_invoices(&self) -> Result<HashMap<String, Invoice>, CashuMintError> {
         self.get_serialized::<HashMap<String, Invoice>>(DbKeyPrefix::PendingInvoices)
             .map(|maybe_proofs| maybe_proofs.unwrap_or_default())
     }
 
-    pub fn read_pending_invoice(&self, key: String) -> Result<Invoice, CashuMintError> {
+    pub fn get_pending_invoice(&self, key: String) -> Result<Invoice, CashuMintError> {
         let invoices = self
             .get_serialized::<HashMap<String, Invoice>>(DbKeyPrefix::PendingInvoices)
             .map(|maybe_proofs| maybe_proofs.unwrap_or_default());
@@ -79,12 +79,8 @@ impl Database {
         })
     }
 
-    pub fn write_pending_invoice(
-        &self,
-        key: String,
-        invoice: Invoice,
-    ) -> Result<(), CashuMintError> {
-        let invoices = self.read_pending_invoices();
+    pub fn add_pending_invoice(&self, key: String, invoice: Invoice) -> Result<(), CashuMintError> {
+        let invoices = self.get_pending_invoices();
 
         invoices.and_then(|mut invoices| {
             invoices.insert(key, invoice);
@@ -95,7 +91,7 @@ impl Database {
     }
 
     pub fn remove_pending_invoice(&self, key: String) -> Result<(), CashuMintError> {
-        let invoices = self.read_pending_invoices();
+        let invoices = self.get_pending_invoices();
 
         invoices.and_then(|mut invoices| {
             invoices.remove(key.as_str());
@@ -132,8 +128,8 @@ mod tests {
             script: None,
         }]);
 
-        db.write_used_proofs(proofs.clone())?;
-        let new_proofs = db.read_used_proofs()?;
+        db.add_used_proofs(proofs.clone())?;
+        let new_proofs = db.get_used_proofs()?;
         assert_eq!(proofs, new_proofs);
         Ok(())
     }
@@ -144,7 +140,7 @@ mod tests {
         let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
         let db = super::Database::new(tmp_dir.to_owned());
 
-        let new_proofs = db.read_used_proofs()?;
+        let new_proofs = db.get_used_proofs()?;
         assert!(new_proofs.is_empty());
         Ok(())
     }
@@ -160,8 +156,8 @@ mod tests {
             amount: 21,
             payment_request: "bar".to_string(),
         };
-        db.write_pending_invoice(key.to_string(), invoice.clone())?;
-        let lookup_invoice = db.read_pending_invoice(key.to_string())?;
+        db.add_pending_invoice(key.to_string(), invoice.clone())?;
+        let lookup_invoice = db.get_pending_invoice(key.to_string())?;
 
         assert_eq!(invoice, lookup_invoice);
         Ok(())

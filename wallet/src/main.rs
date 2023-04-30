@@ -134,8 +134,6 @@ async fn main() -> anyhow::Result<()> {
             let prompt = "Enter invoice:\n\n".to_string();
             let pr = wait_for_user_input(prompt);
 
-            println!(">> {pr}");
-
             let response = wallet.melt_token(pr, deserialized).await?;
             if response.paid {
                 println!("Invoice has been paid: Tokens melted successfully");
