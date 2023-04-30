@@ -4,6 +4,7 @@ use axum::extract::{Query, State};
 use axum::routing::post;
 use axum::Router;
 use axum::{routing::get, Json};
+use cashurs_core::crypto;
 use cashurs_core::model::{
     BlindedSignature, CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest,
     PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest,
@@ -13,15 +14,16 @@ use dotenvy::dotenv;
 use error::CashuMintError;
 use hyper::Method;
 use mint::Mint;
-use model::MintQuery;
+use model::{GetMintQuery, PostMintQuery};
 use secp256k1::PublicKey;
 use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
-use tracing::{event, Level};
+use tracing::{debug, event, Level};
 
 use crate::lightning::Lightning;
+use crate::model::Invoice;
 use std::env;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -117,27 +119,47 @@ async fn post_check_fees(
 
 async fn get_mint(
     State(mint): State<Mint>,
-    Query(mint_query): Query<MintQuery>,
+    Query(mint_query): Query<GetMintQuery>,
 ) -> Result<Json<PaymentRequest>, CashuMintError> {
-    println!("amount: {mint_query:#?}",);
-    // FIXME return error if amount is None
-    let amount: i64 = mint_query.amount.unwrap().try_into().unwrap(); // FIXME use u64
-    let invoice = mint.lightning.create_invoice(amount).await;
-    Ok(Json(PaymentRequest {
-        pr: invoice.payment_request,
-        hash: invoice.payment_hash,
-    }))
+    debug!("amount: {mint_query:#?}");
+
+    let pr = mint
+        .lightning
+        .create_invoice(mint_query.amount)
+        .await
+        .payment_request;
+    let key = crypto::generate_hash();
+    debug!("amount: {mint_query:#?} {key:#?}");
+    mint.db
+        .write_pending_invoice(key.clone(), Invoice::new(mint_query.amount, pr.clone()))?;
+
+    // FIXME return error if amount is zero
+
+    Ok(Json(PaymentRequest { pr, hash: key }))
 }
 
 async fn post_mint(
     State(mint): State<Mint>,
-    Query(mint_query): Query<MintQuery>,
+    Query(mint_query): Query<PostMintQuery>,
     Json(blinded_messages): Json<PostMintRequest>,
 ) -> Result<Json<PostMintResponse>, CashuMintError> {
     event!(
         Level::INFO,
         "post_mint: {mint_query:#?} {blinded_messages:#?}"
     );
+
+    let invoice = mint.db.read_pending_invoice(mint_query.hash.clone())?;
+
+    let is_paid = mint
+        .lightning
+        .is_invoice_paid(invoice.payment_request.clone())
+        .await?;
+
+    if !is_paid {
+        return Ok(Json(PostMintResponse { promises: vec![] }));
+    }
+
+    mint.db.remove_pending_invoice(mint_query.hash)?;
 
     let promises = blinded_messages
         .outputs

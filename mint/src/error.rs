@@ -27,6 +27,9 @@ pub enum CashuMintError {
 
     #[error("Invoice amount is too low {0}")]
     InvoiceAmountTooLow(String),
+
+    #[error("Invoice not found for hash {0}")]
+    InvoiceNotFound(String),
 }
 
 impl IntoResponse for CashuMintError {

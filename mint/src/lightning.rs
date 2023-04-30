@@ -23,7 +23,20 @@ impl Lightning {
         }
     }
 
-    pub async fn create_invoice(&self, amount: i64) -> CreateInvoiceResult {
+    pub async fn is_invoice_paid(&self, _invoice: String) -> Result<bool, CashuMintError> {
+        // FIXME decode invoice is broken in rust_lnbits
+        // let decoded_invoice = self.decode_invoice(invoice).await.unwrap();
+
+        // Ok(self
+        //     .client
+        //     .is_invoice_paid(&decoded_invoice.payment_hash)
+        //     .await
+        //     .unwrap())
+        Ok(true)
+    }
+
+    pub async fn create_invoice(&self, amount: u64) -> CreateInvoiceResult {
+        let amount: i64 = amount.try_into().unwrap(); // FIXME use u64
         self.client
             .create_invoice(&CreateInvoiceParams {
                 amount,

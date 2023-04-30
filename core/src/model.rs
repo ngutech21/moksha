@@ -211,7 +211,7 @@ pub struct Keysets {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PaymentRequest {
     pub pr: String,
-    pub hash: String,
+    pub hash: String, // TODO use sha256::Hash
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

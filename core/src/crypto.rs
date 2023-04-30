@@ -1,9 +1,18 @@
 use base64::{engine::general_purpose, Engine as _};
 use bitcoin_hashes::{sha256, Hash};
+
+use rand::RngCore;
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use std::collections::HashMap;
 
 const MAX_ORDER: u64 = 32;
+
+pub fn generate_hash() -> String {
+    let mut rng = rand::thread_rng();
+    let mut random = [0u8; 32];
+    rng.fill_bytes(&mut random);
+    sha256::Hash::hash(&random).to_string()
+}
 
 pub fn derive_keys(master_key: &str, derivation_path: &str) -> HashMap<u64, SecretKey> {
     let mut keys = HashMap::new();

@@ -44,11 +44,7 @@ impl Wallet {
             .collect::<Vec<String>>()
     }
 
-    pub async fn mint_tokens(
-        &self,
-        amount: u64,
-        payment_hash: String,
-    ) -> Result<Proofs, CashuWalletError> {
+    pub async fn mint_tokens(&self, amount: u64, hash: String) -> Result<Proofs, CashuWalletError> {
         let split_amount = split_amount(amount);
         let secrets = self.create_secrets(&split_amount);
 
@@ -64,7 +60,7 @@ impl Wallet {
         let post_mint_resp = self
             .client
             .post_mint_payment_request(
-                payment_hash,
+                hash,
                 blinded_messages
                     .clone()
                     .into_iter()

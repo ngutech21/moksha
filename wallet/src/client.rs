@@ -37,8 +37,6 @@ impl Client {
             outputs: output,
         })?;
 
-        println!("body: {}", &body);
-
         let resp = self
             .request_client
             .post(url)
@@ -48,7 +46,6 @@ impl Client {
             .await?;
         let response = resp.text().await?;
 
-        println!("response: {}", &response);
         // FIXME check for error
         Ok(serde_json::from_str::<PostSplitResponse>(&response)?)
     }
@@ -120,10 +117,10 @@ impl Client {
 
     pub async fn post_mint_payment_request(
         &self,
-        payment_hash: String,
+        hash: String,
         blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMintResponse, CashuWalletError> {
-        let url = format!("{}/mint?payment_hash={}", self.mint_url, payment_hash);
+        let url = format!("{}/mint?hash={}", self.mint_url, hash);
         let body = serde_json::to_string(&PostMintRequest {
             outputs: blinded_messages,
         })?;

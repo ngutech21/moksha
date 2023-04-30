@@ -146,15 +146,15 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::Mint { amount } => {
             let payment_request = client.get_mint_payment_request(amount).await?;
-            let payment_hash = payment_request.clone().hash;
+            let hash = payment_request.clone().hash;
             let invoice = payment_request.clone().pr;
 
             let prompt = format!(
-                "Pay invoice to mint sats. Press return after invoice is paid:\n\n{invoice}"
+                "Pay invoice to mint tokens. Press return after invoice is paid:\n\n{invoice}"
             );
             wait_for_user_input(prompt);
 
-            let proofs = wallet.mint_tokens(amount, payment_hash).await?;
+            let proofs = wallet.mint_tokens(amount, hash).await?;
 
             let serialized_tokens = Tokens::new(Token {
                 mint: Some(mint_url.to_string()),

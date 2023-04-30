@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use cashurs_core::model::Proofs;
 use rocksdb::DB;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::error::CashuMintError;
+use crate::{error::CashuMintError, model::Invoice};
 
 #[derive(Clone)]
 pub struct Database {
@@ -15,6 +15,7 @@ pub struct Database {
 #[derive(Clone, Debug)]
 pub enum DbKeyPrefix {
     UsedProofs = 0x01,
+    PendingInvoices = 0x02,
 }
 
 impl Database {
@@ -60,6 +61,49 @@ impl Database {
         self.get_serialized::<Proofs>(DbKeyPrefix::UsedProofs)
             .map(|maybe_proofs| maybe_proofs.unwrap_or_else(Proofs::empty))
     }
+
+    pub fn read_pending_invoices(&self) -> Result<HashMap<String, Invoice>, CashuMintError> {
+        self.get_serialized::<HashMap<String, Invoice>>(DbKeyPrefix::PendingInvoices)
+            .map(|maybe_proofs| maybe_proofs.unwrap_or_default())
+    }
+
+    pub fn read_pending_invoice(&self, key: String) -> Result<Invoice, CashuMintError> {
+        let invoices = self
+            .get_serialized::<HashMap<String, Invoice>>(DbKeyPrefix::PendingInvoices)
+            .map(|maybe_proofs| maybe_proofs.unwrap_or_default());
+        invoices.and_then(|invoices| {
+            invoices
+                .get(&key)
+                .cloned()
+                .ok_or_else(|| CashuMintError::InvoiceNotFound(key))
+        })
+    }
+
+    pub fn write_pending_invoice(
+        &self,
+        key: String,
+        invoice: Invoice,
+    ) -> Result<(), CashuMintError> {
+        let invoices = self.read_pending_invoices();
+
+        invoices.and_then(|mut invoices| {
+            invoices.insert(key, invoice);
+            self.put_serialized(DbKeyPrefix::PendingInvoices, &invoices)
+        })?;
+
+        Ok(())
+    }
+
+    pub fn remove_pending_invoice(&self, key: String) -> Result<(), CashuMintError> {
+        let invoices = self.read_pending_invoices();
+
+        invoices.and_then(|mut invoices| {
+            invoices.remove(key.as_str());
+            self.put_serialized(DbKeyPrefix::PendingInvoices, &invoices)
+        })?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -68,6 +112,8 @@ mod tests {
         dhke,
         model::{Proof, Proofs},
     };
+
+    use crate::model::Invoice;
 
     #[test]
     fn test_write_proofs() -> anyhow::Result<()> {
@@ -100,6 +146,24 @@ mod tests {
 
         let new_proofs = db.read_used_proofs()?;
         assert!(new_proofs.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn test_read_write_pending_invoices() -> anyhow::Result<()> {
+        let tmp = tempfile::tempdir()?;
+        let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
+        let db = super::Database::new(tmp_dir.to_owned());
+
+        let key = "foo";
+        let invoice = Invoice {
+            amount: 21,
+            payment_request: "bar".to_string(),
+        };
+        db.write_pending_invoice(key.to_string(), invoice.clone())?;
+        let lookup_invoice = db.read_pending_invoice(key.to_string())?;
+
+        assert_eq!(invoice, lookup_invoice);
         Ok(())
     }
 }
