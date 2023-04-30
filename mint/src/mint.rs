@@ -38,11 +38,14 @@ impl Mint {
         // TODO verify proofs
 
         // TODO check for fees
+        let amount_msat = invoice
+            .amount_milli_satoshis()
+            .expect("Invoice amount is missing");
 
-        if invoice.amount_msat < (proofs_amount / 1000) as i64 {
+        if amount_msat < (proofs_amount / 1000) {
             return Err(CashuMintError::InvoiceAmountTooLow(format!(
                 "Invoice amount is too low: {}",
-                invoice.amount_msat
+                amount_msat
             )));
         }
 

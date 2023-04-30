@@ -5,13 +5,14 @@ use axum::{
     Json,
 };
 use hyper::StatusCode;
+use lightning_invoice::ParseOrSemanticError;
 use serde_json::json;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum CashuMintError {
     #[error("Failed to decode payment request {0} - Error {1}")]
-    DecodeInvoice(String, lnbits_rust::LNBitsError),
+    DecodeInvoice(String, ParseOrSemanticError),
 
     #[error("Failed to pay invoice {0} - Error {1}")]
     PayInvoice(String, lnbits_rust::LNBitsError),

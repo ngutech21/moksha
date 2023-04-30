@@ -1,9 +1,12 @@
 use lnbits_rust::{
-    api::invoice::{CreateInvoiceParams, CreateInvoiceResult, DecodedInvoice, PayInvoiceResult},
+    api::invoice::{CreateInvoiceParams, CreateInvoiceResult, PayInvoiceResult},
     LNBitsClient,
 };
 
 use crate::error::CashuMintError;
+
+use lightning_invoice::Invoice as LNInvoice;
+use std::str::FromStr;
 
 #[derive(Clone)]
 pub struct Lightning {
@@ -23,16 +26,13 @@ impl Lightning {
         }
     }
 
-    pub async fn is_invoice_paid(&self, _invoice: String) -> Result<bool, CashuMintError> {
-        // FIXME decode invoice is broken in rust_lnbits
-        // let decoded_invoice = self.decode_invoice(invoice).await.unwrap();
-
-        // Ok(self
-        //     .client
-        //     .is_invoice_paid(&decoded_invoice.payment_hash)
-        //     .await
-        //     .unwrap())
-        Ok(true)
+    pub async fn is_invoice_paid(&self, invoice: String) -> Result<bool, CashuMintError> {
+        let decoded_invoice = self.decode_invoice(invoice).await.unwrap();
+        Ok(self
+            .client
+            .is_invoice_paid(&decoded_invoice.payment_hash().to_string())
+            .await
+            .unwrap())
     }
 
     pub async fn create_invoice(&self, amount: u64) -> CreateInvoiceResult {
@@ -63,11 +63,13 @@ impl Lightning {
     pub async fn decode_invoice(
         &self,
         payment_request: String,
-    ) -> Result<DecodedInvoice, CashuMintError> {
+    ) -> Result<LNInvoice, CashuMintError> {
         // TODO use lightning_invoice from LDK instead of calling the API
-        self.client
-            .decode_invoice(&payment_request)
-            .await
+        // self.client
+        //     .decode_invoice(&payment_request)
+        //     .await
+        //     .map_err(|err| CashuMintError::DecodeInvoice(payment_request, err))
+        LNInvoice::from_str(&payment_request)
             .map_err(|err| CashuMintError::DecodeInvoice(payment_request, err))
     }
 }
