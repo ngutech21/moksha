@@ -1,6 +1,6 @@
 use std::env;
 
-use cashurs_core::model::{BlindedMessage, Token, Tokens};
+use cashurs_core::model::{split_amount, BlindedMessage, Token, Tokens};
 use clap::{Parser, Subcommand};
 use dotenvy::dotenv;
 use secp256k1::SecretKey;
@@ -67,7 +67,7 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Command::Split {
-            amount: split_amount,
+            amount: splt_amount,
         } => {
             let prompt = "Enter Token:\n\n".to_string();
             let serialized_token = wait_for_user_input(prompt);
@@ -75,21 +75,21 @@ async fn main() -> anyhow::Result<()> {
             let tokens = Tokens::deserialize(serialized_token)?;
             // FIXME check if token is correct handle error
             let total_token_amount = tokens.get_total_amount();
-            if total_token_amount < split_amount {
+            if total_token_amount < splt_amount {
                 println!("Not enough tokens");
                 return Ok(());
             }
 
-            print!("first_amount: {split_amount}");
-            let first_secrets = wallet.create_secrets(&wallet::split_amount(split_amount));
+            print!("first_amount: {splt_amount}");
+            let first_secrets = wallet.create_secrets(&split_amount(splt_amount));
             let first_outputs =
-                wallet.create_blinded_messages(split_amount, first_secrets.clone())?;
+                wallet.create_blinded_messages(splt_amount, first_secrets.clone())?;
 
             // ############################################################################
 
-            let second_amount = total_token_amount - split_amount;
+            let second_amount = total_token_amount - splt_amount;
             print!("second_amount: {second_amount}");
-            let second_secrets = wallet.create_secrets(&wallet::split_amount(second_amount));
+            let second_secrets = wallet.create_secrets(&split_amount(second_amount));
             let second_outputs =
                 wallet.create_blinded_messages(second_amount, second_secrets.clone())?;
 
@@ -98,7 +98,7 @@ async fn main() -> anyhow::Result<()> {
             total_outputs.extend(get_blinded_msg(second_outputs.clone()));
 
             let split_result = client
-                .post_split_tokens(split_amount, tokens.get_proofs(), total_outputs)
+                .post_split_tokens(splt_amount, tokens.get_proofs(), total_outputs)
                 .await?;
 
             println!("split result:\n\n{split_result:?}");
@@ -111,7 +111,7 @@ async fn main() -> anyhow::Result<()> {
             let first_tokens = Tokens::from((mint_url.clone(), first_proofs));
             println!(
                 "Split tokens {} sats:\n\n{:?}",
-                split_amount,
+                splt_amount,
                 first_tokens.serialize()?
             );
 

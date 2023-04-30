@@ -261,6 +261,21 @@ pub struct PostSplitResponse {
     pub snd: Vec<BlindedSignature>,
 }
 
+/// split a decimal amount into a vector of powers of 2
+pub fn split_amount(amount: u64) -> Vec<u64> {
+    format!("{amount:b}")
+        .chars()
+        .rev()
+        .enumerate()
+        .filter_map(|(i, c)| {
+            if c == '1' {
+                return Some(2_u64.pow(i as u32));
+            }
+            None
+        })
+        .collect::<Vec<u64>>()
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -268,6 +283,14 @@ mod tests {
         model::{Proof, Proofs, Token, Tokens},
     };
     use serde_json::json;
+
+    #[test]
+    fn test_split_amount() -> anyhow::Result<()> {
+        let amount = 13;
+        let bits = super::split_amount(amount);
+        assert_eq!(bits, vec![1, 4, 8]);
+        Ok(())
+    }
 
     #[test]
     fn test_proof() -> anyhow::Result<()> {

@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use cashurs_core::{
     dhke::Dhke,
-    model::{BlindedMessage, BlindedSignature, Keysets, PostMeltResponse, Proof, Proofs, Tokens},
+    model::{
+        split_amount, BlindedMessage, BlindedSignature, Keysets, PostMeltResponse, Proof, Proofs,
+        Tokens,
+    },
 };
 use secp256k1::{PublicKey, SecretKey};
 
@@ -45,10 +48,10 @@ impl Wallet {
     }
 
     pub async fn mint_tokens(&self, amount: u64, hash: String) -> Result<Proofs, CashuWalletError> {
-        let split_amount = split_amount(amount);
-        let secrets = self.create_secrets(&split_amount);
+        let splited_amount = split_amount(amount);
+        let secrets = self.create_secrets(&splited_amount);
 
-        let blinded_messages = split_amount
+        let blinded_messages = splited_amount
             .into_iter()
             .zip(secrets.clone())
             .map(|(amount, secret)| {
@@ -152,31 +155,4 @@ fn generate_random_string() -> String {
         .take(24)
         .map(char::from)
         .collect()
-}
-
-/// split a decimal amount into a vector of powers of 2
-pub fn split_amount(amount: u64) -> Vec<u64> {
-    format!("{amount:b}")
-        .chars()
-        .rev()
-        .enumerate()
-        .filter_map(|(i, c)| {
-            if c == '1' {
-                return Some(2_u64.pow(i as u32));
-            }
-            None
-        })
-        .collect::<Vec<u64>>()
-}
-
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    fn test_split_amount() -> anyhow::Result<()> {
-        let amount = 13;
-        let bits = super::split_amount(amount);
-        assert_eq!(bits, vec![1, 4, 8]);
-        Ok(())
-    }
 }

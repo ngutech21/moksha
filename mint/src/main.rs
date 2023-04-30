@@ -6,9 +6,8 @@ use axum::Router;
 use axum::{routing::get, Json};
 use cashurs_core::crypto;
 use cashurs_core::model::{
-    BlindedSignature, CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest,
-    PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest,
-    PostSplitResponse,
+    CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
+    PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
 };
 use dotenvy::dotenv;
 use error::CashuMintError;
@@ -90,12 +89,18 @@ fn app(mint: Mint) -> Router {
 }
 
 async fn post_split(
-    Json(_check_fees): Json<PostSplitRequest>,
-) -> Result<Json<PostSplitResponse>, ()> {
-    Ok(Json(PostSplitResponse {
-        fst: vec![],
-        snd: vec![],
-    }))
+    State(mint): State<Mint>,
+    Json(split_request): Json<PostSplitRequest>,
+) -> Result<Json<PostSplitResponse>, CashuMintError> {
+    let (fst, snd) = mint
+        .split(
+            split_request.amount,
+            split_request.proofs,
+            split_request.outputs,
+        )
+        .await?;
+
+    Ok(Json(PostSplitResponse { fst, snd }))
 }
 
 async fn post_melt(
@@ -161,22 +166,10 @@ async fn post_mint(
 
     mint.db.remove_pending_invoice(mint_query.hash)?;
 
-    let promises = blinded_messages
-        .outputs
-        .iter()
-        .map(|blinded_msg| {
-            let private_key = mint.keyset.private_keys.get(&blinded_msg.amount).unwrap(); // FIXME unwrap
-            let blinded_sig = mint
-                .dhke
-                .step2_bob(blinded_messages.outputs[0].b_, private_key)
-                .unwrap(); // FIXME unwrap
-            BlindedSignature {
-                id: Some(mint.keyset.keyset_id.clone()),
-                amount: blinded_msg.amount,
-                c_: blinded_sig,
-            }
-        })
-        .collect::<Vec<BlindedSignature>>();
+    let promises = mint
+        .create_blinded_signatures(blinded_messages.outputs)
+        .await?;
+
     Ok(Json(PostMintResponse { promises }))
 }
 
