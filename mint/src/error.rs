@@ -44,6 +44,7 @@ impl IntoResponse for CashuMintError {
         };
 
         let body = Json(json!({
+            "code": 0,
             "error": self.to_string(),
         }));
 

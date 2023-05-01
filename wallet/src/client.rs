@@ -5,7 +5,10 @@ use cashurs_core::model::{
     PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
     Proofs,
 };
-use reqwest::header::{HeaderValue, CONTENT_TYPE};
+use reqwest::{
+    header::{HeaderValue, CONTENT_TYPE},
+    Response, StatusCode,
+};
 use secp256k1::PublicKey;
 
 use crate::error::CashuWalletError;
@@ -16,11 +19,43 @@ pub struct Client {
     request_client: reqwest::Client,
 }
 
+#[derive(serde::Deserialize, Debug)]
+struct CashuErrorResponse {
+    code: u64,
+    error: String,
+}
+
 impl Client {
     pub fn new(mint_url: String) -> Self {
         Self {
             mint_url,
             request_client: reqwest::Client::new(),
+        }
+    }
+
+    async fn extract_response_data<T: serde::de::DeserializeOwned>(
+        response: Response,
+    ) -> Result<T, CashuWalletError> {
+        match response.status() {
+            StatusCode::OK => {
+                let response_text = response.text().await?;
+                match serde_json::from_str::<T>(&response_text) {
+                    Ok(data) => Ok(data),
+                    Err(..) => Err(CashuWalletError::UnexpectedResponse("".to_string())),
+                }
+            }
+            _ => match &response.headers().get(CONTENT_TYPE) {
+                Some(content_type) => {
+                    if *content_type == "application/json" {
+                        let data =
+                            serde_json::from_str::<CashuErrorResponse>(&response.text().await?)?;
+                        Err(CashuWalletError::MintError(data.code, data.error))
+                    } else {
+                        Err(CashuWalletError::UnexpectedResponse(response.text().await?))
+                    }
+                }
+                None => Err(CashuWalletError::UnexpectedResponse("".to_string())),
+            },
         }
     }
 
@@ -44,10 +79,8 @@ impl Client {
             .body(body)
             .send()
             .await?;
-        let response = resp.text().await?;
 
-        // FIXME check for error
-        Ok(serde_json::from_str::<PostSplitResponse>(&response)?)
+        Self::extract_response_data::<PostSplitResponse>(resp).await
     }
 
     pub async fn post_melt_tokens(
@@ -69,13 +102,7 @@ impl Client {
             .body(body)
             .send()
             .await?;
-
-        if !resp.status().is_success() {
-            return Err(CashuWalletError::MintError(resp.text().await?));
-        }
-        let response = resp.text().await?;
-        // FIXME check for error
-        Ok(serde_json::from_str::<PostMeltResponse>(&response)?)
+        Self::extract_response_data::<PostMeltResponse>(resp).await
     }
 
     pub async fn post_checkfees(&self, pr: String) -> Result<CheckFeesResponse, CashuWalletError> {
@@ -89,22 +116,20 @@ impl Client {
             .body(body)
             .send()
             .await?;
-        let response = resp.text().await?;
-        Ok(serde_json::from_str::<CheckFeesResponse>(&response)?)
+
+        Self::extract_response_data::<CheckFeesResponse>(resp).await
     }
 
     pub async fn get_mint_keys(&self) -> Result<HashMap<u64, PublicKey>, CashuWalletError> {
         let url = format!("{}/keys", self.mint_url);
         let resp = self.request_client.get(url).send().await?;
-
-        Ok(resp.json::<HashMap<u64, PublicKey>>().await?)
+        Self::extract_response_data::<HashMap<u64, PublicKey>>(resp).await
     }
 
     pub async fn get_mint_keysets(&self) -> Result<Keysets, CashuWalletError> {
         let url = format!("{}/keysets", self.mint_url);
         let resp = self.request_client.get(url).send().await?;
-
-        Ok(resp.json::<Keysets>().await?)
+        Self::extract_response_data::<Keysets>(resp).await
     }
 
     pub async fn get_mint_payment_request(
@@ -113,9 +138,7 @@ impl Client {
     ) -> Result<PaymentRequest, CashuWalletError> {
         let url = format!("{}/mint?amount={}", self.mint_url, amount);
         let resp = self.request_client.get(url).send().await?;
-
-        let response = resp.text().await?;
-        Ok(serde_json::from_str::<PaymentRequest>(&response)?)
+        Self::extract_response_data::<PaymentRequest>(resp).await
     }
 
     pub async fn post_mint_payment_request(
@@ -123,7 +146,7 @@ impl Client {
         hash: String,
         blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMintResponse, CashuWalletError> {
-        let url = format!("{}/mint?hash={}", self.mint_url, hash);
+        let url = format!("{}/mint?hash={}", self.mint_url, hash); // FIXME change back to hash
         let body = serde_json::to_string(&PostMintRequest {
             outputs: blinded_messages,
         })?;
@@ -135,7 +158,6 @@ impl Client {
             .body(body)
             .send()
             .await?;
-        let response = resp.text().await?;
-        Ok(serde_json::from_str::<PostMintResponse>(&response)?)
+        Self::extract_response_data::<PostMintResponse>(resp).await
     }
 }
