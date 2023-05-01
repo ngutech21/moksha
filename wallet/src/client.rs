@@ -47,8 +47,10 @@ impl Client {
             _ => match &response.headers().get(CONTENT_TYPE) {
                 Some(content_type) => {
                     if *content_type == "application/json" {
-                        let data =
-                            serde_json::from_str::<CashuErrorResponse>(&response.text().await?)?;
+                        let txt = response.text().await?;
+                        let data = serde_json::from_str::<CashuErrorResponse>(&txt)
+                            .map_err(|_| CashuWalletError::UnexpectedResponse(txt))
+                            .unwrap();
                         Err(CashuWalletError::MintError(data.code, data.error))
                     } else {
                         Err(CashuWalletError::UnexpectedResponse(response.text().await?))
