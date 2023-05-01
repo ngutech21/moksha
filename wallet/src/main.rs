@@ -2,6 +2,7 @@ use std::env;
 
 use cashurs_core::model::{Token, Tokens};
 use clap::{Parser, Subcommand};
+use client::Client;
 use dotenvy::dotenv;
 
 mod client;
@@ -46,11 +47,11 @@ fn wait_for_user_input(prompt: String) -> String {
 async fn main() -> anyhow::Result<()> {
     let mint_url = read_env();
 
-    let client = client::Client::new(mint_url.clone());
+    let client = client::HttpClient::new(mint_url.clone());
     let keys = client.get_mint_keys().await?;
     let keysets = client.get_mint_keysets().await?;
 
-    let wallet = wallet::Wallet::new(client.clone(), keys, keysets);
+    let wallet = wallet::Wallet::new(Box::new(client.clone()), keys, keysets);
 
     let cli = Opts::parse();
     // let cli = Opts {

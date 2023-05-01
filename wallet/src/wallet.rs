@@ -13,14 +13,18 @@ use crate::{client::Client, error::CashuWalletError};
 use rand::{distributions::Alphanumeric, Rng};
 
 pub struct Wallet {
-    client: Client,
+    client: Box<dyn Client>,
     mint_keys: HashMap<u64, PublicKey>, // FIXME use specific type
     keysets: Keysets,
     dhke: Dhke,
 }
 
 impl Wallet {
-    pub fn new(client: Client, mint_keys: HashMap<u64, PublicKey>, keysets: Keysets) -> Self {
+    pub fn new(
+        client: Box<dyn Client>,
+        mint_keys: HashMap<u64, PublicKey>,
+        keysets: Keysets,
+    ) -> Self {
         Self {
             client,
             mint_keys,
@@ -221,18 +225,53 @@ fn generate_random_string() -> String {
 #[cfg(test)]
 mod tests {
     use super::Wallet;
-    use crate::client::Client;
-    use cashurs_core::model::Keysets;
+    use crate::client::{HttpClient, MockClient};
+    use cashurs_core::model::{Keysets, PostSplitResponse, Tokens};
     use std::collections::HashMap;
 
     #[test]
     fn test_create_secrets() {
-        let client = Client::new("http://localhost:8080".to_string());
-        let wallet = Wallet::new(client, HashMap::new(), Keysets { keysets: vec![] });
+        let client = HttpClient::new("http://localhost:8080".to_string());
+        let wallet = Wallet::new(
+            Box::new(client),
+            HashMap::new(),
+            Keysets { keysets: vec![] },
+        );
 
         let amounts = vec![1, 2, 3, 4, 5, 6, 7];
         let secrets = wallet.create_secrets(&amounts);
 
         assert!(secrets.len() == amounts.len());
+    }
+
+    #[tokio::test]
+    async fn test_split() -> anyhow::Result<()> {
+        let mut client = MockClient::new();
+
+        client.expect_post_split_tokens().returning(|_, _, _| {
+            Ok(PostSplitResponse {
+                fst: vec![],
+                snd: vec![],
+            })
+        });
+
+        let wallet = Wallet::new(
+            Box::new(client),
+            HashMap::new(),
+            Keysets {
+                keysets: vec!["foo".to_string()],
+            },
+        );
+
+        let raw_token = "cashuAeyJ0b2tlbiI6W3sibWludCI6Imh0dHA6Ly8xMjcuMC4wLjE6MzMzOCIsInByb29mcyI6W3siYW1vdW50Ijo2NCwic2VjcmV0IjoibXpkdzJFRUszOGptSXdGQ0x6OWJISGZEIiwiQyI6IjAzNGRiOTU2Zjg0OTE3ZGRhMmRhMDgzNTc2OGFkZTUzOWFjMzhjZjA0MmZhYWY4NDk3NTJjNWE3N2I5YmIwOGQ2ZCIsImlkIjoicGFGYk8xNDJfc3VpIn1dfV19";
+        let tokens = Tokens::deserialize(raw_token.to_string())?;
+
+        let result = wallet
+            .split_tokens(tokens, 20, "mint_url".to_string())
+            .await;
+
+        println!("{:?}", result);
+
+        Ok(())
     }
 }
