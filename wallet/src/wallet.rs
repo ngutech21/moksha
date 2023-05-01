@@ -59,10 +59,19 @@ impl Wallet {
 
         println!("total outputs: {:?}", total_outputs);
 
+        let sum_proofs = tokens.get_total_amount();
+
+        println!("Sum proofs: {:?}", sum_proofs);
+
         let split_result = self
             .client
             .post_split_tokens(splt_amount, tokens.get_proofs(), total_outputs)
             .await?;
+
+        println!(
+            ">> Split result: {}",
+            serde_json::to_string(&split_result).unwrap()
+        );
 
         let first_tokens = Tokens::from((
             mint_url.clone(),
@@ -273,5 +282,14 @@ mod tests {
         println!("{:?}", result);
 
         Ok(())
+    }
+
+    #[test]
+    fn test_splitup() {
+        let items = vec![1, 2, 3, 4, 5, 6];
+        let fst = &items[0..3];
+        let snd = &items[3..5];
+
+        println!("{:?} {:?}", fst, snd);
     }
 }

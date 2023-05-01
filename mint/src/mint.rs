@@ -62,11 +62,26 @@ impl Mint {
         let second_slice = blinded_messages[sum_first..blinded_messages.len()].to_vec();
         let second_sigs = self.create_blinded_signatures(second_slice).await?;
 
+        let amount_first = self.get_amount(&first_sigs);
+        let amount_second = self.get_amount(&second_sigs);
+
+        if sum_proofs != (amount_first + amount_second) {
+            return Err(CashuMintError::SplitAmountMismatch(format!(
+                "Split amount mismatch: {} != {} + {}",
+                sum_proofs, amount_first, amount_second
+            )));
+        }
+
         self.db.add_used_proofs(proofs)?;
 
-        // TODO check: # verify amounts in produced proofs
+        Ok((second_sigs, first_sigs))
+    }
 
-        Ok((first_sigs, second_sigs))
+    fn get_amount(&self, blinded_sigs: &[BlindedSignature]) -> u64 {
+        blinded_sigs
+            .iter()
+            .map(|blinded_sig| blinded_sig.amount)
+            .sum()
     }
 
     pub async fn melt(

@@ -8,6 +8,7 @@ use hyper::StatusCode;
 use lightning_invoice::ParseOrSemanticError;
 use serde_json::json;
 use thiserror::Error;
+use tracing::{event, Level};
 
 #[derive(Error, Debug)]
 pub enum CashuMintError {
@@ -34,10 +35,15 @@ pub enum CashuMintError {
 
     #[error("Proof already used {0}")]
     ProofAlreadyUsed(String),
+
+    #[error("{0}")]
+    SplitAmountMismatch(String),
 }
 
 impl IntoResponse for CashuMintError {
     fn into_response(self) -> Response {
+        event!(Level::ERROR, "error in mint: {:?}", self);
+
         let status = match self {
             CashuMintError::Db(_) => StatusCode::INTERNAL_SERVER_ERROR,
             _ => StatusCode::BAD_REQUEST,
