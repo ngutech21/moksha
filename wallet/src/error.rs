@@ -17,4 +17,7 @@ pub enum CashuWalletError {
 
     #[error("UnexpectedResponse - {0}")]
     UnexpectedResponse(String),
+
+    #[error("CashuCoreError - {0}")]
+    CashuCore(#[from] cashurs_core::error::CashuCoreError),
 }

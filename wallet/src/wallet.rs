@@ -29,6 +29,58 @@ impl Wallet {
         }
     }
 
+    pub async fn split_tokens(
+        &self,
+        tokens: Tokens,
+        splt_amount: u64,
+        mint_url: String,
+    ) -> Result<(Tokens, Tokens), CashuWalletError> {
+        let total_token_amount = tokens.get_total_amount();
+        let first_secrets = self.create_secrets(&split_amount(splt_amount));
+        let first_outputs = self.create_blinded_messages(splt_amount, first_secrets.clone())?;
+
+        println!("First outputs: {:?}", first_outputs);
+
+        // ############################################################################
+
+        let second_amount = total_token_amount - splt_amount;
+        let second_secrets = self.create_secrets(&split_amount(second_amount));
+        let second_outputs = self.create_blinded_messages(second_amount, second_secrets.clone())?;
+
+        println!("Second outputs: {:?}", second_outputs);
+
+        let mut total_outputs = vec![];
+        total_outputs.extend(get_blinded_msg(first_outputs.clone()));
+        total_outputs.extend(get_blinded_msg(second_outputs.clone()));
+
+        println!("total outputs: {:?}", total_outputs);
+
+        let split_result = self
+            .client
+            .post_split_tokens(splt_amount, tokens.get_proofs(), total_outputs)
+            .await?;
+
+        let first_tokens = Tokens::from((
+            mint_url.clone(),
+            self.create_proofs_from_blinded_signatures(
+                split_result.fst,
+                first_secrets,
+                first_outputs,
+            )?,
+        ));
+
+        let second_tokens = Tokens::from((
+            mint_url.clone(),
+            self.create_proofs_from_blinded_signatures(
+                split_result.snd,
+                second_secrets,
+                second_outputs,
+            )?,
+        ));
+
+        Ok((first_tokens, second_tokens))
+    }
+
     pub async fn melt_token(
         &self,
         pr: String,
@@ -107,6 +159,8 @@ impl Wallet {
     ) -> Result<Vec<(BlindedMessage, SecretKey)>, CashuWalletError> {
         let split_amount = split_amount(amount);
 
+        println!("split_amount {:?} total {:?}", split_amount, amount);
+
         Ok(split_amount
             .into_iter()
             .zip(secrets)
@@ -149,10 +203,36 @@ impl Wallet {
     }
 }
 
+fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, SecretKey)>) -> Vec<BlindedMessage> {
+    blinded_messages
+        .into_iter()
+        .map(|(msg, _)| msg)
+        .collect::<Vec<BlindedMessage>>()
+}
+
 fn generate_random_string() -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(24)
         .map(char::from)
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Wallet;
+    use crate::client::Client;
+    use cashurs_core::model::Keysets;
+    use std::collections::HashMap;
+
+    #[test]
+    fn test_create_secrets() {
+        let client = Client::new("http://localhost:8080".to_string());
+        let wallet = Wallet::new(client, HashMap::new(), Keysets { keysets: vec![] });
+
+        let amounts = vec![1, 2, 3, 4, 5, 6, 7];
+        let secrets = wallet.create_secrets(&amounts);
+
+        assert!(secrets.len() == amounts.len());
+    }
 }

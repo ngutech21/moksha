@@ -41,7 +41,7 @@ impl Client {
                 let response_text = response.text().await?;
                 match serde_json::from_str::<T>(&response_text) {
                     Ok(data) => Ok(data),
-                    Err(..) => Err(CashuWalletError::UnexpectedResponse("".to_string())),
+                    Err(..) => Err(CashuWalletError::UnexpectedResponse(response_text)),
                 }
             }
             _ => match &response.headers().get(CONTENT_TYPE) {
@@ -148,7 +148,8 @@ impl Client {
         hash: String,
         blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMintResponse, CashuWalletError> {
-        let url = format!("{}/mint?hash={}", self.mint_url, hash); // FIXME change back to hash
+        //let url = format!("{}/mint?payment_hash={}", self.mint_url, hash); // TODO old query param
+        let url = format!("{}/mint?hash={}", self.mint_url, hash);
         let body = serde_json::to_string(&PostMintRequest {
             outputs: blinded_messages,
         })?;

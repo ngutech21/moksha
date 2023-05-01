@@ -1,9 +1,8 @@
 use std::env;
 
-use cashurs_core::model::{split_amount, BlindedMessage, Token, Tokens};
+use cashurs_core::model::{Token, Tokens};
 use clap::{Parser, Subcommand};
 use dotenvy::dotenv;
-use secp256k1::SecretKey;
 
 mod client;
 mod error;
@@ -43,13 +42,6 @@ fn wait_for_user_input(prompt: String) -> String {
     }
 }
 
-fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, SecretKey)>) -> Vec<BlindedMessage> {
-    blinded_messages
-        .into_iter()
-        .map(|(msg, _)| msg)
-        .collect::<Vec<BlindedMessage>>()
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let mint_url = read_env();
@@ -73,53 +65,22 @@ async fn main() -> anyhow::Result<()> {
             let serialized_token = wait_for_user_input(prompt);
 
             let tokens = Tokens::deserialize(serialized_token)?;
-            // FIXME check if token is correct handle error
             let total_token_amount = tokens.get_total_amount();
             if total_token_amount < splt_amount {
                 println!("Not enough tokens");
                 return Ok(());
             }
+            let (first_tokens, second_tokens) =
+                wallet.split_tokens(tokens, splt_amount, mint_url).await?;
 
-            let first_secrets = wallet.create_secrets(&split_amount(splt_amount));
-            let first_outputs =
-                wallet.create_blinded_messages(splt_amount, first_secrets.clone())?;
-
-            // ############################################################################
-
-            let second_amount = total_token_amount - splt_amount;
-            let second_secrets = wallet.create_secrets(&split_amount(second_amount));
-            let second_outputs =
-                wallet.create_blinded_messages(second_amount, second_secrets.clone())?;
-
-            let mut total_outputs = vec![];
-            total_outputs.extend(get_blinded_msg(first_outputs.clone()));
-            total_outputs.extend(get_blinded_msg(second_outputs.clone()));
-
-            let split_result = client
-                .post_split_tokens(splt_amount, tokens.get_proofs(), total_outputs)
-                .await?;
-
-            let first_proofs = wallet.create_proofs_from_blinded_signatures(
-                split_result.fst,
-                first_secrets,
-                first_outputs,
-            )?;
-            let first_tokens = Tokens::from((mint_url.clone(), first_proofs));
             println!(
                 "\nSplit tokens ({:?} sats):\n{}",
-                splt_amount,
+                first_tokens.get_total_amount(),
                 first_tokens.serialize()?
             );
-
-            let second_proofs = wallet.create_proofs_from_blinded_signatures(
-                split_result.snd,
-                second_secrets,
-                second_outputs,
-            )?;
-            let second_tokens = Tokens::from((mint_url.clone(), second_proofs));
             println!(
                 "\nRemaining tokens ({:?} sats):\n{}",
-                second_amount,
+                second_tokens.get_total_amount(),
                 second_tokens.serialize()?
             );
         }
