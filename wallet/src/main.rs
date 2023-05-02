@@ -75,12 +75,12 @@ async fn main() -> anyhow::Result<()> {
                 wallet.split_tokens(tokens, splt_amount, mint_url).await?;
 
             println!(
-                "\nSplit tokens ({:?} sats):\n{}",
+                "\nTokens ({:?} sats):\n{}",
                 second_tokens.get_total_amount(),
                 second_tokens.serialize()?
             );
             println!(
-                "\nRemaining tokens ({:?} sats):\n{}",
+                "\nTokens ({:?} sats):\n{}",
                 first_tokens.get_total_amount(),
                 first_tokens.serialize()?
             );

@@ -4,7 +4,6 @@ use axum::extract::{Query, State};
 use axum::routing::post;
 use axum::Router;
 use axum::{routing::get, Json};
-use cashurs_core::crypto;
 use cashurs_core::model::{
     CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
     PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
@@ -22,7 +21,6 @@ use tower_http::{
 use tracing::{debug, event, Level};
 
 use crate::lightning::Lightning;
-use crate::model::Invoice;
 use std::env;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -128,19 +126,8 @@ async fn get_mint(
 ) -> Result<Json<PaymentRequest>, CashuMintError> {
     debug!("amount: {mint_query:#?}");
 
-    let pr = mint
-        .lightning
-        .create_invoice(mint_query.amount)
-        .await
-        .payment_request;
-    let key = crypto::generate_hash();
-    debug!("amount: {mint_query:#?} {key:#?}");
-    mint.db
-        .add_pending_invoice(key.clone(), Invoice::new(mint_query.amount, pr.clone()))?;
-
-    // FIXME return error if amount is zero
-
-    Ok(Json(PaymentRequest { pr, hash: key }))
+    let (pr, hash) = mint.create_invoice(mint_query.amount).await?;
+    Ok(Json(PaymentRequest { pr, hash }))
 }
 
 async fn post_mint(
@@ -153,24 +140,27 @@ async fn post_mint(
         "post_mint: {mint_query:#?} {blinded_messages:#?}"
     );
 
-    let invoice = mint.db.get_pending_invoice(mint_query.hash.clone())?;
-
-    let is_paid = mint
-        .lightning
-        .is_invoice_paid(invoice.payment_request.clone())
-        .await?;
-
-    if !is_paid {
-        return Ok(Json(PostMintResponse { promises: vec![] }));
-    }
-
-    mint.db.remove_pending_invoice(mint_query.hash)?;
-
     let promises = mint
-        .create_blinded_signatures(blinded_messages.outputs)
+        .mint_tokens(mint_query.hash, blinded_messages.outputs)
         .await?;
-
     Ok(Json(PostMintResponse { promises }))
+
+    // let invoice = mint.db.get_pending_invoice(mint_query.hash.clone())?;
+
+    // let is_paid = mint
+    //     .lightning
+    //     .is_invoice_paid(invoice.payment_request.clone())
+    //     .await?;
+
+    // if !is_paid {
+    //     return Ok(Json(PostMintResponse { promises: vec![] }));
+    // }
+
+    // mint.db.remove_pending_invoice(mint_query.hash)?;
+
+    // let promises = mint
+    //     .create_blinded_signatures(blinded_messages.outputs)
+    //     .await?;
 }
 
 async fn get_keys(

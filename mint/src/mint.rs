@@ -1,9 +1,10 @@
 use cashurs_core::{
+    crypto,
     dhke::Dhke,
     model::{split_amount, BlindedMessage, BlindedSignature, MintKeyset, Proofs},
 };
 
-use crate::{database::Database, error::CashuMintError, lightning::Lightning};
+use crate::{database::Database, error::CashuMintError, lightning::Lightning, model::Invoice};
 
 #[derive(Clone)]
 pub struct Mint {
@@ -40,6 +41,34 @@ impl Mint {
             })
             .collect::<Vec<BlindedSignature>>();
         Ok(promises)
+    }
+
+    pub async fn create_invoice(&self, amount: u64) -> Result<(String, String), CashuMintError> {
+        let pr = self.lightning.create_invoice(amount).await.payment_request;
+        let key = crypto::generate_hash();
+        self.db
+            .add_pending_invoice(key.clone(), Invoice::new(amount, pr.clone()))?;
+        Ok((pr, key))
+    }
+
+    pub async fn mint_tokens(
+        &self,
+        invoice_hash: String,
+        outputs: Vec<BlindedMessage>,
+    ) -> Result<Vec<BlindedSignature>, CashuMintError> {
+        let invoice = self.db.get_pending_invoice(invoice_hash.clone())?;
+
+        let is_paid = self
+            .lightning
+            .is_invoice_paid(invoice.payment_request.clone())
+            .await?;
+
+        if !is_paid {
+            return Ok(vec![]);
+        }
+
+        self.db.remove_pending_invoice(invoice_hash)?;
+        self.create_blinded_signatures(outputs).await
     }
 
     pub async fn split(
