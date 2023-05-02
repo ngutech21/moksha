@@ -172,7 +172,8 @@ mod tests {
 
     use crate::{database::MockDatabase, error::CashuMintError, lightning::Lightning, Mint};
     use async_trait::async_trait;
-    use cashurs_core::model::Proofs;
+    use cashurs_core::model::TotalAmount;
+    use cashurs_core::model::{PostSplitRequest, Proofs};
     use lnbits_rust::api::invoice::{CreateInvoiceResult, PayInvoiceResult};
 
     pub struct LightningMock {}
@@ -220,6 +221,38 @@ mod tests {
 
         assert_eq!(first.len(), 0);
         assert_eq!(second.len(), 0);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_split_64_in_20() -> anyhow::Result<()> {
+        let mut mock_db = MockDatabase::new();
+        mock_db
+            .expect_get_used_proofs()
+            .returning(|| Ok(Proofs::empty()));
+        mock_db.expect_add_used_proofs().returning(|_| Ok(()));
+
+        let db = Arc::new(mock_db);
+
+        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+        let raw_token = std::fs::read_to_string(format!(
+            "{base_dir}/src/fixtures/post_split_request_64_20.json"
+        ))?;
+
+        let request = serde_json::from_str::<PostSplitRequest>(&raw_token)?;
+
+        let lightning = Arc::new(LightningMock {});
+        let mint = Mint::new("superprivatesecretkey".to_string(), lightning, db);
+
+        let (first, second) = mint.split(20, request.proofs, request.outputs).await?;
+
+        first.total_amount();
+
+        println!("{} {:?}", first.total_amount(), first);
+        println!("{} {:?}", second.total_amount(), second);
+
+        assert_eq!(first.total_amount(), 20);
+        assert_eq!(second.total_amount(), 44);
         Ok(())
     }
 }

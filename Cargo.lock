@@ -1082,8 +1082,7 @@ checksum = "36eb31c1778188ae1e64398743890d0877fef36d11521ac60406b42016e8c2cf"
 [[package]]
 name = "lnbits_rust"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab04e1ffa05a70034dab4ed74bbfc774b5e35446fda99446249de014b3452a0b"
+source = "git+https://github.com/ngutech21/lnbits_rust/?branch=main#14935ece104cad5ab6d0813c44cb2fa5bd4b7581"
 dependencies = [
  "reqwest",
  "serde",

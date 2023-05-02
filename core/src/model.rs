@@ -146,6 +146,16 @@ impl From<(String, Proofs)> for Tokens {
     }
 }
 
+pub trait TotalAmount {
+    fn total_amount(&self) -> u64;
+}
+
+impl TotalAmount for Vec<BlindedSignature> {
+    fn total_amount(&self) -> u64 {
+        self.iter().fold(0, |acc, x| acc + x.amount)
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Proofs(pub(super) Vec<Proof>);
 
