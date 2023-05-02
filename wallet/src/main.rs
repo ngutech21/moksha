@@ -76,13 +76,13 @@ async fn main() -> anyhow::Result<()> {
 
             println!(
                 "\nSplit tokens ({:?} sats):\n{}",
-                first_tokens.get_total_amount(),
-                first_tokens.serialize()?
+                second_tokens.get_total_amount(),
+                second_tokens.serialize()?
             );
             println!(
                 "\nRemaining tokens ({:?} sats):\n{}",
-                second_tokens.get_total_amount(),
-                second_tokens.serialize()?
+                first_tokens.get_total_amount(),
+                first_tokens.serialize()?
             );
         }
         Command::Melt { token } => {

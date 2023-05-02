@@ -40,38 +40,27 @@ impl Wallet {
         mint_url: String,
     ) -> Result<(Tokens, Tokens), CashuWalletError> {
         let total_token_amount = tokens.get_total_amount();
-        let first_secrets = self.create_secrets(&split_amount(splt_amount));
-        let first_outputs = self.create_blinded_messages(splt_amount, first_secrets.clone())?;
-
-        println!("First outputs: {:?}", first_outputs);
+        let first_amount = total_token_amount - splt_amount;
+        let first_secrets = self.create_secrets(&split_amount(first_amount));
+        let first_outputs = self.create_blinded_messages(first_amount, first_secrets.clone())?;
 
         // ############################################################################
 
-        let second_amount = total_token_amount - splt_amount;
+        let second_amount = splt_amount;
         let second_secrets = self.create_secrets(&split_amount(second_amount));
         let second_outputs = self.create_blinded_messages(second_amount, second_secrets.clone())?;
-
-        println!("Second outputs: {:?}", second_outputs);
 
         let mut total_outputs = vec![];
         total_outputs.extend(get_blinded_msg(first_outputs.clone()));
         total_outputs.extend(get_blinded_msg(second_outputs.clone()));
 
-        println!("total outputs: {:?}", total_outputs);
-
-        let sum_proofs = tokens.get_total_amount();
-
-        println!("Sum proofs: {:?}", sum_proofs);
+        let _sum_proofs = tokens.get_total_amount();
+        // FIXME check if sum_proofs is equal to total_outputs
 
         let split_result = self
             .client
             .post_split_tokens(splt_amount, tokens.get_proofs(), total_outputs)
             .await?;
-
-        println!(
-            ">> Split result: {}",
-            serde_json::to_string(&split_result).unwrap()
-        );
 
         let first_tokens = Tokens::from((
             mint_url.clone(),
@@ -172,8 +161,6 @@ impl Wallet {
     ) -> Result<Vec<(BlindedMessage, SecretKey)>, CashuWalletError> {
         let split_amount = split_amount(amount);
 
-        println!("split_amount {:?} total {:?}", split_amount, amount);
-
         Ok(split_amount
             .into_iter()
             .zip(secrets)
@@ -272,8 +259,10 @@ mod tests {
             },
         );
 
-        let raw_token = "cashuAeyJ0b2tlbiI6W3sibWludCI6Imh0dHA6Ly8xMjcuMC4wLjE6MzMzOCIsInByb29mcyI6W3siYW1vdW50Ijo2NCwic2VjcmV0IjoibXpkdzJFRUszOGptSXdGQ0x6OWJISGZEIiwiQyI6IjAzNGRiOTU2Zjg0OTE3ZGRhMmRhMDgzNTc2OGFkZTUzOWFjMzhjZjA0MmZhYWY4NDk3NTJjNWE3N2I5YmIwOGQ2ZCIsImlkIjoicGFGYk8xNDJfc3VpIn1dfV19";
-        let tokens = Tokens::deserialize(raw_token.to_string())?;
+        // read file
+        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+        let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/token_64.cashu"))?;
+        let tokens = Tokens::deserialize(raw_token.trim().to_string())?;
 
         let result = wallet
             .split_tokens(tokens, 20, "mint_url".to_string())
@@ -282,14 +271,5 @@ mod tests {
         println!("{:?}", result);
 
         Ok(())
-    }
-
-    #[test]
-    fn test_splitup() {
-        let items = vec![1, 2, 3, 4, 5, 6];
-        let fst = &items[0..3];
-        let snd = &items[3..5];
-
-        println!("{:?} {:?}", fst, snd);
     }
 }

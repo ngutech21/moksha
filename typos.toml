@@ -1,0 +1,3 @@
+[type.cashu]
+extend-glob = ["*.cashu"]
+check-file = false
