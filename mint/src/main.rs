@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use axum::extract::{Query, State};
 use axum::routing::post;
@@ -20,7 +21,7 @@ use tower_http::{
 };
 use tracing::{debug, event, Level};
 
-use crate::lightning::Lightning;
+use crate::lightning::LnbitsLightning;
 use std::env;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -60,12 +61,12 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn create_mint() -> Mint {
-    let ln = Lightning::new(
+    let ln = Arc::new(LnbitsLightning::new(
         env::var("LNBITS_WALLET_ID").expect("LNBITS_WALLET_ID not found"),
         env::var("LNBITS_ADMIN_KEY").expect("LNBITS_ADMIN_KEY not found"),
         env::var("LNBITS_INVOICE_READ_KEY").expect("LNBITS_INVOICE_READ_KEY not found"),
         env::var("LNBITS_URL").expect("LNBITS_URL not found"),
-    );
+    ));
 
     Mint::new(
         env::var("MINT_PRIVATE_KEY").expect("MINT_PRIVATE_KEY not found"),
@@ -117,7 +118,7 @@ async fn post_melt(
 async fn post_check_fees(
     Json(_check_fees): Json<CheckFeesRequest>,
 ) -> Result<Json<CheckFeesResponse>, CashuMintError> {
-    Ok(Json(CheckFeesResponse { fee: 1 }))
+    Ok(Json(CheckFeesResponse { fee: 0 }))
 }
 
 async fn get_mint(
@@ -144,23 +145,6 @@ async fn post_mint(
         .mint_tokens(mint_query.hash, blinded_messages.outputs)
         .await?;
     Ok(Json(PostMintResponse { promises }))
-
-    // let invoice = mint.db.get_pending_invoice(mint_query.hash.clone())?;
-
-    // let is_paid = mint
-    //     .lightning
-    //     .is_invoice_paid(invoice.payment_request.clone())
-    //     .await?;
-
-    // if !is_paid {
-    //     return Ok(Json(PostMintResponse { promises: vec![] }));
-    // }
-
-    // mint.db.remove_pending_invoice(mint_query.hash)?;
-
-    // let promises = mint
-    //     .create_blinded_signatures(blinded_messages.outputs)
-    //     .await?;
 }
 
 async fn get_keys(

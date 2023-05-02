@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cashurs_core::{
     crypto,
     dhke::Dhke,
@@ -8,14 +10,18 @@ use crate::{database::Database, error::CashuMintError, lightning::Lightning, mod
 
 #[derive(Clone)]
 pub struct Mint {
-    pub lightning: Lightning,
+    pub lightning: Arc<dyn Lightning + Send + Sync>,
     pub keyset: MintKeyset,
     pub db: Database,
     pub dhke: Dhke,
 }
 
 impl Mint {
-    pub fn new(secret: String, lightning: Lightning, db_path: String) -> Self {
+    pub fn new(
+        secret: String,
+        lightning: Arc<dyn Lightning + Send + Sync>,
+        db_path: String,
+    ) -> Self {
         Self {
             lightning,
             keyset: MintKeyset::new(secret),
@@ -156,6 +162,56 @@ impl Mint {
                 return Err(CashuMintError::ProofAlreadyUsed(format!("{used_proof:?}")));
             }
         }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use crate::{error::CashuMintError, lightning::Lightning, Mint};
+    use async_trait::async_trait;
+    use cashurs_core::model::Proofs;
+    use lnbits_rust::api::invoice::{CreateInvoiceResult, PayInvoiceResult};
+
+    pub struct LightningMock {}
+
+    #[async_trait]
+    impl Lightning for LightningMock {
+        async fn is_invoice_paid(&self, _invoice: String) -> Result<bool, CashuMintError> {
+            Ok(true)
+        }
+
+        async fn create_invoice(&self, _amount: u64) -> CreateInvoiceResult {
+            CreateInvoiceResult {
+                payment_hash: "test".to_string(),
+                payment_request: "test".to_string(),
+            }
+        }
+
+        async fn pay_invoice(
+            &self,
+            _payment_request: String,
+        ) -> Result<PayInvoiceResult, CashuMintError> {
+            Ok(PayInvoiceResult {
+                payment_hash: "test".to_string(),
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn test_split_zero() -> anyhow::Result<()> {
+        let blinded_messages = vec![];
+
+        let lightning = Arc::new(LightningMock {});
+        let mint = Mint::new("secret".to_string(), lightning, "data".to_string());
+
+        let proofs = Proofs::empty();
+        let (first, second) = mint.split(0, proofs, blinded_messages).await?;
+
+        assert_eq!(first.len(), 0);
+        assert_eq!(second.len(), 0);
         Ok(())
     }
 }

@@ -161,8 +161,8 @@ impl Client for HttpClient {
         hash: String,
         blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMintResponse, CashuWalletError> {
-        let url = format!("{}/mint?payment_hash={}", self.mint_url, hash); // TODO old query param
-                                                                           //let url = format!("{}/mint?hash={}", self.mint_url, hash);
+        //let url = format!("{}/mint?payment_hash={}", self.mint_url, hash); // TODO old query param
+        let url = format!("{}/mint?hash={}", self.mint_url, hash);
         let body = serde_json::to_string(&PostMintRequest {
             outputs: blinded_messages,
         })?;
