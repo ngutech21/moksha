@@ -202,8 +202,8 @@ pub struct MintKeyset {
 }
 
 impl MintKeyset {
-    pub fn new(seed: String) -> MintKeyset {
-        let priv_keys = derive_keys(&seed, "derivation_path"); // FIXME extract derivation path
+    pub fn new(seed: String, derivation_path: String) -> MintKeyset {
+        let priv_keys = derive_keys(&seed, &derivation_path);
         let pub_keys = derive_pubkeys(&priv_keys);
         MintKeyset {
             private_keys: priv_keys,

@@ -24,7 +24,7 @@ impl Mint {
     ) -> Self {
         Self {
             lightning,
-            keyset: MintKeyset::new(secret),
+            keyset: MintKeyset::new(secret, "".to_string()),
             db,
             dhke: Dhke::new(),
         }
