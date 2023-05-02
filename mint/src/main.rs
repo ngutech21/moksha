@@ -68,10 +68,14 @@ fn create_mint() -> Mint {
         env::var("LNBITS_URL").expect("LNBITS_URL not found"),
     ));
 
+    let db = Arc::new(database::RocksDB::new(
+        env::var("MINT_DB_PATH").expect("MINT_DB_PATH not found"),
+    ));
+
     Mint::new(
         env::var("MINT_PRIVATE_KEY").expect("MINT_PRIVATE_KEY not found"),
         ln,
-        env::var("MINT_DB_PATH").expect("MINT_DB_PATH not found"),
+        db,
     )
 }
 

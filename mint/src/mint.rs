@@ -12,7 +12,7 @@ use crate::{database::Database, error::CashuMintError, lightning::Lightning, mod
 pub struct Mint {
     pub lightning: Arc<dyn Lightning + Send + Sync>,
     pub keyset: MintKeyset,
-    pub db: Database,
+    pub db: Arc<dyn Database + Send + Sync>,
     pub dhke: Dhke,
 }
 
@@ -20,12 +20,12 @@ impl Mint {
     pub fn new(
         secret: String,
         lightning: Arc<dyn Lightning + Send + Sync>,
-        db_path: String,
+        db: Arc<dyn Database + Send + Sync>,
     ) -> Self {
         Self {
             lightning,
             keyset: MintKeyset::new(secret),
-            db: Database::new(db_path),
+            db,
             dhke: Dhke::new(),
         }
     }
@@ -170,7 +170,7 @@ impl Mint {
 mod tests {
     use std::sync::Arc;
 
-    use crate::{error::CashuMintError, lightning::Lightning, Mint};
+    use crate::{database::MockDatabase, error::CashuMintError, lightning::Lightning, Mint};
     use async_trait::async_trait;
     use cashurs_core::model::Proofs;
     use lnbits_rust::api::invoice::{CreateInvoiceResult, PayInvoiceResult};
@@ -204,8 +204,16 @@ mod tests {
     async fn test_split_zero() -> anyhow::Result<()> {
         let blinded_messages = vec![];
 
+        let mut mock_db = MockDatabase::new();
+        mock_db
+            .expect_get_used_proofs()
+            .returning(|| Ok(Proofs::empty()));
+        mock_db.expect_add_used_proofs().returning(|_| Ok(()));
+
+        let db = Arc::new(mock_db);
+
         let lightning = Arc::new(LightningMock {});
-        let mint = Mint::new("secret".to_string(), lightning, "data".to_string());
+        let mint = Mint::new("superprivatesecretkey".to_string(), lightning, db);
 
         let proofs = Proofs::empty();
         let (first, second) = mint.split(0, proofs, blinded_messages).await?;

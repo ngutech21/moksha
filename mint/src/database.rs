@@ -5,9 +5,11 @@ use rocksdb::DB;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{error::CashuMintError, model::Invoice};
+#[cfg(test)]
+use mockall::automock;
 
 #[derive(Clone)]
-pub struct Database {
+pub struct RocksDB {
     db: Arc<DB>,
 }
 
@@ -18,7 +20,18 @@ pub enum DbKeyPrefix {
     PendingInvoices = 0x02,
 }
 
-impl Database {
+#[cfg_attr(test, automock)]
+pub trait Database {
+    fn add_used_proofs(&self, proofs: Proofs) -> Result<(), CashuMintError>;
+    fn get_used_proofs(&self) -> Result<Proofs, CashuMintError>;
+
+    fn get_pending_invoice(&self, key: String) -> Result<Invoice, CashuMintError>;
+    fn get_pending_invoices(&self) -> Result<HashMap<String, Invoice>, CashuMintError>;
+    fn add_pending_invoice(&self, key: String, invoice: Invoice) -> Result<(), CashuMintError>;
+    fn remove_pending_invoice(&self, key: String) -> Result<(), CashuMintError>;
+}
+
+impl RocksDB {
     pub fn new(path: String) -> Self {
         Self {
             db: Arc::new(DB::open_default(path).expect("Could not open database {path}")),
@@ -52,8 +65,10 @@ impl Database {
             None => Ok(None),
         }
     }
+}
 
-    pub fn add_used_proofs(&self, proofs: Proofs) -> Result<(), CashuMintError> {
+impl Database for RocksDB {
+    fn add_used_proofs(&self, proofs: Proofs) -> Result<(), CashuMintError> {
         let used_proofs = self.get_used_proofs()?;
 
         let insert = Proofs::new(
@@ -68,17 +83,17 @@ impl Database {
         Ok(())
     }
 
-    pub fn get_used_proofs(&self) -> Result<Proofs, CashuMintError> {
+    fn get_used_proofs(&self) -> Result<Proofs, CashuMintError> {
         self.get_serialized::<Proofs>(DbKeyPrefix::UsedProofs)
             .map(|maybe_proofs| maybe_proofs.unwrap_or_else(Proofs::empty))
     }
 
-    pub fn get_pending_invoices(&self) -> Result<HashMap<String, Invoice>, CashuMintError> {
+    fn get_pending_invoices(&self) -> Result<HashMap<String, Invoice>, CashuMintError> {
         self.get_serialized::<HashMap<String, Invoice>>(DbKeyPrefix::PendingInvoices)
             .map(|maybe_proofs| maybe_proofs.unwrap_or_default())
     }
 
-    pub fn get_pending_invoice(&self, key: String) -> Result<Invoice, CashuMintError> {
+    fn get_pending_invoice(&self, key: String) -> Result<Invoice, CashuMintError> {
         let invoices = self
             .get_serialized::<HashMap<String, Invoice>>(DbKeyPrefix::PendingInvoices)
             .map(|maybe_proofs| maybe_proofs.unwrap_or_default());
@@ -90,7 +105,7 @@ impl Database {
         })
     }
 
-    pub fn add_pending_invoice(&self, key: String, invoice: Invoice) -> Result<(), CashuMintError> {
+    fn add_pending_invoice(&self, key: String, invoice: Invoice) -> Result<(), CashuMintError> {
         let invoices = self.get_pending_invoices();
 
         invoices.and_then(|mut invoices| {
@@ -101,7 +116,7 @@ impl Database {
         Ok(())
     }
 
-    pub fn remove_pending_invoice(&self, key: String) -> Result<(), CashuMintError> {
+    fn remove_pending_invoice(&self, key: String) -> Result<(), CashuMintError> {
         let invoices = self.get_pending_invoices();
 
         invoices.and_then(|mut invoices| {
@@ -115,19 +130,21 @@ impl Database {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use cashurs_core::{
         dhke,
         model::{Proof, Proofs},
     };
 
-    use crate::model::Invoice;
+    use crate::{database::Database, model::Invoice};
 
     #[test]
     fn test_write_proofs() -> anyhow::Result<()> {
         let tmp = tempfile::tempdir()?;
         let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
 
-        let db = super::Database::new(tmp_dir.to_owned());
+        let db: Arc<dyn Database> = Arc::new(super::RocksDB::new(tmp_dir.to_owned()));
 
         let proofs = Proofs::new(vec![Proof {
             amount: 21,
@@ -164,7 +181,7 @@ mod tests {
     fn test_read_empty_proofs() -> anyhow::Result<()> {
         let tmp = tempfile::tempdir()?;
         let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
-        let db = super::Database::new(tmp_dir.to_owned());
+        let db = super::RocksDB::new(tmp_dir.to_owned());
 
         let new_proofs = db.get_used_proofs()?;
         assert!(new_proofs.is_empty());
@@ -175,7 +192,7 @@ mod tests {
     fn test_read_write_pending_invoices() -> anyhow::Result<()> {
         let tmp = tempfile::tempdir()?;
         let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
-        let db = super::Database::new(tmp_dir.to_owned());
+        let db = super::RocksDB::new(tmp_dir.to_owned());
 
         let key = "foo";
         let invoice = Invoice {
