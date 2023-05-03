@@ -41,18 +41,33 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 - [] [NUT-09](https://github.com/cashubtc/nuts/blob/main/09.md)
 
 ## Usage
+### Setup
 ```
 git clone https://github.com/ngutech21/cashu-rs.git
+cargo install just
+cargo install typos
 cd cashu-rs
-cargo run --bin cashurs-wallet mint 42
 ```
 
-## Config
+
+### Config
 ```bash
 mv .env.example .env
 # edit .env file
 vim .env
 ```
+
+### Run mint (server)
+```
+cargo run --bin cashurs-mint
+```
+
+
+### Run cli-wallet
+```
+cargo run --bin cashurs-wallet mint 42
+```
+
 
 
 
