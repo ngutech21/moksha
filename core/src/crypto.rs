@@ -1,11 +1,12 @@
 use base64::{engine::general_purpose, Engine as _};
 use bitcoin_hashes::{sha256, Hash};
 
+use itertools::Itertools;
 use rand::RngCore;
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use std::collections::HashMap;
 
-const MAX_ORDER: u64 = 32;
+const MAX_ORDER: u64 = 64;
 
 pub fn generate_hash() -> String {
     let mut rng = rand::thread_rng();
@@ -42,14 +43,13 @@ pub fn derive_pubkeys(keys: &HashMap<u64, SecretKey>) -> HashMap<u64, PublicKey>
 }
 
 pub fn derive_keyset_id(keys: &HashMap<u64, PublicKey>) -> String {
-    let mut sorted_keys = keys.keys().collect::<Vec<&u64>>();
-    sorted_keys.sort();
-    let pubkeys_concat = sorted_keys
+    let pubkeys_concat = keys
         .iter()
-        .map(|p| p.to_string())
-        .collect::<String>();
+        .sorted_by(|(amt_a, _), (amt_b, _)| amt_a.cmp(amt_b))
+        .map(|(_, pubkey)| pubkey)
+        .join("");
     let hashed_pubkeys = sha256::Hash::hash(pubkeys_concat.as_bytes()).to_byte_array();
-    general_purpose::URL_SAFE.encode(hashed_pubkeys)[..12].to_string()
+    general_purpose::STANDARD.encode(hashed_pubkeys)[..12].to_string()
 }
 
 #[cfg(test)]
@@ -60,6 +60,18 @@ mod tests {
         use hex::FromHex;
         let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
         secp256k1::PublicKey::from_slice(&input_vec).expect("Invalid Public Key")
+    }
+
+    #[test]
+    fn test_derive_keys_master() -> anyhow::Result<()> {
+        let keys = super::derive_keys("master", "0/0/0/0");
+        assert!(keys.len() == 64);
+
+        let pub_keys = super::derive_pubkeys(&keys);
+        let id = super::derive_keyset_id(&pub_keys);
+        assert_eq!("JHV8eUnoAln/", id);
+        assert!(id.len() == 12);
+        Ok(())
     }
 
     #[test]
@@ -82,7 +94,7 @@ mod tests {
         let keyset_id = super::derive_keyset_id(&pubs);
 
         assert!(keyset_id.len() == 12);
-        assert_eq!(keyset_id, "a1HUMd9dfxQc");
+        assert_eq!(keyset_id, "cNbjM0O6V/Kl");
         Ok(())
     }
 }

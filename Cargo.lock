@@ -297,6 +297,7 @@ dependencies = [
  "base64",
  "bitcoin_hashes 0.12.0",
  "hex",
+ "itertools",
  "rand",
  "secp256k1 0.27.0",
  "serde",
