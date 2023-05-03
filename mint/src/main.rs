@@ -74,6 +74,7 @@ fn create_mint() -> Mint {
 
     Mint::new(
         env::var("MINT_PRIVATE_KEY").expect("MINT_PRIVATE_KEY not found"),
+        "".to_string(),
         ln,
         db,
     )

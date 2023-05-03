@@ -19,12 +19,13 @@ pub struct Mint {
 impl Mint {
     pub fn new(
         secret: String,
+        derivation_path: String,
         lightning: Arc<dyn Lightning + Send + Sync>,
         db: Arc<dyn Database + Send + Sync>,
     ) -> Self {
         Self {
             lightning,
-            keyset: MintKeyset::new(secret, "".to_string()),
+            keyset: MintKeyset::new(secret, derivation_path),
             db,
             dhke: Dhke::new(),
         }
@@ -172,7 +173,8 @@ mod tests {
 
     use crate::{database::MockDatabase, error::CashuMintError, lightning::Lightning, Mint};
     use async_trait::async_trait;
-    use cashurs_core::model::TotalAmount;
+    use cashurs_core::dhke;
+    use cashurs_core::model::{BlindedMessage, TotalAmount};
     use cashurs_core::model::{PostSplitRequest, Proofs};
     use lnbits_rust::api::invoice::{CreateInvoiceResult, PayInvoiceResult};
 
@@ -201,6 +203,42 @@ mod tests {
         }
     }
 
+    fn create_mint_from_mocks() -> Mint {
+        let mock_db = MockDatabase::new();
+        let db = Arc::new(mock_db);
+        let lightning = Arc::new(LightningMock {});
+        Mint::new(
+            "TEST_PRIVATE_KEY".to_string(),
+            "0/0/0/0".to_string(),
+            lightning,
+            db,
+        )
+    }
+
+    #[tokio::test]
+    async fn test_create_blindsignatures() -> anyhow::Result<()> {
+        let mint = create_mint_from_mocks();
+
+        let blinded_messages = vec![BlindedMessage {
+            amount: 8,
+            b_: dhke::public_key_from_hex(
+                "02634a2c2b34bec9e8a4aba4361f6bf202d7fa2365379b0840afe249a7a9d71239",
+            ),
+        }];
+
+        let result = mint.create_blinded_signatures(blinded_messages).await?;
+
+        assert_eq!(1, result.len());
+        assert_eq!(8, result[0].amount);
+        assert_eq!(
+            dhke::public_key_from_hex(
+                "037074c4f53e326ee14ed67125f387d160e0e729351471b69ad41f7d5d21071e15"
+            ),
+            result[0].c_
+        );
+        Ok(())
+    }
+
     #[tokio::test]
     async fn test_split_zero() -> anyhow::Result<()> {
         let blinded_messages = vec![];
@@ -214,7 +252,12 @@ mod tests {
         let db = Arc::new(mock_db);
 
         let lightning = Arc::new(LightningMock {});
-        let mint = Mint::new("superprivatesecretkey".to_string(), lightning, db);
+        let mint = Mint::new(
+            "superprivatesecretkey".to_string(),
+            "".to_string(),
+            lightning,
+            db,
+        );
 
         let proofs = Proofs::empty();
         let (first, second) = mint.split(0, proofs, blinded_messages).await?;
@@ -242,15 +285,16 @@ mod tests {
         let request = serde_json::from_str::<PostSplitRequest>(&raw_token)?;
 
         let lightning = Arc::new(LightningMock {});
-        let mint = Mint::new("superprivatesecretkey".to_string(), lightning, db);
+        let mint = Mint::new(
+            "superprivatesecretkey".to_string(),
+            "".to_string(),
+            lightning,
+            db,
+        );
 
         let (first, second) = mint.split(20, request.proofs, request.outputs).await?;
 
         first.total_amount();
-
-        println!("{} {:?}", first.total_amount(), first);
-        println!("{} {:?}", second.total_amount(), second);
-
         assert_eq!(first.total_amount(), 20);
         assert_eq!(second.total_amount(), 44);
         Ok(())
