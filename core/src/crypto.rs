@@ -74,6 +74,19 @@ mod tests {
         Ok(())
     }
 
+    // uses values from cashu test_mint.py
+    #[test]
+    fn test_derive_keys_cashu_py() -> anyhow::Result<()> {
+        let keys = super::derive_keys("TEST_PRIVATE_KEY", "0/0/0/0");
+        assert!(keys.len() == 64);
+
+        let pub_keys = super::derive_pubkeys(&keys);
+        let id = super::derive_keyset_id(&pub_keys);
+        assert_eq!("1cCNIAZ2X/w1", id);
+        assert!(id.len() == 12);
+        Ok(())
+    }
+
     #[test]
     fn test_derive_keyset_id() -> anyhow::Result<()> {
         let mut pubs = HashMap::new();
