@@ -1,4 +1,7 @@
 [![Rust](https://github.com/ngutech21/cashu-rs/actions/workflows/rust.yml/badge.svg?branch=master)](https://github.com/ngutech21/cashu-rs/actions/workflows/rust.yml)
+![coverage](https://img.shields.io/codecov/c/github/ngutech21/cashu-rs)
+
+
 
 ⚠️ **Don't be reckless:** This project is in early development, it does however work with real sats! Always use amounts you don't mind loosing. 
 
