@@ -35,11 +35,9 @@ pub fn derive_pubkey(master_key: &str) -> PublicKey {
 
 pub fn derive_pubkeys(keys: &HashMap<u64, SecretKey>) -> HashMap<u64, PublicKey> {
     let secp = Secp256k1::new();
-    let mut pubkeys: HashMap<u64, PublicKey> = HashMap::new();
-    for amt in keys.keys() {
-        pubkeys.insert(*amt, keys[amt].public_key(&secp));
-    }
-    pubkeys
+    keys.keys()
+        .map(|amt| (*amt, keys[amt].public_key(&secp)))
+        .collect()
 }
 
 pub fn derive_keyset_id(keys: &HashMap<u64, PublicKey>) -> String {
