@@ -54,10 +54,18 @@ pub fn derive_keyset_id(keys: &HashMap<u64, PublicKey>) -> String {
 mod tests {
     use std::collections::HashMap;
 
+    use super::generate_hash;
+
     fn public_key_from_hex(hex: &str) -> secp256k1::PublicKey {
         use hex::FromHex;
         let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
         secp256k1::PublicKey::from_slice(&input_vec).expect("Invalid Public Key")
+    }
+
+    #[test]
+    fn test_generate_hash() {
+        let hash = generate_hash();
+        assert_eq!(hash.len(), 64);
     }
 
     #[test]
