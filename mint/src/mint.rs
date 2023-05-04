@@ -180,29 +180,16 @@ impl Mint {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
     use crate::lightning::MockLightning;
     use crate::{database::MockDatabase, error::CashuMintError, Mint};
     use cashurs_core::dhke;
     use cashurs_core::model::{BlindedMessage, TotalAmount};
     use cashurs_core::model::{PostSplitRequest, Proofs};
-
-    fn create_mint_from_mocks() -> Mint {
-        let mock_db = MockDatabase::new();
-        let db = Arc::new(mock_db);
-        let lightning = Arc::new(MockLightning::new());
-        Mint::new(
-            "TEST_PRIVATE_KEY".to_string(),
-            "0/0/0/0".to_string(),
-            lightning,
-            db,
-        )
-    }
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn test_create_blindsignatures() -> anyhow::Result<()> {
-        let mint = create_mint_from_mocks();
+        let mint = create_mint_from_mocks(None);
 
         let blinded_messages = vec![BlindedMessage {
             amount: 8,
@@ -227,22 +214,7 @@ mod tests {
     #[tokio::test]
     async fn test_split_zero() -> anyhow::Result<()> {
         let blinded_messages = vec![];
-
-        let mut mock_db = MockDatabase::new();
-        mock_db
-            .expect_get_used_proofs()
-            .returning(|| Ok(Proofs::empty()));
-        mock_db.expect_add_used_proofs().returning(|_| Ok(()));
-
-        let db = Arc::new(mock_db);
-
-        let lightning = Arc::new(MockLightning::new());
-        let mint = Mint::new(
-            "superprivatesecretkey".to_string(),
-            "".to_string(),
-            lightning,
-            db,
-        );
+        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
 
         let proofs = Proofs::empty();
         let (first, second) = mint.split(0, proofs, blinded_messages).await?;
@@ -254,23 +226,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_split_64_in_20() -> anyhow::Result<()> {
-        let mut mock_db = MockDatabase::new();
-        mock_db
-            .expect_get_used_proofs()
-            .returning(|| Ok(Proofs::empty()));
-        mock_db.expect_add_used_proofs().returning(|_| Ok(()));
-
-        let db = Arc::new(mock_db);
-
+        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
-
-        let lightning = Arc::new(MockLightning::new());
-        let mint = Mint::new(
-            "superprivatesecretkey".to_string(),
-            "".to_string(),
-            lightning,
-            db,
-        );
 
         let (first, second) = mint.split(20, request.proofs, request.outputs).await?;
 
@@ -282,22 +239,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_split_amount_is_too_high() -> anyhow::Result<()> {
-        let mut mock_db = MockDatabase::new();
-        mock_db
-            .expect_get_used_proofs()
-            .returning(|| Ok(Proofs::empty()));
-        mock_db.expect_add_used_proofs().returning(|_| Ok(()));
-
-        let db = Arc::new(mock_db);
+        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
-
-        let lightning = Arc::new(MockLightning::new());
-        let mint = Mint::new(
-            "superprivatesecretkey".to_string(),
-            "".to_string(),
-            lightning,
-            db,
-        );
 
         let result = mint.split(65, request.proofs, request.outputs).await;
         assert!(result.is_err());
@@ -309,24 +252,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_split_duplicate_key() -> anyhow::Result<()> {
-        let mut mock_db = MockDatabase::new();
-        mock_db
-            .expect_get_used_proofs()
-            .returning(|| Ok(Proofs::empty()));
-        mock_db.expect_add_used_proofs().returning(|_| Ok(()));
-
-        let db = Arc::new(mock_db);
-
+        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
         let request =
             create_request_from_fixture("post_split_request_duplicate_key.json".to_string())?;
-
-        let lightning = Arc::new(MockLightning::new());
-        let mint = Mint::new(
-            "superprivatesecretkey".to_string(),
-            "".to_string(),
-            lightning,
-            db,
-        );
 
         let result = mint.split(20, request.proofs, request.outputs).await;
         assert!(result.is_err());
@@ -337,5 +265,29 @@ mod tests {
         let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{fixture}"))?;
         Ok(serde_json::from_str::<PostSplitRequest>(&raw_token)?)
+    }
+
+    fn create_mint_from_mocks(mock_db: Option<MockDatabase>) -> Mint {
+        let db = match mock_db {
+            Some(db) => Arc::new(db),
+            None => Arc::new(MockDatabase::new()),
+        };
+
+        let lightning = Arc::new(MockLightning::new());
+        Mint::new(
+            "TEST_PRIVATE_KEY".to_string(),
+            "0/0/0/0".to_string(),
+            lightning,
+            db,
+        )
+    }
+
+    fn create_mock_db_get_used_proofs() -> MockDatabase {
+        let mut mock_db = MockDatabase::new();
+        mock_db
+            .expect_get_used_proofs()
+            .returning(|| Ok(Proofs::empty()));
+        mock_db.expect_add_used_proofs().returning(|_| Ok(()));
+        mock_db
     }
 }
