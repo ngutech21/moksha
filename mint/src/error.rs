@@ -41,6 +41,9 @@ pub enum CashuMintError {
 
     #[error("split amount is higher than the total sum.")]
     SplitAmountTooHigh,
+
+    #[error("duplicate promises.")]
+    SplitHasDuplicatePromises,
 }
 
 impl IntoResponse for CashuMintError {

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use cashurs_core::{
     crypto,
@@ -78,6 +78,11 @@ impl Mint {
         self.create_blinded_signatures(outputs).await
     }
 
+    fn has_duplicate_pubkeys(outputs: &[BlindedMessage]) -> bool {
+        let mut uniq = HashSet::new();
+        !outputs.iter().all(move |x| uniq.insert(x.b_))
+    }
+
     pub async fn split(
         &self,
         amount: u64,
@@ -86,6 +91,10 @@ impl Mint {
     ) -> Result<(Vec<BlindedSignature>, Vec<BlindedSignature>), CashuMintError> {
         self.check_used_proofs(&proofs)?;
 
+        if Self::has_duplicate_pubkeys(&blinded_messages) {
+            return Err(CashuMintError::SplitHasDuplicatePromises);
+        }
+
         let sum_proofs = proofs.get_total_amount();
 
         if amount > sum_proofs {
@@ -93,7 +102,6 @@ impl Mint {
         }
         let sum_first = split_amount(sum_proofs - amount).len();
 
-        // TODO check: "duplicate promises."
         // TODO check: "split of promises is not as expected."
 
         let first_slice = blinded_messages[0..sum_first].to_vec();
@@ -296,6 +304,32 @@ mod tests {
         let _err = result.unwrap_err();
         assert!(matches!(CashuMintError::SplitAmountTooHigh, _err));
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_split_duplicate_key() -> anyhow::Result<()> {
+        let mut mock_db = MockDatabase::new();
+        mock_db
+            .expect_get_used_proofs()
+            .returning(|| Ok(Proofs::empty()));
+        mock_db.expect_add_used_proofs().returning(|_| Ok(()));
+
+        let db = Arc::new(mock_db);
+
+        let request =
+            create_request_from_fixture("post_split_request_duplicate_key.json".to_string())?;
+
+        let lightning = Arc::new(MockLightning::new());
+        let mint = Mint::new(
+            "superprivatesecretkey".to_string(),
+            "".to_string(),
+            lightning,
+            db,
+        );
+
+        let result = mint.split(20, request.proofs, request.outputs).await;
+        assert!(result.is_err());
         Ok(())
     }
 
