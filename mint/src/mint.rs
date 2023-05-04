@@ -174,42 +174,16 @@ impl Mint {
 mod tests {
     use std::sync::Arc;
 
-    use crate::{database::MockDatabase, error::CashuMintError, lightning::Lightning, Mint};
-    use async_trait::async_trait;
+    use crate::lightning::MockLightning;
+    use crate::{database::MockDatabase, error::CashuMintError, Mint};
     use cashurs_core::dhke;
     use cashurs_core::model::{BlindedMessage, TotalAmount};
     use cashurs_core::model::{PostSplitRequest, Proofs};
-    use lnbits_rust::api::invoice::{CreateInvoiceResult, PayInvoiceResult};
-
-    pub struct LightningMock {}
-
-    #[async_trait]
-    impl Lightning for LightningMock {
-        async fn is_invoice_paid(&self, _invoice: String) -> Result<bool, CashuMintError> {
-            Ok(true)
-        }
-
-        async fn create_invoice(&self, _amount: u64) -> CreateInvoiceResult {
-            CreateInvoiceResult {
-                payment_hash: "test".to_string(),
-                payment_request: "test".to_string(),
-            }
-        }
-
-        async fn pay_invoice(
-            &self,
-            _payment_request: String,
-        ) -> Result<PayInvoiceResult, CashuMintError> {
-            Ok(PayInvoiceResult {
-                payment_hash: "test".to_string(),
-            })
-        }
-    }
 
     fn create_mint_from_mocks() -> Mint {
         let mock_db = MockDatabase::new();
         let db = Arc::new(mock_db);
-        let lightning = Arc::new(LightningMock {});
+        let lightning = Arc::new(MockLightning::new());
         Mint::new(
             "TEST_PRIVATE_KEY".to_string(),
             "0/0/0/0".to_string(),
@@ -254,7 +228,7 @@ mod tests {
 
         let db = Arc::new(mock_db);
 
-        let lightning = Arc::new(LightningMock {});
+        let lightning = Arc::new(MockLightning::new());
         let mint = Mint::new(
             "superprivatesecretkey".to_string(),
             "".to_string(),
@@ -282,7 +256,7 @@ mod tests {
 
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
 
-        let lightning = Arc::new(LightningMock {});
+        let lightning = Arc::new(MockLightning::new());
         let mint = Mint::new(
             "superprivatesecretkey".to_string(),
             "".to_string(),
@@ -309,7 +283,7 @@ mod tests {
         let db = Arc::new(mock_db);
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
 
-        let lightning = Arc::new(LightningMock {});
+        let lightning = Arc::new(MockLightning::new());
         let mint = Mint::new(
             "superprivatesecretkey".to_string(),
             "".to_string(),
