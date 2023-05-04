@@ -7,6 +7,8 @@ use lnbits_rust::{
 use crate::error::CashuMintError;
 
 use lightning_invoice::Invoice as LNInvoice;
+#[cfg(test)]
+use mockall::automock;
 use std::str::FromStr;
 
 #[derive(Clone)]
@@ -14,6 +16,7 @@ pub struct LnbitsLightning {
     pub client: LNBitsClient,
 }
 
+#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait Lightning: Send + Sync {
     async fn is_invoice_paid(&self, invoice: String) -> Result<bool, CashuMintError>;

@@ -163,3 +163,49 @@ async fn get_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, CashuMin
         keysets: vec![mint.keyset.keyset_id],
     }))
 }
+
+#[cfg(test)]
+mod tests {
+    use std::{collections::HashMap, sync::Arc};
+
+    use cashurs_core::model::Keysets;
+    use hyper::{Body, Request, StatusCode};
+    use secp256k1::PublicKey;
+    use tower::ServiceExt;
+
+    use crate::{app, database::MockDatabase, lightning::MockLightning, mint::Mint};
+
+    #[tokio::test]
+    async fn test_get_keys() -> anyhow::Result<()> {
+        let app = app(create_mock_mint());
+        let response = app
+            .oneshot(Request::builder().uri("/keys").body(Body::empty())?)
+            .await?;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = hyper::body::to_bytes(response.into_body()).await?;
+        let keys: HashMap<u64, PublicKey> = serde_json::from_slice(&body)?;
+        assert_eq!(64, keys.len());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_keysets() -> anyhow::Result<()> {
+        let app = app(create_mock_mint());
+        let response = app
+            .oneshot(Request::builder().uri("/keysets").body(Body::empty())?)
+            .await?;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = hyper::body::to_bytes(response.into_body()).await?;
+        let keysets = serde_json::from_slice::<Keysets>(&body)?;
+        assert_eq!(1, keysets.keysets.len());
+        Ok(())
+    }
+
+    fn create_mock_mint() -> Mint {
+        let db = Arc::new(MockDatabase::new());
+        let lightning = Arc::new(MockLightning::new());
+        Mint::new("mytestsecret".to_string(), "".to_string(), lightning, db)
+    }
+}
