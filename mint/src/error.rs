@@ -38,6 +38,9 @@ pub enum CashuMintError {
 
     #[error("{0}")]
     SplitAmountMismatch(String),
+
+    #[error("split amount is higher than the total sum.")]
+    SplitAmountTooHigh,
 }
 
 impl IntoResponse for CashuMintError {

@@ -87,9 +87,12 @@ impl Mint {
         self.check_used_proofs(&proofs)?;
 
         let sum_proofs = proofs.get_total_amount();
+
+        if amount > sum_proofs {
+            return Err(CashuMintError::SplitAmountTooHigh);
+        }
         let sum_first = split_amount(sum_proofs - amount).len();
 
-        // TODO check: "split amount is higher than the total sum."
         // TODO check: "duplicate promises."
         // TODO check: "split of promises is not as expected."
 
@@ -277,12 +280,7 @@ mod tests {
 
         let db = Arc::new(mock_db);
 
-        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
-        let raw_token = std::fs::read_to_string(format!(
-            "{base_dir}/src/fixtures/post_split_request_64_20.json"
-        ))?;
-
-        let request = serde_json::from_str::<PostSplitRequest>(&raw_token)?;
+        let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
 
         let lightning = Arc::new(LightningMock {});
         let mint = Mint::new(
@@ -298,5 +296,38 @@ mod tests {
         assert_eq!(first.total_amount(), 20);
         assert_eq!(second.total_amount(), 44);
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_split_amount_is_too_high() -> anyhow::Result<()> {
+        let mut mock_db = MockDatabase::new();
+        mock_db
+            .expect_get_used_proofs()
+            .returning(|| Ok(Proofs::empty()));
+        mock_db.expect_add_used_proofs().returning(|_| Ok(()));
+
+        let db = Arc::new(mock_db);
+        let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
+
+        let lightning = Arc::new(LightningMock {});
+        let mint = Mint::new(
+            "superprivatesecretkey".to_string(),
+            "".to_string(),
+            lightning,
+            db,
+        );
+
+        let result = mint.split(65, request.proofs, request.outputs).await;
+        assert!(result.is_err());
+        let _err = result.unwrap_err();
+        assert!(matches!(CashuMintError::SplitAmountTooHigh, _err));
+
+        Ok(())
+    }
+
+    fn create_request_from_fixture(fixture: String) -> Result<PostSplitRequest, anyhow::Error> {
+        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+        let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{fixture}"))?;
+        Ok(serde_json::from_str::<PostSplitRequest>(&raw_token)?)
     }
 }
