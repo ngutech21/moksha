@@ -114,8 +114,7 @@ impl Mint {
 
         if sum_proofs != (amount_first + amount_second) {
             return Err(CashuMintError::SplitAmountMismatch(format!(
-                "Split amount mismatch: {} != {} + {}",
-                sum_proofs, amount_first, amount_second
+                "Split amount mismatch: {sum_proofs} != {amount_first} + {amount_second}"
             )));
         }
 
@@ -154,8 +153,7 @@ impl Mint {
 
         if amount_msat < (proofs_amount / 1000) {
             return Err(CashuMintError::InvoiceAmountTooLow(format!(
-                "Invoice amount is too low: {}",
-                amount_msat
+                "Invoice amount is too low: {amount_msat}",
             )));
         }
 
