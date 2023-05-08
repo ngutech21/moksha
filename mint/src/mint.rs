@@ -236,6 +236,19 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_split_64_in_64() -> anyhow::Result<()> {
+        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
+        let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
+
+        let (first, second) = mint.split(64, request.proofs, request.outputs).await?;
+
+        first.total_amount();
+        assert_eq!(first.total_amount(), 64);
+        assert_eq!(second.total_amount(), 0);
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_split_amount_is_too_high() -> anyhow::Result<()> {
         let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
