@@ -1,3 +1,5 @@
+use std::string::FromUtf8Error;
+
 use reqwest::header::InvalidHeaderValue;
 use thiserror::Error;
 
@@ -20,4 +22,10 @@ pub enum CashuWalletError {
 
     #[error("CashuCoreError - {0}")]
     CashuCore(#[from] cashurs_core::error::CashuCoreError),
+
+    #[error("DB Error {0}")]
+    Db(#[from] rocksdb::Error),
+
+    #[error("Utf8 Error {0}")]
+    Utf8(#[from] FromUtf8Error),
 }

@@ -4,9 +4,11 @@ use cashurs_core::model::{Token, Tokens};
 use clap::{Parser, Subcommand};
 use client::Client;
 use dotenvy::dotenv;
+use localstore::RocksDBLocalStore;
 
 mod client;
 mod error;
+mod localstore;
 mod wallet;
 
 #[derive(Parser)]
@@ -21,11 +23,12 @@ enum Command {
     Mint { amount: u64 },
     Melt { token: String },
     Split { amount: u64 },
+    Balance,
 }
 
-fn read_env() -> String {
+fn read_env(variable: &str) -> String {
     dotenv().expect(".env file not found");
-    env::var("MINT_URL").expect("MINT_URL not found")
+    env::var(variable).expect("MINT_URL not found")
 }
 
 fn wait_for_user_input(prompt: String) -> String {
@@ -45,13 +48,15 @@ fn wait_for_user_input(prompt: String) -> String {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let mint_url = read_env();
+    let mint_url = read_env("MINT_URL");
 
     let client = client::HttpClient::new(mint_url.clone());
     let keys = client.get_mint_keys().await?;
     let keysets = client.get_mint_keysets().await?;
 
-    let wallet = wallet::Wallet::new(Box::new(client.clone()), keys, keysets);
+    let localstore = Box::new(RocksDBLocalStore::new(read_env("WALLET_DB_PATH")));
+
+    let wallet = wallet::Wallet::new(Box::new(client.clone()), keys, keysets, localstore);
 
     let cli = Opts::parse();
     // let cli = Opts {
@@ -59,6 +64,10 @@ async fn main() -> anyhow::Result<()> {
     // };
 
     match cli.command {
+        Command::Balance => {
+            let balance = wallet.get_balance();
+            println!("Balance: {:?}", balance);
+        }
         Command::Split {
             amount: splt_amount,
         } => {

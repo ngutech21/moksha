@@ -346,6 +346,7 @@ dependencies = [
  "mockall",
  "rand",
  "reqwest",
+ "rocksdb",
  "secp256k1 0.27.0",
  "serde",
  "serde_json",

@@ -9,7 +9,7 @@ use cashurs_core::{
 };
 use secp256k1::{PublicKey, SecretKey};
 
-use crate::{client::Client, error::CashuWalletError};
+use crate::{client::Client, error::CashuWalletError, localstore::LocalStore};
 use rand::{distributions::Alphanumeric, Rng};
 
 pub struct Wallet {
@@ -17,6 +17,7 @@ pub struct Wallet {
     mint_keys: HashMap<u64, PublicKey>, // FIXME use specific type
     keysets: Keysets,
     dhke: Dhke,
+    localstore: Box<dyn LocalStore>,
 }
 
 impl Wallet {
@@ -24,13 +25,19 @@ impl Wallet {
         client: Box<dyn Client>,
         mint_keys: HashMap<u64, PublicKey>,
         keysets: Keysets,
+        localstore: Box<dyn LocalStore>,
     ) -> Self {
         Self {
             client,
             mint_keys,
             keysets,
             dhke: Dhke::new(),
+            localstore,
         }
+    }
+
+    pub fn get_balance(&self) -> Result<u64, CashuWalletError> {
+        Ok(0)
     }
 
     pub async fn split_tokens(
@@ -221,17 +228,22 @@ fn generate_random_string() -> String {
 #[cfg(test)]
 mod tests {
     use super::Wallet;
-    use crate::client::{HttpClient, MockClient};
+    use crate::{
+        client::{HttpClient, MockClient},
+        localstore::MockLocalStore,
+    };
     use cashurs_core::model::{Keysets, PostSplitResponse, Tokens};
     use std::collections::HashMap;
 
     #[test]
     fn test_create_secrets() {
         let client = HttpClient::new("http://localhost:8080".to_string());
+        let localstore = Box::new(MockLocalStore::new());
         let wallet = Wallet::new(
             Box::new(client),
             HashMap::new(),
             Keysets { keysets: vec![] },
+            localstore,
         );
 
         let amounts = vec![1, 2, 3, 4, 5, 6, 7];
@@ -251,12 +263,15 @@ mod tests {
             })
         });
 
+        let localstore = Box::new(MockLocalStore::new());
+
         let wallet = Wallet::new(
             Box::new(client),
             HashMap::new(),
             Keysets {
                 keysets: vec!["foo".to_string()],
             },
+            localstore,
         );
 
         // read file
