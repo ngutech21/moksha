@@ -87,7 +87,7 @@ impl Tokens {
         }
     }
 
-    pub fn get_total_amount(&self) -> u64 {
+    pub fn total_amount(&self) -> u64 {
         self.tokens
             .iter()
             .map(|token| {
@@ -151,6 +151,12 @@ pub trait TotalAmount {
 }
 
 impl TotalAmount for Vec<BlindedSignature> {
+    fn total_amount(&self) -> u64 {
+        self.iter().fold(0, |acc, x| acc + x.amount)
+    }
+}
+
+impl TotalAmount for Vec<BlindedMessage> {
     fn total_amount(&self) -> u64 {
         self.iter().fold(0, |acc, x| acc + x.amount)
     }

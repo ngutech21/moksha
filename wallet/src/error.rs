@@ -28,4 +28,7 @@ pub enum CashuWalletError {
 
     #[error("Utf8 Error {0}")]
     Utf8(#[from] FromUtf8Error),
+
+    #[error("Invalid Proofs")]
+    InvalidProofs,
 }

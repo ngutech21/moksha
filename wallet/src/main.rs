@@ -75,7 +75,7 @@ async fn main() -> anyhow::Result<()> {
             let serialized_token = wait_for_user_input(prompt);
 
             let tokens = Tokens::deserialize(serialized_token)?;
-            let total_token_amount = tokens.get_total_amount();
+            let total_token_amount = tokens.total_amount();
             if total_token_amount < splt_amount {
                 println!("Not enough tokens");
                 return Ok(());
@@ -85,12 +85,12 @@ async fn main() -> anyhow::Result<()> {
 
             println!(
                 "\nTokens ({:?} sats):\n{}",
-                second_tokens.get_total_amount(),
+                second_tokens.total_amount(),
                 second_tokens.serialize()?
             );
             println!(
                 "\nTokens ({:?} sats):\n{}",
-                first_tokens.get_total_amount(),
+                first_tokens.total_amount(),
                 first_tokens.serialize()?
             );
         }

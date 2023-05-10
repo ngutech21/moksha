@@ -4,7 +4,7 @@ use cashurs_core::{
     dhke::Dhke,
     model::{
         split_amount, BlindedMessage, BlindedSignature, Keysets, PostMeltResponse, Proof, Proofs,
-        Tokens,
+        Tokens, TotalAmount,
     },
 };
 use secp256k1::{PublicKey, SecretKey};
@@ -46,7 +46,7 @@ impl Wallet {
         splt_amount: u64,
         mint_url: String,
     ) -> Result<(Tokens, Tokens), CashuWalletError> {
-        let total_token_amount = tokens.get_total_amount();
+        let total_token_amount = tokens.total_amount();
         let first_amount = total_token_amount - splt_amount;
         let first_secrets = self.create_secrets(&split_amount(first_amount));
         let first_outputs = self.create_blinded_messages(first_amount, first_secrets.clone())?;
@@ -61,8 +61,9 @@ impl Wallet {
         total_outputs.extend(get_blinded_msg(first_outputs.clone()));
         total_outputs.extend(get_blinded_msg(second_outputs.clone()));
 
-        let _sum_proofs = tokens.get_total_amount();
-        // FIXME check if sum_proofs is equal to total_outputs
+        if tokens.total_amount() != total_outputs.total_amount() {
+            return Err(CashuWalletError::InvalidProofs);
+        }
 
         let split_result = self
             .client
