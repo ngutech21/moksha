@@ -62,7 +62,7 @@ vim .env
 
 ### Run mint (server)
 ```
-cargo run --bin cashurs-mint
+just run-mint
 ```
 
 

@@ -48,7 +48,7 @@ fn wait_for_user_input(prompt: String) -> String {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let mint_url = read_env("MINT_URL");
+    let mint_url = read_env("WALLET_MINT_URL");
 
     let client = client::HttpClient::new(mint_url.clone());
     let keys = client.get_mint_keys().await?;
