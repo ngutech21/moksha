@@ -194,6 +194,20 @@ impl Proofs {
             .collect::<Vec<String>>();
         secrets.len() != secrets.into_iter().collect::<HashSet<_>>().len()
     }
+
+    pub fn remove(&self, remove_proofs: Vec<Proof>) -> Proofs {
+        let mut proofs = self.0.clone();
+        for remove_proof in remove_proofs {
+            proofs.retain(|proof| proof != &remove_proof);
+        }
+        proofs.into()
+    }
+}
+
+impl From<Vec<Proof>> for Proofs {
+    fn from(from: Vec<Proof>) -> Self {
+        Self(from)
+    }
 }
 
 #[derive(Debug, Clone)]

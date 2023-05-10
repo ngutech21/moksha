@@ -11,6 +11,8 @@ mod error;
 mod localstore;
 mod wallet;
 
+use crate::localstore::LocalStore;
+
 #[derive(Parser)]
 #[command(version)]
 struct Opts {
@@ -24,6 +26,7 @@ enum Command {
     Melt { token: String },
     Split { amount: u64 },
     Balance,
+    Send { amount: u64 },
 }
 
 fn read_env(variable: &str) -> String {
@@ -60,7 +63,7 @@ async fn main() -> anyhow::Result<()> {
         Box::new(client.clone()),
         keys,
         keysets,
-        localstore,
+        localstore.clone(),
         mint_url,
     );
 
@@ -70,6 +73,28 @@ async fn main() -> anyhow::Result<()> {
     // };
 
     match cli.command {
+        Command::Send { amount } => {
+            let balance = wallet.get_balance()?;
+            if amount > balance {
+                println!("Not enough balance");
+                return Ok(());
+            }
+
+            let all_tokens = localstore.get_tokens()?;
+            let (result, remaining_tokens) =
+                wallet.split_tokens(all_tokens.clone(), amount).await?;
+
+            // FIXME don't send all tokens
+
+            localstore.delete_tokens(all_tokens)?;
+            localstore.add_tokens(remaining_tokens)?;
+
+            let amount = result.total_amount();
+            let ser = result.serialize()?;
+
+            println!("Result {amount} sats:\n{ser}");
+        }
+
         Command::Balance => {
             let balance = wallet.get_balance()?;
             println!("Balance: {:?}", balance);

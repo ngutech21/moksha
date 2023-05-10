@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cashurs_core::model::Tokens;
+use cashurs_core::model::{Token, Tokens};
 use rocksdb::DB;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -11,10 +11,12 @@ use mockall::automock;
 
 #[cfg_attr(test, automock)]
 pub trait LocalStore {
+    fn delete_tokens(&self, tokens: Tokens) -> Result<(), CashuWalletError>;
     fn add_tokens(&self, tokens: Tokens) -> Result<(), CashuWalletError>;
     fn get_tokens(&self) -> Result<Tokens, CashuWalletError>;
 }
 
+#[derive(Clone, Debug)]
 pub struct RocksDBLocalStore {
     db: Arc<DB>,
 }
@@ -69,5 +71,29 @@ impl LocalStore for RocksDBLocalStore {
     fn get_tokens(&self) -> Result<Tokens, CashuWalletError> {
         self.get_serialized(DbKeyPrefix::Tokens)
             .map(|maybe_tokens| maybe_tokens.unwrap_or_else(Tokens::empty))
+    }
+
+    fn delete_tokens(&self, tokens: Tokens) -> Result<(), CashuWalletError> {
+        let all_tokens = self.get_tokens()?;
+
+        if all_tokens.tokens.is_empty() {
+            return Ok(());
+        }
+
+        let all_proofs = all_tokens.get_proofs();
+        let retained_proofs = all_proofs.remove(tokens.get_proofs().get_proofs());
+
+        let first_token = all_tokens.tokens.first().expect("Tokens is emoty");
+        let mint = first_token.to_owned().mint;
+
+        self.put_serialized(
+            DbKeyPrefix::Tokens,
+            &Tokens::new(Token {
+                mint,
+                proofs: retained_proofs,
+            }),
+        )?;
+
+        Ok(())
     }
 }
