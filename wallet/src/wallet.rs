@@ -37,7 +37,8 @@ impl Wallet {
     }
 
     pub fn get_balance(&self) -> Result<u64, CashuWalletError> {
-        Ok(0)
+        let total = self.localstore.get_tokens()?.total_amount();
+        Ok(total)
     }
 
     pub async fn split_tokens(

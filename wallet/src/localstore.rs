@@ -63,10 +63,11 @@ impl RocksDBLocalStore {
 
 impl LocalStore for RocksDBLocalStore {
     fn add_tokens(&self, tokens: Tokens) -> Result<(), CashuWalletError> {
-        Ok(self.put_serialized(DbKeyPrefix::Tokens, &tokens)?)
+        self.put_serialized(DbKeyPrefix::Tokens, &tokens)
     }
 
     fn get_tokens(&self) -> Result<Tokens, CashuWalletError> {
-        Ok(self.get_serialized(DbKeyPrefix::Tokens)?.unwrap())
+        self.get_serialized(DbKeyPrefix::Tokens)
+            .map(|maybe_tokens| maybe_tokens.unwrap_or_else(Tokens::empty))
     }
 }

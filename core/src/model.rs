@@ -76,13 +76,9 @@ impl Tokens {
         }
     }
 
-    // FIXME use From<Proofs> instead
-    pub fn new_from_proofs(mint: String, proofs: Proofs) -> Self {
+    pub fn empty() -> Self {
         Self {
-            tokens: vec![Token {
-                mint: Some(mint),
-                proofs,
-            }],
+            tokens: vec![],
             memo: None,
         }
     }
@@ -302,9 +298,14 @@ mod tests {
 
     #[test]
     fn test_split_amount() -> anyhow::Result<()> {
-        let amount = 13;
-        let bits = super::split_amount(amount);
+        let bits = super::split_amount(13);
         assert_eq!(bits, vec![1, 4, 8]);
+
+        let bits = super::split_amount(63);
+        assert_eq!(bits, vec![1, 2, 4, 8, 16, 32]);
+
+        let bits = super::split_amount(64);
+        assert_eq!(bits, vec![64]);
         Ok(())
     }
 

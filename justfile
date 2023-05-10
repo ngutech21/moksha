@@ -2,6 +2,10 @@ default:
   @just --list
 
 
+run-mint:
+  cargo run --bin cashurs-mint
+
+
 [no-exit-message]
 typos:
   #!/usr/bin/env bash

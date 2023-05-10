@@ -65,7 +65,7 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Command::Balance => {
-            let balance = wallet.get_balance();
+            let balance = wallet.get_balance()?;
             println!("Balance: {:?}", balance);
         }
         Command::Split {
