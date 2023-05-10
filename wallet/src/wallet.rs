@@ -18,6 +18,7 @@ pub struct Wallet {
     keysets: Keysets,
     dhke: Dhke,
     localstore: Box<dyn LocalStore>,
+    mint_url: String,
 }
 
 impl Wallet {
@@ -26,6 +27,7 @@ impl Wallet {
         mint_keys: HashMap<u64, PublicKey>,
         keysets: Keysets,
         localstore: Box<dyn LocalStore>,
+        mint_url: String,
     ) -> Self {
         Self {
             client,
@@ -33,6 +35,7 @@ impl Wallet {
             keysets,
             dhke: Dhke::new(),
             localstore,
+            mint_url,
         }
     }
 
@@ -45,7 +48,6 @@ impl Wallet {
         &self,
         tokens: Tokens,
         splt_amount: u64,
-        mint_url: String,
     ) -> Result<(Tokens, Tokens), CashuWalletError> {
         let total_token_amount = tokens.total_amount();
         let first_amount = total_token_amount - splt_amount;
@@ -72,7 +74,7 @@ impl Wallet {
             .await?;
 
         let first_tokens = Tokens::from((
-            mint_url.clone(),
+            self.mint_url.clone(),
             self.create_proofs_from_blinded_signatures(
                 split_result.fst,
                 first_secrets,
@@ -81,7 +83,7 @@ impl Wallet {
         ));
 
         let second_tokens = Tokens::from((
-            mint_url.clone(),
+            self.mint_url.clone(),
             self.create_proofs_from_blinded_signatures(
                 split_result.snd,
                 second_secrets,
@@ -110,7 +112,7 @@ impl Wallet {
             .collect::<Vec<String>>()
     }
 
-    pub async fn mint_tokens(&self, amount: u64, hash: String) -> Result<Proofs, CashuWalletError> {
+    pub async fn mint_tokens(&self, amount: u64, hash: String) -> Result<Tokens, CashuWalletError> {
         let splited_amount = split_amount(amount);
         let secrets = self.create_secrets(&splited_amount);
 
@@ -145,7 +147,7 @@ impl Wallet {
             .map(|(_, secret)| secret)
             .collect::<Vec<SecretKey>>();
 
-        Ok(Proofs::new(
+        let proofs = Proofs::new(
             post_mint_resp
                 .promises
                 .iter()
@@ -160,7 +162,12 @@ impl Wallet {
                     Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
                 })
                 .collect::<Vec<Proof>>(),
-        ))
+        );
+
+        let tokens = Tokens::from((self.mint_url.clone(), proofs));
+        self.localstore.add_tokens(tokens.clone())?;
+
+        Ok(tokens)
     }
 
     pub fn create_blinded_messages(
@@ -246,6 +253,7 @@ mod tests {
             HashMap::new(),
             Keysets { keysets: vec![] },
             localstore,
+            "mint_url".to_string(),
         );
 
         let amounts = vec![1, 2, 3, 4, 5, 6, 7];
@@ -274,6 +282,7 @@ mod tests {
                 keysets: vec!["foo".to_string()],
             },
             localstore,
+            "mint_url".to_string(),
         );
 
         // read file
@@ -281,9 +290,7 @@ mod tests {
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/token_64.cashu"))?;
         let tokens = Tokens::deserialize(raw_token.trim().to_string())?;
 
-        let result = wallet
-            .split_tokens(tokens, 20, "mint_url".to_string())
-            .await;
+        let result = wallet.split_tokens(tokens, 20).await;
 
         println!("{:?}", result);
 

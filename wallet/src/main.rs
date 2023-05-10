@@ -1,6 +1,6 @@
 use std::env;
 
-use cashurs_core::model::{Token, Tokens};
+use cashurs_core::model::Tokens;
 use clap::{Parser, Subcommand};
 use client::Client;
 use dotenvy::dotenv;
@@ -56,7 +56,13 @@ async fn main() -> anyhow::Result<()> {
 
     let localstore = Box::new(RocksDBLocalStore::new(read_env("WALLET_DB_PATH")));
 
-    let wallet = wallet::Wallet::new(Box::new(client.clone()), keys, keysets, localstore);
+    let wallet = wallet::Wallet::new(
+        Box::new(client.clone()),
+        keys,
+        keysets,
+        localstore,
+        mint_url,
+    );
 
     let cli = Opts::parse();
     // let cli = Opts {
@@ -80,8 +86,7 @@ async fn main() -> anyhow::Result<()> {
                 println!("Not enough tokens");
                 return Ok(());
             }
-            let (first_tokens, second_tokens) =
-                wallet.split_tokens(tokens, splt_amount, mint_url).await?;
+            let (first_tokens, second_tokens) = wallet.split_tokens(tokens, splt_amount).await?;
 
             println!(
                 "\nTokens ({:?} sats):\n{}",
@@ -118,13 +123,8 @@ async fn main() -> anyhow::Result<()> {
             );
             wait_for_user_input(prompt);
 
-            let proofs = wallet.mint_tokens(amount, hash).await?;
-
-            let serialized_tokens = Tokens::new(Token {
-                mint: Some(mint_url.to_string()),
-                proofs,
-            })
-            .serialize()?;
+            let tokens = wallet.mint_tokens(amount, hash).await?;
+            let serialized_tokens = tokens.serialize()?;
 
             println!("Minted tokens:\n\n{serialized_tokens}");
         }
