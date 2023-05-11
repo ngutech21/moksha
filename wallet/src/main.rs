@@ -129,13 +129,14 @@ async fn main() -> anyhow::Result<()> {
             let ln_invoice = wallet.decode_invoice(&invoice)?;
             let ln_amount = ln_invoice
                 .amount_milli_satoshis()
-                .expect("Invoice has no amount");
+                .expect("Invoice has no amount")
+                / 1000;
 
-            if ln_amount > (all_tokens.total_amount() * 1000) {
+            if ln_amount > all_tokens.total_amount() {
                 println!("Not enough tokens");
                 return Ok(());
             }
-            let selected_proofs = wallet.get_proofs_for_amount(ln_amount / 1000)?;
+            let selected_proofs = wallet.get_proofs_for_amount(ln_amount)?;
 
             let response = wallet.melt_token(invoice, selected_proofs).await?;
 

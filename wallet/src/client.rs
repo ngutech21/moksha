@@ -37,6 +37,7 @@ pub trait Client {
         &self,
         proofs: Proofs,
         pr: String,
+        outputs: Vec<BlindedMessage>,
     ) -> Result<PostMeltResponse, CashuWalletError>;
 
     async fn post_checkfees(&self, pr: String) -> Result<CheckFeesResponse, CashuWalletError>;
@@ -102,12 +103,13 @@ impl Client for HttpClient {
         &self,
         proofs: Proofs,
         pr: String,
+        outputs: Vec<BlindedMessage>,
     ) -> Result<PostMeltResponse, CashuWalletError> {
         let url = format!("{}/melt", self.mint_url);
         let body = serde_json::to_string(&PostMeltRequest {
             pr,
             proofs,
-            outputs: vec![],
+            outputs,
         })?;
 
         let resp = self

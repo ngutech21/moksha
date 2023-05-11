@@ -103,20 +103,48 @@ impl Wallet {
     ) -> Result<PostMeltResponse, CashuWalletError> {
         let _fees = self.client.post_checkfees(pr.clone()).await.unwrap();
         // TODO get tokens for fee amount
-        let melt_response = self.client.post_melt_tokens(proofs.clone(), pr).await?;
 
-        let tokens = Tokens::new(Token {
+        let invoice_amount = self.get_invoice_amount(&pr)?;
+
+        let remaining = proofs.get_total_amount() - invoice_amount;
+
+        let secrets = self.create_secrets(&split_amount(remaining));
+        let outputs_full = self.create_blinded_messages(remaining, secrets.clone())?;
+        let outputs = get_blinded_msg(outputs_full.clone());
+
+        let melt_response = self
+            .client
+            .post_melt_tokens(proofs.clone(), pr, outputs)
+            .await?;
+
+        self.localstore.delete_tokens(Tokens::new(Token {
             mint: Some(self.mint_url.clone()),
             proofs,
-        });
+        }))?;
 
-        self.localstore.delete_tokens(tokens)?;
+        let change = melt_response.change.clone();
+
+        let change_proofs =
+            self.create_proofs_from_blinded_signatures(change, secrets, outputs_full)?;
+
+        println!("change_proofs: {:?}", change_proofs);
+
+        self.localstore.add_tokens(Tokens::new(Token {
+            mint: Some(self.mint_url.clone()),
+            proofs: change_proofs,
+        }))?;
+
         Ok(melt_response)
     }
 
     pub fn decode_invoice(&self, payment_request: &str) -> Result<LNInvoice, CashuWalletError> {
         LNInvoice::from_str(payment_request)
             .map_err(|err| CashuWalletError::DecodeInvoice(payment_request.to_owned(), err))
+    }
+
+    pub fn get_invoice_amount(&self, payment_request: &str) -> Result<u64, CashuWalletError> {
+        let invoice = self.decode_invoice(payment_request)?;
+        Ok(invoice.amount_milli_satoshis().unwrap() / 1000) // FIXME unwrap
     }
 
     pub fn create_secrets(&self, split_amount: &Vec<u64>) -> Vec<String> {
@@ -262,6 +290,7 @@ impl Wallet {
     }
 }
 
+// FIXME implement for Vec<BlindedMessage, Secretkey>
 fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, SecretKey)>) -> Vec<BlindedMessage> {
     blinded_messages
         .into_iter()

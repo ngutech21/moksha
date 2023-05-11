@@ -134,6 +134,7 @@ impl Mint {
         &self,
         payment_request: String,
         proofs: Proofs,
+        blinded_messages: Vec<BlindedMessage>,
     ) -> Result<(bool, String, Vec<BlindedSignature>), CashuMintError> {
         let invoice = self
             .lightning
@@ -162,7 +163,12 @@ impl Mint {
 
         let result = self.lightning.pay_invoice(payment_request).await?;
 
-        Ok((true, result.payment_hash, vec![]))
+        let remaining_amount = (amount_msat - (proofs_amount / 1000)) * 1000;
+
+        // FIXME check if output amount matches remaining_amount
+        let output = self.create_blinded_signatures(blinded_messages).await?;
+
+        Ok((true, result.payment_hash, output))
     }
 
     pub fn check_used_proofs(&self, proofs: &Proofs) -> Result<(), CashuMintError> {
@@ -181,8 +187,10 @@ mod tests {
     use crate::lightning::MockLightning;
     use crate::{database::MockDatabase, error::CashuMintError, Mint};
     use cashurs_core::dhke;
-    use cashurs_core::model::{BlindedMessage, TotalAmount};
+    use cashurs_core::model::{BlindedMessage, Tokens, TotalAmount};
     use cashurs_core::model::{PostSplitRequest, Proofs};
+    use lnbits_rust::api::invoice::PayInvoiceResult;
+    use std::str::FromStr;
     use std::sync::Arc;
 
     #[tokio::test]
@@ -272,10 +280,63 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test]
+    /// melt 20 sats with 60 tokens and receive 40 tokens as change
+    async fn test_melt_overpay() -> anyhow::Result<()> {
+        use lightning_invoice::Invoice as LNInvoice;
+
+        let mut lightning = MockLightning::new();
+
+        lightning.expect_decode_invoice().returning(|_| {
+            Ok(
+                // 20 sat
+                LNInvoice::from_str("lnbc200n1pj9eanxsp5agdl4rd0twdljpcgmg67dwj9mseu5m4lwfhslkws4uh4m5f5pcrqpp5lvspx676rykr64l02s97wjztcxe355qck0naydrsvvkqw42cc35sdq2f38xy6t5wvxqzjccqpjrzjq027t9tsc6jn5ve2k6gnn689unn8h239juuf9s3ce09aty6ed73t5z7nqsqqsygqqyqqqqqqqqqqqqgq9q9qyysgqs5msn4j9v53fq000zhw0gulkcx2dlnfdt953v2ur7z765jj3m0fx6cppkpjwntq5nsqm273u4eevva508pvepg8mh27sqcd29sfjr4cq255a40").unwrap()
+            )
+        });
+        lightning.expect_pay_invoice().returning(|_| {
+            Ok(PayInvoiceResult {
+                payment_hash: "hash".to_string(),
+            })
+        });
+
+        let mint = Mint::new(
+            "TEST_PRIVATE_KEY".to_string(),
+            "0/0/0/0".to_string(),
+            Arc::new(lightning),
+            Arc::new(create_mock_db_get_used_proofs()),
+        );
+
+        let tokens = create_token_from_fixture("token_60.cashu".to_string())?;
+        let invoice = "some invoice".to_string();
+        let change = create_blinded_msgs_from_fixture("blinded_messages_40.json".to_string())?;
+
+        let (paid, _payment_hash, change) = mint.melt(invoice, tokens.get_proofs(), change).await?;
+
+        assert!(paid);
+        assert!(change.total_amount() == 40);
+        println!("{:?}", change);
+        Ok(())
+    }
+
+    // FIXME refactor helper functions
+    fn create_token_from_fixture(fixture: String) -> Result<Tokens, anyhow::Error> {
+        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+        let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{fixture}"))?;
+        Ok(Tokens::deserialize(raw_token.trim().to_string())?)
+    }
+
     fn create_request_from_fixture(fixture: String) -> Result<PostSplitRequest, anyhow::Error> {
         let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{fixture}"))?;
         Ok(serde_json::from_str::<PostSplitRequest>(&raw_token)?)
+    }
+
+    fn create_blinded_msgs_from_fixture(
+        fixture: String,
+    ) -> Result<Vec<BlindedMessage>, anyhow::Error> {
+        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+        let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{fixture}"))?;
+        Ok(serde_json::from_str::<Vec<BlindedMessage>>(&raw_token)?)
     }
 
     fn create_mint_from_mocks(mock_db: Option<MockDatabase>) -> Mint {

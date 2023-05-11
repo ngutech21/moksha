@@ -111,7 +111,9 @@ async fn post_melt(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltRequest>,
 ) -> Result<Json<PostMeltResponse>, CashuMintError> {
-    let (paid, preimage, change) = mint.melt(melt_request.pr, melt_request.proofs).await?;
+    let (paid, preimage, change) = mint
+        .melt(melt_request.pr, melt_request.proofs, melt_request.outputs)
+        .await?;
 
     Ok(Json(PostMeltResponse {
         paid,
