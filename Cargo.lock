@@ -343,6 +343,7 @@ dependencies = [
  "cashurs-core",
  "clap",
  "dotenvy",
+ "lightning-invoice",
  "mockall",
  "rand",
  "reqwest",

@@ -4,13 +4,15 @@ use cashurs_core::{
     dhke::Dhke,
     model::{
         split_amount, BlindedMessage, BlindedSignature, Keysets, PostMeltResponse, Proof, Proofs,
-        Tokens, TotalAmount,
+        Token, Tokens, TotalAmount,
     },
 };
 use secp256k1::{PublicKey, SecretKey};
 
 use crate::{client::Client, error::CashuWalletError, localstore::LocalStore};
+use lightning_invoice::Invoice as LNInvoice;
 use rand::{distributions::Alphanumeric, Rng};
+use std::str::FromStr;
 
 pub struct Wallet {
     client: Box<dyn Client>,
@@ -97,13 +99,24 @@ impl Wallet {
     pub async fn melt_token(
         &self,
         pr: String,
-        tokens: Tokens,
+        proofs: Proofs,
     ) -> Result<PostMeltResponse, CashuWalletError> {
         let _fees = self.client.post_checkfees(pr.clone()).await.unwrap();
         // TODO get tokens for fee amount
-        let proofs = tokens.get_proofs();
-        let melt_response = self.client.post_melt_tokens(proofs, pr).await?;
+        let melt_response = self.client.post_melt_tokens(proofs.clone(), pr).await?;
+
+        let tokens = Tokens::new(Token {
+            mint: Some(self.mint_url.clone()),
+            proofs,
+        });
+
+        self.localstore.delete_tokens(tokens)?;
         Ok(melt_response)
+    }
+
+    pub fn decode_invoice(&self, payment_request: &str) -> Result<LNInvoice, CashuWalletError> {
+        LNInvoice::from_str(payment_request)
+            .map_err(|err| CashuWalletError::DecodeInvoice(payment_request.to_owned(), err))
     }
 
     pub fn create_secrets(&self, split_amount: &Vec<u64>) -> Vec<String> {
@@ -217,6 +230,36 @@ impl Wallet {
                 .collect::<Vec<Proof>>(),
         ))
     }
+
+    pub fn get_proofs_for_amount(&self, amount: u64) -> Result<Proofs, CashuWalletError> {
+        let all_tokens = self.localstore.get_tokens()?;
+
+        if amount > all_tokens.total_amount() {
+            return Err(CashuWalletError::NotEnoughTokens);
+        }
+
+        let mut all_proofs = all_tokens
+            .tokens
+            .iter()
+            .flat_map(|token| token.proofs.get_proofs())
+            .collect::<Vec<Proof>>();
+        all_proofs.sort_by(|a, b| a.amount.partial_cmp(&b.amount).unwrap());
+
+        let mut selected_proofs = vec![];
+        let mut selected_amount = 0;
+
+        while selected_amount < amount {
+            if all_proofs.is_empty() {
+                break;
+            }
+
+            let proof = all_proofs.pop().unwrap();
+            selected_amount += proof.amount;
+            selected_proofs.push(proof);
+        }
+
+        Ok(Proofs::new(selected_proofs))
+    }
 }
 
 fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, SecretKey)>) -> Vec<BlindedMessage> {
@@ -241,7 +284,7 @@ mod tests {
         client::{HttpClient, MockClient},
         localstore::MockLocalStore,
     };
-    use cashurs_core::model::{Keysets, PostSplitResponse, Tokens};
+    use cashurs_core::model::{Keysets, PostSplitResponse, Proofs, Token, Tokens};
     use std::collections::HashMap;
 
     #[test]
@@ -291,9 +334,71 @@ mod tests {
         let tokens = Tokens::deserialize(raw_token.trim().to_string())?;
 
         let result = wallet.split_tokens(tokens, 20).await;
+        // TODO add asserts for test
+        println!("{:?}", result);
+        Ok(())
+    }
 
+    #[tokio::test]
+    async fn test_get_proofs_for_amount_empty() -> anyhow::Result<()> {
+        let mut local_store = MockLocalStore::new();
+        local_store.expect_get_tokens().returning(|| {
+            Ok(Tokens::new(Token {
+                mint: Some("mint_url".to_string()),
+                proofs: Proofs::empty(),
+            }))
+        });
+
+        let wallet = Wallet::new(
+            Box::new(MockClient::new()),
+            HashMap::new(),
+            Keysets {
+                keysets: vec!["foo".to_string()],
+            },
+            Box::new(local_store),
+            "mint_url".to_string(),
+        );
+
+        let result = wallet.get_proofs_for_amount(10);
+
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_proofs_for_amount_valid() -> anyhow::Result<()> {
+        let mut local_store = MockLocalStore::new();
+
+        let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
+
+        local_store.expect_get_tokens().returning(move || {
+            Ok(Tokens::new(Token {
+                mint: Some("mint_url".to_string()),
+                proofs: fixture.get_proofs(),
+            }))
+        });
+
+        let wallet = Wallet::new(
+            Box::new(MockClient::new()),
+            HashMap::new(),
+            Keysets {
+                keysets: vec!["foo".to_string()],
+            },
+            Box::new(local_store),
+            "mint_url".to_string(),
+        );
+
+        let result = wallet.get_proofs_for_amount(10)?;
         println!("{:?}", result);
 
+        assert_eq!(32, result.get_total_amount());
+        assert_eq!(1, result.len());
         Ok(())
+    }
+
+    fn read_fixture(name: &str) -> anyhow::Result<Tokens> {
+        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+        let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{name}"))?;
+        Ok(Tokens::deserialize(raw_token.trim().to_string())?)
     }
 }

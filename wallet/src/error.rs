@@ -1,5 +1,6 @@
 use std::string::FromUtf8Error;
 
+use lightning_invoice::ParseOrSemanticError;
 use reqwest::header::InvalidHeaderValue;
 use thiserror::Error;
 
@@ -31,4 +32,10 @@ pub enum CashuWalletError {
 
     #[error("Invalid Proofs")]
     InvalidProofs,
+
+    #[error("Not enough tokens")]
+    NotEnoughTokens,
+
+    #[error("Failed to decode payment request {0} - Error {1}")]
+    DecodeInvoice(String, ParseOrSemanticError),
 }

@@ -23,7 +23,7 @@ struct Opts {
 #[derive(Subcommand, Clone)]
 enum Command {
     Mint { amount: u64 },
-    Melt { token: String },
+    Pay { invoice: String },
     Split { amount: u64 },
     Balance,
     Send { amount: u64 },
@@ -124,13 +124,21 @@ async fn main() -> anyhow::Result<()> {
                 first_tokens.serialize()?
             );
         }
-        Command::Melt { token } => {
-            let deserialized = Tokens::deserialize(token)?;
+        Command::Pay { invoice } => {
+            let all_tokens = localstore.get_tokens()?;
+            let ln_invoice = wallet.decode_invoice(&invoice)?;
+            let ln_amount = ln_invoice
+                .amount_milli_satoshis()
+                .expect("Invoice has no amount");
 
-            let prompt = "Enter invoice:\n\n".to_string();
-            let pr = wait_for_user_input(prompt);
+            if ln_amount > (all_tokens.total_amount() * 1000) {
+                println!("Not enough tokens");
+                return Ok(());
+            }
+            let selected_proofs = wallet.get_proofs_for_amount(ln_amount / 1000)?;
 
-            let response = wallet.melt_token(pr, deserialized).await?;
+            let response = wallet.melt_token(invoice, selected_proofs).await?;
+
             if response.paid {
                 println!("Invoice has been paid: Tokens melted successfully");
                 // TODO NUT-08 create tokens from change

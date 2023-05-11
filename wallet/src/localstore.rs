@@ -83,7 +83,7 @@ impl LocalStore for RocksDBLocalStore {
         let all_proofs = all_tokens.get_proofs();
         let retained_proofs = all_proofs.remove(tokens.get_proofs().get_proofs());
 
-        let first_token = all_tokens.tokens.first().expect("Tokens is emoty");
+        let first_token = all_tokens.tokens.first().expect("Tokens is empty");
         let mint = first_token.to_owned().mint;
 
         self.put_serialized(
