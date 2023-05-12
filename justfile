@@ -5,6 +5,9 @@ default:
 run-mint:
   cargo run --bin cashurs-mint
 
+run-wallet *ARGS:
+  cargo run --bin cashurs-wallet {{ARGS}} 
+
 
 [no-exit-message]
 typos:
