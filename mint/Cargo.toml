@@ -25,7 +25,7 @@ secp256k1 = {version="0.27.0", features = [ "rand", "serde" ]}
 lnbits_rust = { git = "https://github.com/ngutech21/lnbits_rust/", branch = "main" }
 thiserror = "1.0.40"
 cashurs-core = { path = "../core" }
-rocksdb = "0.20.1"
+rocksdb = "0.21.0"
 lightning-invoice = "0.23.0"
 
 [dev-dependencies]

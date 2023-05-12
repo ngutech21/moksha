@@ -19,7 +19,7 @@ serde = "1.0.163"
 rand = "0.8.5"
 thiserror = "1.0.40"
 async-trait = "0.1.68"
-rocksdb = "0.20.1"
+rocksdb = "0.21.0"
 lightning-invoice = "0.23.0"
 
 
