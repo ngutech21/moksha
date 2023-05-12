@@ -163,7 +163,7 @@ impl Mint {
 
         let result = self.lightning.pay_invoice(payment_request).await?;
 
-        let remaining_amount = (amount_msat - (proofs_amount / 1000)) * 1000;
+        let _remaining_amount = (amount_msat - (proofs_amount / 1000)) * 1000;
 
         // FIXME check if output amount matches remaining_amount
         let output = self.create_blinded_signatures(blinded_messages).await?;

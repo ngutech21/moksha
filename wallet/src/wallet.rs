@@ -127,7 +127,7 @@ impl Wallet {
         let change_proofs =
             self.create_proofs_from_blinded_signatures(change, secrets, outputs_full)?;
 
-        println!("change_proofs: {:?}", change_proofs);
+        println!("change_proofs: {change_proofs:?}");
 
         self.localstore.add_tokens(Tokens::new(Token {
             mint: Some(self.mint_url.clone()),
@@ -364,7 +364,7 @@ mod tests {
 
         let result = wallet.split_tokens(tokens, 20).await;
         // TODO add asserts for test
-        println!("{:?}", result);
+        println!("{result:?}");
         Ok(())
     }
 
@@ -418,7 +418,7 @@ mod tests {
         );
 
         let result = wallet.get_proofs_for_amount(10)?;
-        println!("{:?}", result);
+        println!("{result:?}");
 
         assert_eq!(32, result.get_total_amount());
         assert_eq!(1, result.len());
