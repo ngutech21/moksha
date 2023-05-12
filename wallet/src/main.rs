@@ -68,9 +68,6 @@ async fn main() -> anyhow::Result<()> {
     );
 
     let cli = Opts::parse();
-    // let cli = Opts {
-    //     command: Command::Split { amount: 6 },
-    // };
 
     match cli.command {
         Command::Send { amount } => {
