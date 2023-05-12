@@ -6,6 +6,9 @@ members = [
     "mint"
 ]
 
+[profile.dev]
+split-debuginfo = "unpacked"
+
 [workspace.metadata]
 authors = ["The cashu-rs Developers"]
 edition = "2021"
