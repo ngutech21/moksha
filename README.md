@@ -68,7 +68,7 @@ just run-mint
 
 ### Run cli-wallet
 ```
-cargo run --bin cashurs-wallet mint 42
+cargo run-wallet mint 42
 ```
 
 

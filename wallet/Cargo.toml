@@ -19,9 +19,9 @@ serde = "1.0.162"
 rand = "0.8.5"
 thiserror = "1.0.40"
 async-trait = "0.1.68"
-mockall = "0.11.4"
 rocksdb = "0.20.1"
 lightning-invoice = "0.23.0"
 
 
 [dev-dependencies]
+mockall = "0.11.4"
