@@ -99,20 +99,17 @@ impl Wallet {
     pub async fn melt_token(
         &self,
         pr: String,
+        _invoice_amount: u64,
         proofs: Proofs,
     ) -> Result<PostMeltResponse, CashuWalletError> {
-        let fees = self.client.post_checkfees(pr.clone()).await?;
-        let invoice_amount = self.get_invoice_amount(&pr)? + (fees.fee / 1000);
-
-        let remaining = proofs.get_total_amount() - invoice_amount;
-
-        let secrets = self.create_secrets(&split_amount(remaining));
-        let outputs_full = self.create_blinded_messages(remaining, secrets.clone())?;
-        let outputs = get_blinded_msg(outputs_full.clone());
+        //   let remaining = proofs.get_total_amount() - invoice_amount;
+        // let secrets = self.create_secrets(&split_amount(remaining));
+        // let outputs_full = self.create_blinded_messages(remaining, secrets.clone())?;
+        // let outputs = get_blinded_msg(outputs_full.clone());
 
         let melt_response = self
             .client
-            .post_melt_tokens(proofs.clone(), pr, outputs)
+            .post_melt_tokens(proofs.clone(), pr, vec![])
             .await?;
 
         self.localstore.delete_tokens(Tokens::new(Token {
@@ -120,22 +117,22 @@ impl Wallet {
             proofs,
         }))?;
 
-        let change = melt_response.change.clone();
+        // let change = melt_response.change.clone();
 
-        let change_proofs =
-            self.create_proofs_from_blinded_signatures(change, secrets, outputs_full)?;
+        // let change_proofs =
+        //     self.create_proofs_from_blinded_signatures(change, secrets, outputs_full)?;
 
-        println!("change_proofs: {change_proofs:?}");
+        // println!("change_proofs: {change_proofs:?}");
 
-        self.localstore.add_tokens(Tokens::new(Token {
-            mint: Some(self.mint_url.clone()),
-            proofs: change_proofs,
-        }))?;
+        // self.localstore.add_tokens(Tokens::new(Token {
+        //     mint: Some(self.mint_url.clone()),
+        //     proofs: change_proofs,
+        // }))?;
 
         Ok(melt_response)
     }
 
-    pub fn decode_invoice(&self, payment_request: &str) -> Result<LNInvoice, CashuWalletError> {
+    fn decode_invoice(&self, payment_request: &str) -> Result<LNInvoice, CashuWalletError> {
         LNInvoice::from_str(payment_request)
             .map_err(|err| CashuWalletError::DecodeInvoice(payment_request.to_owned(), err))
     }

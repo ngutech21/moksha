@@ -64,7 +64,7 @@ async fn main() -> anyhow::Result<()> {
         keys,
         keysets,
         localstore.clone(),
-        mint_url,
+        mint_url.clone(),
     );
 
     let cli = Opts::parse();
@@ -123,11 +123,9 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::Pay { invoice } => {
             let all_tokens = localstore.get_tokens()?;
-            let ln_invoice = wallet.decode_invoice(&invoice)?;
-            let ln_amount = ln_invoice
-                .amount_milli_satoshis()
-                .expect("Invoice has no amount")
-                / 1000;
+
+            let fees = client.post_checkfees(invoice.clone()).await?;
+            let ln_amount = wallet.get_invoice_amount(&invoice)? + (fees.fee / 1000);
 
             if ln_amount > all_tokens.total_amount() {
                 println!("Not enough tokens");
@@ -135,7 +133,22 @@ async fn main() -> anyhow::Result<()> {
             }
             let selected_proofs = wallet.get_proofs_for_amount(ln_amount)?;
 
-            let response = wallet.melt_token(invoice, selected_proofs).await?;
+            let total_proofs = if selected_proofs.get_total_amount() > ln_amount {
+                //selected_proofs.get_total_amount()
+                let selected_tokens = Tokens::from((mint_url.clone(), selected_proofs.clone()));
+                let split_result = wallet
+                    .split_tokens(selected_tokens.clone(), ln_amount)
+                    .await?;
+
+                localstore.delete_tokens(selected_tokens)?;
+                localstore.add_tokens(split_result.1)?;
+
+                split_result.0.get_proofs()
+            } else {
+                selected_proofs
+            };
+
+            let response = wallet.melt_token(invoice, ln_amount, total_proofs).await?;
 
             if response.paid {
                 println!("Invoice has been paid: Tokens melted successfully");
