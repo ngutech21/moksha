@@ -142,7 +142,10 @@ impl Wallet {
 
     pub fn get_invoice_amount(&self, payment_request: &str) -> Result<u64, CashuWalletError> {
         let invoice = self.decode_invoice(payment_request)?;
-        Ok(invoice.amount_milli_satoshis().unwrap() / 1000) // FIXME unwrap
+        Ok(invoice
+            .amount_milli_satoshis()
+            .ok_or_else(|| CashuWalletError::InvalidInvoice(payment_request.to_owned()))?
+            / 1000)
     }
 
     pub fn create_secrets(&self, split_amount: &Vec<u64>) -> Vec<String> {
@@ -338,7 +341,7 @@ mod tests {
 
         client.expect_post_split_tokens().returning(|_, _, _| {
             Ok(PostSplitResponse {
-                fst: vec![],
+                fst: vec![], // TODO return dummy values
                 snd: vec![],
             })
         });
@@ -360,8 +363,9 @@ mod tests {
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/token_64.cashu"))?;
         let tokens = Tokens::deserialize(raw_token.trim().to_string())?;
 
-        let result = wallet.split_tokens(tokens, 20).await;
-        // TODO add asserts for test
+        let result = wallet.split_tokens(tokens, 20).await?;
+        // assert_eq!(20, result.0.total_amount());
+        // assert_eq!(44, result.1.total_amount());
         println!("{result:?}");
         Ok(())
     }

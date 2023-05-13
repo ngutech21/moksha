@@ -38,4 +38,7 @@ pub enum CashuWalletError {
 
     #[error("Failed to decode payment request {0} - Error {1}")]
     DecodeInvoice(String, ParseOrSemanticError),
+
+    #[error("Invalid invoice {0}")]
+    InvalidInvoice(String),
 }
