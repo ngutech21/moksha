@@ -12,7 +12,7 @@ use cashurs_core::model::{
 use dotenvy::dotenv;
 use error::CashuMintError;
 use hyper::Method;
-use mint::Mint;
+use mint::{LightningFeeConfig, Mint};
 use model::{GetMintQuery, PostMintQuery};
 use secp256k1::PublicKey;
 use tower_http::{
@@ -72,11 +72,23 @@ fn create_mint() -> Mint {
         env::var("MINT_DB_PATH").expect("MINT_DB_PATH not found"),
     ));
 
+    let fee_config = LightningFeeConfig {
+        fee_percent: env::var("LIGHTNING_FEE_PERCENT")
+            .expect("LIGHTNING_FEE_PERCENT not found")
+            .parse()
+            .expect("LIGHTNING_FEE_PERCENT is not a valid number"),
+        fee_reserve_min: env::var("LIGHTNING_RESERVE_FEE_MIN")
+            .expect("LIGHTNING_RESERVE_FEE_MIN not found")
+            .parse()
+            .expect("LIGHTNING_RESERVE_FEE_MIN is not a valid number"),
+    };
+
     Mint::new(
         env::var("MINT_PRIVATE_KEY").expect("MINT_PRIVATE_KEY not found"),
         "".to_string(),
         ln,
         db,
+        fee_config,
     )
 }
 
@@ -123,9 +135,18 @@ async fn post_melt(
 }
 
 async fn post_check_fees(
+    State(mint): State<Mint>,
     Json(_check_fees): Json<CheckFeesRequest>,
 ) -> Result<Json<CheckFeesResponse>, CashuMintError> {
-    Ok(Json(CheckFeesResponse { fee: 0 }))
+    let invoice = mint.lightning.decode_invoice(_check_fees.pr).await?;
+
+    Ok(Json(CheckFeesResponse {
+        fee: mint.fee_reserve(
+            invoice
+                .amount_milli_satoshis()
+                .ok_or_else(|| error::CashuMintError::InvalidAmount)?,
+        ),
+    }))
 }
 
 async fn get_mint(
@@ -175,7 +196,12 @@ mod tests {
     use secp256k1::PublicKey;
     use tower::ServiceExt;
 
-    use crate::{app, database::MockDatabase, lightning::MockLightning, mint::Mint};
+    use crate::{
+        app,
+        database::MockDatabase,
+        lightning::MockLightning,
+        mint::{LightningFeeConfig, Mint},
+    };
 
     #[tokio::test]
     async fn test_get_keys() -> anyhow::Result<()> {
@@ -208,6 +234,12 @@ mod tests {
     fn create_mock_mint() -> Mint {
         let db = Arc::new(MockDatabase::new());
         let lightning = Arc::new(MockLightning::new());
-        Mint::new("mytestsecret".to_string(), "".to_string(), lightning, db)
+        Mint::new(
+            "mytestsecret".to_string(),
+            "".to_string(),
+            lightning,
+            db,
+            LightningFeeConfig::default(),
+        )
     }
 }

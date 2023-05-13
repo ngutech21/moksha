@@ -44,6 +44,9 @@ pub enum CashuMintError {
 
     #[error("duplicate promises.")]
     SplitHasDuplicatePromises,
+
+    #[error("Invalid amount")]
+    InvalidAmount,
 }
 
 impl IntoResponse for CashuMintError {

@@ -14,6 +14,23 @@ pub struct Mint {
     pub keyset: MintKeyset,
     pub db: Arc<dyn Database + Send + Sync>,
     pub dhke: Dhke,
+    pub lightning_fee_config: LightningFeeConfig,
+}
+
+#[derive(Clone, Debug)]
+pub struct LightningFeeConfig {
+    pub fee_percent: f32,
+    pub fee_reserve_min: u64,
+    // TODO check of fee_percent is in range
+}
+
+impl Default for LightningFeeConfig {
+    fn default() -> Self {
+        Self {
+            fee_percent: 1.0,
+            fee_reserve_min: 4000,
+        }
+    }
 }
 
 impl Mint {
@@ -22,14 +39,24 @@ impl Mint {
         derivation_path: String,
         lightning: Arc<dyn Lightning + Send + Sync>,
         db: Arc<dyn Database + Send + Sync>,
+        lightning_fee_config: LightningFeeConfig,
     ) -> Self {
         Self {
             lightning,
+            lightning_fee_config,
             keyset: MintKeyset::new(secret, derivation_path),
             db,
             dhke: Dhke::new(),
         }
     }
+
+    pub fn fee_reserve(&self, amount_msat: u64) -> u64 {
+        let fee_percent = self.lightning_fee_config.fee_percent as f64 / 100.0;
+        let fee_reserve = (amount_msat as f64 * fee_percent) as u64;
+        std::cmp::max(fee_reserve, self.lightning_fee_config.fee_reserve_min)
+    }
+
+    // TODO write tests for fee_reserve
 
     pub async fn create_blinded_signatures(
         &self,
@@ -185,6 +212,7 @@ impl Mint {
 #[cfg(test)]
 mod tests {
     use crate::lightning::MockLightning;
+    use crate::mint::LightningFeeConfig;
     use crate::{database::MockDatabase, error::CashuMintError, Mint};
     use cashurs_core::dhke;
     use cashurs_core::model::{BlindedMessage, Tokens, TotalAmount};
@@ -304,6 +332,7 @@ mod tests {
             "0/0/0/0".to_string(),
             Arc::new(lightning),
             Arc::new(create_mock_db_get_used_proofs()),
+            LightningFeeConfig::default(),
         );
 
         let tokens = create_token_from_fixture("token_60.cashu".to_string())?;
@@ -351,6 +380,7 @@ mod tests {
             "0/0/0/0".to_string(),
             lightning,
             db,
+            LightningFeeConfig::default(),
         )
     }
 
