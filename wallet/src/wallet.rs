@@ -101,10 +101,8 @@ impl Wallet {
         pr: String,
         proofs: Proofs,
     ) -> Result<PostMeltResponse, CashuWalletError> {
-        let _fees = self.client.post_checkfees(pr.clone()).await.unwrap();
-        // TODO get tokens for fee amount
-
-        let invoice_amount = self.get_invoice_amount(&pr)?;
+        let fees = self.client.post_checkfees(pr.clone()).await?;
+        let invoice_amount = self.get_invoice_amount(&pr)? + (fees.fee / 1000);
 
         let remaining = proofs.get_total_amount() - invoice_amount;
 
