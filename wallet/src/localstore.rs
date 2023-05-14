@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cashurs_core::model::{Token, Tokens};
+use cashurs_core::model::{Proof, Proofs, Token, Tokens};
 use rocksdb::DB;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -64,8 +64,27 @@ impl RocksDBLocalStore {
 }
 
 impl LocalStore for RocksDBLocalStore {
-    fn add_tokens(&self, tokens: Tokens) -> Result<(), CashuWalletError> {
-        self.put_serialized(DbKeyPrefix::Tokens, &tokens)
+    // FIXME store Proofs in Localstore instead of Tokens
+    fn add_tokens(&self, new_tokens: Tokens) -> Result<(), CashuWalletError> {
+        let all_tokens = self.get_tokens();
+
+        all_tokens.and_then(|tokens| {
+            if tokens.total_amount() == 0 {
+                return Ok(self.put_serialized(DbKeyPrefix::Tokens, &new_tokens)?);
+            }
+
+            let first_token = tokens.tokens.first().expect("Tokens is empty");
+            let mint = first_token.to_owned().mint.unwrap();
+
+            let mut proofs: Vec<Proof> = vec![];
+            proofs.append(&mut tokens.get_proofs().get_proofs());
+            proofs.append(&mut new_tokens.get_proofs().get_proofs());
+
+            let new_tokens = Tokens::from((mint, Proofs::from(proofs)));
+
+            self.put_serialized(DbKeyPrefix::Tokens, &new_tokens)
+        })?;
+        Ok(())
     }
 
     fn get_tokens(&self) -> Result<Tokens, CashuWalletError> {
@@ -124,8 +143,6 @@ mod tests {
         let binding = tokens.tokens.get(0).unwrap().proofs.get_proofs();
         let proof_4 = binding.get(0).unwrap().to_owned();
         print!("first {:?}", proof_4);
-
-        //let mint_url = tokens.tokens.
 
         let tokens_delete = Tokens::from((
             "http://127.0.0.1:3338".to_string(),
