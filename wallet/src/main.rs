@@ -132,6 +132,7 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
             let selected_proofs = wallet.get_proofs_for_amount(ln_amount)?;
+            println!("selected proofs {:?}", selected_proofs.get_total_amount());
 
             let total_proofs = if selected_proofs.get_total_amount() > ln_amount {
                 //selected_proofs.get_total_amount()
@@ -140,10 +141,16 @@ async fn main() -> anyhow::Result<()> {
                     .split_tokens(selected_tokens.clone(), ln_amount)
                     .await?;
 
-                localstore.delete_tokens(selected_tokens)?;
-                localstore.add_tokens(split_result.1)?;
+                println!(
+                    "split result 0 {:?} 1 {:?}",
+                    split_result.0.total_amount(),
+                    split_result.1.total_amount()
+                );
 
-                split_result.0.get_proofs()
+                localstore.delete_tokens(selected_tokens)?;
+                localstore.add_tokens(split_result.0)?;
+
+                split_result.1.get_proofs()
             } else {
                 selected_proofs
             };

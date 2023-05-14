@@ -97,3 +97,54 @@ impl LocalStore for RocksDBLocalStore {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::{sync::Arc, vec};
+
+    use cashurs_core::model::{Proofs, Tokens};
+
+    use super::LocalStore;
+
+    #[test]
+    fn test_delete_tokens() -> anyhow::Result<()> {
+        let tmp = tempfile::tempdir()?;
+        let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
+
+        let localstore: Arc<dyn LocalStore> =
+            Arc::new(super::RocksDBLocalStore::new(tmp_dir.to_owned()));
+
+        let tokens = read_fixture("token_60.cashu")?;
+        localstore.add_tokens(tokens.clone())?;
+
+        let loaded_tokens = localstore.get_tokens()?;
+
+        assert_eq!(tokens, loaded_tokens);
+
+        let binding = tokens.tokens.get(0).unwrap().proofs.get_proofs();
+        let proof_4 = binding.get(0).unwrap().to_owned();
+        print!("first {:?}", proof_4);
+
+        //let mint_url = tokens.tokens.
+
+        let tokens_delete = Tokens::from((
+            "http://127.0.0.1:3338".to_string(),
+            Proofs::from(vec![proof_4]),
+        ));
+
+        localstore.delete_tokens(tokens_delete)?;
+
+        let result_tokens = localstore.get_tokens()?;
+        dbg!(&result_tokens);
+
+        assert_eq!(56, result_tokens.total_amount());
+
+        Ok(())
+    }
+
+    fn read_fixture(name: &str) -> anyhow::Result<Tokens> {
+        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+        let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{name}"))?;
+        Ok(Tokens::deserialize(raw_token.trim().to_string())?)
+    }
+}

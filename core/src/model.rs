@@ -52,7 +52,7 @@ impl Proof {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct P2SHScript {}
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[skip_serializing_none]
 pub struct Token {
     pub mint: Option<String>,
@@ -61,7 +61,7 @@ pub struct Token {
 
 // FIXME rename to TokenV3
 #[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Tokens {
     #[serde(rename = "token")]
     pub tokens: Vec<Token>,
