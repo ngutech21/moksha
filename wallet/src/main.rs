@@ -78,7 +78,7 @@ async fn main() -> anyhow::Result<()> {
             }
 
             let all_tokens = localstore.get_tokens()?;
-            let (result, remaining_tokens) =
+            let (remaining_tokens, result) =
                 wallet.split_tokens(all_tokens.clone(), amount).await?;
 
             // FIXME don't send all tokens
