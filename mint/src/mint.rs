@@ -147,7 +147,7 @@ impl Mint {
 
         self.db.add_used_proofs(proofs)?;
 
-        Ok((second_sigs, first_sigs))
+        Ok((first_sigs, second_sigs))
     }
 
     fn get_amount(&self, blinded_sigs: &[BlindedSignature]) -> u64 {

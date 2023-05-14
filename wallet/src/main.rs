@@ -169,10 +169,11 @@ async fn main() -> anyhow::Result<()> {
             );
             wait_for_user_input(prompt);
 
-            let tokens = wallet.mint_tokens(amount, hash).await?;
-            let serialized_tokens = tokens.serialize()?;
-
-            println!("Minted tokens:\n\n{serialized_tokens}");
+            wallet.mint_tokens(amount, hash).await?;
+            println!(
+                "Tokens minted successfully.\nNew balance {} sats",
+                wallet.get_balance()?
+            );
         }
     }
     Ok(())
