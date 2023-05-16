@@ -266,8 +266,8 @@ mod tests {
         let (first, second) = mint.split(20, request.proofs, request.outputs).await?;
 
         first.total_amount();
-        assert_eq!(first.total_amount(), 20);
-        assert_eq!(second.total_amount(), 44);
+        assert_eq!(first.total_amount(), 44);
+        assert_eq!(second.total_amount(), 20);
         Ok(())
     }
 
@@ -278,9 +278,8 @@ mod tests {
 
         let (first, second) = mint.split(64, request.proofs, request.outputs).await?;
 
-        first.total_amount();
-        assert_eq!(first.total_amount(), 64);
-        assert_eq!(second.total_amount(), 0);
+        assert_eq!(first.total_amount(), 0);
+        assert_eq!(second.total_amount(), 64);
         Ok(())
     }
 
@@ -343,7 +342,6 @@ mod tests {
 
         assert!(paid);
         assert!(change.total_amount() == 40);
-        println!("{:?}", change);
         Ok(())
     }
 
