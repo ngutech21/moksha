@@ -70,7 +70,7 @@ impl LocalStore for RocksDBLocalStore {
 
         all_tokens.and_then(|tokens| {
             if tokens.total_amount() == 0 {
-                return Ok(self.put_serialized(DbKeyPrefix::Tokens, &new_tokens)?);
+                return self.put_serialized(DbKeyPrefix::Tokens, &new_tokens);
             }
 
             let first_token = tokens.tokens.first().expect("Tokens is empty");
