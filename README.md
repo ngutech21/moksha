@@ -19,8 +19,6 @@ This project aims to replicate the python mint implementation of cashu.
 ## Progress
 Wallet Features:
 
-At the moment the wallet doesn't use a database, but prints the tokens to stdout. 
-
 - [x] connect to mint (load keys)
 - [x] request minting tokens
 - [x] minting tokens
@@ -68,7 +66,7 @@ just run-mint
 
 ### Run cli-wallet
 ```
-cargo run-wallet mint 42
+just run-wallet mint 42
 ```
 
 
