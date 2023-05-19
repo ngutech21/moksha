@@ -22,11 +22,23 @@ struct Opts {
 
 #[derive(Subcommand, Clone)]
 enum Command {
+    /// Mint tokens
     Mint { amount: u64 },
+
+    /// Pay Lightning invoice
     Pay { invoice: String },
-    Split { amount: u64 },
-    Balance,
+
+    /// Send tokens
     Send { amount: u64 },
+
+    /// Receive tokens
+    Receive { token: String },
+
+    /// Show local balance
+    Balance,
+
+    /// Split tokens without storing them
+    Split { amount: u64 },
 }
 
 fn read_env(variable: &str) -> String {
@@ -70,6 +82,14 @@ async fn main() -> anyhow::Result<()> {
     let cli = Opts::parse();
 
     match cli.command {
+        Command::Receive { token } => {
+            let tokens = Tokens::deserialize(token)?;
+            localstore.add_tokens(tokens)?;
+            println!(
+                "Tokens received successfully.\nNew balance {} sats",
+                wallet.get_balance()?
+            );
+        }
         Command::Send { amount } => {
             let balance = wallet.get_balance()?;
             if amount > balance {
