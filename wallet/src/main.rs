@@ -99,19 +99,20 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            let all_tokens = localstore.get_tokens()?;
+            let selected_proofs = wallet.get_proofs_for_amount(amount)?;
+            let selected_proofs = Tokens::from((mint_url.clone(), selected_proofs.clone()));
+
             let (remaining_tokens, result) =
-                wallet.split_tokens(all_tokens.clone(), amount).await?;
+                wallet.split_tokens(selected_proofs.clone(), amount).await?;
 
-            // FIXME don't send all tokens
-
-            localstore.delete_tokens(all_tokens)?;
+            localstore.delete_tokens(selected_proofs)?;
             localstore.add_tokens(remaining_tokens)?;
 
             let amount = result.total_amount();
             let ser = result.serialize()?;
 
             println!("Result {amount} sats:\n{ser}");
+            println!("\nNew balance: {:?} sats", wallet.get_balance()?);
         }
 
         Command::Balance => {
