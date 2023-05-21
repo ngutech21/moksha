@@ -55,7 +55,7 @@ pub struct P2SHScript {}
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[skip_serializing_none]
 pub struct Token {
-    pub mint: Option<String>,
+    pub mint: Option<String>, // TODO use specific type
     pub proofs: Proofs,
 }
 

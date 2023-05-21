@@ -21,7 +21,7 @@ pub struct Mint {
 pub struct LightningFeeConfig {
     pub fee_percent: f32,
     pub fee_reserve_min: u64,
-    // TODO check of fee_percent is in range
+    // TODO check if fee_percent is in range
 }
 
 impl Default for LightningFeeConfig {
@@ -55,8 +55,6 @@ impl Mint {
         let fee_reserve = (amount_msat as f64 * fee_percent) as u64;
         std::cmp::max(fee_reserve, self.lightning_fee_config.fee_reserve_min)
     }
-
-    // TODO write tests for fee_reserve
 
     pub async fn create_blinded_signatures(
         &self,
@@ -220,6 +218,14 @@ mod tests {
     use lnbits_rust::api::invoice::PayInvoiceResult;
     use std::str::FromStr;
     use std::sync::Arc;
+
+    #[test]
+    fn test_fee_reserve() -> anyhow::Result<()> {
+        let mint = create_mint_from_mocks(None);
+        let fee = mint.fee_reserve(10000);
+        assert_eq!(4000, fee);
+        Ok(())
+    }
 
     #[tokio::test]
     async fn test_create_blindsignatures() -> anyhow::Result<()> {
