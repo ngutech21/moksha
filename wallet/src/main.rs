@@ -84,7 +84,9 @@ async fn main() -> anyhow::Result<()> {
     match cli.command {
         Command::Receive { token } => {
             let tokens = Tokens::deserialize(token)?;
-            localstore.add_tokens(tokens)?;
+            let total_amount = tokens.total_amount();
+            let (_, redeemed_tokens) = wallet.split_tokens(tokens, total_amount).await?;
+            localstore.add_tokens(redeemed_tokens)?;
             println!(
                 "Tokens received successfully.\nNew balance {} sats",
                 wallet.get_balance()?
