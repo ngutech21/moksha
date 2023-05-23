@@ -33,7 +33,7 @@ pub struct Proof {
     pub secret: String,
     #[serde(rename = "C")]
     pub c: PublicKey,
-    pub id: Option<String>,
+    pub id: Option<String>, // FIXME use keysetID as specific type / consider making this non optional and brake backwards compatibility
     pub script: Option<P2SHScript>,
 }
 
