@@ -2,16 +2,13 @@ use std::env;
 
 use cashurs_core::model::Tokens;
 use clap::{Parser, Subcommand};
-use client::Client;
 use dotenvy::dotenv;
-use localstore::RocksDBLocalStore;
 
-mod client;
-mod error;
-mod localstore;
-mod wallet;
+use cashurs_wallet::localstore::RocksDBLocalStore;
+use cashurs_wallet::wallet;
 
-use crate::localstore::LocalStore;
+use cashurs_wallet::client::Client;
+use cashurs_wallet::localstore::LocalStore;
 
 #[derive(Parser)]
 #[command(version)]
@@ -65,7 +62,7 @@ fn wait_for_user_input(prompt: String) -> String {
 async fn main() -> anyhow::Result<()> {
     let mint_url = read_env("WALLET_MINT_URL");
 
-    let client = client::HttpClient::new(mint_url.clone());
+    let client = cashurs_wallet::client::HttpClient::new(mint_url.clone());
     let keys = client.get_mint_keys().await?;
     let keysets = client.get_mint_keysets().await?;
 

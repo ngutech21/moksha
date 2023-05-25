@@ -15,20 +15,20 @@ use rand::{distributions::Alphanumeric, Rng};
 use std::str::FromStr;
 
 pub struct Wallet {
-    client: Box<dyn Client>,
+    client: Box<dyn Client + Sync + Send>,
     mint_keys: HashMap<u64, PublicKey>, // FIXME use specific type
     keysets: Keysets,
     dhke: Dhke,
-    localstore: Box<dyn LocalStore>,
+    localstore: Box<dyn LocalStore + Sync + Send>,
     mint_url: String,
 }
 
 impl Wallet {
     pub fn new(
-        client: Box<dyn Client>,
+        client: Box<dyn Client + Sync + Send>,
         mint_keys: HashMap<u64, PublicKey>,
         keysets: Keysets,
-        localstore: Box<dyn LocalStore>,
+        localstore: Box<dyn LocalStore + Sync + Send>,
         mint_url: String,
     ) -> Self {
         Self {
