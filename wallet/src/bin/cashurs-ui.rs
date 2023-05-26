@@ -1,16 +1,20 @@
 use std::collections::HashMap;
 
 use cashurs_core::model::Keysets;
+use cashurs_wallet::client::HttpClient;
 use cashurs_wallet::gui::{settings_tab, wallet_tab, Message};
 use cashurs_wallet::localstore::RocksDBLocalStore;
 use cashurs_wallet::wallet;
 use dotenvy::dotenv;
+use iced::widget::qr_code::State;
 use iced::Settings;
 use iced::{Application, Command, Font, Theme};
 use iced_aw::tabs::TabBarStyles;
 use iced_aw::Tabs;
 
 use cashurs_wallet::gui::Tab;
+
+use cashurs_wallet::client::Client;
 
 const ICON_FONT: Font = iced::Font::External {
     name: "Icons",
@@ -32,6 +36,9 @@ pub struct MainFrame {
     active_tab: usize,
     settings_tab: settings_tab::SettingsTab,
     wallet_tab: wallet_tab::WalletTab,
+
+    wallet: wallet::Wallet,
+    client: HttpClient,
 }
 
 impl Application for MainFrame {
@@ -52,7 +59,13 @@ impl Application for MainFrame {
 
         let localstore = Box::new(RocksDBLocalStore::new(read_env("WALLET_DB_PATH")));
 
-        let wallet = wallet::Wallet::new(Box::new(client), keys, keysets, localstore, mint_url);
+        let wallet = wallet::Wallet::new(
+            Box::new(client.clone()),
+            keys,
+            keysets,
+            localstore,
+            mint_url,
+        );
 
         let balance = wallet.get_balance().expect("msg");
 
@@ -64,8 +77,10 @@ impl Application for MainFrame {
                     invoice: "".to_string(),
                     mint_token_amount: 0,
                     balance,
-                    wallet,
+                    qr_code: None,
                 },
+                wallet,
+                client,
             },
             Command::none(),
         )
@@ -77,21 +92,49 @@ impl Application for MainFrame {
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
         match message {
-            Message::TabSelected(index) => self.active_tab = index,
-            Message::Settings(message) => self.settings_tab.update(message),
-            Message::Wallet(message) => self.wallet_tab.update(message),
-            Message::Something(result) => {
-                match result {
-                    Ok(_tokens) => {
-                        //self.wallet_tab.balance = tokens.amount;
+            Message::TabSelected(index) => {
+                self.active_tab = index;
+                Command::none()
+            }
+            Message::Settings(message) => {
+                self.settings_tab.update(message);
+                Command::none()
+            }
+            Message::CreateInvoicePressed => {
+                let amt = self.wallet_tab.mint_token_amount;
+                let cl = self.client.clone();
+                Command::perform(
+                    async move {
+                        cl.get_mint_payment_request(amt)
+                            .await
+                            .map_err(|err| err.to_string())
+                    },
+                    Message::PaymentRequest,
+                )
+            }
+            Message::MintPressed => Command::none(),
+            Message::InvoiceTextChanged(invoice) => {
+                self.wallet_tab.invoice = invoice;
+                Command::none()
+            }
+            Message::MintTokenAmountChanged(amt) => {
+                self.wallet_tab.mint_token_amount = amt;
+                Command::none()
+            }
+            Message::PaymentRequest(pr) => {
+                match pr {
+                    Ok(pr) => {
+                        self.wallet_tab.invoice = pr.pr.clone();
+                        self.wallet_tab.qr_code = State::new(&pr.pr).ok();
                     }
                     Err(e) => {
-                        println!("Error: {}", e);
+                        println!("Error: {:?}", e);
                     }
                 }
+
+                Command::none()
             }
         }
-        Command::none()
     }
 
     fn view(&self) -> iced::Element<Self::Message> {

@@ -19,7 +19,7 @@ use crate::error::CashuWalletError;
 
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait Client {
+pub trait Client: Send + Sync {
     async fn post_split_tokens(
         &self,
         amount: u64,

@@ -1,51 +1,39 @@
 use iced::{
-    widget::{button, Column, Container, Text, TextInput},
+    widget::{button, qr_code::State, Column, Container, QRCode, Row, Text},
     Element, Length,
 };
 use iced_aw::{style::NumberInputStyles, NumberInput, TabLabel};
-
-use crate::wallet;
 
 use super::{Message, Tab};
 
 pub struct WalletTab {
     pub balance: u64,
     pub invoice: String,
+    pub qr_code: Option<State>,
     pub mint_token_amount: u64,
-    pub wallet: wallet::Wallet,
 }
 
-impl WalletTab {
-    // async fn mint(wallet: &wallet::Wallet) -> Result<Tokens, CashuWalletError> {
-    //     wallet.mint_tokens(100, "lnbc".to_string()).await
-    // }
+pub trait Collection<'a, Message>: Sized {
+    fn push(self, element: impl Into<Element<'a, Message>>) -> Self;
 
-    // pub fn update(&'static mut self, message: WalletMessage) -> Command<Message> {
-    //     match message {
-    //         WalletMessage::MintPressed => {
-    //             let w = &self.wallet;
-    //             return Command::perform(Self::mint(w), Message::Something);
-    //         }
-    //         WalletMessage::InvoiceTextChanged(invoice) => self.invoice = invoice,
-    //         WalletMessage::MintTokenAmountChanged(amt) => self.mint_token_amount = amt,
-    //     }
-    //     Command::none()
-    // }
-
-    pub fn update(&mut self, message: WalletMessage) {
-        match message {
-            WalletMessage::MintPressed => {}
-            WalletMessage::InvoiceTextChanged(invoice) => self.invoice = invoice,
-            WalletMessage::MintTokenAmountChanged(amt) => self.mint_token_amount = amt,
+    fn push_maybe(self, element: Option<impl Into<Element<'a, Message>>>) -> Self {
+        match element {
+            Some(element) => self.push(element),
+            None => self,
         }
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum WalletMessage {
-    MintPressed,
-    InvoiceTextChanged(String),
-    MintTokenAmountChanged(u64),
+impl<'a, Message> Collection<'a, Message> for Column<'a, Message> {
+    fn push(self, element: impl Into<Element<'a, Message>>) -> Self {
+        Self::push(self, element)
+    }
+}
+
+impl<'a, Message> Collection<'a, Message> for Row<'a, Message> {
+    fn push(self, element: impl Into<Element<'a, Message>>) -> Self {
+        Self::push(self, element)
+    }
 }
 
 impl Tab for WalletTab {
@@ -60,33 +48,30 @@ impl Tab for WalletTab {
     }
 
     fn content(&self) -> Element<'_, Self::Message> {
-        let content: Element<'_, WalletMessage> = Container::new(
+        let content: Element<'_, Message> = Container::new(
             Column::new()
-                .push(Text::new(format!("Balance {} (sats)", self.balance)))
-                .push(
-                    TextInput::new("lnbc...", &self.invoice)
-                        .on_input(WalletMessage::InvoiceTextChanged)
-                        .padding(15)
-                        .size(30),
-                )
+                .push(Text::new(format!("Balance {} (sats)", self.balance)).size(18))
+                .push_maybe(self.qr_code.as_ref().map(QRCode::new))
+                .push(Text::new(&self.invoice).size(12))
                 .push(
                     NumberInput::new(
                         self.mint_token_amount,
                         1_000,
-                        WalletMessage::MintTokenAmountChanged,
+                        Message::MintTokenAmountChanged,
                     )
                     .style(NumberInputStyles::Default)
                     .step(100)
                     .padding(15.0)
                     .size(30.0),
                 )
-                .push(button("Mint").on_press(WalletMessage::MintPressed)),
+                .push(button("Create Invoice").on_press(Message::CreateInvoicePressed))
+                .push(button("Mint").on_press(Message::MintPressed)),
         )
         .width(Length::Fill)
         .height(Length::Fill)
         .center_x()
         .center_y()
         .into();
-        content.map(Message::Wallet)
+        content
     }
 }

@@ -1,4 +1,4 @@
-use cashurs_core::model::Tokens;
+use cashurs_core::model::PaymentRequest;
 use iced::{
     alignment::{Horizontal, Vertical},
     widget::{Column, Container},
@@ -6,19 +6,20 @@ use iced::{
 };
 use iced_aw::TabLabel;
 
-use crate::error::CashuWalletError;
-
-use self::{settings_tab::SettingsMessage, wallet_tab::WalletMessage};
+use self::settings_tab::SettingsMessage;
 
 pub mod settings_tab;
 pub mod wallet_tab;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Message {
     TabSelected(usize),
     Settings(SettingsMessage),
-    Wallet(WalletMessage),
-    Something(Result<Tokens, CashuWalletError>),
+    MintPressed,
+    InvoiceTextChanged(String),
+    MintTokenAmountChanged(u64),
+    CreateInvoicePressed,
+    PaymentRequest(Result<PaymentRequest, String>),
 }
 
 pub trait Tab {
