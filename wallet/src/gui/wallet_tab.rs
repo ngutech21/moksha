@@ -1,6 +1,8 @@
+use std::borrow::Cow;
+
 use iced::{
     widget::{button, qr_code::State, Column, Container, QRCode, Row, Text},
-    Element, Length,
+    Color, Element, Font, Length, Theme,
 };
 use iced_aw::{style::NumberInputStyles, NumberInput, TabLabel};
 
@@ -22,6 +24,20 @@ pub trait Collection<'a, Message>: Sized {
             None => self,
         }
     }
+}
+
+pub fn text<'a>(content: impl Into<Cow<'a, str>>) -> iced::widget::Text<'a, iced::Renderer<Theme>> {
+    p1_regular(content)
+}
+
+pub fn h1<'a>(content: impl Into<Cow<'a, str>>) -> iced::widget::Text<'a, iced::Renderer<Theme>> {
+    iced::widget::Text::new(content).size(48)
+}
+
+pub fn p1_regular<'a>(
+    content: impl Into<Cow<'a, str>>,
+) -> iced::widget::Text<'a, iced::Renderer<Theme>> {
+    iced::widget::Text::new(content).size(20)
 }
 
 impl<'a, Message> Collection<'a, Message> for Column<'a, Message> {
@@ -50,28 +66,38 @@ impl Tab for WalletTab {
     fn content(&self) -> Element<'_, Self::Message> {
         let content: Element<'_, Message> = Container::new(
             Column::new()
-                .push(Text::new(format!("Balance {} (sats)", self.balance)).size(18))
+                .push(h1(format!("Balance {} (sats)", self.balance)))
                 .push_maybe(self.qr_code.as_ref().map(QRCode::new))
-                .push(Text::new(&self.invoice).size(12))
+                .push(text(&self.invoice))
                 .push(
-                    NumberInput::new(
-                        self.mint_token_amount,
-                        1_000,
-                        Message::MintTokenAmountChanged,
-                    )
-                    .style(NumberInputStyles::Default)
-                    .step(100)
-                    .padding(15.0)
-                    .size(30.0),
+                    Row::new().push(text("Amount (sats)")).push(
+                        NumberInput::new(
+                            self.mint_token_amount,
+                            1_000,
+                            Message::MintTokenAmountChanged,
+                        )
+                        .min(1)
+                        .style(NumberInputStyles::Default)
+                        .step(100),
+                    ),
                 )
-                .push(button("Create Invoice").on_press(Message::CreateInvoicePressed))
-                .push(button("Mint").on_press(Message::MintPressed)),
+                .push(
+                    Row::new()
+                        .align_items(iced::Alignment::Center)
+                        .spacing(10)
+                        .push(button("Create Invoice").on_press(Message::CreateInvoicePressed))
+                        .push(
+                            Column::new()
+                                .push(button("Mint Tokens").on_press(Message::MintPressed)),
+                        ),
+                ),
         )
         .width(Length::Fill)
         .height(Length::Fill)
         .center_x()
         .center_y()
         .into();
+        //content.explain(Color::WHITE)
         content
     }
 }

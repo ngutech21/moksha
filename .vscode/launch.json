@@ -8,8 +8,8 @@
       "type": "lldb",
       "request": "launch",
       "name": "Debug Wallet",
-      "program": "${workspaceFolder}/target/debug/cashurs-cli",
-      "args": ["mint", "10"],
+      "program": "${workspaceFolder}/target/debug/cashurs-ui",
+      //"args": ["mint", "10"],
       "cwd": "${workspaceFolder}"
     }
   ]
