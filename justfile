@@ -6,7 +6,7 @@ run-mint:
   cargo run --bin cashurs-mint
 
 run-wallet *ARGS:
-  cargo run --bin cashurs-wallet {{ARGS}} 
+  cargo run --bin cashurs-cli {{ARGS}} 
 
 
 [no-exit-message]
