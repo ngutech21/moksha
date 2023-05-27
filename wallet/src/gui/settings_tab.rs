@@ -49,7 +49,7 @@ impl Tab for SettingsTab {
     }
 
     fn tab_label(&self) -> TabLabel {
-        TabLabel::IconText('\u{E5E9}', self.title())
+        TabLabel::IconText('\u{EA6E}', self.title())
     }
 
     fn content(&self) -> Element<'_, Self::Message> {

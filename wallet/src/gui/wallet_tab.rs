@@ -61,7 +61,7 @@ impl Tab for WalletTab {
     }
 
     fn tab_label(&self) -> TabLabel {
-        TabLabel::IconText('\u{E800}', self.title())
+        TabLabel::IconText('\u{EC78}', self.title())
     }
 
     fn content(&self) -> Element<'_, Self::Message> {

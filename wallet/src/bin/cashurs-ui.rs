@@ -15,7 +15,7 @@ use cashurs_wallet::client::Client;
 
 const ICON_FONT: Font = iced::Font::External {
     name: "Icons",
-    bytes: include_bytes!("../../fonts/icons.ttf"),
+    bytes: include_bytes!("../../fonts/boxicons.ttf"),
 };
 
 fn read_env(variable: &str) -> String {
