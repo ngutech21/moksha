@@ -10,6 +10,10 @@ members = [
 [profile.dev]
 split-debuginfo = "unpacked"
 
+[profile.release]
+strip = true  # Automatically strip symbols from the binary.
+lto = true # Enable link-time optimization.
+
 [workspace.metadata]
 authors = ["The cashu-rs Developers"]
 edition = "2021"
