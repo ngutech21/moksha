@@ -32,7 +32,11 @@ async fn main() -> anyhow::Result<()> {
     let localstore = Box::new(RocksDBLocalStore::new(read_env("WALLET_DB_PATH")));
     let wallet = wallet::Wallet::new(Box::new(client), keys, keysets, localstore, mint_url);
 
-    let settings = Settings::with_flags(wallet);
+    let mut settings = Settings::with_flags(wallet);
+    settings.antialiasing = true;
+    settings.window.size = (800, 600);
+    settings.window.resizable = true;
+
     MainFrame::run(settings)?;
     Ok(())
 }

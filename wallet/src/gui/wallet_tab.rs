@@ -69,10 +69,10 @@ impl Tab for WalletTab {
             Column::new()
                 .push(h1(format!("Balance {} (sats)", self.balance)))
                 .push_maybe(self.qr_code.as_ref().map(QRCode::new))
-                .push(
+                .push_maybe(self.invoice.as_ref().map(|_| {
                     TextInput::new("", &self.invoice.clone().unwrap_or_default())
-                        .on_input(Message::InvoiceTextChanged),
-                )
+                        .on_input(Message::InvoiceTextChanged)
+                }))
                 .push(
                     Row::new().push(text("Amount (sats)")).push(
                         NumberInput::new(
@@ -90,9 +90,10 @@ impl Tab for WalletTab {
                         .align_items(iced::Alignment::Center)
                         .spacing(10)
                         .push(button("Create Invoice").on_press(Message::CreateInvoicePressed))
-                        .push(
-                            Column::new()
-                                .push(button("Mint Tokens").on_press(Message::MintPressed)),
+                        .push_maybe(
+                            self.invoice
+                                .as_ref()
+                                .map(|_| button("Mint Tokens").on_press(Message::MintPressed)),
                         ),
                 ),
         )
