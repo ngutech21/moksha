@@ -6,8 +6,6 @@ use cashurs_core::model::{
     PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
     Proofs,
 };
-#[cfg(test)]
-use mockall::automock;
 
 use reqwest::{
     header::{HeaderValue, CONTENT_TYPE},
@@ -16,10 +14,10 @@ use reqwest::{
 use secp256k1::PublicKey;
 
 use crate::error::CashuWalletError;
+use dyn_clone::DynClone;
 
-#[cfg_attr(test, automock)]
 #[async_trait]
-pub trait Client: Send + Sync {
+pub trait Client: Send + Sync + DynClone {
     async fn post_split_tokens(
         &self,
         amount: u64,

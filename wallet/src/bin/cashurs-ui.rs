@@ -1,10 +1,7 @@
-use std::collections::HashMap;
-
-use cashurs_core::model::Keysets;
 use cashurs_wallet::client::HttpClient;
 use cashurs_wallet::gui::{settings_tab, wallet_tab, Message};
 use cashurs_wallet::localstore::RocksDBLocalStore;
-use cashurs_wallet::wallet;
+use cashurs_wallet::wallet::{self, Wallet};
 use dotenvy::dotenv;
 use iced::widget::qr_code::State;
 use iced::Settings;
@@ -28,7 +25,15 @@ fn read_env(variable: &str) -> String {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    MainFrame::run(Settings::default())?;
+    let mint_url = read_env("WALLET_MINT_URL");
+    let client = cashurs_wallet::client::HttpClient::new(mint_url.clone());
+    let keys = client.get_mint_keys().await?;
+    let keysets = client.get_mint_keysets().await?;
+    let localstore = Box::new(RocksDBLocalStore::new(read_env("WALLET_DB_PATH")));
+    let wallet = wallet::Wallet::new(Box::new(client), keys, keysets, localstore, mint_url);
+
+    let settings = Settings::with_flags(wallet);
+    MainFrame::run(settings)?;
     Ok(())
 }
 
@@ -45,37 +50,21 @@ impl Application for MainFrame {
     type Message = Message;
     type Theme = Theme;
     type Executor = iced::executor::Default;
-    type Flags = ();
+    type Flags = Wallet;
 
-    fn new(_flags: ()) -> (MainFrame, Command<Message>) {
+    fn new(wallet: Wallet) -> (MainFrame, Command<Message>) {
         let mint_url = read_env("WALLET_MINT_URL");
-        let client = cashurs_wallet::client::HttpClient::new(mint_url.clone());
-
-        //let keys = client.get_mint_keys().await.expect("msg");
-        let keys = HashMap::new();
-        let keysets = Keysets {
-            keysets: Vec::new(),
-        };
-
-        let localstore = Box::new(RocksDBLocalStore::new(read_env("WALLET_DB_PATH")));
-
-        let wallet = wallet::Wallet::new(
-            Box::new(client.clone()),
-            keys,
-            keysets,
-            localstore,
-            mint_url,
-        );
+        let client = cashurs_wallet::client::HttpClient::new(mint_url);
 
         let balance = wallet.get_balance().expect("msg");
-
         (
             MainFrame {
                 active_tab: 0,
                 settings_tab: settings_tab::SettingsTab::new(),
                 wallet_tab: wallet_tab::WalletTab {
-                    invoice: "".to_string(),
-                    mint_token_amount: 0,
+                    invoice_hash: None,
+                    invoice: None,
+                    mint_token_amount: None,
                     balance,
                     qr_code: None,
                 },
@@ -92,6 +81,15 @@ impl Application for MainFrame {
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
         match message {
+            Message::TokensMinted(balance) => {
+                println!("new balance: {:?}", balance);
+                self.wallet_tab.balance = balance.unwrap_or(0);
+                self.wallet_tab.qr_code = None;
+                self.wallet_tab.invoice = None;
+                self.wallet_tab.invoice_hash = None;
+                self.wallet_tab.mint_token_amount = None;
+                Command::none()
+            }
             Message::TabSelected(index) => {
                 self.active_tab = index;
                 Command::none()
@@ -101,7 +99,11 @@ impl Application for MainFrame {
                 Command::none()
             }
             Message::CreateInvoicePressed => {
-                let amt = self.wallet_tab.mint_token_amount;
+                let amt = match self.wallet_tab.mint_token_amount {
+                    Some(amt) => amt,
+                    None => return Command::none(),
+                };
+
                 let cl = self.client.clone();
                 Command::perform(
                     async move {
@@ -112,19 +114,37 @@ impl Application for MainFrame {
                     Message::PaymentRequest,
                 )
             }
-            Message::MintPressed => Command::none(),
+            Message::MintPressed => {
+                let amt = self.wallet_tab.mint_token_amount;
+                let hash = self.wallet_tab.invoice_hash.to_owned();
+
+                if amt.is_none() || hash.is_none() {
+                    return Command::none();
+                }
+
+                let wallet = self.wallet.clone();
+
+                Command::perform(
+                    async move {
+                        let _ = wallet.mint_tokens(amt.unwrap(), hash.unwrap()).await;
+                        wallet.get_balance().map_err(|err| err.to_string())
+                    },
+                    Message::TokensMinted,
+                )
+            }
             Message::InvoiceTextChanged(invoice) => {
-                self.wallet_tab.invoice = invoice;
+                self.wallet_tab.invoice = Some(invoice);
                 Command::none()
             }
             Message::MintTokenAmountChanged(amt) => {
-                self.wallet_tab.mint_token_amount = amt;
+                self.wallet_tab.mint_token_amount = Some(amt);
                 Command::none()
             }
             Message::PaymentRequest(pr) => {
                 match pr {
                     Ok(pr) => {
-                        self.wallet_tab.invoice = pr.pr.clone();
+                        self.wallet_tab.invoice = Some(pr.pr.clone());
+                        self.wallet_tab.invoice_hash = Some(pr.hash);
                         self.wallet_tab.qr_code = State::new(&pr.pr).ok();
                     }
                     Err(e) => {

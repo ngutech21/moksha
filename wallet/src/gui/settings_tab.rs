@@ -6,8 +6,6 @@ use iced_aw::TabLabel;
 
 use super::{Message, Tab};
 
-//use crate::{Message, Tab};
-
 #[derive(Debug)]
 pub struct SettingsTab {
     mint_url: String,
@@ -28,6 +26,12 @@ impl SettingsTab {
             }
         }
         println!("event {:?}", &self);
+    }
+}
+
+impl Default for SettingsTab {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

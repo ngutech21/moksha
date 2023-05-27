@@ -20,6 +20,7 @@ pub enum Message {
     MintTokenAmountChanged(u64),
     CreateInvoicePressed,
     PaymentRequest(Result<PaymentRequest, String>),
+    TokensMinted(Result<u64, String>),
 }
 
 pub trait Tab {

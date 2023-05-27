@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
 use iced::{
-    widget::{button, qr_code::State, Column, Container, QRCode, Row, Text},
-    Color, Element, Font, Length, Theme,
+    widget::{button, qr_code::State, Column, Container, QRCode, Row, TextInput},
+    Element, Length, Theme,
 };
 use iced_aw::{style::NumberInputStyles, NumberInput, TabLabel};
 
@@ -10,9 +10,10 @@ use super::{Message, Tab};
 
 pub struct WalletTab {
     pub balance: u64,
-    pub invoice: String,
+    pub invoice: Option<String>,
+    pub invoice_hash: Option<String>,
     pub qr_code: Option<State>,
-    pub mint_token_amount: u64,
+    pub mint_token_amount: Option<u64>,
 }
 
 pub trait Collection<'a, Message>: Sized {
@@ -68,11 +69,14 @@ impl Tab for WalletTab {
             Column::new()
                 .push(h1(format!("Balance {} (sats)", self.balance)))
                 .push_maybe(self.qr_code.as_ref().map(QRCode::new))
-                .push(text(&self.invoice))
+                .push(
+                    TextInput::new("", &self.invoice.clone().unwrap_or_default())
+                        .on_input(Message::InvoiceTextChanged),
+                )
                 .push(
                     Row::new().push(text("Amount (sats)")).push(
                         NumberInput::new(
-                            self.mint_token_amount,
+                            self.mint_token_amount.unwrap_or_default(),
                             1_000,
                             Message::MintTokenAmountChanged,
                         )

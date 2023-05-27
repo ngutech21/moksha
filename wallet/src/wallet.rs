@@ -23,6 +23,19 @@ pub struct Wallet {
     mint_url: String,
 }
 
+impl Clone for Wallet {
+    fn clone(&self) -> Self {
+        Self {
+            mint_keys: self.mint_keys.clone(),
+            keysets: self.keysets.clone(),
+            dhke: self.dhke.clone(),
+            mint_url: self.mint_url.clone(),
+            client: dyn_clone::clone_box(&*self.client),
+            localstore: dyn_clone::clone_box(&*self.localstore),
+        }
+    }
+}
+
 impl Wallet {
     pub fn new(
         client: Box<dyn Client + Sync + Send>,
@@ -308,11 +321,119 @@ fn generate_random_string() -> String {
 mod tests {
     use super::Wallet;
     use crate::{
-        client::{HttpClient, MockClient},
-        localstore::MockLocalStore,
+        client::{Client, HttpClient},
+        error::CashuWalletError,
+        localstore::LocalStore,
     };
-    use cashurs_core::model::{Keysets, PostSplitResponse, Proofs, Token, Tokens};
+    use async_trait::async_trait;
+    use cashurs_core::model::{
+        BlindedMessage, CheckFeesResponse, Keysets, PaymentRequest, PostMeltResponse,
+        PostMintResponse, PostSplitResponse, Proofs, Token, Tokens,
+    };
+    use secp256k1::PublicKey;
     use std::collections::HashMap;
+
+    #[derive(Clone)]
+    struct MockLocalStore {
+        tokens: Tokens,
+    }
+
+    impl MockLocalStore {
+        fn new() -> Self {
+            Self {
+                tokens: Tokens::new(Token {
+                    mint: Some("mint_url".to_string()),
+                    proofs: Proofs::empty(),
+                }),
+            }
+        }
+
+        fn with_tokens(tokens: Tokens) -> Self {
+            Self { tokens }
+        }
+    }
+
+    impl Default for MockLocalStore {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
+    impl LocalStore for MockLocalStore {
+        fn add_tokens(&self, _new_tokens: Tokens) -> Result<(), crate::error::CashuWalletError> {
+            unimplemented!()
+        }
+
+        fn get_tokens(
+            &self,
+        ) -> Result<cashurs_core::model::Tokens, crate::error::CashuWalletError> {
+            Ok(self.tokens.clone())
+        }
+
+        fn delete_tokens(&self, _tokens: Tokens) -> Result<(), crate::error::CashuWalletError> {
+            unimplemented!()
+        }
+    }
+
+    #[derive(Clone)]
+    struct MockClient {}
+
+    impl MockClient {
+        fn new() -> Self {
+            Self {}
+        }
+    }
+
+    #[async_trait]
+    impl Client for MockClient {
+        async fn post_split_tokens(
+            &self,
+            _amount: u64,
+            _proofs: Proofs,
+            _output: Vec<BlindedMessage>,
+        ) -> Result<PostSplitResponse, CashuWalletError> {
+            Ok(PostSplitResponse {
+                fst: vec![],
+                snd: vec![],
+            })
+        }
+
+        async fn post_mint_payment_request(
+            &self,
+            _hash: String,
+            _blinded_messages: Vec<BlindedMessage>,
+        ) -> Result<PostMintResponse, CashuWalletError> {
+            unimplemented!()
+        }
+
+        async fn post_melt_tokens(
+            &self,
+            _proofs: Proofs,
+            _pr: String,
+            _outputs: Vec<BlindedMessage>,
+        ) -> Result<PostMeltResponse, CashuWalletError> {
+            unimplemented!()
+        }
+
+        async fn post_checkfees(&self, _pr: String) -> Result<CheckFeesResponse, CashuWalletError> {
+            unimplemented!()
+        }
+
+        async fn get_mint_keys(&self) -> Result<HashMap<u64, PublicKey>, CashuWalletError> {
+            unimplemented!()
+        }
+
+        async fn get_mint_keysets(&self) -> Result<Keysets, CashuWalletError> {
+            unimplemented!()
+        }
+
+        async fn get_mint_payment_request(
+            &self,
+            _amount: u64,
+        ) -> Result<PaymentRequest, CashuWalletError> {
+            unimplemented!()
+        }
+    }
 
     #[test]
     fn test_create_secrets() {
@@ -334,15 +455,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_split() -> anyhow::Result<()> {
-        let mut client = MockClient::new();
-
-        client.expect_post_split_tokens().returning(|_, _, _| {
-            Ok(PostSplitResponse {
-                fst: vec![], // TODO return dummy values
-                snd: vec![],
-            })
-        });
-
+        let client = MockClient::new();
         let localstore = Box::new(MockLocalStore::new());
 
         let wallet = Wallet::new(
@@ -369,13 +482,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_proofs_for_amount_empty() -> anyhow::Result<()> {
-        let mut local_store = MockLocalStore::new();
-        local_store.expect_get_tokens().returning(|| {
-            Ok(Tokens::new(Token {
-                mint: Some("mint_url".to_string()),
-                proofs: Proofs::empty(),
-            }))
-        });
+        let local_store = MockLocalStore::new();
 
         let wallet = Wallet::new(
             Box::new(MockClient::new()),
@@ -395,16 +502,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_proofs_for_amount_valid() -> anyhow::Result<()> {
-        let mut local_store = MockLocalStore::new();
-
         let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
-
-        local_store.expect_get_tokens().returning(move || {
-            Ok(Tokens::new(Token {
-                mint: Some("mint_url".to_string()),
-                proofs: fixture.get_proofs(),
-            }))
-        });
+        let local_store = MockLocalStore::with_tokens(fixture);
 
         let wallet = Wallet::new(
             Box::new(MockClient::new()),

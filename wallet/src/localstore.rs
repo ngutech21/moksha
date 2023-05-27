@@ -6,11 +6,9 @@ use serde::{de::DeserializeOwned, Serialize};
 
 use crate::error::CashuWalletError;
 
-#[cfg(test)]
-use mockall::automock;
+use dyn_clone::DynClone;
 
-#[cfg_attr(test, automock)]
-pub trait LocalStore {
+pub trait LocalStore: DynClone {
     fn delete_tokens(&self, tokens: Tokens) -> Result<(), CashuWalletError>;
     fn add_tokens(&self, tokens: Tokens) -> Result<(), CashuWalletError>;
     fn get_tokens(&self) -> Result<Tokens, CashuWalletError>;
