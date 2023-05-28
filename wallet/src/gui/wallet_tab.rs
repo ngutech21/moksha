@@ -67,7 +67,8 @@ impl Tab for WalletTab {
     fn content(&self) -> Element<'_, Self::Message> {
         let content: Element<'_, Message> = Container::new(
             Column::new()
-                .push(h1(format!("Balance {} (sats)", self.balance)))
+                .push(h1(format!("{} (sats)", self.balance)))
+                .spacing(100)
                 .push_maybe(self.qr_code.as_ref().map(QRCode::new))
                 .push_maybe(self.invoice.as_ref().map(|_| {
                     TextInput::new("", &self.invoice.clone().unwrap_or_default())

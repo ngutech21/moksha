@@ -6,7 +6,7 @@ use cashurs_wallet::localstore::RocksDBLocalStore;
 use cashurs_wallet::wallet::{self, Wallet};
 use dotenvy::dotenv;
 use iced::widget::qr_code::State;
-use iced::Settings;
+use iced::{theme, Color, Settings};
 use iced::{Application, Command, Font, Theme};
 use iced_aw::tabs::TabBarStyles;
 use iced_aw::Tabs;
@@ -192,6 +192,12 @@ impl Application for MainFrame {
     }
 
     fn theme(&self) -> iced::Theme {
-        Theme::Dark
+        Theme::custom(theme::Palette {
+            background: Color::from_rgb8(37, 37, 37),
+            text: Color::BLACK,
+            primary: Color::from_rgb8(94, 124, 226),
+            success: Color::from_rgb8(8, 102, 79),
+            danger: Color::from_rgb8(195, 66, 63),
+        })
     }
 }
