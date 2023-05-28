@@ -10,7 +10,7 @@ name = "cashurs_core"
 path = "src/lib.rs"
 
 [dependencies]
-base64 = "0.21.1"
+base64 = "0.21.2"
 bitcoin_hashes = "0.12.0"
 rand = "0.8.5"
 secp256k1 = {version="0.27.0", features = [ "rand", "serde" ]}
