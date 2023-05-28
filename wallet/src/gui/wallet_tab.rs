@@ -1,12 +1,13 @@
-use std::borrow::Cow;
-
 use iced::{
     widget::{button, qr_code::State, Column, Container, QRCode, Row, TextInput},
-    Element, Length, Theme,
+    Element, Length,
 };
 use iced_aw::{style::NumberInputStyles, NumberInput, TabLabel};
 
 use super::{Message, Tab};
+
+use super::util::Collection;
+use super::util::{h1, text};
 
 pub struct WalletTab {
     pub balance: u64,
@@ -14,43 +15,6 @@ pub struct WalletTab {
     pub invoice_hash: Option<String>,
     pub qr_code: Option<State>,
     pub mint_token_amount: Option<u64>,
-}
-
-pub trait Collection<'a, Message>: Sized {
-    fn push(self, element: impl Into<Element<'a, Message>>) -> Self;
-
-    fn push_maybe(self, element: Option<impl Into<Element<'a, Message>>>) -> Self {
-        match element {
-            Some(element) => self.push(element),
-            None => self,
-        }
-    }
-}
-
-pub fn text<'a>(content: impl Into<Cow<'a, str>>) -> iced::widget::Text<'a, iced::Renderer<Theme>> {
-    p1_regular(content)
-}
-
-pub fn h1<'a>(content: impl Into<Cow<'a, str>>) -> iced::widget::Text<'a, iced::Renderer<Theme>> {
-    iced::widget::Text::new(content).size(48)
-}
-
-pub fn p1_regular<'a>(
-    content: impl Into<Cow<'a, str>>,
-) -> iced::widget::Text<'a, iced::Renderer<Theme>> {
-    iced::widget::Text::new(content).size(20)
-}
-
-impl<'a, Message> Collection<'a, Message> for Column<'a, Message> {
-    fn push(self, element: impl Into<Element<'a, Message>>) -> Self {
-        Self::push(self, element)
-    }
-}
-
-impl<'a, Message> Collection<'a, Message> for Row<'a, Message> {
-    fn push(self, element: impl Into<Element<'a, Message>>) -> Self {
-        Self::push(self, element)
-    }
 }
 
 impl Tab for WalletTab {
@@ -94,7 +58,8 @@ impl Tab for WalletTab {
                                 .step(100),
                             ),
                     )
-                }),
+                })
+                .push(button("Receive Tokens").on_press(Message::ShowReceiveTokensPopup)),
         )
         .width(Length::Fill)
         .height(Length::Fill)

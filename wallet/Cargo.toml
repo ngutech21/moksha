@@ -31,7 +31,7 @@ async-trait = "0.1.68"
 rocksdb = "0.21.0"
 lightning-invoice = "0.23.0"
 iced = {version="0.9.0", features=["image", "tokio","qr_code","debug"]}
-iced_aw = { version = "0.5", default-features = false, features = ["tab_bar","tabs", "number_input"] }
+iced_aw = { version = "0.5", default-features = false, features = ["tab_bar","tabs", "number_input","modal","card"] }
 dyn-clone = "1.0.11"
 
 

@@ -11,6 +11,8 @@ use self::settings_tab::SettingsMessage;
 pub mod settings_tab;
 pub mod wallet_tab;
 
+pub mod util;
+
 #[derive(Debug, Clone)]
 pub enum Message {
     TabSelected(usize),
@@ -19,7 +21,11 @@ pub enum Message {
     MintTokenAmountChanged(u64),
     CreateInvoicePressed,
     PaymentRequestReceived(Result<PaymentRequest, String>),
-    TokensMinted(Result<u64, String>),
+    TokenBalanceChanged(Result<u64, String>),
+    ShowReceiveTokensPopup,
+    HideReceiveTokensPopup,
+    ImportTokensPressed,
+    ReceiveTokenChanged(String),
 }
 
 pub trait Tab {

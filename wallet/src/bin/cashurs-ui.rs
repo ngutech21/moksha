@@ -1,20 +1,24 @@
 use std::time::Duration;
 
+use cashurs_core::model::Tokens;
 use cashurs_wallet::client::HttpClient;
+use cashurs_wallet::gui::Tab;
 use cashurs_wallet::gui::{settings_tab, wallet_tab, Message};
 use cashurs_wallet::localstore::RocksDBLocalStore;
 use cashurs_wallet::wallet::{self, Wallet};
 use dotenvy::dotenv;
+use iced::alignment::Horizontal;
 use iced::widget::qr_code::State;
-use iced::{theme, Color, Settings};
-use iced::{Application, Command, Font, Theme};
+use iced::widget::{button, text_input, Row};
+use iced::{theme, Application, Command, Font, Theme};
+use iced::{Color, Length, Settings};
 use iced_aw::tabs::TabBarStyles;
-use iced_aw::Tabs;
-
-use cashurs_wallet::gui::Tab;
+use iced_aw::{Card, Modal, Tabs};
 
 use cashurs_wallet::client::Client;
 use tokio::time::{sleep_until, Instant};
+
+use cashurs_wallet::gui::util::text;
 
 const ICON_FONT: Font = iced::Font::External {
     name: "Icons",
@@ -51,6 +55,8 @@ pub struct MainFrame {
 
     wallet: wallet::Wallet,
     client: HttpClient,
+    show_modal: bool,
+    receive_token: String,
 }
 
 impl Application for MainFrame {
@@ -77,6 +83,8 @@ impl Application for MainFrame {
                 },
                 wallet,
                 client,
+                show_modal: false,
+                receive_token: String::new(),
             },
             Command::none(),
         )
@@ -88,7 +96,41 @@ impl Application for MainFrame {
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
         match message {
-            Message::TokensMinted(balance) => {
+            Message::ImportTokensPressed => {
+                println!("import tokens pressed");
+
+                let token = self.receive_token.clone();
+                let tokens = Tokens::deserialize(token).unwrap();
+                let total_amount = tokens.total_amount();
+                self.show_modal = false;
+
+                let wallet = self.wallet.clone();
+                Command::perform(
+                    async move {
+                        let (_, redeemed_tokens) =
+                            wallet.split_tokens(tokens, total_amount).await.unwrap();
+                        let _ = wallet.localstore().add_tokens(redeemed_tokens); // FIXME error handling
+                        wallet.get_balance().map_err(|err| err.to_string())
+                    },
+                    Message::TokenBalanceChanged,
+                )
+            }
+            Message::ReceiveTokenChanged(token) => {
+                self.receive_token = token;
+                println!("token changed: {:?}", &self.receive_token);
+                Command::none()
+            }
+            Message::ShowReceiveTokensPopup => {
+                print!("Receive tokens pressed");
+                self.show_modal = true;
+                Command::none()
+            }
+            Message::HideReceiveTokensPopup => {
+                print!("Hide tokens pressed");
+                self.show_modal = false;
+                Command::none()
+            }
+            Message::TokenBalanceChanged(balance) => {
                 println!("new balance: {:?}", balance);
                 self.wallet_tab.balance = balance.unwrap_or(0);
                 self.wallet_tab.qr_code = None;
@@ -168,7 +210,7 @@ impl Application for MainFrame {
                                 }
                                 wallet.get_balance().map_err(|err| err.to_string())
                             },
-                            Message::TokensMinted,
+                            Message::TokenBalanceChanged,
                         );
                     }
                     Err(e) => {
@@ -182,13 +224,41 @@ impl Application for MainFrame {
     }
 
     fn view(&self) -> iced::Element<Self::Message> {
-        Tabs::new(self.active_tab, Message::TabSelected)
+        let content = Tabs::new(self.active_tab, Message::TabSelected)
             .push(self.wallet_tab.tab_label(), self.wallet_tab.view())
             .push(self.settings_tab.tab_label(), self.settings_tab.view())
             .tab_bar_style(TabBarStyles::Blue)
             .icon_font(ICON_FONT)
-            .tab_bar_position(iced_aw::TabBarPosition::Top)
+            .tab_bar_position(iced_aw::TabBarPosition::Top);
+
+        Modal::new(self.show_modal, content, || {
+            Card::new(
+                text("Receive Tokens"),
+                text_input("Token", &self.receive_token).on_input(Message::ReceiveTokenChanged),
+            )
+            .foot(
+                Row::new()
+                    .spacing(10)
+                    .padding(5)
+                    .width(Length::Fill)
+                    .push(
+                        button(text("Cancel").horizontal_alignment(Horizontal::Center))
+                            .width(Length::Fill)
+                            .on_press(Message::HideReceiveTokensPopup),
+                    )
+                    .push(
+                        button(text("Import Tokens").horizontal_alignment(Horizontal::Center))
+                            .width(Length::Fill)
+                            .on_press(Message::ImportTokensPressed),
+                    ),
+            )
+            .max_width(500.0)
+            .on_close(Message::HideReceiveTokensPopup)
             .into()
+        })
+        .backdrop(Message::HideReceiveTokensPopup)
+        .on_esc(Message::HideReceiveTokensPopup)
+        .into()
     }
 
     fn theme(&self) -> iced::Theme {
@@ -199,5 +269,6 @@ impl Application for MainFrame {
             success: Color::from_rgb8(8, 102, 79),
             danger: Color::from_rgb8(195, 66, 63),
         })
+        //Theme::Dark
     }
 }

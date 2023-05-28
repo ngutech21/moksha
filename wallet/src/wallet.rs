@@ -54,6 +54,10 @@ impl Wallet {
         }
     }
 
+    pub fn localstore(&self) -> &dyn LocalStore {
+        &*self.localstore
+    }
+
     pub fn get_balance(&self) -> Result<u64, CashuWalletError> {
         let total = self.localstore.get_tokens()?.total_amount();
         Ok(total)
