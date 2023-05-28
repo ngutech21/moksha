@@ -15,8 +15,11 @@ pub enum CashuWalletError {
     #[error("InvalidHeaderValueError - {0}")]
     InvalidHeaderValue(#[from] InvalidHeaderValue),
 
-    #[error("MintError - {0} - {0}")]
-    MintError(u64, String),
+    #[error("{0}")]
+    MintError(String),
+
+    #[error("{1}")]
+    InvoiceNotPaidYet(u64, String),
 
     #[error("UnexpectedResponse - {0}")]
     UnexpectedResponse(String),

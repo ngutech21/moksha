@@ -33,6 +33,9 @@ pub enum CashuMintError {
     #[error("Invoice not found for hash {0}")]
     InvoiceNotFound(String),
 
+    #[error("Lightning invoice not paid yet.")]
+    InvoiceNotPaidYet,
+
     #[error("Proof already used {0}")]
     ProofAlreadyUsed(String),
 

@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, time::Duration};
 
 use cashurs_core::model::Tokens;
 use clap::{Parser, Subcommand};
@@ -9,6 +9,7 @@ use cashurs_wallet::wallet;
 
 use cashurs_wallet::client::Client;
 use cashurs_wallet::localstore::LocalStore;
+use tokio::time::{sleep_until, Instant};
 
 #[derive(Parser)]
 #[command(version)]
@@ -184,16 +185,29 @@ async fn main() -> anyhow::Result<()> {
             let hash = payment_request.clone().hash;
             let invoice = payment_request.clone().pr;
 
-            let prompt = format!(
-                "Pay invoice to mint tokens. Press return after invoice is paid:\n\n{invoice}"
-            );
-            wait_for_user_input(prompt);
+            println!("Pay invoice to mint tokens:\n\n{invoice}");
 
-            wallet.mint_tokens(amount, hash).await?;
-            println!(
-                "Tokens minted successfully.\nNew balance {} sats",
-                wallet.get_balance()?
-            );
+            loop {
+                sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
+                let mint_result = wallet.mint_tokens(amount, hash.clone()).await;
+
+                match mint_result {
+                    Ok(_) => {
+                        println!(
+                            "Tokens minted successfully.\nNew balance {} sats",
+                            wallet.get_balance()?
+                        );
+                        break;
+                    }
+                    Err(cashurs_wallet::error::CashuWalletError::InvoiceNotPaidYet(_, _)) => {
+                        continue;
+                    }
+                    Err(e) => {
+                        println!("General Error: {}", e);
+                        break;
+                    }
+                }
+            }
         }
     }
     Ok(())

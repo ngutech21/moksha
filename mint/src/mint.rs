@@ -96,7 +96,7 @@ impl Mint {
             .await?;
 
         if !is_paid {
-            return Ok(vec![]);
+            return Err(CashuMintError::InvoiceNotPaidYet);
         }
 
         self.db.remove_pending_invoice(invoice_hash)?;

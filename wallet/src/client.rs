@@ -195,7 +195,14 @@ async fn extract_response_data<T: serde::de::DeserializeOwned>(
                     let data = serde_json::from_str::<CashuErrorResponse>(&txt)
                         .map_err(|_| CashuWalletError::UnexpectedResponse(txt))
                         .unwrap();
-                    Err(CashuWalletError::MintError(data.code, data.error))
+
+                    // FIXME: use the error code to return a proper error
+                    match data.error.as_str() {
+                        "Lightning invoice not paid yet." => {
+                            Err(CashuWalletError::InvoiceNotPaidYet(data.code, data.error))
+                        }
+                        _ => Err(CashuWalletError::MintError(data.error)),
+                    }
                 } else {
                     Err(CashuWalletError::UnexpectedResponse(response.text().await?))
                 }
