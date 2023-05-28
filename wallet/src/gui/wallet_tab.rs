@@ -73,29 +73,27 @@ impl Tab for WalletTab {
                     TextInput::new("", &self.invoice.clone().unwrap_or_default())
                         .on_input(Message::InvoiceTextChanged)
                 }))
-                .push(
-                    Row::new().push(text("Amount (sats)")).push(
-                        NumberInput::new(
-                            self.mint_token_amount.unwrap_or_default(),
-                            1_000,
-                            Message::MintTokenAmountChanged,
-                        )
-                        .min(1)
-                        .style(NumberInputStyles::Default)
-                        .step(100),
-                    ),
-                )
-                .push(
-                    Row::new()
-                        .align_items(iced::Alignment::Center)
-                        .spacing(10)
-                        .push(button("Create Invoice").on_press(Message::CreateInvoicePressed))
-                        .push_maybe(
-                            self.invoice
-                                .as_ref()
-                                .map(|_| button("Mint Tokens").on_press(Message::MintPressed)),
-                        ),
-                ),
+                .push_maybe(if self.qr_code.is_some() {
+                    None
+                } else {
+                    Some(
+                        Row::new()
+                            .align_items(iced::Alignment::Center)
+                            .spacing(10)
+                            .push(button("Mint Tokens").on_press(Message::CreateInvoicePressed))
+                            .push(text("Amount (sats)"))
+                            .push(
+                                NumberInput::new(
+                                    self.mint_token_amount.unwrap_or_default(),
+                                    1_000,
+                                    Message::MintTokenAmountChanged,
+                                )
+                                .min(1)
+                                .style(NumberInputStyles::Default)
+                                .step(100),
+                            ),
+                    )
+                }),
         )
         .width(Length::Fill)
         .height(Length::Fill)

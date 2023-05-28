@@ -15,11 +15,10 @@ pub mod wallet_tab;
 pub enum Message {
     TabSelected(usize),
     Settings(SettingsMessage),
-    MintPressed,
     InvoiceTextChanged(String),
     MintTokenAmountChanged(u64),
     CreateInvoicePressed,
-    PaymentRequest(Result<PaymentRequest, String>),
+    PaymentRequestReceived(Result<PaymentRequest, String>),
     TokensMinted(Result<u64, String>),
 }
 

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use cashurs_wallet::client::HttpClient;
 use cashurs_wallet::gui::{settings_tab, wallet_tab, Message};
 use cashurs_wallet::localstore::RocksDBLocalStore;
@@ -12,6 +14,7 @@ use iced_aw::Tabs;
 use cashurs_wallet::gui::Tab;
 
 use cashurs_wallet::client::Client;
+use tokio::time::{sleep_until, Instant};
 
 const ICON_FONT: Font = iced::Font::External {
     name: "Icons",
@@ -115,25 +118,7 @@ impl Application for MainFrame {
                             .await
                             .map_err(|err| err.to_string())
                     },
-                    Message::PaymentRequest,
-                )
-            }
-            Message::MintPressed => {
-                let amt = self.wallet_tab.mint_token_amount;
-                let hash = self.wallet_tab.invoice_hash.to_owned();
-
-                if amt.is_none() || hash.is_none() {
-                    return Command::none();
-                }
-
-                let wallet = self.wallet.clone();
-
-                Command::perform(
-                    async move {
-                        let _ = wallet.mint_tokens(amt.unwrap(), hash.unwrap()).await;
-                        wallet.get_balance().map_err(|err| err.to_string())
-                    },
-                    Message::TokensMinted,
+                    Message::PaymentRequestReceived,
                 )
             }
             Message::InvoiceTextChanged(invoice) => {
@@ -144,12 +129,47 @@ impl Application for MainFrame {
                 self.wallet_tab.mint_token_amount = Some(amt);
                 Command::none()
             }
-            Message::PaymentRequest(pr) => {
+
+            Message::PaymentRequestReceived(pr) => {
                 match pr {
                     Ok(pr) => {
                         self.wallet_tab.invoice = Some(pr.pr.clone());
-                        self.wallet_tab.invoice_hash = Some(pr.hash);
+                        self.wallet_tab.invoice_hash = Some(pr.hash.clone());
                         self.wallet_tab.qr_code = State::new(&pr.pr).ok();
+
+                        let hash = pr.hash;
+                        let amt = self.wallet_tab.mint_token_amount;
+                        if amt.is_none() {
+                            return Command::none();
+                        }
+
+                        let wallet = self.wallet.clone();
+
+                        return Command::perform(
+                            async move {
+                                loop {
+                                    sleep_until(Instant::now() + Duration::from_millis(1_000))
+                                        .await;
+                                    let mint_result =
+                                        wallet.mint_tokens(amt.unwrap(), hash.clone()).await;
+
+                                    match mint_result {
+                                        Ok(_) => {
+                                            break;
+                                        }
+                                        Err(cashurs_wallet::error::CashuWalletError::InvoiceNotPaidYet(_, _)) => {
+                                            continue;
+                                        }
+                                        Err(e) => {
+                                            println!("Error: {:?}", e);
+                                            break;
+                                        }
+                                    }
+                                }
+                                wallet.get_balance().map_err(|err| err.to_string())
+                            },
+                            Message::TokensMinted,
+                        );
                     }
                     Err(e) => {
                         println!("Error: {:?}", e);
