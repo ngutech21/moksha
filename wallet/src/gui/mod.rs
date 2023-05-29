@@ -24,6 +24,9 @@ pub enum Message {
     TokenBalanceChanged(Result<u64, String>),
     ShowReceiveTokensPopup,
     HideReceiveTokensPopup,
+    ShowMintTokensPopup,
+    HideMintTokensPopup,
+    ShowPayInvoicePopup,
     ImportTokensPressed,
     ReceiveTokenChanged(String),
 }

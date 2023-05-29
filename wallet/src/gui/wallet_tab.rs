@@ -1,13 +1,16 @@
 use iced::{
-    widget::{button, qr_code::State, Column, Container, QRCode, Row, TextInput},
+    widget::{qr_code::State, Column, Container, QRCode, Row, TextInput},
     Element, Length,
 };
-use iced_aw::{style::NumberInputStyles, NumberInput, TabLabel};
+use iced_aw::TabLabel;
 
-use super::{Message, Tab};
+use super::{
+    util::{btn, mint_icon, pay_icon, receive_icon},
+    Message, Tab,
+};
 
+use super::util::h1;
 use super::util::Collection;
-use super::util::{h1, text};
 
 pub struct WalletTab {
     pub balance: u64,
@@ -32,7 +35,7 @@ impl Tab for WalletTab {
         let content: Element<'_, Message> = Container::new(
             Column::new()
                 .push(h1(format!("{} (sats)", self.balance)))
-                .spacing(100)
+                .spacing(10)
                 .push_maybe(self.qr_code.as_ref().map(QRCode::new))
                 .push_maybe(self.invoice.as_ref().map(|_| {
                     TextInput::new("", &self.invoice.clone().unwrap_or_default())
@@ -45,21 +48,19 @@ impl Tab for WalletTab {
                         Row::new()
                             .align_items(iced::Alignment::Center)
                             .spacing(10)
-                            .push(button("Mint Tokens").on_press(Message::CreateInvoicePressed))
-                            .push(text("Amount (sats)"))
                             .push(
-                                NumberInput::new(
-                                    self.mint_token_amount.unwrap_or_default(),
-                                    1_000,
-                                    Message::MintTokenAmountChanged,
-                                )
-                                .min(1)
-                                .style(NumberInputStyles::Default)
-                                .step(100),
+                                btn(Some(mint_icon()), "Mint")
+                                    .on_press(Message::ShowMintTokensPopup),
+                            )
+                            .push(
+                                btn(Some(receive_icon()), "Receive")
+                                    .on_press(Message::ShowReceiveTokensPopup),
+                            )
+                            .push(
+                                btn(Some(pay_icon()), "Pay").on_press(Message::ShowPayInvoicePopup),
                             ),
                     )
-                })
-                .push(button("Receive Tokens").on_press(Message::ShowReceiveTokensPopup)),
+                }),
         )
         .width(Length::Fill)
         .height(Length::Fill)

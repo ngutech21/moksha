@@ -10,15 +10,17 @@ use dotenvy::dotenv;
 use iced::alignment::Horizontal;
 use iced::widget::qr_code::State;
 use iced::widget::{button, text_input, Row};
-use iced::{theme, Application, Command, Font, Theme};
-use iced::{Color, Length, Settings};
+use iced::{Application, Command, Font, Theme};
+use iced::{Length, Settings};
+use iced_aw::style::NumberInputStyles;
 use iced_aw::tabs::TabBarStyles;
-use iced_aw::{Card, Modal, Tabs};
+use iced_aw::{Card, Modal, NumberInput, Tabs};
 
 use cashurs_wallet::client::Client;
 use tokio::time::{sleep_until, Instant};
 
 use cashurs_wallet::gui::util::text;
+use cashurs_wallet::gui::util::Collection;
 
 const ICON_FONT: Font = iced::Font::External {
     name: "Icons",
@@ -55,7 +57,8 @@ pub struct MainFrame {
 
     wallet: wallet::Wallet,
     client: HttpClient,
-    show_modal: bool,
+    show_receive_tokens_modal: bool,
+    show_mint_tokens_modal: bool,
     receive_token: String,
 }
 
@@ -83,7 +86,8 @@ impl Application for MainFrame {
                 },
                 wallet,
                 client,
-                show_modal: false,
+                show_receive_tokens_modal: false,
+                show_mint_tokens_modal: false,
                 receive_token: String::new(),
             },
             Command::none(),
@@ -96,13 +100,28 @@ impl Application for MainFrame {
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
         match message {
+            Message::ShowPayInvoicePopup => {
+                print!("Pay invoice pressed");
+                Command::none()
+            }
+            Message::ShowMintTokensPopup => {
+                print!("show Mint tokens pressed");
+                self.show_mint_tokens_modal = true;
+                Command::none()
+            }
+            Message::HideMintTokensPopup => {
+                print!("Hide mint tokens pressed");
+                self.show_mint_tokens_modal = false;
+                Command::none()
+            }
+
             Message::ImportTokensPressed => {
                 println!("import tokens pressed");
 
                 let token = self.receive_token.clone();
                 let tokens = Tokens::deserialize(token).unwrap();
                 let total_amount = tokens.total_amount();
-                self.show_modal = false;
+                self.show_receive_tokens_modal = false;
 
                 let wallet = self.wallet.clone();
                 Command::perform(
@@ -122,12 +141,12 @@ impl Application for MainFrame {
             }
             Message::ShowReceiveTokensPopup => {
                 print!("Receive tokens pressed");
-                self.show_modal = true;
+                self.show_receive_tokens_modal = true;
                 Command::none()
             }
             Message::HideReceiveTokensPopup => {
                 print!("Hide tokens pressed");
-                self.show_modal = false;
+                self.show_receive_tokens_modal = false;
                 Command::none()
             }
             Message::TokenBalanceChanged(balance) => {
@@ -148,6 +167,7 @@ impl Application for MainFrame {
                 Command::none()
             }
             Message::CreateInvoicePressed => {
+                self.show_mint_tokens_modal = false;
                 let amt = match self.wallet_tab.mint_token_amount {
                     Some(amt) => amt,
                     None => return Command::none(),
@@ -231,44 +251,95 @@ impl Application for MainFrame {
             .icon_font(ICON_FONT)
             .tab_bar_position(iced_aw::TabBarPosition::Top);
 
-        Modal::new(self.show_modal, content, || {
-            Card::new(
-                text("Receive Tokens"),
-                text_input("Token", &self.receive_token).on_input(Message::ReceiveTokenChanged),
-            )
-            .foot(
-                Row::new()
-                    .spacing(10)
-                    .padding(5)
-                    .width(Length::Fill)
-                    .push(
-                        button(text("Cancel").horizontal_alignment(Horizontal::Center))
-                            .width(Length::Fill)
-                            .on_press(Message::HideReceiveTokensPopup),
-                    )
-                    .push(
-                        button(text("Import Tokens").horizontal_alignment(Horizontal::Center))
-                            .width(Length::Fill)
-                            .on_press(Message::ImportTokensPressed),
-                    ),
-            )
-            .max_width(500.0)
-            .on_close(Message::HideReceiveTokensPopup)
+        if self.show_receive_tokens_modal {
+            Modal::new(self.show_receive_tokens_modal, content, || {
+                Card::new(
+                    text("Receive Tokens"),
+                    text_input("Token", &self.receive_token).on_input(Message::ReceiveTokenChanged),
+                )
+                .foot(
+                    Row::new()
+                        .spacing(10)
+                        .padding(5)
+                        .width(Length::Fill)
+                        .push(
+                            button(text("Cancel").horizontal_alignment(Horizontal::Center))
+                                .width(Length::Fill)
+                                .on_press(Message::HideReceiveTokensPopup),
+                        )
+                        .push(
+                            button(text("Import Tokens").horizontal_alignment(Horizontal::Center))
+                                .width(Length::Fill)
+                                .on_press(Message::ImportTokensPressed),
+                        ),
+                )
+                .max_width(500.0)
+                .on_close(Message::HideReceiveTokensPopup)
+                .into()
+            })
+            .backdrop(Message::HideReceiveTokensPopup)
+            .on_esc(Message::HideReceiveTokensPopup)
             .into()
-        })
-        .backdrop(Message::HideReceiveTokensPopup)
-        .on_esc(Message::HideReceiveTokensPopup)
-        .into()
+        } else if self.show_mint_tokens_modal {
+            Modal::new(self.show_mint_tokens_modal, content, || {
+                Card::new(
+                    text("Enter amount in sats"),
+                    NumberInput::new(
+                        self.wallet_tab.mint_token_amount.unwrap_or_default(),
+                        1_000,
+                        Message::MintTokenAmountChanged,
+                    )
+                    .min(1)
+                    .style(NumberInputStyles::Default)
+                    .step(100),
+                )
+                .foot(
+                    Row::new()
+                        .spacing(10)
+                        .padding(5)
+                        .width(Length::Fill)
+                        .push(
+                            button(text("Cancel").horizontal_alignment(Horizontal::Center))
+                                .width(Length::Fill)
+                                .on_press(Message::HideMintTokensPopup),
+                        )
+                        .push_maybe(
+                            if self.wallet_tab.mint_token_amount.is_some()
+                                && self.wallet_tab.mint_token_amount.unwrap() > 0
+                            {
+                                Some(
+                                    button(
+                                        text("Create invoice")
+                                            .horizontal_alignment(Horizontal::Center),
+                                    )
+                                    .width(Length::Fill)
+                                    .on_press(Message::CreateInvoicePressed),
+                                )
+                            } else {
+                                None
+                            },
+                        ),
+                )
+                .max_width(500.0)
+                .on_close(Message::HideMintTokensPopup)
+                .into()
+            })
+            .backdrop(Message::HideMintTokensPopup)
+            .on_esc(Message::HideMintTokensPopup)
+            .into()
+        } else {
+            content.into()
+        }
     }
 
     fn theme(&self) -> iced::Theme {
-        Theme::custom(theme::Palette {
-            background: Color::from_rgb8(37, 37, 37),
-            text: Color::BLACK,
-            primary: Color::from_rgb8(94, 124, 226),
-            success: Color::from_rgb8(8, 102, 79),
-            danger: Color::from_rgb8(195, 66, 63),
-        })
-        //Theme::Dark
+        // Theme::custom(theme::Palette {
+        //     background: Color::from_rgb8(37, 37, 37),
+        //     text: Color::BLACK,
+        //     primary: Color::from_rgb8(94, 124, 226),
+        //     success: Color::from_rgb8(8, 102, 79),
+        //     danger: Color::from_rgb8(195, 66, 63),
+        // })
+        Theme::Dark
     }
 }
