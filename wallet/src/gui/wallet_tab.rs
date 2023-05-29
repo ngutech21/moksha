@@ -18,6 +18,7 @@ pub struct WalletTab {
     pub invoice_hash: Option<String>,
     pub qr_code: Option<State>,
     pub mint_token_amount: Option<u64>,
+    pub pay_invoice: Option<String>,
 }
 
 impl Tab for WalletTab {

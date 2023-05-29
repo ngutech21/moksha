@@ -59,6 +59,7 @@ pub struct MainFrame {
     client: HttpClient,
     show_receive_tokens_modal: bool,
     show_mint_tokens_modal: bool,
+    show_pay_invoice_modal: bool,
     receive_token: String,
 }
 
@@ -83,11 +84,13 @@ impl Application for MainFrame {
                     mint_token_amount: None,
                     balance,
                     qr_code: None,
+                    pay_invoice: None,
                 },
                 wallet,
                 client,
                 show_receive_tokens_modal: false,
                 show_mint_tokens_modal: false,
+                show_pay_invoice_modal: false,
                 receive_token: String::new(),
             },
             Command::none(),
@@ -100,8 +103,22 @@ impl Application for MainFrame {
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
         match message {
+            Message::PayInvoiceChanged(invoice) => {
+                self.wallet_tab.pay_invoice = Some(invoice);
+                Command::none()
+            }
+            Message::PayInvoicePressed => {
+                println!("pay invoice pressed");
+                Command::none()
+            }
             Message::ShowPayInvoicePopup => {
-                print!("Pay invoice pressed");
+                self.show_pay_invoice_modal = true;
+                println!("show invoice popup");
+                Command::none()
+            }
+            Message::HideInvoicePopup => {
+                self.show_pay_invoice_modal = false;
+                println!("hide Pay invoice pressed");
                 Command::none()
             }
             Message::ShowMintTokensPopup => {
@@ -326,6 +343,45 @@ impl Application for MainFrame {
             })
             .backdrop(Message::HideMintTokensPopup)
             .on_esc(Message::HideMintTokensPopup)
+            .into()
+        } else if self.show_pay_invoice_modal {
+            Modal::new(self.show_pay_invoice_modal, content, || {
+                Card::new(
+                    text("Pay invoice"),
+                    text_input(
+                        "Invoice",
+                        &self.wallet_tab.pay_invoice.clone().unwrap_or_default(),
+                    )
+                    .on_input(Message::PayInvoiceChanged),
+                )
+                .foot(
+                    Row::new()
+                        .spacing(10)
+                        .padding(5)
+                        .width(Length::Fill)
+                        .push(
+                            button(text("Cancel").horizontal_alignment(Horizontal::Center))
+                                .width(Length::Fill)
+                                .on_press(Message::HideInvoicePopup),
+                        )
+                        .push_maybe(if self.wallet_tab.pay_invoice.is_some() {
+                            Some(
+                                button(
+                                    text("Pay invoice").horizontal_alignment(Horizontal::Center),
+                                )
+                                .width(Length::Fill)
+                                .on_press(Message::PayInvoicePressed),
+                            )
+                        } else {
+                            None
+                        }),
+                )
+                .max_width(500.0)
+                .on_close(Message::HideInvoicePopup)
+                .into()
+            })
+            .backdrop(Message::HideInvoicePopup)
+            .on_esc(Message::HideInvoicePopup)
             .into()
         } else {
             content.into()

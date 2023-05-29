@@ -27,6 +27,9 @@ pub enum Message {
     ShowMintTokensPopup,
     HideMintTokensPopup,
     ShowPayInvoicePopup,
+    HideInvoicePopup,
+    PayInvoiceChanged(String),
+    PayInvoicePressed,
     ImportTokensPressed,
     ReceiveTokenChanged(String),
 }
