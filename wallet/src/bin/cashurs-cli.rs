@@ -143,32 +143,9 @@ async fn main() -> anyhow::Result<()> {
             );
         }
         Command::Pay { invoice } => {
-            let all_tokens = localstore.get_tokens()?;
+            let response = wallet.pay_invoice(invoice).await?;
 
-            let fees = client.post_checkfees(invoice.clone()).await?;
-            let ln_amount = wallet.get_invoice_amount(&invoice)? + (fees.fee / 1000);
-
-            if ln_amount > all_tokens.total_amount() {
-                println!("Not enough tokens");
-                return Ok(());
-            }
-            let selected_proofs = wallet.get_proofs_for_amount(ln_amount)?;
-
-            let total_proofs = if selected_proofs.get_total_amount() > ln_amount {
-                let selected_tokens = Tokens::from((mint_url.clone(), selected_proofs.clone()));
-                let split_result = wallet
-                    .split_tokens(selected_tokens.clone(), ln_amount)
-                    .await?;
-
-                localstore.delete_tokens(selected_tokens)?;
-                localstore.add_tokens(split_result.0)?;
-
-                split_result.1.get_proofs()
-            } else {
-                selected_proofs
-            };
-
-            let response = wallet.melt_token(invoice, ln_amount, total_proofs).await?;
+            // FIXME handle not enough tokens error
 
             if response.paid {
                 println!(

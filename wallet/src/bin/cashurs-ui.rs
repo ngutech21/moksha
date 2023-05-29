@@ -108,30 +108,35 @@ impl Application for MainFrame {
                 Command::none()
             }
             Message::PayInvoicePressed => {
-                println!("pay invoice pressed");
-                Command::none()
+                self.show_pay_invoice_modal = false;
+                let wallet = self.wallet.clone();
+                let invoice = self.wallet_tab.pay_invoice.clone().unwrap();
+                self.wallet_tab.pay_invoice = None;
+
+                Command::perform(
+                    async move {
+                        wallet.pay_invoice(invoice).await.unwrap(); // FIXME handle error
+                        wallet.get_balance().map_err(|err| err.to_string())
+                    },
+                    Message::TokenBalanceChanged,
+                )
             }
             Message::ShowPayInvoicePopup => {
                 self.show_pay_invoice_modal = true;
-                println!("show invoice popup");
                 Command::none()
             }
             Message::HideInvoicePopup => {
                 self.show_pay_invoice_modal = false;
-                println!("hide Pay invoice pressed");
                 Command::none()
             }
             Message::ShowMintTokensPopup => {
-                print!("show Mint tokens pressed");
                 self.show_mint_tokens_modal = true;
                 Command::none()
             }
             Message::HideMintTokensPopup => {
-                print!("Hide mint tokens pressed");
                 self.show_mint_tokens_modal = false;
                 Command::none()
             }
-
             Message::ImportTokensPressed => {
                 println!("import tokens pressed");
 
@@ -208,7 +213,6 @@ impl Application for MainFrame {
                 self.wallet_tab.mint_token_amount = Some(amt);
                 Command::none()
             }
-
             Message::PaymentRequestReceived(pr) => {
                 match pr {
                     Ok(pr) => {

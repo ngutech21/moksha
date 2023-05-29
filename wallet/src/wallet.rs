@@ -63,6 +63,35 @@ impl Wallet {
         Ok(total)
     }
 
+    pub async fn pay_invoice(&self, invoice: String) -> Result<PostMeltResponse, CashuWalletError> {
+        let all_tokens = self.localstore.get_tokens()?;
+
+        let fees = self.client.post_checkfees(invoice.clone()).await?;
+        let ln_amount = self.get_invoice_amount(&invoice)? + (fees.fee / 1000);
+
+        if ln_amount > all_tokens.total_amount() {
+            println!("Not enough tokens");
+            return Err(CashuWalletError::NotEnoughTokens);
+        }
+        let selected_proofs = self.get_proofs_for_amount(ln_amount)?;
+
+        let total_proofs = if selected_proofs.get_total_amount() > ln_amount {
+            let selected_tokens = Tokens::from((self.mint_url.clone(), selected_proofs.clone()));
+            let split_result = self
+                .split_tokens(selected_tokens.clone(), ln_amount)
+                .await?;
+
+            self.localstore.delete_tokens(selected_tokens)?;
+            self.localstore.add_tokens(split_result.0)?;
+
+            split_result.1.get_proofs()
+        } else {
+            selected_proofs
+        };
+
+        self.melt_token(invoice, ln_amount, total_proofs).await
+    }
+
     pub async fn split_tokens(
         &self,
         tokens: Tokens,
