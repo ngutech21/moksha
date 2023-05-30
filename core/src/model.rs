@@ -170,7 +170,7 @@ impl Proofs {
         Self(vec![])
     }
 
-    pub fn get_total_amount(&self) -> u64 {
+    pub fn total_amount(&self) -> u64 {
         self.0.iter().map(|proof| proof.amount).sum()
     }
 

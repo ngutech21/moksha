@@ -4,7 +4,7 @@ use cashurs_core::model::Tokens;
 use cashurs_wallet::client::HttpClient;
 use cashurs_wallet::gui::Tab;
 use cashurs_wallet::gui::{settings_tab, wallet_tab, Message};
-use cashurs_wallet::localstore::RocksDBLocalStore;
+use cashurs_wallet::localstore::SqliteLocalStore;
 use cashurs_wallet::wallet::{self, Wallet};
 use dotenvy::dotenv;
 use iced::alignment::Horizontal;
@@ -21,6 +21,7 @@ use tokio::time::{sleep_until, Instant};
 
 use cashurs_wallet::gui::util::text;
 use cashurs_wallet::gui::util::Collection;
+use cashurs_wallet::localstore::LocalStore;
 
 const ICON_FONT: Font = iced::Font::External {
     name: "Icons",
@@ -38,10 +39,16 @@ async fn main() -> anyhow::Result<()> {
     let client = cashurs_wallet::client::HttpClient::new(mint_url.clone());
     let keys = client.get_mint_keys().await?;
     let keysets = client.get_mint_keysets().await?;
-    let localstore = Box::new(RocksDBLocalStore::new(read_env("WALLET_DB_PATH")));
-    let wallet = wallet::Wallet::new(Box::new(client), keys, keysets, localstore, mint_url);
 
-    let mut settings = Settings::with_flags(wallet);
+    let db_path = read_env("WALLET_DB_PATH");
+    let localstore = Box::new(SqliteLocalStore::with_path(db_path).await?);
+
+    localstore.migrate().await;
+
+    let wallet = wallet::Wallet::new(Box::new(client), keys, keysets, localstore, mint_url);
+    let balance = wallet.get_balance().await?;
+
+    let mut settings = Settings::with_flags((wallet, balance));
     settings.antialiasing = true;
     settings.window.size = (800, 600);
     settings.window.resizable = true;
@@ -67,13 +74,14 @@ impl Application for MainFrame {
     type Message = Message;
     type Theme = Theme;
     type Executor = iced::executor::Default;
-    type Flags = Wallet;
+    type Flags = (Wallet, u64);
 
-    fn new(wallet: Wallet) -> (MainFrame, Command<Message>) {
+    fn new(flags: (Wallet, u64)) -> (MainFrame, Command<Message>) {
+        let wallet = flags.0;
+        let balance = flags.1;
         let mint_url = read_env("WALLET_MINT_URL");
         let client = cashurs_wallet::client::HttpClient::new(mint_url);
 
-        let balance = wallet.get_balance().expect("msg");
         (
             MainFrame {
                 active_tab: 0,
@@ -116,7 +124,7 @@ impl Application for MainFrame {
                 Command::perform(
                     async move {
                         wallet.pay_invoice(invoice).await.unwrap(); // FIXME handle error
-                        wallet.get_balance().map_err(|err| err.to_string())
+                        wallet.get_balance().await.map_err(|err| err.to_string())
                     },
                     Message::TokenBalanceChanged,
                 )
@@ -142,16 +150,13 @@ impl Application for MainFrame {
 
                 let token = self.receive_token.clone();
                 let tokens = Tokens::deserialize(token).unwrap();
-                let total_amount = tokens.total_amount();
                 self.show_receive_tokens_modal = false;
 
                 let wallet = self.wallet.clone();
                 Command::perform(
                     async move {
-                        let (_, redeemed_tokens) =
-                            wallet.split_tokens(tokens, total_amount).await.unwrap();
-                        let _ = wallet.localstore().add_tokens(redeemed_tokens); // FIXME error handling
-                        wallet.get_balance().map_err(|err| err.to_string())
+                        let _ = wallet.receive_tokens(tokens).await; // FIXME handle error
+                        wallet.get_balance().await.map_err(|err| err.to_string())
                     },
                     Message::TokenBalanceChanged,
                 )
@@ -249,7 +254,7 @@ impl Application for MainFrame {
                                         }
                                     }
                                 }
-                                wallet.get_balance().map_err(|err| err.to_string())
+                                wallet.get_balance().await.map_err(|err| err.to_string())
                             },
                             Message::TokenBalanceChanged,
                         );

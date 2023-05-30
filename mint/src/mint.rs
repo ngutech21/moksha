@@ -120,7 +120,7 @@ impl Mint {
             return Err(CashuMintError::SplitHasDuplicatePromises);
         }
 
-        let sum_proofs = proofs.get_total_amount();
+        let sum_proofs = proofs.total_amount();
 
         if amount > sum_proofs {
             return Err(CashuMintError::SplitAmountTooHigh);
@@ -166,7 +166,7 @@ impl Mint {
             .decode_invoice(payment_request.clone())
             .await?;
 
-        let proofs_amount = proofs.get_total_amount();
+        let proofs_amount = proofs.total_amount();
 
         // TODO verify proofs
 

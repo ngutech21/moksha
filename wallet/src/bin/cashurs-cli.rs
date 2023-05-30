@@ -4,7 +4,7 @@ use cashurs_core::model::Tokens;
 use clap::{Parser, Subcommand};
 use dotenvy::dotenv;
 
-use cashurs_wallet::localstore::RocksDBLocalStore;
+use cashurs_wallet::localstore::SqliteLocalStore;
 use cashurs_wallet::wallet;
 
 use cashurs_wallet::client::Client;
@@ -67,7 +67,9 @@ async fn main() -> anyhow::Result<()> {
     let keys = client.get_mint_keys().await?;
     let keysets = client.get_mint_keysets().await?;
 
-    let localstore = Box::new(RocksDBLocalStore::new(read_env("WALLET_DB_PATH")));
+    let db_path = read_env("WALLET_DB_PATH");
+    let localstore = Box::new(SqliteLocalStore::with_path(db_path).await?);
+    localstore.migrate().await;
 
     let wallet = wallet::Wallet::new(
         Box::new(client.clone()),
@@ -82,39 +84,37 @@ async fn main() -> anyhow::Result<()> {
     match cli.command {
         Command::Receive { token } => {
             let tokens = Tokens::deserialize(token)?;
-            let total_amount = tokens.total_amount();
-            let (_, redeemed_tokens) = wallet.split_tokens(tokens, total_amount).await?;
-            localstore.add_tokens(redeemed_tokens)?;
+            wallet.receive_tokens(tokens).await?;
             println!(
                 "Tokens received successfully.\nNew balance {} sats",
-                wallet.get_balance()?
+                wallet.get_balance().await?
             );
         }
         Command::Send { amount } => {
-            let balance = wallet.get_balance()?;
+            let balance = wallet.get_balance().await?;
             if amount > balance {
                 println!("Not enough balance");
                 return Ok(());
             }
 
-            let selected_proofs = wallet.get_proofs_for_amount(amount)?;
-            let selected_proofs = Tokens::from((mint_url.clone(), selected_proofs.clone()));
+            let selected_proofs = wallet.get_proofs_for_amount(amount).await?;
+            let selected_tokens = Tokens::from((mint_url.clone(), selected_proofs.clone()));
 
             let (remaining_tokens, result) =
-                wallet.split_tokens(selected_proofs.clone(), amount).await?;
+                wallet.split_tokens(selected_tokens.clone(), amount).await?;
 
-            localstore.delete_tokens(selected_proofs)?;
-            localstore.add_tokens(remaining_tokens)?;
+            localstore.delete_proofs(selected_proofs).await?;
+            localstore.add_proofs(remaining_tokens.get_proofs()).await?;
 
             let amount = result.total_amount();
             let ser = result.serialize()?;
 
             println!("Result {amount} sats:\n{ser}");
-            println!("\nNew balance: {:?} sats", wallet.get_balance()?);
+            println!("\nNew balance: {:?} sats", wallet.get_balance().await?);
         }
 
         Command::Balance => {
-            let balance = wallet.get_balance()?;
+            let balance = wallet.get_balance().await?;
             println!("Balance: {balance:?} sats");
         }
         Command::Split {
@@ -150,7 +150,7 @@ async fn main() -> anyhow::Result<()> {
             if response.paid {
                 println!(
                     "\nInvoice has been paid: Tokens melted successfully\nNew balance: {:?} sats",
-                    wallet.get_balance()?
+                    wallet.get_balance().await?
                 );
                 // TODO NUT-08 create tokens from change
             } else {
@@ -172,7 +172,7 @@ async fn main() -> anyhow::Result<()> {
                     Ok(_) => {
                         println!(
                             "Tokens minted successfully.\nNew balance {} sats",
-                            wallet.get_balance()?
+                            wallet.get_balance().await?
                         );
                         break;
                     }

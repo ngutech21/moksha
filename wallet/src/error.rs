@@ -28,7 +28,7 @@ pub enum CashuWalletError {
     CashuCore(#[from] cashurs_core::error::CashuCoreError),
 
     #[error("DB Error {0}")]
-    Db(#[from] rocksdb::Error),
+    Db(#[from] sqlx::Error),
 
     #[error("Utf8 Error {0}")]
     Utf8(#[from] FromUtf8Error),

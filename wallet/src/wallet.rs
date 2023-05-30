@@ -4,7 +4,7 @@ use cashurs_core::{
     dhke::Dhke,
     model::{
         split_amount, BlindedMessage, BlindedSignature, Keysets, PostMeltResponse, Proof, Proofs,
-        Token, Tokens, TotalAmount,
+        Tokens, TotalAmount,
     },
 };
 use secp256k1::{PublicKey, SecretKey};
@@ -54,35 +54,46 @@ impl Wallet {
         }
     }
 
-    pub fn localstore(&self) -> &dyn LocalStore {
+    pub fn localstore(&self) -> &(dyn LocalStore + Sync + Send) {
         &*self.localstore
     }
 
-    pub fn get_balance(&self) -> Result<u64, CashuWalletError> {
-        let total = self.localstore.get_tokens()?.total_amount();
+    pub async fn get_balance(&self) -> Result<u64, CashuWalletError> {
+        let total = self.localstore.get_proofs().await?.total_amount();
         Ok(total)
     }
 
+    pub async fn receive_tokens(&self, tokens: Tokens) -> Result<(), CashuWalletError> {
+        let total_amount = tokens.total_amount();
+        let (_, redeemed_tokens) = self.split_tokens(tokens, total_amount).await?;
+        self.localstore
+            .add_proofs(redeemed_tokens.get_proofs())
+            .await?;
+        Ok(())
+    }
+
     pub async fn pay_invoice(&self, invoice: String) -> Result<PostMeltResponse, CashuWalletError> {
-        let all_tokens = self.localstore.get_tokens()?;
+        let all_proofs = self.localstore.get_proofs().await?;
 
         let fees = self.client.post_checkfees(invoice.clone()).await?;
         let ln_amount = self.get_invoice_amount(&invoice)? + (fees.fee / 1000);
 
-        if ln_amount > all_tokens.total_amount() {
+        if ln_amount > all_proofs.total_amount() {
             println!("Not enough tokens");
             return Err(CashuWalletError::NotEnoughTokens);
         }
-        let selected_proofs = self.get_proofs_for_amount(ln_amount)?;
+        let selected_proofs = self.get_proofs_for_amount(ln_amount).await?;
 
-        let total_proofs = if selected_proofs.get_total_amount() > ln_amount {
+        let total_proofs = if selected_proofs.total_amount() > ln_amount {
             let selected_tokens = Tokens::from((self.mint_url.clone(), selected_proofs.clone()));
             let split_result = self
                 .split_tokens(selected_tokens.clone(), ln_amount)
                 .await?;
 
-            self.localstore.delete_tokens(selected_tokens)?;
-            self.localstore.add_tokens(split_result.0)?;
+            self.localstore.delete_proofs(selected_proofs).await?;
+            self.localstore
+                .add_proofs(split_result.0.get_proofs())
+                .await?;
 
             split_result.1.get_proofs()
         } else {
@@ -158,10 +169,7 @@ impl Wallet {
             .post_melt_tokens(proofs.clone(), pr, vec![])
             .await?;
 
-        self.localstore.delete_tokens(Tokens::new(Token {
-            mint: Some(self.mint_url.clone()),
-            proofs,
-        }))?;
+        self.localstore.delete_proofs(proofs).await?;
 
         // let change = melt_response.change.clone();
 
@@ -250,7 +258,9 @@ impl Wallet {
         );
 
         let tokens = Tokens::from((self.mint_url.clone(), proofs));
-        self.localstore.add_tokens(tokens.clone())?;
+        self.localstore
+            .add_proofs(tokens.clone().get_proofs())
+            .await?;
 
         Ok(tokens)
     }
@@ -303,18 +313,14 @@ impl Wallet {
         ))
     }
 
-    pub fn get_proofs_for_amount(&self, amount: u64) -> Result<Proofs, CashuWalletError> {
-        let all_tokens = self.localstore.get_tokens()?;
+    pub async fn get_proofs_for_amount(&self, amount: u64) -> Result<Proofs, CashuWalletError> {
+        let all_proofs = self.localstore.get_proofs().await?;
 
-        if amount > all_tokens.total_amount() {
+        if amount > all_proofs.total_amount() {
             return Err(CashuWalletError::NotEnoughTokens);
         }
 
-        let mut all_proofs = all_tokens
-            .tokens
-            .iter()
-            .flat_map(|token| token.proofs.get_proofs())
-            .collect::<Vec<Proof>>();
+        let mut all_proofs = all_proofs.get_proofs();
         all_proofs.sort_by(|a, b| a.amount.partial_cmp(&b.amount).unwrap());
 
         let mut selected_proofs = vec![];
@@ -392,18 +398,24 @@ mod tests {
         }
     }
 
+    #[async_trait]
     impl LocalStore for MockLocalStore {
-        fn add_tokens(&self, _new_tokens: Tokens) -> Result<(), crate::error::CashuWalletError> {
+        async fn migrate(&self) {}
+
+        async fn add_proofs(&self, _: Proofs) -> Result<(), crate::error::CashuWalletError> {
             unimplemented!()
         }
 
-        fn get_tokens(
+        async fn get_proofs(
             &self,
-        ) -> Result<cashurs_core::model::Tokens, crate::error::CashuWalletError> {
-            Ok(self.tokens.clone())
+        ) -> Result<cashurs_core::model::Proofs, crate::error::CashuWalletError> {
+            Ok(self.tokens.clone().get_proofs())
         }
 
-        fn delete_tokens(&self, _tokens: Tokens) -> Result<(), crate::error::CashuWalletError> {
+        async fn delete_proofs(
+            &self,
+            _proofs: Proofs,
+        ) -> Result<(), crate::error::CashuWalletError> {
             unimplemented!()
         }
     }
@@ -527,7 +539,7 @@ mod tests {
             "mint_url".to_string(),
         );
 
-        let result = wallet.get_proofs_for_amount(10);
+        let result = wallet.get_proofs_for_amount(10).await;
 
         assert!(result.is_err());
         Ok(())
@@ -548,10 +560,10 @@ mod tests {
             "mint_url".to_string(),
         );
 
-        let result = wallet.get_proofs_for_amount(10)?;
+        let result = wallet.get_proofs_for_amount(10).await?;
         println!("{result:?}");
 
-        assert_eq!(32, result.get_total_amount());
+        assert_eq!(32, result.total_amount());
         assert_eq!(1, result.len());
         Ok(())
     }
