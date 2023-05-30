@@ -45,7 +45,7 @@ impl LocalStore for SqliteLocalStore {
     }
 
     async fn add_proofs(&self, proofs: Proofs) -> Result<(), CashuWalletError> {
-        let tx = self.start_transaction().await.unwrap();
+        let tx = self.start_transaction().await?;
         for proof in proofs.get_proofs() {
             sqlx::query(
                 r#"INSERT INTO proofs (keyset_id, amount, C, secret, time_created) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP);
@@ -58,7 +58,7 @@ impl LocalStore for SqliteLocalStore {
             .execute(&self.pool)
             .await?;
         }
-        self.commit_transaction(tx).await.unwrap();
+        self.commit_transaction(tx).await?;
         Ok(())
     }
 
@@ -97,8 +97,7 @@ impl SqliteLocalStore {
 
     pub async fn with_path(absolute_path: String) -> Result<Self, CashuWalletError> {
         let pool = sqlx::SqlitePool::connect(format!("sqlite://{absolute_path}?mode=rwc").as_str())
-            .await
-            .unwrap(); // FIXME handle error
+            .await?;
         Ok(Self { pool })
     }
 

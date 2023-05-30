@@ -149,7 +149,7 @@ impl Application for MainFrame {
                 println!("import tokens pressed");
 
                 let token = self.receive_token.clone();
-                let tokens = Tokens::deserialize(token).unwrap();
+                let tokens = Tokens::deserialize(token).unwrap(); // FIXME handle error
                 self.show_receive_tokens_modal = false;
 
                 let wallet = self.wallet.clone();

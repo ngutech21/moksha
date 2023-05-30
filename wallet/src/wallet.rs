@@ -321,7 +321,7 @@ impl Wallet {
         }
 
         let mut all_proofs = all_proofs.get_proofs();
-        all_proofs.sort_by(|a, b| a.amount.partial_cmp(&b.amount).unwrap());
+        all_proofs.sort_by(|a, b| a.amount.cmp(&b.amount));
 
         let mut selected_proofs = vec![];
         let mut selected_amount = 0;
@@ -331,7 +331,7 @@ impl Wallet {
                 break;
             }
 
-            let proof = all_proofs.pop().unwrap();
+            let proof = all_proofs.pop().expect("proofs is empty");
             selected_amount += proof.amount;
             selected_proofs.push(proof);
         }

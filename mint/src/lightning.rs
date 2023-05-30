@@ -21,7 +21,7 @@ pub struct LnbitsLightning {
 #[async_trait]
 pub trait Lightning: Send + Sync {
     async fn is_invoice_paid(&self, invoice: String) -> Result<bool, CashuMintError>;
-    async fn create_invoice(&self, amount: u64) -> CreateInvoiceResult;
+    async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, CashuMintError>;
     async fn pay_invoice(
         &self,
         payment_request: String,
@@ -50,17 +50,17 @@ impl LnbitsLightning {
 #[async_trait]
 impl Lightning for LnbitsLightning {
     async fn is_invoice_paid(&self, invoice: String) -> Result<bool, CashuMintError> {
-        let decoded_invoice = self.decode_invoice(invoice).await.unwrap();
+        let decoded_invoice = self.decode_invoice(invoice).await?;
         Ok(self
             .client
             .is_invoice_paid(&decoded_invoice.payment_hash().to_string())
-            .await
-            .unwrap())
+            .await?)
     }
 
-    async fn create_invoice(&self, amount: u64) -> CreateInvoiceResult {
+    async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, CashuMintError> {
         let amount: i64 = amount.try_into().unwrap(); // FIXME use u64
-        self.client
+        Ok(self
+            .client
             .create_invoice(&CreateInvoiceParams {
                 amount,
                 unit: "sat".to_string(),
@@ -69,8 +69,7 @@ impl Lightning for LnbitsLightning {
                 webhook: None,
                 internal: None,
             })
-            .await
-            .unwrap()
+            .await?)
     }
 
     async fn pay_invoice(

@@ -76,7 +76,7 @@ impl Mint {
     }
 
     pub async fn create_invoice(&self, amount: u64) -> Result<(String, String), CashuMintError> {
-        let pr = self.lightning.create_invoice(amount).await.payment_request;
+        let pr = self.lightning.create_invoice(amount).await?.payment_request;
         let key = crypto::generate_hash();
         self.db
             .add_pending_invoice(key.clone(), Invoice::new(amount, pr.clone()))?;
@@ -323,7 +323,7 @@ mod tests {
         lightning.expect_decode_invoice().returning(|_| {
             Ok(
                 // 20 sat
-                LNInvoice::from_str("lnbc200n1pj9eanxsp5agdl4rd0twdljpcgmg67dwj9mseu5m4lwfhslkws4uh4m5f5pcrqpp5lvspx676rykr64l02s97wjztcxe355qck0naydrsvvkqw42cc35sdq2f38xy6t5wvxqzjccqpjrzjq027t9tsc6jn5ve2k6gnn689unn8h239juuf9s3ce09aty6ed73t5z7nqsqqsygqqyqqqqqqqqqqqqgq9q9qyysgqs5msn4j9v53fq000zhw0gulkcx2dlnfdt953v2ur7z765jj3m0fx6cppkpjwntq5nsqm273u4eevva508pvepg8mh27sqcd29sfjr4cq255a40").unwrap()
+                LNInvoice::from_str("lnbc200n1pj9eanxsp5agdl4rd0twdljpcgmg67dwj9mseu5m4lwfhslkws4uh4m5f5pcrqpp5lvspx676rykr64l02s97wjztcxe355qck0naydrsvvkqw42cc35sdq2f38xy6t5wvxqzjccqpjrzjq027t9tsc6jn5ve2k6gnn689unn8h239juuf9s3ce09aty6ed73t5z7nqsqqsygqqyqqqqqqqqqqqqgq9q9qyysgqs5msn4j9v53fq000zhw0gulkcx2dlnfdt953v2ur7z765jj3m0fx6cppkpjwntq5nsqm273u4eevva508pvepg8mh27sqcd29sfjr4cq255a40").expect("invalid invoice")
             )
         });
         lightning.expect_pay_invoice().returning(|_| {

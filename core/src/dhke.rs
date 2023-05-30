@@ -205,9 +205,8 @@ mod tests {
         let dhke = Dhke::new();
         let blinding_factor =
             hex_to_string("0000000000000000000000000000000000000000000000000000000000000001");
-        let (pub_key, _) = dhke
-            .step1_alice("test_message".to_string(), Some(blinding_factor.as_bytes()))
-            .unwrap();
+        let (pub_key, _) =
+            dhke.step1_alice("test_message".to_string(), Some(blinding_factor.as_bytes()))?;
 
         let a = private_key_from_hex(
             "0000000000000000000000000000000000000000000000000000000000000001",

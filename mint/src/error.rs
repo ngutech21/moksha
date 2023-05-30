@@ -50,6 +50,9 @@ pub enum CashuMintError {
 
     #[error("Invalid amount")]
     InvalidAmount,
+
+    #[error("Lightning Error {0}")]
+    Lightning(#[from] lnbits_rust::LNBitsError),
 }
 
 impl IntoResponse for CashuMintError {
