@@ -1,12 +1,15 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use cashurs_core::model::{Proof, Proofs, Token, Tokens};
 use rocksdb::DB;
 use serde::{de::DeserializeOwned, Serialize};
+use sqlx::{sqlite::SqliteError, SqlitePool};
 
 use crate::error::CashuWalletError;
 
 use dyn_clone::DynClone;
+use sqlx::Row;
 
 pub trait LocalStore: DynClone {
     fn delete_tokens(&self, tokens: Tokens) -> Result<(), CashuWalletError>;
@@ -14,9 +17,112 @@ pub trait LocalStore: DynClone {
     fn get_tokens(&self) -> Result<Tokens, CashuWalletError>;
 }
 
+#[async_trait]
+pub trait LocalStore2: DynClone {
+    async fn delete_proofs(&self, proofs: Proofs) -> Result<(), CashuWalletError>;
+    async fn add_proofs(&self, proofs: Proofs) -> Result<(), CashuWalletError>;
+    async fn get_proofs(&self) -> Result<Proofs, CashuWalletError>;
+}
+
 #[derive(Clone, Debug)]
 pub struct RocksDBLocalStore {
     db: Arc<DB>,
+}
+
+#[derive(Clone, Debug)]
+pub struct SqliteLocalStore {
+    pool: sqlx::SqlitePool,
+}
+
+#[async_trait]
+impl LocalStore2 for SqliteLocalStore {
+    async fn delete_proofs(&self, proofs: Proofs) -> Result<(), CashuWalletError> {
+        let proof_secrets = proofs
+            .get_proofs()
+            .iter()
+            .map(|p| p.secret.to_owned())
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        sqlx::query("DELETE FROM proofs WHERE secret in (?);")
+            .bind(proof_secrets)
+            .execute(&self.pool)
+            .await
+            .unwrap();
+        Ok(())
+    }
+
+    async fn add_proofs(&self, proofs: Proofs) -> Result<(), CashuWalletError> {
+        let tx = self.start_transaction().await.unwrap();
+        for proof in proofs.get_proofs() {
+            sqlx::query(
+                r#"INSERT INTO proofs (keyset_id, amount, C, secret, time_created) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP);
+                "#,
+            )
+            .bind(proof.id)
+            .bind(proof.amount as i64) // FIXME use u64
+            .bind(proof.c.to_string())
+            .bind(proof.secret)
+            .execute(&self.pool)
+            .await.unwrap();
+        }
+        self.commit_transaction(tx).await.unwrap();
+        Ok(())
+    }
+
+    async fn get_proofs(&self) -> Result<Proofs, CashuWalletError> {
+        let rows = sqlx::query("SELECT * FROM proofs;")
+            .fetch_all(&self.pool)
+            .await
+            .unwrap();
+
+        let result = rows
+            .iter()
+            .map(|row| {
+                let id = row.get(0);
+                let amount: i64 = row.get(1);
+                let c: String = row.get(2);
+                let secret: String = row.get(3);
+                let _time_created: String = row.get(4); // TODO use time_created
+                Ok(Proof {
+                    id,
+                    amount: amount as u64,
+                    c: c.parse().unwrap(),
+                    secret,
+                    script: None,
+                })
+            })
+            .collect::<Result<Vec<Proof>, SqliteError>>()
+            .map(Proofs::from);
+
+        Ok(result.unwrap())
+    }
+}
+
+impl SqliteLocalStore {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self { pool }
+    }
+
+    pub async fn migrate(&self) {
+        sqlx::migrate!("../wallet/migrations")
+            .run(&self.pool)
+            .await
+            .expect("Could not run migrations");
+    }
+
+    pub async fn start_transaction(
+        &self,
+    ) -> Result<sqlx::Transaction<'_, sqlx::Sqlite>, sqlx::Error> {
+        self.pool.begin().await
+    }
+
+    pub async fn commit_transaction(
+        &self,
+        transaction: sqlx::Transaction<'_, sqlx::Sqlite>,
+    ) -> Result<(), sqlx::Error> {
+        transaction.commit().await
+    }
 }
 
 #[repr(u8)]
@@ -121,7 +227,36 @@ mod tests {
 
     use cashurs_core::model::{Proofs, Tokens};
 
-    use super::LocalStore;
+    use super::{LocalStore, SqliteLocalStore};
+    use crate::localstore::LocalStore2;
+
+    #[tokio::test]
+    async fn test_sqlite() -> anyhow::Result<()> {
+        let tmp = tempfile::tempdir()?;
+        let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
+
+        println!("tmp dir {:?}", tmp_dir);
+
+        let pool = sqlx::SqlitePool::connect(
+            format!("sqlite:///{tmp_dir}/test_wallet.db?mode=rwc").as_str(),
+        )
+        .await?;
+        let db = SqliteLocalStore::new(pool);
+        db.migrate().await;
+
+        let tx = db.start_transaction().await?;
+        let tokens = read_fixture("token_60.cashu")?;
+        let store: Arc<dyn LocalStore2> = Arc::new(db.clone());
+        store.add_proofs(tokens.get_proofs()).await?;
+        db.commit_transaction(tx).await?;
+
+        let loaded_proofs = store.get_proofs().await?;
+        assert_eq!(tokens.get_proofs(), loaded_proofs);
+
+        println!("loaded proofs {:?}", loaded_proofs);
+
+        Ok(())
+    }
 
     #[test]
     fn test_delete_tokens() -> anyhow::Result<()> {

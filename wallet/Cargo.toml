@@ -11,10 +11,6 @@ resolver = "2"
 name = "cashurs_wallet"
 path = "src/lib.rs"
 
-# [[bin]]
-# name = "cashurs-ui"
-# path = "src/gui/main.rs"
-
 [dependencies]
 anyhow = {version="1.0.71", features = ["backtrace"] }
 clap = { version = "4.3.0", features = ["derive"] }
@@ -33,6 +29,7 @@ lightning-invoice = "0.23.0"
 iced = {version="0.9.0", features=["image", "tokio","qr_code","debug"]}
 iced_aw = { version = "0.5", default-features = false, features = ["tab_bar","tabs", "number_input","modal","card"] }
 dyn-clone = "1.0.11"
+sqlx = { version = "0.6.3", features = ["sqlite", "runtime-tokio-native-tls", "migrate"] }
 
 
 [dev-dependencies]
