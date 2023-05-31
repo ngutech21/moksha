@@ -111,8 +111,8 @@ async fn post_split(
     let (fst, snd) = mint
         .split(
             split_request.amount,
-            split_request.proofs,
-            split_request.outputs,
+            &split_request.proofs,
+            &split_request.outputs,
         )
         .await?;
 
@@ -124,7 +124,7 @@ async fn post_melt(
     Json(melt_request): Json<PostMeltRequest>,
 ) -> Result<Json<PostMeltResponse>, CashuMintError> {
     let (paid, preimage, change) = mint
-        .melt(melt_request.pr, melt_request.proofs, melt_request.outputs)
+        .melt(melt_request.pr, &melt_request.proofs, &melt_request.outputs)
         .await?;
 
     Ok(Json(PostMeltResponse {
@@ -170,7 +170,7 @@ async fn post_mint(
     );
 
     let promises = mint
-        .mint_tokens(mint_query.hash, blinded_messages.outputs)
+        .mint_tokens(mint_query.hash, &blinded_messages.outputs)
         .await?;
     Ok(Json(PostMintResponse { promises }))
 }

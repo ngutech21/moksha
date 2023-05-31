@@ -22,7 +22,7 @@ pub enum DbKeyPrefix {
 
 #[cfg_attr(test, automock)]
 pub trait Database {
-    fn add_used_proofs(&self, proofs: Proofs) -> Result<(), CashuMintError>;
+    fn add_used_proofs(&self, proofs: &Proofs) -> Result<(), CashuMintError>;
     fn get_used_proofs(&self) -> Result<Proofs, CashuMintError>;
 
     fn get_pending_invoice(&self, key: String) -> Result<Invoice, CashuMintError>;
@@ -68,7 +68,7 @@ impl RocksDB {
 }
 
 impl Database for RocksDB {
-    fn add_used_proofs(&self, proofs: Proofs) -> Result<(), CashuMintError> {
+    fn add_used_proofs(&self, proofs: &Proofs) -> Result<(), CashuMintError> {
         let used_proofs = self.get_used_proofs()?;
 
         let insert = Proofs::new(
@@ -156,10 +156,11 @@ mod tests {
             script: None,
         }]);
 
-        db.add_used_proofs(proofs.clone())?;
+        db.add_used_proofs(&proofs)?;
         let new_proofs = db.get_used_proofs()?;
         assert_eq!(proofs, new_proofs);
 
+        // FIXME create constructor for Proofs
         let proofs2 = Proofs::new(vec![Proof {
             amount: 42,
             secret: "secret 2".to_string(),
@@ -170,7 +171,7 @@ mod tests {
             script: None,
         }]);
 
-        db.add_used_proofs(proofs2)?;
+        db.add_used_proofs(&proofs2)?;
         let result_proofs = db.get_used_proofs()?;
         assert!(result_proofs.len() == 2);
 

@@ -56,9 +56,9 @@ impl Mint {
         std::cmp::max(fee_reserve, self.lightning_fee_config.fee_reserve_min)
     }
 
-    pub async fn create_blinded_signatures(
+    pub fn create_blinded_signatures(
         &self,
-        blinded_messages: Vec<BlindedMessage>,
+        blinded_messages: &[BlindedMessage],
     ) -> Result<Vec<BlindedSignature>, CashuMintError> {
         let promises = blinded_messages
             .iter()
@@ -86,7 +86,7 @@ impl Mint {
     pub async fn mint_tokens(
         &self,
         invoice_hash: String,
-        outputs: Vec<BlindedMessage>,
+        outputs: &[BlindedMessage],
     ) -> Result<Vec<BlindedSignature>, CashuMintError> {
         let invoice = self.db.get_pending_invoice(invoice_hash.clone())?;
 
@@ -100,7 +100,7 @@ impl Mint {
         }
 
         self.db.remove_pending_invoice(invoice_hash)?;
-        self.create_blinded_signatures(outputs).await
+        self.create_blinded_signatures(outputs)
     }
 
     fn has_duplicate_pubkeys(outputs: &[BlindedMessage]) -> bool {
@@ -111,12 +111,12 @@ impl Mint {
     pub async fn split(
         &self,
         amount: u64,
-        proofs: Proofs,
-        blinded_messages: Vec<BlindedMessage>,
+        proofs: &Proofs,
+        blinded_messages: &[BlindedMessage],
     ) -> Result<(Vec<BlindedSignature>, Vec<BlindedSignature>), CashuMintError> {
-        self.check_used_proofs(&proofs)?;
+        self.check_used_proofs(proofs)?;
 
-        if Self::has_duplicate_pubkeys(&blinded_messages) {
+        if Self::has_duplicate_pubkeys(blinded_messages) {
             return Err(CashuMintError::SplitHasDuplicatePromises);
         }
 
@@ -130,9 +130,9 @@ impl Mint {
         // TODO check: "split of promises is not as expected."
 
         let first_slice = blinded_messages[0..sum_first].to_vec();
-        let first_sigs = self.create_blinded_signatures(first_slice).await?;
+        let first_sigs = self.create_blinded_signatures(&first_slice)?;
         let second_slice = blinded_messages[sum_first..blinded_messages.len()].to_vec();
-        let second_sigs = self.create_blinded_signatures(second_slice).await?;
+        let second_sigs = self.create_blinded_signatures(&second_slice)?;
 
         let amount_first = self.get_amount(&first_sigs);
         let amount_second = self.get_amount(&second_sigs);
@@ -158,8 +158,8 @@ impl Mint {
     pub async fn melt(
         &self,
         payment_request: String,
-        proofs: Proofs,
-        blinded_messages: Vec<BlindedMessage>,
+        proofs: &Proofs,
+        blinded_messages: &[BlindedMessage],
     ) -> Result<(bool, String, Vec<BlindedSignature>), CashuMintError> {
         let invoice = self
             .lightning
@@ -170,7 +170,7 @@ impl Mint {
 
         // TODO verify proofs
 
-        self.check_used_proofs(&proofs)?;
+        self.check_used_proofs(proofs)?;
 
         // TODO check for fees
         let amount_msat = invoice
@@ -191,7 +191,7 @@ impl Mint {
         let _remaining_amount = (amount_msat - (proofs_amount / 1000)) * 1000;
 
         // FIXME check if output amount matches remaining_amount
-        let output = self.create_blinded_signatures(blinded_messages).await?;
+        let output = self.create_blinded_signatures(blinded_messages)?;
 
         Ok((true, result.payment_hash, output))
     }
@@ -238,7 +238,7 @@ mod tests {
             ),
         }];
 
-        let result = mint.create_blinded_signatures(blinded_messages).await?;
+        let result = mint.create_blinded_signatures(&blinded_messages)?;
 
         assert_eq!(1, result.len());
         assert_eq!(8, result[0].amount);
@@ -257,7 +257,7 @@ mod tests {
         let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
 
         let proofs = Proofs::empty();
-        let (first, second) = mint.split(0, proofs, blinded_messages).await?;
+        let (first, second) = mint.split(0, &proofs, &blinded_messages).await?;
 
         assert_eq!(first.len(), 0);
         assert_eq!(second.len(), 0);
@@ -269,7 +269,7 @@ mod tests {
         let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
 
-        let (first, second) = mint.split(20, request.proofs, request.outputs).await?;
+        let (first, second) = mint.split(20, &request.proofs, &request.outputs).await?;
 
         first.total_amount();
         assert_eq!(first.total_amount(), 44);
@@ -282,7 +282,7 @@ mod tests {
         let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
 
-        let (first, second) = mint.split(64, request.proofs, request.outputs).await?;
+        let (first, second) = mint.split(64, &request.proofs, &request.outputs).await?;
 
         assert_eq!(first.total_amount(), 0);
         assert_eq!(second.total_amount(), 64);
@@ -294,7 +294,7 @@ mod tests {
         let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
 
-        let result = mint.split(65, request.proofs, request.outputs).await;
+        let result = mint.split(65, &request.proofs, &request.outputs).await;
         assert!(result.is_err());
         let _err = result.unwrap_err();
         assert!(matches!(CashuMintError::SplitAmountTooHigh, _err));
@@ -308,7 +308,7 @@ mod tests {
         let request =
             create_request_from_fixture("post_split_request_duplicate_key.json".to_string())?;
 
-        let result = mint.split(20, request.proofs, request.outputs).await;
+        let result = mint.split(20, &request.proofs, &request.outputs).await;
         assert!(result.is_err());
         Ok(())
     }
@@ -344,7 +344,8 @@ mod tests {
         let invoice = "some invoice".to_string();
         let change = create_blinded_msgs_from_fixture("blinded_messages_40.json".to_string())?;
 
-        let (paid, _payment_hash, change) = mint.melt(invoice, tokens.get_proofs(), change).await?;
+        let (paid, _payment_hash, change) =
+            mint.melt(invoice, &tokens.get_proofs(), &change).await?;
 
         assert!(paid);
         assert!(change.total_amount() == 40);
