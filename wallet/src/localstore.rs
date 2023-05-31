@@ -119,7 +119,7 @@ impl SqliteLocalStore {
 mod tests {
     use std::{sync::Arc, vec};
 
-    use cashurs_core::model::{Proofs, Tokens};
+    use cashurs_core::model::{Proofs, TokenV3};
 
     use super::SqliteLocalStore;
     use crate::localstore::LocalStore;
@@ -173,9 +173,9 @@ mod tests {
         Ok(())
     }
 
-    fn read_fixture(name: &str) -> anyhow::Result<Tokens> {
+    fn read_fixture(name: &str) -> anyhow::Result<TokenV3> {
         let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{name}"))?;
-        Ok(Tokens::deserialize(raw_token.trim().to_string())?)
+        Ok(TokenV3::deserialize(raw_token.trim().to_string())?)
     }
 }

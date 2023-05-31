@@ -213,7 +213,7 @@ mod tests {
     use crate::mint::LightningFeeConfig;
     use crate::{database::MockDatabase, error::CashuMintError, Mint};
     use cashurs_core::dhke;
-    use cashurs_core::model::{BlindedMessage, Tokens, TotalAmount};
+    use cashurs_core::model::{BlindedMessage, TokenV3, TotalAmount};
     use cashurs_core::model::{PostSplitRequest, Proofs};
     use lnbits_rust::api::invoice::PayInvoiceResult;
     use std::str::FromStr;
@@ -352,10 +352,10 @@ mod tests {
     }
 
     // FIXME refactor helper functions
-    fn create_token_from_fixture(fixture: String) -> Result<Tokens, anyhow::Error> {
+    fn create_token_from_fixture(fixture: String) -> Result<TokenV3, anyhow::Error> {
         let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{fixture}"))?;
-        Ok(Tokens::deserialize(raw_token.trim().to_string())?)
+        Ok(TokenV3::deserialize(raw_token.trim().to_string())?)
     }
 
     fn create_request_from_fixture(fixture: String) -> Result<PostSplitRequest, anyhow::Error> {

@@ -50,7 +50,7 @@ impl Proof {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct P2SHScript {}
+pub struct P2SHScript;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[skip_serializing_none]
@@ -59,16 +59,15 @@ pub struct Token {
     pub proofs: Proofs,
 }
 
-// FIXME rename to TokenV3
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct Tokens {
+pub struct TokenV3 {
     #[serde(rename = "token")]
     pub tokens: Vec<Token>,
     pub memo: Option<String>,
 }
 
-impl Tokens {
+impl TokenV3 {
     pub fn new(token: Token) -> Self {
         Self {
             tokens: vec![token],
@@ -115,7 +114,7 @@ impl Tokens {
         ))
     }
 
-    pub fn deserialize(data: String) -> Result<Tokens, CashuCoreError> {
+    pub fn deserialize(data: String) -> Result<TokenV3, CashuCoreError> {
         if !data.starts_with(TOKEN_PREFIX_V3) {
             return Err(CashuCoreError::InvalidTokenPrefix);
         }
@@ -125,12 +124,12 @@ impl Tokens {
                 .expect("Token does not contain prefix")
                 .as_bytes(),
         )?;
-        let token = serde_json::from_slice::<Tokens>(&json)?;
+        let token = serde_json::from_slice::<TokenV3>(&json)?;
         Ok(token)
     }
 }
 
-impl From<(String, Proofs)> for Tokens {
+impl From<(String, Proofs)> for TokenV3 {
     fn from(from: (String, Proofs)) -> Self {
         Self {
             tokens: vec![Token {
@@ -306,7 +305,7 @@ pub fn split_amount(amount: u64) -> Vec<u64> {
 mod tests {
     use crate::{
         dhke,
-        model::{Proof, Proofs, Token, Tokens},
+        model::{Proof, Proofs, Token, TokenV3},
     };
     use serde_json::json;
 
@@ -386,7 +385,7 @@ mod tests {
                 script: None,
             }]),
         };
-        let tokens = super::Tokens {
+        let tokens = super::TokenV3 {
             tokens: vec![token],
             memo: Some("my memo".to_string()),
         };
@@ -400,7 +399,7 @@ mod tests {
     #[test]
     fn test_tokens_deserialize() -> anyhow::Result<()> {
         let input = "cashuAeyJ0b2tlbiI6W3sibWludCI6Imh0dHBzOi8vODMzMy5zcGFjZTozMzM4IiwicHJvb2ZzIjpbeyJpZCI6IkRTQWw5bnZ2eWZ2YSIsImFtb3VudCI6Miwic2VjcmV0IjoiRWhwZW5uQzlxQjNpRmxXOEZaX3BadyIsIkMiOiIwMmMwMjAwNjdkYjcyN2Q1ODZiYzMxODNhZWNmOTdmY2I4MDBjM2Y0Y2M0NzU5ZjY5YzYyNmM5ZGI1ZDhmNWI1ZDQifSx7ImlkIjoiRFNBbDludnZ5ZnZhIiwiYW1vdW50Ijo4LCJzZWNyZXQiOiJUbVM2Q3YwWVQ1UFVfNUFUVktudWt3IiwiQyI6IjAyYWM5MTBiZWYyOGNiZTVkNzMyNTQxNWQ1YzI2MzAyNmYxNWY5Yjk2N2EwNzljYTk3NzlhYjZlNWMyZGIxMzNhNyJ9XX1dLCJtZW1vIjoiVGhhbmt5b3UuIn0=";
-        let tokens = Tokens::deserialize(input.to_string())?;
+        let tokens = TokenV3::deserialize(input.to_string())?;
         assert_eq!(tokens.memo, Some("Thankyou.".to_string()),);
         assert_eq!(tokens.tokens.len(), 1);
         Ok(())

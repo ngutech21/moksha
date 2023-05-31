@@ -1,6 +1,6 @@
 use std::{env, time::Duration};
 
-use cashurs_core::model::Tokens;
+use cashurs_core::model::TokenV3;
 use clap::{Parser, Subcommand};
 use dotenvy::dotenv;
 
@@ -83,7 +83,7 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Command::Receive { token } => {
-            let tokens = Tokens::deserialize(token)?;
+            let tokens = TokenV3::deserialize(token)?;
             wallet.receive_tokens(tokens).await?;
             println!(
                 "Tokens received successfully.\nNew balance {} sats",
@@ -98,7 +98,7 @@ async fn main() -> anyhow::Result<()> {
             }
 
             let selected_proofs = wallet.get_proofs_for_amount(amount).await?;
-            let selected_tokens = Tokens::from((mint_url.clone(), selected_proofs.clone()));
+            let selected_tokens = TokenV3::from((mint_url.clone(), selected_proofs.clone()));
 
             let (remaining_tokens, result) =
                 wallet.split_tokens(selected_tokens.clone(), amount).await?;
@@ -123,7 +123,7 @@ async fn main() -> anyhow::Result<()> {
             let prompt = "Enter Token:\n".to_string();
             let serialized_token = wait_for_user_input(prompt);
 
-            let tokens = Tokens::deserialize(serialized_token)?;
+            let tokens = TokenV3::deserialize(serialized_token)?;
             let total_token_amount = tokens.total_amount();
             if total_token_amount < splt_amount {
                 println!("Not enough tokens");

@@ -4,7 +4,7 @@ use cashurs_core::{
     dhke::Dhke,
     model::{
         split_amount, BlindedMessage, BlindedSignature, Keysets, PostMeltResponse, Proof, Proofs,
-        Tokens, TotalAmount,
+        TokenV3, TotalAmount,
     },
 };
 use secp256k1::{PublicKey, SecretKey};
@@ -63,7 +63,7 @@ impl Wallet {
         Ok(total)
     }
 
-    pub async fn receive_tokens(&self, tokens: Tokens) -> Result<(), CashuWalletError> {
+    pub async fn receive_tokens(&self, tokens: TokenV3) -> Result<(), CashuWalletError> {
         let total_amount = tokens.total_amount();
         let (_, redeemed_tokens) = self.split_tokens(tokens, total_amount).await?;
         self.localstore
@@ -85,7 +85,7 @@ impl Wallet {
         let selected_proofs = self.get_proofs_for_amount(ln_amount).await?;
 
         let total_proofs = if selected_proofs.total_amount() > ln_amount {
-            let selected_tokens = Tokens::from((self.mint_url.clone(), selected_proofs.clone()));
+            let selected_tokens = TokenV3::from((self.mint_url.clone(), selected_proofs.clone()));
             let split_result = self
                 .split_tokens(selected_tokens.clone(), ln_amount)
                 .await?;
@@ -105,9 +105,9 @@ impl Wallet {
 
     pub async fn split_tokens(
         &self,
-        tokens: Tokens,
+        tokens: TokenV3,
         splt_amount: u64,
-    ) -> Result<(Tokens, Tokens), CashuWalletError> {
+    ) -> Result<(TokenV3, TokenV3), CashuWalletError> {
         let total_token_amount = tokens.total_amount();
         let first_amount = total_token_amount - splt_amount;
         let first_secrets = self.create_secrets(&split_amount(first_amount));
@@ -132,7 +132,7 @@ impl Wallet {
             .post_split_tokens(splt_amount, tokens.get_proofs(), total_outputs)
             .await?;
 
-        let first_tokens = Tokens::from((
+        let first_tokens = TokenV3::from((
             self.mint_url.clone(),
             self.create_proofs_from_blinded_signatures(
                 split_result.fst,
@@ -141,7 +141,7 @@ impl Wallet {
             )?,
         ));
 
-        let second_tokens = Tokens::from((
+        let second_tokens = TokenV3::from((
             self.mint_url.clone(),
             self.create_proofs_from_blinded_signatures(
                 split_result.snd,
@@ -205,7 +205,11 @@ impl Wallet {
             .collect::<Vec<String>>()
     }
 
-    pub async fn mint_tokens(&self, amount: u64, hash: String) -> Result<Tokens, CashuWalletError> {
+    pub async fn mint_tokens(
+        &self,
+        amount: u64,
+        hash: String,
+    ) -> Result<TokenV3, CashuWalletError> {
         let splited_amount = split_amount(amount);
         let secrets = self.create_secrets(&splited_amount);
 
@@ -257,7 +261,7 @@ impl Wallet {
                 .collect::<Vec<Proof>>(),
         );
 
-        let tokens = Tokens::from((self.mint_url.clone(), proofs));
+        let tokens = TokenV3::from((self.mint_url.clone(), proofs));
         self.localstore
             .add_proofs(tokens.clone().get_proofs())
             .await?;
@@ -367,27 +371,27 @@ mod tests {
     use async_trait::async_trait;
     use cashurs_core::model::{
         BlindedMessage, CheckFeesResponse, Keysets, PaymentRequest, PostMeltResponse,
-        PostMintResponse, PostSplitResponse, Proofs, Token, Tokens,
+        PostMintResponse, PostSplitResponse, Proofs, Token, TokenV3,
     };
     use secp256k1::PublicKey;
     use std::collections::HashMap;
 
     #[derive(Clone)]
     struct MockLocalStore {
-        tokens: Tokens,
+        tokens: TokenV3,
     }
 
     impl MockLocalStore {
         fn new() -> Self {
             Self {
-                tokens: Tokens::new(Token {
+                tokens: TokenV3::new(Token {
                     mint: Some("mint_url".to_string()),
                     proofs: Proofs::empty(),
                 }),
             }
         }
 
-        fn with_tokens(tokens: Tokens) -> Self {
+        fn with_tokens(tokens: TokenV3) -> Self {
             Self { tokens }
         }
     }
@@ -516,7 +520,7 @@ mod tests {
         // read file
         let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/token_64.cashu"))?;
-        let tokens = Tokens::deserialize(raw_token.trim().to_string())?;
+        let tokens = TokenV3::deserialize(raw_token.trim().to_string())?;
 
         let result = wallet.split_tokens(tokens, 20).await?;
         // assert_eq!(20, result.0.total_amount());
@@ -568,9 +572,9 @@ mod tests {
         Ok(())
     }
 
-    fn read_fixture(name: &str) -> anyhow::Result<Tokens> {
+    fn read_fixture(name: &str) -> anyhow::Result<TokenV3> {
         let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{name}"))?;
-        Ok(Tokens::deserialize(raw_token.trim().to_string())?)
+        Ok(TokenV3::deserialize(raw_token.trim().to_string())?)
     }
 }

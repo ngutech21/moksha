@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use cashurs_core::model::Tokens;
+use cashurs_core::model::TokenV3;
 use cashurs_wallet::client::HttpClient;
 use cashurs_wallet::gui::Tab;
 use cashurs_wallet::gui::{settings_tab, wallet_tab, Message};
@@ -149,7 +149,7 @@ impl Application for MainFrame {
                 println!("import tokens pressed");
 
                 let token = self.receive_token.clone();
-                let tokens = Tokens::deserialize(token).unwrap(); // FIXME handle error
+                let tokens = TokenV3::deserialize(token).unwrap(); // FIXME handle error
                 self.show_receive_tokens_modal = false;
 
                 let wallet = self.wallet.clone();
