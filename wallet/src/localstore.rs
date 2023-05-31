@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use cashurs_core::model::{Keysets, Proof, Proofs};
+use cashurs_core::model::{Proof, Proofs};
 use sqlx::{sqlite::SqliteError, SqlitePool};
 
 use crate::error::CashuWalletError;
@@ -77,7 +77,7 @@ impl LocalStore for SqliteLocalStore {
             .fetch_all(&self.pool)
             .await?;
 
-        let result = rows
+        Ok(rows
             .iter()
             .map(|row| {
                 let id = row.get(0);
@@ -94,9 +94,7 @@ impl LocalStore for SqliteLocalStore {
                 })
             })
             .collect::<Result<Vec<Proof>, SqliteError>>()
-            .map(Proofs::from);
-
-        Ok(result.unwrap()) // FIXME handle error
+            .map(Proofs::from)?)
     }
 
     async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), CashuWalletError> {
@@ -116,16 +114,14 @@ impl LocalStore for SqliteLocalStore {
             .fetch_all(&self.pool)
             .await?;
 
-        let result = rows
+        Ok(rows
             .iter()
             .map(|row| {
                 let id = row.get(0);
                 let mint_url: String = row.get(1);
                 Ok(WalletKeyset { id, mint_url })
             })
-            .collect::<Result<Vec<WalletKeyset>, SqliteError>>();
-
-        Ok(result.unwrap()) // FIXME handle error
+            .collect::<Result<Vec<WalletKeyset>, SqliteError>>()?)
     }
 }
 
@@ -198,8 +194,13 @@ mod tests {
 
         assert_eq!(tokens.proofs(), loaded_tokens);
 
-        let binding = tokens.tokens.get(0).unwrap().proofs.proofs();
-        let proof_4 = binding.get(0).unwrap().to_owned();
+        let proofs = tokens
+            .tokens
+            .get(0)
+            .expect("Tokens is empty")
+            .proofs
+            .proofs();
+        let proof_4 = proofs.get(0).expect("Proof is empty").to_owned();
         print!("first {:?}", proof_4);
 
         localstore

@@ -2,6 +2,7 @@ use std::string::FromUtf8Error;
 
 use lightning_invoice::ParseOrSemanticError;
 use reqwest::header::InvalidHeaderValue;
+use sqlx::sqlite::SqliteError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -29,6 +30,9 @@ pub enum CashuWalletError {
 
     #[error("DB Error {0}")]
     Db(#[from] sqlx::Error),
+
+    #[error("Sqlite Error {0}")]
+    Sqlite(#[from] SqliteError),
 
     #[error("Utf8 Error {0}")]
     Utf8(#[from] FromUtf8Error),
