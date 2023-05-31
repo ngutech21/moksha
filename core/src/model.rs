@@ -165,6 +165,10 @@ impl Proofs {
         Self(proofs)
     }
 
+    pub fn with_proof(proof: Proof) -> Self {
+        Self(vec![proof])
+    }
+
     pub fn empty() -> Self {
         Self(vec![])
     }

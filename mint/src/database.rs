@@ -146,30 +146,28 @@ mod tests {
 
         let db: Arc<dyn Database> = Arc::new(super::RocksDB::new(tmp_dir.to_owned()));
 
-        let proofs = Proofs::new(vec![Proof {
-            amount: 21,
-            secret: "secret".to_string(),
-            c: dhke::public_key_from_hex(
+        let keyset_id = "keyset_id";
+        let proofs = Proofs::with_proof(Proof::new(
+            21,
+            "secret".to_string(),
+            dhke::public_key_from_hex(
                 "02c020067db727d586bc3183aecf97fcb800c3f4cc4759f69c626c9db5d8f5b5d4",
             ),
-            id: None,
-            script: None,
-        }]);
+            keyset_id.to_owned(),
+        ));
 
         db.add_used_proofs(&proofs)?;
         let new_proofs = db.get_used_proofs()?;
         assert_eq!(proofs, new_proofs);
 
-        // FIXME create constructor for Proofs
-        let proofs2 = Proofs::new(vec![Proof {
-            amount: 42,
-            secret: "secret 2".to_string(),
-            c: dhke::public_key_from_hex(
+        let proofs2 = Proofs::with_proof(Proof::new(
+            42,
+            "secret 2".to_string(),
+            dhke::public_key_from_hex(
                 "02c020067db727d586bc3183aecf97fcb800c3f4cc4759f69c626c9db5d8f5b5d4",
             ),
-            id: None,
-            script: None,
-        }]);
+            keyset_id.to_owned(),
+        ));
 
         db.add_used_proofs(&proofs2)?;
         let result_proofs = db.get_used_proofs()?;
