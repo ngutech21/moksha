@@ -7,3 +7,10 @@ CREATE TABLE IF NOT EXISTS proofs (
                 time_created TIMESTAMP, 
                 UNIQUE (secret)
 );
+
+CREATE TABLE IF NOT EXISTS keysets (
+                id TEXT NOT NULL,
+                mint_url TEXT NOT NULL,
+                active BOOL DEFAULT TRUE,
+                UNIQUE (id, mint_url)
+);

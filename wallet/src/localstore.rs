@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use cashurs_core::model::{Proof, Proofs};
+use cashurs_core::model::{Keysets, Proof, Proofs};
 use sqlx::{sqlite::SqliteError, SqlitePool};
 
 use crate::error::CashuWalletError;
@@ -7,11 +7,21 @@ use crate::error::CashuWalletError;
 use dyn_clone::DynClone;
 use sqlx::Row;
 
+#[derive(Debug, Clone)]
+pub struct WalletKeyset {
+    pub id: String,
+    pub mint_url: String,
+}
+
 #[async_trait]
 pub trait LocalStore: DynClone {
     async fn delete_proofs(&self, proofs: &Proofs) -> Result<(), CashuWalletError>;
     async fn add_proofs(&self, proofs: &Proofs) -> Result<(), CashuWalletError>;
     async fn get_proofs(&self) -> Result<Proofs, CashuWalletError>;
+
+    async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, CashuWalletError>;
+    async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), CashuWalletError>;
+
     async fn migrate(&self);
 }
 
@@ -85,6 +95,35 @@ impl LocalStore for SqliteLocalStore {
             })
             .collect::<Result<Vec<Proof>, SqliteError>>()
             .map(Proofs::from);
+
+        Ok(result.unwrap()) // FIXME handle error
+    }
+
+    async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), CashuWalletError> {
+        sqlx::query(
+            r#"INSERT INTO keysets (id, mint_url) VALUES ($1, $2);
+            "#,
+        )
+        .bind(keyset.id.to_owned())
+        .bind(keyset.mint_url.to_owned())
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, CashuWalletError> {
+        let rows = sqlx::query("SELECT * FROM keysets;")
+            .fetch_all(&self.pool)
+            .await?;
+
+        let result = rows
+            .iter()
+            .map(|row| {
+                let id = row.get(0);
+                let mint_url: String = row.get(1);
+                Ok(WalletKeyset { id, mint_url })
+            })
+            .collect::<Result<Vec<WalletKeyset>, SqliteError>>();
 
         Ok(result.unwrap()) // FIXME handle error
     }

@@ -357,7 +357,7 @@ mod tests {
     use crate::{
         client::{Client, HttpClient},
         error::CashuWalletError,
-        localstore::LocalStore,
+        localstore::{LocalStore, WalletKeyset},
     };
     use async_trait::async_trait;
     use cashurs_core::model::{
@@ -411,6 +411,14 @@ mod tests {
             &self,
             _proofs: &Proofs,
         ) -> Result<(), crate::error::CashuWalletError> {
+            unimplemented!()
+        }
+
+        async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, CashuWalletError> {
+            unimplemented!()
+        }
+
+        async fn add_keyset(&self, _keyset: &WalletKeyset) -> Result<(), CashuWalletError> {
             unimplemented!()
         }
     }
