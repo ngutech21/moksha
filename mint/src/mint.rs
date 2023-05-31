@@ -197,9 +197,9 @@ impl Mint {
     }
 
     pub fn check_used_proofs(&self, proofs: &Proofs) -> Result<(), CashuMintError> {
-        let used_proofs = self.db.get_used_proofs()?.get_proofs();
+        let used_proofs = self.db.get_used_proofs()?.proofs();
         for used_proof in used_proofs {
-            if proofs.get_proofs().contains(&used_proof) {
+            if proofs.proofs().contains(&used_proof) {
                 return Err(CashuMintError::ProofAlreadyUsed(format!("{used_proof:?}")));
             }
         }
@@ -344,8 +344,7 @@ mod tests {
         let invoice = "some invoice".to_string();
         let change = create_blinded_msgs_from_fixture("blinded_messages_40.json".to_string())?;
 
-        let (paid, _payment_hash, change) =
-            mint.melt(invoice, &tokens.get_proofs(), &change).await?;
+        let (paid, _payment_hash, change) = mint.melt(invoice, &tokens.proofs(), &change).await?;
 
         assert!(paid);
         assert!(change.total_amount() == 40);

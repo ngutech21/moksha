@@ -63,7 +63,7 @@ impl Wallet {
         let total_amount = tokens.total_amount();
         let (_, redeemed_tokens) = self.split_tokens(tokens, total_amount).await?;
         self.localstore
-            .add_proofs(&redeemed_tokens.get_proofs())
+            .add_proofs(&redeemed_tokens.proofs())
             .await?;
         Ok(())
     }
@@ -85,11 +85,9 @@ impl Wallet {
             let split_result = self.split_tokens(&selected_tokens, ln_amount).await?;
 
             self.localstore.delete_proofs(&selected_proofs).await?;
-            self.localstore
-                .add_proofs(&split_result.0.get_proofs())
-                .await?;
+            self.localstore.add_proofs(&split_result.0.proofs()).await?;
 
-            split_result.1.get_proofs()
+            split_result.1.proofs()
         } else {
             selected_proofs
         };
@@ -123,7 +121,7 @@ impl Wallet {
 
         let split_result = self
             .client
-            .post_split_tokens(splt_amount, tokens.get_proofs(), total_outputs)
+            .post_split_tokens(splt_amount, tokens.proofs(), total_outputs)
             .await?;
 
         let first_tokens = TokenV3::from((
@@ -256,7 +254,7 @@ impl Wallet {
         );
 
         let tokens = TokenV3::from((self.mint_url.clone(), proofs));
-        self.localstore.add_proofs(&tokens.get_proofs()).await?;
+        self.localstore.add_proofs(&tokens.proofs()).await?;
 
         Ok(tokens)
     }
@@ -317,7 +315,7 @@ impl Wallet {
             return Err(CashuWalletError::NotEnoughTokens);
         }
 
-        let mut all_proofs = all_proofs.get_proofs();
+        let mut all_proofs = all_proofs.proofs();
         all_proofs.sort_by(|a, b| a.amount.cmp(&b.amount));
 
         let mut selected_proofs = vec![];
@@ -406,7 +404,7 @@ mod tests {
         async fn get_proofs(
             &self,
         ) -> Result<cashurs_core::model::Proofs, crate::error::CashuWalletError> {
-            Ok(self.tokens.clone().get_proofs())
+            Ok(self.tokens.clone().proofs())
         }
 
         async fn delete_proofs(

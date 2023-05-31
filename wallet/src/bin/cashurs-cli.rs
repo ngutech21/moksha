@@ -103,9 +103,7 @@ async fn main() -> anyhow::Result<()> {
             let (remaining_tokens, result) = wallet.split_tokens(&selected_tokens, amount).await?;
 
             localstore.delete_proofs(&selected_proofs).await?;
-            localstore
-                .add_proofs(&remaining_tokens.get_proofs())
-                .await?;
+            localstore.add_proofs(&remaining_tokens.proofs()).await?;
 
             let amount = result.total_amount();
             let ser = result.serialize()?;

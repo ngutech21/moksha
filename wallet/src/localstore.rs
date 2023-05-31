@@ -31,7 +31,7 @@ impl LocalStore for SqliteLocalStore {
 
     async fn delete_proofs(&self, proofs: &Proofs) -> Result<(), CashuWalletError> {
         let proof_secrets = proofs
-            .get_proofs()
+            .proofs()
             .iter()
             .map(|p| p.secret.to_owned())
             .collect::<Vec<_>>()
@@ -46,7 +46,7 @@ impl LocalStore for SqliteLocalStore {
 
     async fn add_proofs(&self, proofs: &Proofs) -> Result<(), CashuWalletError> {
         let tx = self.start_transaction().await?;
-        for proof in proofs.get_proofs() {
+        for proof in proofs.proofs() {
             sqlx::query(
                 r#"INSERT INTO proofs (keyset_id, amount, C, secret, time_created) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP);
                 "#,
@@ -135,11 +135,11 @@ mod tests {
         let tx = db.start_transaction().await?;
         let tokens = read_fixture("token_60.cashu")?;
         let store: Arc<dyn LocalStore> = Arc::new(db.clone());
-        store.add_proofs(&tokens.get_proofs()).await?;
+        store.add_proofs(&tokens.proofs()).await?;
         db.commit_transaction(tx).await?;
 
         let loaded_proofs = store.get_proofs().await?;
-        assert_eq!(tokens.get_proofs(), loaded_proofs);
+        assert_eq!(tokens.proofs(), loaded_proofs);
         Ok(())
     }
 
@@ -153,13 +153,13 @@ mod tests {
         localstore.migrate().await;
 
         let tokens = read_fixture("token_60.cashu")?;
-        localstore.add_proofs(&tokens.get_proofs()).await?;
+        localstore.add_proofs(&tokens.proofs()).await?;
 
         let loaded_tokens = localstore.get_proofs().await?;
 
-        assert_eq!(tokens.get_proofs(), loaded_tokens);
+        assert_eq!(tokens.proofs(), loaded_tokens);
 
-        let binding = tokens.tokens.get(0).unwrap().proofs.get_proofs();
+        let binding = tokens.tokens.get(0).unwrap().proofs.proofs();
         let proof_4 = binding.get(0).unwrap().to_owned();
         print!("first {:?}", proof_4);
 

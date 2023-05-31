@@ -88,7 +88,7 @@ impl TokenV3 {
             .map(|token| {
                 token
                     .proofs
-                    .get_proofs()
+                    .proofs()
                     .iter()
                     .map(|proof| proof.amount)
                     .sum::<u64>()
@@ -96,11 +96,11 @@ impl TokenV3 {
             .sum()
     }
 
-    pub fn get_proofs(&self) -> Proofs {
+    pub fn proofs(&self) -> Proofs {
         Proofs::new(
             self.tokens
                 .iter()
-                .flat_map(|token| token.proofs.get_proofs())
+                .flat_map(|token| token.proofs.proofs())
                 .collect(),
         )
     }
@@ -177,7 +177,7 @@ impl Proofs {
         self.0.iter().map(|proof| proof.amount).sum()
     }
 
-    pub fn get_proofs(&self) -> Vec<Proof> {
+    pub fn proofs(&self) -> Vec<Proof> {
         self.0.clone()
     }
 
@@ -191,7 +191,7 @@ impl Proofs {
 
     pub fn has_duplicate_proofs(&self) -> bool {
         let secrets = self
-            .get_proofs()
+            .proofs()
             .into_iter()
             .map(|x| x.secret)
             .collect::<Vec<String>>();
