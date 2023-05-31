@@ -155,7 +155,7 @@ impl Application for MainFrame {
                 let wallet = self.wallet.clone();
                 Command::perform(
                     async move {
-                        let _ = wallet.receive_tokens(tokens).await; // FIXME handle error
+                        let _ = wallet.receive_tokens(&tokens).await; // FIXME handle error
                         wallet.get_balance().await.map_err(|err| err.to_string())
                     },
                     Message::TokenBalanceChanged,

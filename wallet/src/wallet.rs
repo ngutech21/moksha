@@ -54,20 +54,16 @@ impl Wallet {
         }
     }
 
-    pub fn localstore(&self) -> &(dyn LocalStore + Sync + Send) {
-        &*self.localstore
-    }
-
     pub async fn get_balance(&self) -> Result<u64, CashuWalletError> {
         let total = self.localstore.get_proofs().await?.total_amount();
         Ok(total)
     }
 
-    pub async fn receive_tokens(&self, tokens: TokenV3) -> Result<(), CashuWalletError> {
+    pub async fn receive_tokens(&self, tokens: &TokenV3) -> Result<(), CashuWalletError> {
         let total_amount = tokens.total_amount();
         let (_, redeemed_tokens) = self.split_tokens(tokens, total_amount).await?;
         self.localstore
-            .add_proofs(redeemed_tokens.get_proofs())
+            .add_proofs(&redeemed_tokens.get_proofs())
             .await?;
         Ok(())
     }
@@ -86,13 +82,11 @@ impl Wallet {
 
         let total_proofs = if selected_proofs.total_amount() > ln_amount {
             let selected_tokens = TokenV3::from((self.mint_url.clone(), selected_proofs.clone()));
-            let split_result = self
-                .split_tokens(selected_tokens.clone(), ln_amount)
-                .await?;
+            let split_result = self.split_tokens(&selected_tokens, ln_amount).await?;
 
-            self.localstore.delete_proofs(selected_proofs).await?;
+            self.localstore.delete_proofs(&selected_proofs).await?;
             self.localstore
-                .add_proofs(split_result.0.get_proofs())
+                .add_proofs(&split_result.0.get_proofs())
                 .await?;
 
             split_result.1.get_proofs()
@@ -100,24 +94,24 @@ impl Wallet {
             selected_proofs
         };
 
-        self.melt_token(invoice, ln_amount, total_proofs).await
+        self.melt_token(invoice, ln_amount, &total_proofs).await
     }
 
     pub async fn split_tokens(
         &self,
-        tokens: TokenV3,
+        tokens: &TokenV3,
         splt_amount: u64,
     ) -> Result<(TokenV3, TokenV3), CashuWalletError> {
         let total_token_amount = tokens.total_amount();
         let first_amount = total_token_amount - splt_amount;
         let first_secrets = self.create_secrets(&split_amount(first_amount));
-        let first_outputs = self.create_blinded_messages(first_amount, first_secrets.clone())?;
+        let first_outputs = self.create_blinded_messages(first_amount, &first_secrets)?;
 
         // ############################################################################
 
         let second_amount = splt_amount;
         let second_secrets = self.create_secrets(&split_amount(second_amount));
-        let second_outputs = self.create_blinded_messages(second_amount, second_secrets.clone())?;
+        let second_outputs = self.create_blinded_messages(second_amount, &second_secrets)?;
 
         let mut total_outputs = vec![];
         total_outputs.extend(get_blinded_msg(first_outputs.clone()));
@@ -157,7 +151,7 @@ impl Wallet {
         &self,
         pr: String,
         _invoice_amount: u64,
-        proofs: Proofs,
+        proofs: &Proofs,
     ) -> Result<PostMeltResponse, CashuWalletError> {
         //   let remaining = proofs.get_total_amount() - invoice_amount;
         // let secrets = self.create_secrets(&split_amount(remaining));
@@ -191,7 +185,7 @@ impl Wallet {
             .map_err(|err| CashuWalletError::DecodeInvoice(payment_request.to_owned(), err))
     }
 
-    pub fn get_invoice_amount(&self, payment_request: &str) -> Result<u64, CashuWalletError> {
+    fn get_invoice_amount(&self, payment_request: &str) -> Result<u64, CashuWalletError> {
         let invoice = self.decode_invoice(payment_request)?;
         Ok(invoice
             .amount_milli_satoshis()
@@ -199,7 +193,7 @@ impl Wallet {
             / 1000)
     }
 
-    pub fn create_secrets(&self, split_amount: &Vec<u64>) -> Vec<String> {
+    fn create_secrets(&self, split_amount: &[u64]) -> Vec<String> {
         (0..split_amount.len())
             .map(|_| generate_random_string())
             .collect::<Vec<String>>()
@@ -262,17 +256,15 @@ impl Wallet {
         );
 
         let tokens = TokenV3::from((self.mint_url.clone(), proofs));
-        self.localstore
-            .add_proofs(tokens.clone().get_proofs())
-            .await?;
+        self.localstore.add_proofs(&tokens.get_proofs()).await?;
 
         Ok(tokens)
     }
 
-    pub fn create_blinded_messages(
+    fn create_blinded_messages(
         &self,
         amount: u64,
-        secrets: Vec<String>,
+        secrets: &[String],
     ) -> Result<Vec<(BlindedMessage, SecretKey)>, CashuWalletError> {
         let split_amount = split_amount(amount);
 
@@ -280,13 +272,14 @@ impl Wallet {
             .into_iter()
             .zip(secrets)
             .map(|(amount, secret)| {
-                let (b_, alice_secret_key) = self.dhke.step1_alice(secret, None).unwrap(); // FIXME
+                let (b_, alice_secret_key) =
+                    self.dhke.step1_alice(secret.to_string(), None).unwrap(); // FIXME
                 (BlindedMessage { amount, b_ }, alice_secret_key)
             })
             .collect::<Vec<(BlindedMessage, SecretKey)>>())
     }
 
-    pub fn create_proofs_from_blinded_signatures(
+    fn create_proofs_from_blinded_signatures(
         &self,
         signatures: Vec<BlindedSignature>,
         secrets: Vec<String>,
@@ -406,7 +399,7 @@ mod tests {
     impl LocalStore for MockLocalStore {
         async fn migrate(&self) {}
 
-        async fn add_proofs(&self, _: Proofs) -> Result<(), crate::error::CashuWalletError> {
+        async fn add_proofs(&self, _: &Proofs) -> Result<(), crate::error::CashuWalletError> {
             unimplemented!()
         }
 
@@ -418,7 +411,7 @@ mod tests {
 
         async fn delete_proofs(
             &self,
-            _proofs: Proofs,
+            _proofs: &Proofs,
         ) -> Result<(), crate::error::CashuWalletError> {
             unimplemented!()
         }
@@ -522,7 +515,7 @@ mod tests {
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/token_64.cashu"))?;
         let tokens = TokenV3::deserialize(raw_token.trim().to_string())?;
 
-        let result = wallet.split_tokens(tokens, 20).await?;
+        let result = wallet.split_tokens(&tokens, 20).await?;
         // assert_eq!(20, result.0.total_amount());
         // assert_eq!(44, result.1.total_amount());
         println!("{result:?}");

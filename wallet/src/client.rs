@@ -77,13 +77,13 @@ impl Client for HttpClient {
         &self,
         amount: u64,
         proofs: Proofs,
-        output: Vec<BlindedMessage>,
+        outputs: Vec<BlindedMessage>,
     ) -> Result<PostSplitResponse, CashuWalletError> {
         let url = format!("{}/split", self.mint_url);
         let body = serde_json::to_string(&PostSplitRequest {
             amount,
             proofs,
-            outputs: output,
+            outputs,
         })?;
 
         let resp = self

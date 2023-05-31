@@ -9,8 +9,8 @@ use sqlx::Row;
 
 #[async_trait]
 pub trait LocalStore: DynClone {
-    async fn delete_proofs(&self, proofs: Proofs) -> Result<(), CashuWalletError>;
-    async fn add_proofs(&self, proofs: Proofs) -> Result<(), CashuWalletError>;
+    async fn delete_proofs(&self, proofs: &Proofs) -> Result<(), CashuWalletError>;
+    async fn add_proofs(&self, proofs: &Proofs) -> Result<(), CashuWalletError>;
     async fn get_proofs(&self) -> Result<Proofs, CashuWalletError>;
     async fn migrate(&self);
 }
@@ -29,7 +29,7 @@ impl LocalStore for SqliteLocalStore {
             .expect("Could not run migrations");
     }
 
-    async fn delete_proofs(&self, proofs: Proofs) -> Result<(), CashuWalletError> {
+    async fn delete_proofs(&self, proofs: &Proofs) -> Result<(), CashuWalletError> {
         let proof_secrets = proofs
             .get_proofs()
             .iter()
@@ -44,7 +44,7 @@ impl LocalStore for SqliteLocalStore {
         Ok(())
     }
 
-    async fn add_proofs(&self, proofs: Proofs) -> Result<(), CashuWalletError> {
+    async fn add_proofs(&self, proofs: &Proofs) -> Result<(), CashuWalletError> {
         let tx = self.start_transaction().await?;
         for proof in proofs.get_proofs() {
             sqlx::query(
@@ -135,7 +135,7 @@ mod tests {
         let tx = db.start_transaction().await?;
         let tokens = read_fixture("token_60.cashu")?;
         let store: Arc<dyn LocalStore> = Arc::new(db.clone());
-        store.add_proofs(tokens.get_proofs()).await?;
+        store.add_proofs(&tokens.get_proofs()).await?;
         db.commit_transaction(tx).await?;
 
         let loaded_proofs = store.get_proofs().await?;
@@ -153,7 +153,7 @@ mod tests {
         localstore.migrate().await;
 
         let tokens = read_fixture("token_60.cashu")?;
-        localstore.add_proofs(tokens.get_proofs().clone()).await?;
+        localstore.add_proofs(&tokens.get_proofs()).await?;
 
         let loaded_tokens = localstore.get_proofs().await?;
 
@@ -164,7 +164,7 @@ mod tests {
         print!("first {:?}", proof_4);
 
         localstore
-            .delete_proofs(Proofs::from(vec![proof_4]))
+            .delete_proofs(&Proofs::from(vec![proof_4]))
             .await?;
 
         let result_tokens = localstore.get_proofs().await?;

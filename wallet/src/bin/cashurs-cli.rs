@@ -84,7 +84,7 @@ async fn main() -> anyhow::Result<()> {
     match cli.command {
         Command::Receive { token } => {
             let tokens = TokenV3::deserialize(token)?;
-            wallet.receive_tokens(tokens).await?;
+            wallet.receive_tokens(&tokens).await?;
             println!(
                 "Tokens received successfully.\nNew balance {} sats",
                 wallet.get_balance().await?
@@ -100,11 +100,12 @@ async fn main() -> anyhow::Result<()> {
             let selected_proofs = wallet.get_proofs_for_amount(amount).await?;
             let selected_tokens = TokenV3::from((mint_url.clone(), selected_proofs.clone()));
 
-            let (remaining_tokens, result) =
-                wallet.split_tokens(selected_tokens.clone(), amount).await?;
+            let (remaining_tokens, result) = wallet.split_tokens(&selected_tokens, amount).await?;
 
-            localstore.delete_proofs(selected_proofs).await?;
-            localstore.add_proofs(remaining_tokens.get_proofs()).await?;
+            localstore.delete_proofs(&selected_proofs).await?;
+            localstore
+                .add_proofs(&remaining_tokens.get_proofs())
+                .await?;
 
             let amount = result.total_amount();
             let ser = result.serialize()?;
@@ -129,7 +130,7 @@ async fn main() -> anyhow::Result<()> {
                 println!("Not enough tokens");
                 return Ok(());
             }
-            let (first_tokens, second_tokens) = wallet.split_tokens(tokens, splt_amount).await?;
+            let (first_tokens, second_tokens) = wallet.split_tokens(&tokens, splt_amount).await?;
 
             println!(
                 "\nTokens ({:?} sats):\n{}",
