@@ -36,7 +36,7 @@ fn read_env(variable: &str) -> String {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let mint_url = read_env("WALLET_MINT_URL");
-    let client = cashurs_wallet::client::HttpClient::new(mint_url.clone());
+    let client = HttpClient::new(mint_url.clone());
     let keys = client.get_mint_keys().await?;
     let keysets = client.get_mint_keysets().await?;
 

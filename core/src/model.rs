@@ -33,7 +33,7 @@ pub struct Proof {
     pub secret: String,
     #[serde(rename = "C")]
     pub c: PublicKey,
-    pub id: Option<String>, // FIXME use keysetID as specific type / consider making this non optional and brake backwards compatibility
+    pub id: String, // FIXME use keysetID as specific type / consider making this non optional and brake backwards compatibility
     pub script: Option<P2SHScript>,
 }
 
@@ -43,7 +43,7 @@ impl Proof {
             amount,
             secret,
             c,
-            id: Some(id),
+            id,
             script: None,
         }
     }
@@ -339,7 +339,7 @@ mod tests {
 
         let proof = serde_json::from_value::<Proof>(js)?;
         assert_eq!(proof.amount, 2);
-        assert_eq!(proof.id, Some("DSAl9nvvyfva".to_string()));
+        assert_eq!(proof.id, "DSAl9nvvyfva".to_string());
         assert_eq!(proof.secret, "EhpennC9qB3iFlW8FZ_pZw".to_string());
         assert_eq!(
             proof.c.to_string(),
@@ -385,7 +385,7 @@ mod tests {
                 c: dhke::public_key_from_hex(
                     "02c020067db727d586bc3183aecf97fcb800c3f4cc4759f69c626c9db5d8f5b5d4",
                 ),
-                id: None,
+                id: "someid".to_string(),
                 script: None,
             }]),
         };
