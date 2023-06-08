@@ -81,11 +81,13 @@ pub fn icon_link(cx: Scope<IconLinkProps>) -> Element {
 }
 
 #[derive(PartialEq, Props)]
-pub struct QrCodeProps {
-    value: &'static str,
+pub struct QrCodeProps<'a> {
+    value: &'a str,
 }
 
-pub fn qr_code(cx: Scope<QrCodeProps>) -> Element {
+//pub fn icon_button<'a>(cx: Scope<'a, IconButtonProps<'a>>) -> Element<'a> {
+
+pub fn qr_code<'a>(cx: Scope<'a, QrCodeProps<'a>>) -> Element<'a> {
     let raw_value = cx.props.value.to_string();
     let qrdata = generate_qrcode(raw_value.clone());
     let mut clp = Clipboard::new().unwrap(); // FIXME handle error

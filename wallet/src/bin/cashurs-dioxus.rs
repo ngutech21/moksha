@@ -1,6 +1,3 @@
-use std::cell::Cell;
-use std::sync::Arc;
-
 use cashurs_wallet::client::HttpClient;
 use cashurs_wallet::gui::components::{icon_link, icon_nav, qr_code};
 use cashurs_wallet::gui::toast::{toast_frame, ToastInfo};
@@ -14,7 +11,7 @@ use cashurs_wallet::client::Client;
 
 use cashurs_wallet::localstore::LocalStore;
 
-use cashurs_wallet::gui::{components, toast};
+use cashurs_wallet::gui::toast;
 
 use dioxus::prelude::*;
 use fermi::{use_atom_ref, use_init_atom_root, AtomRef};
@@ -196,10 +193,26 @@ fn mint_page(cx: Scope) -> Element {
     let wallet_context = use_shared_state::<Wallet>(cx).unwrap();
     let wallet = wallet_context.read();
 
+    let invoice = use_state(cx, || "".to_string()); // FIXME use option
+
     cx.render(rsx! {
         div { class: "slide",
             icon_nav { icon: "arrow_back", route: "/" }
-            qr_code { value: "lnbcrt210n1pj8a5hmpp5f5tjk04t9vj4248scun8z0ntlakf3t8n9cequrtyj0nltactuy4qdqqcqzzsxqyz5vqsp5ysfgkm46qz7c0prerl9cqjqj8afqc9u5vzels3l6l2adpxxmmp0q9qyyssqadqnc5vzm3u00tsyvypgfw05ats038dq98dx5wyneyqn95s0qyfkysy5qk73tc9lau4dhyyemx6zs58xy90mu650zlhkql2yesrk63cq6ddgck" }
+
+            if !invoice.get().is_empty() {
+                rsx!( qr_code { value: "{invoice}" })
+             }
+
+
+            button { style:"margin-top: 50px;", class: "btn btn-primary mb-2", onclick: move |_|{
+                to_owned![wallet, invoice];
+
+                async move{
+                    let result = wallet.get_mint_payment_request(100).await.unwrap();
+                    invoice.set(result.pr);
+                }
+            }, "Mint 50 Sats"
+            }
         }
     })
 }

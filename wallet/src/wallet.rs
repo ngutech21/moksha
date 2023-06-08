@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use cashurs_core::{
     dhke::Dhke,
     model::{
-        split_amount, BlindedMessage, BlindedSignature, Keysets, PostMeltResponse, Proof, Proofs,
-        TokenV3, TotalAmount,
+        split_amount, BlindedMessage, BlindedSignature, Keysets, PaymentRequest, PostMeltResponse,
+        Proof, Proofs, TokenV3, TotalAmount,
     },
 };
 use secp256k1::{PublicKey, SecretKey};
@@ -52,6 +52,13 @@ impl Wallet {
             localstore,
             mint_url,
         }
+    }
+
+    pub async fn get_mint_payment_request(
+        &self,
+        amount: u64,
+    ) -> Result<PaymentRequest, CashuWalletError> {
+        self.client.get_mint_payment_request(amount).await
     }
 
     pub async fn get_balance(&self) -> Result<u64, CashuWalletError> {
