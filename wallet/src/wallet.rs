@@ -15,7 +15,7 @@ use rand::{distributions::Alphanumeric, Rng};
 use std::str::FromStr;
 
 pub struct Wallet {
-    client: Box<dyn Client + Sync + Send>,
+    client: Box<dyn Client>,
     mint_keys: HashMap<u64, PublicKey>, // FIXME use specific type
     keysets: Keysets,
     dhke: Dhke,
@@ -38,7 +38,7 @@ impl Clone for Wallet {
 
 impl Wallet {
     pub fn new(
-        client: Box<dyn Client + Sync + Send>,
+        client: Box<dyn Client>,
         mint_keys: HashMap<u64, PublicKey>,
         keysets: Keysets,
         localstore: Box<dyn LocalStore + Sync + Send>,
@@ -429,6 +429,12 @@ mod tests {
     impl MockClient {
         fn new() -> Self {
             Self {}
+        }
+    }
+
+    impl PartialEq for MockClient {
+        fn eq(&self, _other: &Self) -> bool {
+            true
         }
     }
 

@@ -56,6 +56,12 @@ pub struct HttpClient {
     request_client: reqwest::Client,
 }
 
+impl PartialEq for HttpClient {
+    fn eq(&self, other: &Self) -> bool {
+        self.mint_url == other.mint_url
+    }
+}
+
 #[derive(serde::Deserialize, Debug)]
 struct CashuErrorResponse {
     code: u64,
