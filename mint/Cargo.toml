@@ -29,6 +29,6 @@ rocksdb = "0.21.0"
 lightning-invoice = "0.23.0"
 
 [dev-dependencies]
-tempfile = "3.5.0"
+tempfile = "3.6.0"
 tower = "0.4.13"
 mockall = "0.11.4"
