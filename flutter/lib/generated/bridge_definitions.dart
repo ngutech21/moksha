@@ -18,4 +18,8 @@ abstract class Native {
   Future<String> generateQrcode({required int amount, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGenerateQrcodeConstMeta;
+
+  Future<int> getBalance({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetBalanceConstMeta;
 }

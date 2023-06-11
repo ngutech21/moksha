@@ -148,6 +148,20 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _wire_generate_qrcode =
       _wire_generate_qrcodePtr.asFunction<void Function(int, int)>();
 
+  void wire_get_balance(
+    int port_,
+  ) {
+    return _wire_get_balance(
+      port_,
+    );
+  }
+
+  late final _wire_get_balancePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_get_balance');
+  late final _wire_get_balance =
+      _wire_get_balancePtr.asFunction<void Function(int)>();
+
   void free_WireSyncReturn(
     WireSyncReturn ptr,
   ) {

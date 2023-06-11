@@ -25,12 +25,15 @@ void wire_say_hello(int64_t port_);
 
 void wire_generate_qrcode(int64_t port_, uint8_t amount);
 
+void wire_get_balance(int64_t port_);
+
 void free_WireSyncReturn(WireSyncReturn ptr);
 
 static int64_t dummy_method_to_enforce_bundling(void) {
     int64_t dummy_var = 0;
     dummy_var ^= ((int64_t) (void*) wire_say_hello);
     dummy_var ^= ((int64_t) (void*) wire_generate_qrcode);
+    dummy_var ^= ((int64_t) (void*) wire_get_balance);
     dummy_var ^= ((int64_t) (void*) free_WireSyncReturn);
     dummy_var ^= ((int64_t) (void*) store_dart_post_cobject);
     dummy_var ^= ((int64_t) (void*) get_dart_object);

@@ -53,6 +53,22 @@ class NativeImpl implements Native {
         argNames: ["amount"],
       );
 
+  Future<int> getBalance({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_balance(port_),
+      parseSuccessData: _wire2api_u64,
+      constMeta: kGetBalanceConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetBalanceConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_balance",
+        argNames: [],
+      );
+
   void dispose() {
     _platform.dispose();
   }
@@ -60,6 +76,10 @@ class NativeImpl implements Native {
 
   String _wire2api_String(dynamic raw) {
     return raw as String;
+  }
+
+  int _wire2api_u64(dynamic raw) {
+    return castInt(raw);
   }
 
   int _wire2api_u8(dynamic raw) {

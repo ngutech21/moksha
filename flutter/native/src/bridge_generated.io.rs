@@ -11,6 +11,11 @@ pub extern "C" fn wire_generate_qrcode(port_: i64, amount: u8) {
     wire_generate_qrcode_impl(port_, amount)
 }
 
+#[no_mangle]
+pub extern "C" fn wire_get_balance(port_: i64) {
+    wire_get_balance_impl(port_)
+}
+
 // Section: allocate functions
 
 // Section: related functions

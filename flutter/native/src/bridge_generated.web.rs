@@ -11,6 +11,11 @@ pub fn wire_generate_qrcode(port_: MessagePort, amount: u8) {
     wire_generate_qrcode_impl(port_, amount)
 }
 
+#[wasm_bindgen]
+pub fn wire_get_balance(port_: MessagePort) {
+    wire_get_balance_impl(port_)
+}
+
 // Section: allocate functions
 
 // Section: related functions

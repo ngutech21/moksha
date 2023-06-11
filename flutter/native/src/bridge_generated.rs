@@ -44,6 +44,16 @@ fn wire_generate_qrcode_impl(port_: MessagePort, amount: impl Wire2Api<u8> + Unw
         },
     )
 }
+fn wire_get_balance_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_balance",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| get_balance(),
+    )
+}
 // Section: wrapper structs
 
 // Section: static checks

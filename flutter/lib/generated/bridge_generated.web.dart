@@ -37,6 +37,8 @@ class NativeWasmModule implements WasmModule {
 
   external dynamic /* void */ wire_generate_qrcode(
       NativePortType port_, int amount);
+
+  external dynamic /* void */ wire_get_balance(NativePortType port_);
 }
 
 // Section: WASM wire connector
@@ -49,4 +51,7 @@ class NativeWire extends FlutterRustBridgeWasmWireBase<NativeWasmModule> {
 
   void wire_generate_qrcode(NativePortType port_, int amount) =>
       wasmModule.wire_generate_qrcode(port_, amount);
+
+  void wire_get_balance(NativePortType port_) =>
+      wasmModule.wire_get_balance(port_);
 }
