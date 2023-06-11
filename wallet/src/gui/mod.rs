@@ -13,9 +13,6 @@ pub mod wallet_tab;
 
 pub mod util;
 
-pub mod components;
-pub mod toast;
-
 #[derive(Debug, Clone)]
 pub enum Message {
     TabSelected(usize),

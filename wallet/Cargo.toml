@@ -34,19 +34,6 @@ iced = {version="0.9.0", features=["image", "tokio","qr_code","debug"]}
 iced_aw = { version = "0.5", default-features = false, features = ["tab_bar","tabs", "number_input","modal","card"] }
 
 
-# dioxus
-base64 = "0.21.2"
-qrcode = "0.12.0"
-dioxus = { git = "https://github.com/DioxusLabs/dioxus", rev="0fec47db725b9c76a95545dd9c444d3a9e627e95"}
-dioxus-desktop = { git = "https://github.com/DioxusLabs/dioxus", rev="0fec47db725b9c76a95545dd9c444d3a9e627e95"}
-dioxus-router = {git = "https://github.com/DioxusLabs/dioxus", rev="0fec47db725b9c76a95545dd9c444d3a9e627e95"}
-dioxus-std = {git = "https://github.com/DioxusLabs/dioxus-std", features = ["clipboard"], rev="994f1ee99065149492ecd338f8012abdbd2f25bc"}
-
-chrono = { version = "0.4.23", features = ["wasmbind"] }
-fermi = {git = "https://github.com/DioxusLabs/dioxus", rev="0fec47db725b9c76a95545dd9c444d3a9e627e95"}
-
-uuid = {version= "1.3.3", features = ["v4","fast-rng","macro-diagnostics"]}
-dyn-eq = "0.1.2"
 
 
 
