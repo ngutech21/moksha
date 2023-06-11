@@ -28,47 +28,50 @@ class _MintWidgetState extends State<MintWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _isMinted
-            ? QrImageView(
-                data: amount,
-                version: QrVersions.auto,
-                size: 200.0,
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-              )
-            : const Text(
-                'Not minted',
-                style: TextStyle(fontSize: 20),
-              ),
-        TextField(
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: 'Amount',
+    return Container(
+      margin: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          _isMinted
+              ? QrImageView(
+                  data: amount,
+                  version: QrVersions.auto,
+                  size: 200.0,
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                )
+              : const Text(
+                  'Not minted',
+                  style: TextStyle(fontSize: 20),
+                ),
+          TextField(
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: 'Amount',
+            ),
+            onChanged: (value) => setState(() {
+              amount = value;
+            }),
           ),
-          onChanged: (value) => setState(() {
-            amount = value;
-          }),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            setState(() {
-              _isMinted = true;
-              print(amount);
-            });
-          },
-          child: const Text('Mint'),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            var qr = await api.generateQrcode(amount: 6);
-            print("QR$qr");
-          },
-          child: const Text('Call Future'),
-        )
-      ],
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _isMinted = true;
+                print(amount);
+              });
+            },
+            child: const Text('Mint'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              var qr = await api.generateQrcode(amount: 6);
+              print("QR$qr");
+            },
+            child: const Text('Call Future'),
+          )
+        ],
+      ),
     );
   }
 }

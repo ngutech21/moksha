@@ -5,9 +5,12 @@ class OverviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-        child: Column(
-      children: [Text("420 69 (sats)")],
-    ));
+    return Container(
+        margin: const EdgeInsets.all(24),
+        child: const Center(
+          child: Column(children: [
+            Text("420 69 (sats)", style: TextStyle(fontSize: 42))
+          ]),
+        ));
   }
 }

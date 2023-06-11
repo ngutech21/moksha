@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/pages/mint_page.dart';
-import 'package:my_app/pages/overview_page.dart';
-import 'package:my_app/pages/receive_page.dart';
+import 'package:cashurs_wallet/pages/mint_page.dart';
+import 'package:cashurs_wallet/pages/overview_page.dart';
+import 'package:cashurs_wallet/pages/receive_page.dart';
 import 'ffi.dart' if (dart.library.html) 'ffi_web.dart';
 
 void main() {
