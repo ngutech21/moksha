@@ -17,6 +17,17 @@ class NativePlatform extends FlutterRustBridgeBase<NativeWire> {
 
 // Section: api2wire
 
+  @protected
+  ffi.Pointer<wire_uint_8_list> api2wire_String(String raw) {
+    return api2wire_uint_8_list(utf8.encoder.convert(raw));
+  }
+
+  @protected
+  ffi.Pointer<wire_uint_8_list> api2wire_uint_8_list(Uint8List raw) {
+    final ans = inner.new_uint_8_list_0(raw.length);
+    ans.ref.ptr.asTypedList(raw.length).setAll(0, raw);
+    return ans;
+  }
 // Section: finalizer
 
 // Section: api_fill_to_wire
@@ -148,6 +159,18 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _wire_generate_qrcode =
       _wire_generate_qrcodePtr.asFunction<void Function(int, int)>();
 
+  void wire_init_db(
+    int port_,
+  ) {
+    return _wire_init_db(
+      port_,
+    );
+  }
+
+  late final _wire_init_dbPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>('wire_init_db');
+  late final _wire_init_db = _wire_init_dbPtr.asFunction<void Function(int)>();
+
   void wire_get_balance(
     int port_,
   ) {
@@ -161,6 +184,38 @@ class NativeWire implements FlutterRustBridgeWireBase {
           'wire_get_balance');
   late final _wire_get_balance =
       _wire_get_balancePtr.asFunction<void Function(int)>();
+
+  void wire_import_token(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> token,
+  ) {
+    return _wire_import_token(
+      port_,
+      token,
+    );
+  }
+
+  late final _wire_import_tokenPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_import_token');
+  late final _wire_import_token = _wire_import_tokenPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  ffi.Pointer<wire_uint_8_list> new_uint_8_list_0(
+    int len,
+  ) {
+    return _new_uint_8_list_0(
+      len,
+    );
+  }
+
+  late final _new_uint_8_list_0Ptr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<wire_uint_8_list> Function(
+              ffi.Int32)>>('new_uint_8_list_0');
+  late final _new_uint_8_list_0 = _new_uint_8_list_0Ptr
+      .asFunction<ffi.Pointer<wire_uint_8_list> Function(int)>();
 
   void free_WireSyncReturn(
     WireSyncReturn ptr,
@@ -178,6 +233,13 @@ class NativeWire implements FlutterRustBridgeWireBase {
 }
 
 final class _Dart_Handle extends ffi.Opaque {}
+
+final class wire_uint_8_list extends ffi.Struct {
+  external ffi.Pointer<ffi.Uint8> ptr;
+
+  @ffi.Int32()
+  external int len;
+}
 
 typedef DartPostCObjectFnType = ffi.Pointer<
     ffi.NativeFunction<

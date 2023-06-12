@@ -53,6 +53,22 @@ class NativeImpl implements Native {
         argNames: ["amount"],
       );
 
+  Future<int> initDb({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_init_db(port_),
+      parseSuccessData: _wire2api_u8,
+      constMeta: kInitDbConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kInitDbConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "init_db",
+        argNames: [],
+      );
+
   Future<int> getBalance({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_get_balance(port_),
@@ -67,6 +83,23 @@ class NativeImpl implements Native {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "get_balance",
         argNames: [],
+      );
+
+  Future<void> importToken({required String token, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(token);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_import_token(port_, arg0),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kImportTokenConstMeta,
+      argValues: [token],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kImportTokenConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "import_token",
+        argNames: ["token"],
       );
 
   void dispose() {
@@ -89,6 +122,10 @@ class NativeImpl implements Native {
   Uint8List _wire2api_uint_8_list(dynamic raw) {
     return raw as Uint8List;
   }
+
+  void _wire2api_unit(dynamic raw) {
+    return;
+  }
 }
 
 // Section: api2wire
@@ -97,4 +134,5 @@ class NativeImpl implements Native {
 int api2wire_u8(int raw) {
   return raw;
 }
+
 // Section: finalizer

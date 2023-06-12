@@ -44,6 +44,16 @@ fn wire_generate_qrcode_impl(port_: MessagePort, amount: impl Wire2Api<u8> + Unw
         },
     )
 }
+fn wire_init_db_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "init_db",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| init_db(),
+    )
+}
 fn wire_get_balance_impl(port_: MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -52,6 +62,19 @@ fn wire_get_balance_impl(port_: MessagePort) {
             mode: FfiCallMode::Normal,
         },
         move || move |task_callback| get_balance(),
+    )
+}
+fn wire_import_token_impl(port_: MessagePort, token: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "import_token",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_token = token.wire2api();
+            move |task_callback| import_token(api_token)
+        },
     )
 }
 // Section: wrapper structs
@@ -76,11 +99,13 @@ where
         (!self.is_null()).then(|| self.wire2api())
     }
 }
+
 impl Wire2Api<u8> for u8 {
     fn wire2api(self) -> u8 {
         self
     }
 }
+
 // Section: impl IntoDart
 
 // Section: executor

@@ -9,10 +9,12 @@ class OverviewPage extends StatefulWidget {
 }
 
 class _OverviewPageState extends State<OverviewPage> {
+  late Future<int> initDB;
   late Future<int> balance;
   @override
   void initState() {
     super.initState();
+    initDB = api.initDb();
     balance = api.getBalance();
   }
 
@@ -23,7 +25,7 @@ class _OverviewPageState extends State<OverviewPage> {
         child: Center(
           child: Column(children: [
             FutureBuilder(
-                future: Future.wait([balance]),
+                future: Future.wait([initDB, balance]),
                 builder: (context, snap) {
                   if (snap.error != null) {
                     // An error has been encountered, so give an appropriate response and
@@ -38,7 +40,7 @@ class _OverviewPageState extends State<OverviewPage> {
                   final data = snap.data;
                   if (data == null) return const CircularProgressIndicator();
 
-                  var value = data[0];
+                  var value = data[1];
                   return Text('$value (sats)',
                       style: const TextStyle(fontSize: 42));
                 })

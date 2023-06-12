@@ -20,6 +20,15 @@ class NativePlatform extends FlutterRustBridgeBase<NativeWire>
 
 // Section: api2wire
 
+  @protected
+  String api2wire_String(String raw) {
+    return raw;
+  }
+
+  @protected
+  Uint8List api2wire_uint_8_list(Uint8List raw) {
+    return raw;
+  }
 // Section: finalizer
 }
 
@@ -38,7 +47,12 @@ class NativeWasmModule implements WasmModule {
   external dynamic /* void */ wire_generate_qrcode(
       NativePortType port_, int amount);
 
+  external dynamic /* void */ wire_init_db(NativePortType port_);
+
   external dynamic /* void */ wire_get_balance(NativePortType port_);
+
+  external dynamic /* void */ wire_import_token(
+      NativePortType port_, String token);
 }
 
 // Section: WASM wire connector
@@ -52,6 +66,11 @@ class NativeWire extends FlutterRustBridgeWasmWireBase<NativeWasmModule> {
   void wire_generate_qrcode(NativePortType port_, int amount) =>
       wasmModule.wire_generate_qrcode(port_, amount);
 
+  void wire_init_db(NativePortType port_) => wasmModule.wire_init_db(port_);
+
   void wire_get_balance(NativePortType port_) =>
       wasmModule.wire_get_balance(port_);
+
+  void wire_import_token(NativePortType port_, String token) =>
+      wasmModule.wire_import_token(port_, token);
 }

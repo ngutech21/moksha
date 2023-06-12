@@ -19,7 +19,15 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kGenerateQrcodeConstMeta;
 
+  Future<int> initDb({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kInitDbConstMeta;
+
   Future<int> getBalance({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetBalanceConstMeta;
+
+  Future<void> importToken({required String token, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kImportTokenConstMeta;
 }
