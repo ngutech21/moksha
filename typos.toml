@@ -1,3 +1,7 @@
 [type.cashu]
 extend-glob = ["*.cashu"]
 check-file = false
+
+
+[files]
+extend-exclude = ["flutter/*"]
