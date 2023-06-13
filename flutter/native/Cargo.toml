@@ -1,0 +1,17 @@
+[package]
+name = "native"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+anyhow = "1.0.71"
+flutter_rust_bridge = "1.77.1"
+tokio = { version = "1.28.2", features = ["rt-multi-thread"] }
+cashurs-wallet = { path = "../../wallet" }
+cashurs-core = { path = "../../core" }
+lazy_static = "1.4.0"
