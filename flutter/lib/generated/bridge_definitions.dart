@@ -27,7 +27,7 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kGetBalanceConstMeta;
 
-  Future<void> importToken({required String token, dynamic hint});
+  Future<int> importToken({required String token, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kImportTokenConstMeta;
 }

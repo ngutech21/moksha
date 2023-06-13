@@ -128,18 +128,18 @@ fn _create_local_wallet() -> anyhow::Result<Wallet> {
     result
 }
 
-pub fn import_token(token: String) -> anyhow::Result<()> {
+pub fn import_token(token: String) -> anyhow::Result<u64> {
     let de = TokenV3::deserialize(token).map_err(anyhow::Error::from)?;
     let wallet = _create_local_wallet().map_err(anyhow::Error::from)?;
 
     let rt = lock_runtime!();
 
-    rt.block_on(async move {
+    rt.block_on(async {
         wallet
             .receive_tokens(&de)
             .await
             .map_err(anyhow::Error::from); // FIXME
     });
 
-    Ok(())
+    Ok(de.total_amount())
 }

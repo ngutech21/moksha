@@ -1,8 +1,15 @@
 import 'package:cashurs_wallet/ffi.dart';
 import 'package:flutter/material.dart';
 
-class ReceivePage extends StatelessWidget {
+class ReceivePage extends StatefulWidget {
   const ReceivePage({super.key});
+
+  @override
+  State<ReceivePage> createState() => _ReceivePageState();
+}
+
+class _ReceivePageState extends State<ReceivePage> {
+  String token = '';
 
   @override
   Widget build(BuildContext context) {
@@ -11,24 +18,29 @@ class ReceivePage extends StatelessWidget {
       child: Center(
           child: Column(
         children: [
-          const TextField(
-            obscureText: true,
-            decoration: InputDecoration(
+          TextField(
+            obscureText: false,
+            maxLines: 5,
+            autofocus: true,
+            onChanged: (value) => setState(() {
+              token = value;
+            }),
+            decoration: const InputDecoration(
               border: OutlineInputBorder(),
               labelText: 'Paste token',
             ),
           ),
+          const Spacer(),
           ElevatedButton(
               onPressed: () async {
-                print("imported token");
-                api.importToken(
-                    token:
-                        "cashuAeyJ0b2tlbiI6W3sibWludCI6Imh0dHA6Ly8xMjcuMC4wLjE6MzMzOCIsInByb29mcyI6W3siYW1vdW50IjoyLCJzZWNyZXQiOiJkTGxOaGpBNXFEY3I2cDBxVFpTUHhmZzEiLCJDIjoiMDM1ODRmZGEwNGRjNWI2NmNhYjUzZWUyYTRjMmY1ZDZiNDE1MjUyMjQ1MzM2OTlhNjdiNzgwYTQ1OTg1YmI3NGYwIiwiaWQiOiJtUjlQSjNNempMMXkifSx7ImFtb3VudCI6OCwic2VjcmV0Ijoia1B2Z2NaaUZ3VDBGR3drcEg4U21nUm4xIiwiQyI6IjAyZDdlMmJhODVjMDhlNzU1ODMzMWEzNjA1ZmY1MjhjZGViZDdkN2FlMTU0ODQyZTEwMzc3OTU2YjJlOWIyOWJjYiIsImlkIjoibVI5UEozTXpqTDF5In1dfV19");
-                // const snackBar = SnackBar(
-                //   content: Column(children: [Text('Imported tokens')]),
-                //   showCloseIcon: true,
-                // );
-                // ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                // FIXME add error handling
+                var amountImported = await api.importToken(token: token);
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content:
+                      Column(children: [Text('Imported $amountImported sats')]),
+                  showCloseIcon: true,
+                ));
               },
               child: const Text("Import token"))
         ],
