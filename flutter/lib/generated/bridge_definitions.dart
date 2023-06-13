@@ -11,10 +11,6 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'package:uuid/uuid.dart';
 
 abstract class Native {
-  Future<String> sayHello({dynamic hint});
-
-  FlutterRustBridgeTaskConstMeta get kSayHelloConstMeta;
-
   Future<String> generateQrcode({required int amount, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGenerateQrcodeConstMeta;
@@ -26,6 +22,10 @@ abstract class Native {
   Future<int> getBalance({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetBalanceConstMeta;
+
+  Future<bool> payInvoice({required String invoice, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kPayInvoiceConstMeta;
 
   Future<int> importToken({required String token, dynamic hint});
 

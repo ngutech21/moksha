@@ -2,11 +2,6 @@ use super::*;
 // Section: wire functions
 
 #[wasm_bindgen]
-pub fn wire_say_hello(port_: MessagePort) {
-    wire_say_hello_impl(port_)
-}
-
-#[wasm_bindgen]
 pub fn wire_generate_qrcode(port_: MessagePort, amount: u8) {
     wire_generate_qrcode_impl(port_, amount)
 }
@@ -19,6 +14,11 @@ pub fn wire_init_db(port_: MessagePort) {
 #[wasm_bindgen]
 pub fn wire_get_balance(port_: MessagePort) {
     wire_get_balance_impl(port_)
+}
+
+#[wasm_bindgen]
+pub fn wire_pay_invoice(port_: MessagePort, invoice: String) {
+    wire_pay_invoice_impl(port_, invoice)
 }
 
 #[wasm_bindgen]

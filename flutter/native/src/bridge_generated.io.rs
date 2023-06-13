@@ -2,11 +2,6 @@ use super::*;
 // Section: wire functions
 
 #[no_mangle]
-pub extern "C" fn wire_say_hello(port_: i64) {
-    wire_say_hello_impl(port_)
-}
-
-#[no_mangle]
 pub extern "C" fn wire_generate_qrcode(port_: i64, amount: u8) {
     wire_generate_qrcode_impl(port_, amount)
 }
@@ -19,6 +14,11 @@ pub extern "C" fn wire_init_db(port_: i64) {
 #[no_mangle]
 pub extern "C" fn wire_get_balance(port_: i64) {
     wire_get_balance_impl(port_)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_pay_invoice(port_: i64, invoice: *mut wire_uint_8_list) {
+    wire_pay_invoice_impl(port_, invoice)
 }
 
 #[no_mangle]

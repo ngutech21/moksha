@@ -16,10 +16,6 @@ use std::sync::Mutex as StdMutex;
 use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 
-pub fn say_hello() -> String {
-    "Hello from Rust!".to_string()
-}
-
 pub fn generate_qrcode(amount: u8) -> anyhow::Result<String> {
     let rt = Runtime::new().unwrap();
 
@@ -128,18 +124,33 @@ fn _create_local_wallet() -> anyhow::Result<Wallet> {
     result
 }
 
+pub fn pay_invoice(invoice: String) -> anyhow::Result<bool> {
+    let wallet = _create_local_wallet().map_err(anyhow::Error::from)?;
+    let rt = lock_runtime!();
+
+    let result = rt.block_on(async {
+        wallet
+            .pay_invoice(invoice)
+            .await
+            .map_err(anyhow::Error::from)
+    })?;
+
+    drop(rt);
+    Ok(result.paid)
+}
+
 pub fn import_token(token: String) -> anyhow::Result<u64> {
     let de = TokenV3::deserialize(token).map_err(anyhow::Error::from)?;
     let wallet = _create_local_wallet().map_err(anyhow::Error::from)?;
-
     let rt = lock_runtime!();
 
     rt.block_on(async {
         wallet
             .receive_tokens(&de)
             .await
-            .map_err(anyhow::Error::from); // FIXME
-    });
+            .map_err(anyhow::Error::from)
+    })?;
 
+    drop(rt);
     Ok(de.total_amount())
 }

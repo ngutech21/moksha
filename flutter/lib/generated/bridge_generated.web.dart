@@ -42,14 +42,15 @@ external NativeWasmModule get wasmModule;
 class NativeWasmModule implements WasmModule {
   external Object /* Promise */ call([String? moduleName]);
   external NativeWasmModule bind(dynamic thisArg, String moduleName);
-  external dynamic /* void */ wire_say_hello(NativePortType port_);
-
   external dynamic /* void */ wire_generate_qrcode(
       NativePortType port_, int amount);
 
   external dynamic /* void */ wire_init_db(NativePortType port_);
 
   external dynamic /* void */ wire_get_balance(NativePortType port_);
+
+  external dynamic /* void */ wire_pay_invoice(
+      NativePortType port_, String invoice);
 
   external dynamic /* void */ wire_import_token(
       NativePortType port_, String token);
@@ -61,8 +62,6 @@ class NativeWire extends FlutterRustBridgeWasmWireBase<NativeWasmModule> {
   NativeWire(FutureOr<WasmModule> module)
       : super(WasmModule.cast<NativeWasmModule>(module));
 
-  void wire_say_hello(NativePortType port_) => wasmModule.wire_say_hello(port_);
-
   void wire_generate_qrcode(NativePortType port_, int amount) =>
       wasmModule.wire_generate_qrcode(port_, amount);
 
@@ -70,6 +69,9 @@ class NativeWire extends FlutterRustBridgeWasmWireBase<NativeWasmModule> {
 
   void wire_get_balance(NativePortType port_) =>
       wasmModule.wire_get_balance(port_);
+
+  void wire_pay_invoice(NativePortType port_, String invoice) =>
+      wasmModule.wire_pay_invoice(port_, invoice);
 
   void wire_import_token(NativePortType port_, String token) =>
       wasmModule.wire_import_token(port_, token);

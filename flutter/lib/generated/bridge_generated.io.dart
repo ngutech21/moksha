@@ -129,20 +129,6 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _init_frb_dart_api_dl = _init_frb_dart_api_dlPtr
       .asFunction<int Function(ffi.Pointer<ffi.Void>)>();
 
-  void wire_say_hello(
-    int port_,
-  ) {
-    return _wire_say_hello(
-      port_,
-    );
-  }
-
-  late final _wire_say_helloPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_say_hello');
-  late final _wire_say_hello =
-      _wire_say_helloPtr.asFunction<void Function(int)>();
-
   void wire_generate_qrcode(
     int port_,
     int amount,
@@ -184,6 +170,23 @@ class NativeWire implements FlutterRustBridgeWireBase {
           'wire_get_balance');
   late final _wire_get_balance =
       _wire_get_balancePtr.asFunction<void Function(int)>();
+
+  void wire_pay_invoice(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> invoice,
+  ) {
+    return _wire_pay_invoice(
+      port_,
+      invoice,
+    );
+  }
+
+  late final _wire_pay_invoicePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_pay_invoice');
+  late final _wire_pay_invoice = _wire_pay_invoicePtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_import_token(
     int port_,

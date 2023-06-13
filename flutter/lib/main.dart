@@ -1,8 +1,8 @@
+import 'package:cashurs_wallet/pages/pay_invoice_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cashurs_wallet/pages/mint_page.dart';
 import 'package:cashurs_wallet/pages/overview_page.dart';
 import 'package:cashurs_wallet/pages/receive_page.dart';
-import 'ffi.dart' if (dart.library.html) 'ffi_web.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,13 +37,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late Future<String> hello;
   int currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    hello = api.sayHello();
   }
 
   List<Widget> createWidget() {
@@ -96,7 +94,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         Container(
           alignment: Alignment.center,
-          child: const Text('Pay'),
+          child: const PayInvoicePage(),
         ),
       ][currentIndex],
     );

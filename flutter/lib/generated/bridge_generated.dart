@@ -20,22 +20,6 @@ class NativeImpl implements Native {
   factory NativeImpl.wasm(FutureOr<WasmModule> module) =>
       NativeImpl(module as ExternalLibrary);
   NativeImpl.raw(this._platform);
-  Future<String> sayHello({dynamic hint}) {
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_say_hello(port_),
-      parseSuccessData: _wire2api_String,
-      constMeta: kSayHelloConstMeta,
-      argValues: [],
-      hint: hint,
-    ));
-  }
-
-  FlutterRustBridgeTaskConstMeta get kSayHelloConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "say_hello",
-        argNames: [],
-      );
-
   Future<String> generateQrcode({required int amount, dynamic hint}) {
     var arg0 = api2wire_u8(amount);
     return _platform.executeNormal(FlutterRustBridgeTask(
@@ -85,6 +69,23 @@ class NativeImpl implements Native {
         argNames: [],
       );
 
+  Future<bool> payInvoice({required String invoice, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(invoice);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_pay_invoice(port_, arg0),
+      parseSuccessData: _wire2api_bool,
+      constMeta: kPayInvoiceConstMeta,
+      argValues: [invoice],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kPayInvoiceConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "pay_invoice",
+        argNames: ["invoice"],
+      );
+
   Future<int> importToken({required String token, dynamic hint}) {
     var arg0 = _platform.api2wire_String(token);
     return _platform.executeNormal(FlutterRustBridgeTask(
@@ -109,6 +110,10 @@ class NativeImpl implements Native {
 
   String _wire2api_String(dynamic raw) {
     return raw as String;
+  }
+
+  bool _wire2api_bool(dynamic raw) {
+    return raw as bool;
   }
 
   int _wire2api_u64(dynamic raw) {

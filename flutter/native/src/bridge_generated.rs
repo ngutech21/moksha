@@ -21,16 +21,6 @@ use std::sync::Arc;
 
 // Section: wire functions
 
-fn wire_say_hello_impl(port_: MessagePort) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "say_hello",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || move |task_callback| Ok(say_hello()),
-    )
-}
 fn wire_generate_qrcode_impl(port_: MessagePort, amount: impl Wire2Api<u8> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -62,6 +52,19 @@ fn wire_get_balance_impl(port_: MessagePort) {
             mode: FfiCallMode::Normal,
         },
         move || move |task_callback| get_balance(),
+    )
+}
+fn wire_pay_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "pay_invoice",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_invoice = invoice.wire2api();
+            move |task_callback| pay_invoice(api_invoice)
+        },
     )
 }
 fn wire_import_token_impl(port_: MessagePort, token: impl Wire2Api<String> + UnwindSafe) {
