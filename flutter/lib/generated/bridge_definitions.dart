@@ -11,10 +11,6 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'package:uuid/uuid.dart';
 
 abstract class Native {
-  Future<String> generateQrcode({required int amount, dynamic hint});
-
-  FlutterRustBridgeTaskConstMeta get kGenerateQrcodeConstMeta;
-
   Future<int> initDb({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kInitDbConstMeta;

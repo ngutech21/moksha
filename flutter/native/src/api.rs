@@ -2,7 +2,6 @@
 // When adding new code to your project, note that only items used
 // here will be transformed to their Dart equivalents.
 
-use std::io::Error;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -19,22 +18,11 @@ use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 use tokio::time::{sleep_until, Instant};
 
-pub fn generate_qrcode(amount: u8) -> anyhow::Result<String> {
-    let rt = Runtime::new().unwrap();
-
-    rt.block_on(async move {
-        let result = internal_generate_qrcode(amount).await;
-        result.map_err(anyhow::Error::from)
-    })
-}
-
-async fn internal_generate_qrcode(amount: u8) -> Result<String, Error> {
-    Ok(format!("qr code for value {amount}"))
-}
-
 lazy_static! {
     static ref DB: Arc<Mutex<Option<SqliteLocalStore>>> = Arc::new(Mutex::new(None));
-    static ref RUNTIME: Arc<StdMutex<Runtime>> = Arc::new(StdMutex::new(Runtime::new().unwrap()));
+    static ref RUNTIME: Arc<StdMutex<Runtime>> = Arc::new(StdMutex::new(
+        Runtime::new().expect("Failed to create runtime")
+    ));
     static ref HTTPCLIENT: Arc<Mutex<Option<HttpClient>>> = Arc::new(Mutex::new(None));
 }
 
@@ -56,18 +44,18 @@ pub fn init_db() -> anyhow::Result<u8> {
     let rt = lock_runtime!();
 
     let new_localstore = rt.block_on(async {
-        SqliteLocalStore::with_path("../data/wallet/cashurs_wallet.db".to_string())
+        SqliteLocalStore::with_path("../data/wallet/cashurs_wallet.db".to_string()) // FIXME make configurable
             .await
             .map_err(anyhow::Error::from)
-            .unwrap() // FIXME
-    });
+    })?;
 
     rt.block_on(async {
         let mut db = DB.lock().await;
+        new_localstore.migrate().await;
         *db = Some(new_localstore);
 
         let mut cl = HTTPCLIENT.lock().await;
-        let client = HttpClient::new("http://127.0.0.1:3338".to_string());
+        let client = HttpClient::new("http://127.0.0.1:3338".to_string()); // FIXME make configurable
         *cl = Some(client);
     });
 
@@ -80,8 +68,6 @@ pub fn get_balance() -> anyhow::Result<u64> {
 
     let result = rt.block_on(async {
         let db = DB.lock().await;
-
-        //let db = db.as_ref().ok_or_else(|| Error("DB not set".to_string()))?;
 
         let total = match db.as_ref() {
             Some(db) => db.get_proofs().await?.total_amount(),
@@ -100,7 +86,7 @@ fn _create_local_wallet() -> anyhow::Result<Wallet> {
 
     let result = rt.block_on(async move {
         let client = HTTPCLIENT.lock().await;
-        let client = client.as_ref().unwrap();
+        let client = client.as_ref().expect("HTTPClient not set");
 
         let keys = client.get_mint_keys().await.map_err(anyhow::Error::from)?;
 
@@ -108,15 +94,12 @@ fn _create_local_wallet() -> anyhow::Result<Wallet> {
             .get_mint_keysets()
             .await
             .map_err(anyhow::Error::from)?;
-        println!("get_balance() localstore");
 
         let localstore = DB.lock().await;
-        let localstore = localstore.as_ref().unwrap();
-
-        //   localstore.migrate().await; // FIXME
+        let localstore = localstore.as_ref().expect("DB not set");
 
         Ok(Wallet::new(
-            Box::new(client.to_owned()),
+            Box::new(client.to_owned()), // FIXME use borrow
             keys,
             keysets,
             Box::new(localstore.to_owned()),
@@ -126,8 +109,6 @@ fn _create_local_wallet() -> anyhow::Result<Wallet> {
     drop(rt);
     result
 }
-
-//let mint_result = wallet.mint_tokens(amount, hash.clone()).await;
 
 pub fn mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
     let wallet = _create_local_wallet().map_err(anyhow::Error::from)?;
@@ -151,7 +132,7 @@ pub fn mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
                 }
             }
         }
-    });
+    }); // FIXME return error
 
     drop(rt);
     Ok(result)

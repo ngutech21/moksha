@@ -21,19 +21,6 @@ use std::sync::Arc;
 
 // Section: wire functions
 
-fn wire_generate_qrcode_impl(port_: MessagePort, amount: impl Wire2Api<u8> + UnwindSafe) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "generate_qrcode",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_amount = amount.wire2api();
-            move |task_callback| generate_qrcode(api_amount)
-        },
-    )
-}
 fn wire_init_db_impl(port_: MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {

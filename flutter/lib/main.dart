@@ -62,18 +62,22 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         destinations: const <Widget>[
           NavigationDestination(
+            tooltip: '',
             icon: Icon(Icons.home),
             label: 'Home',
           ),
           NavigationDestination(
+            tooltip: '',
             icon: Icon(Icons.currency_bitcoin),
             label: 'Mint',
           ),
           NavigationDestination(
+            tooltip: '',
             icon: Icon(Icons.import_export),
             label: 'Receive',
           ),
           NavigationDestination(
+            tooltip: '',
             icon: Icon(Icons.bolt),
             label: 'Pay',
           ),

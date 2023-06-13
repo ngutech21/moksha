@@ -134,22 +134,6 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _init_frb_dart_api_dl = _init_frb_dart_api_dlPtr
       .asFunction<int Function(ffi.Pointer<ffi.Void>)>();
 
-  void wire_generate_qrcode(
-    int port_,
-    int amount,
-  ) {
-    return _wire_generate_qrcode(
-      port_,
-      amount,
-    );
-  }
-
-  late final _wire_generate_qrcodePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint8)>>(
-          'wire_generate_qrcode');
-  late final _wire_generate_qrcode =
-      _wire_generate_qrcodePtr.asFunction<void Function(int, int)>();
-
   void wire_init_db(
     int port_,
   ) {

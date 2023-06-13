@@ -47,9 +47,6 @@ external NativeWasmModule get wasmModule;
 class NativeWasmModule implements WasmModule {
   external Object /* Promise */ call([String? moduleName]);
   external NativeWasmModule bind(dynamic thisArg, String moduleName);
-  external dynamic /* void */ wire_generate_qrcode(
-      NativePortType port_, int amount);
-
   external dynamic /* void */ wire_init_db(NativePortType port_);
 
   external dynamic /* void */ wire_get_balance(NativePortType port_);
@@ -72,9 +69,6 @@ class NativeWasmModule implements WasmModule {
 class NativeWire extends FlutterRustBridgeWasmWireBase<NativeWasmModule> {
   NativeWire(FutureOr<WasmModule> module)
       : super(WasmModule.cast<NativeWasmModule>(module));
-
-  void wire_generate_qrcode(NativePortType port_, int amount) =>
-      wasmModule.wire_generate_qrcode(port_, amount);
 
   void wire_init_db(NativePortType port_) => wasmModule.wire_init_db(port_);
 

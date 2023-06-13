@@ -20,23 +20,6 @@ class NativeImpl implements Native {
   factory NativeImpl.wasm(FutureOr<WasmModule> module) =>
       NativeImpl(module as ExternalLibrary);
   NativeImpl.raw(this._platform);
-  Future<String> generateQrcode({required int amount, dynamic hint}) {
-    var arg0 = api2wire_u8(amount);
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_generate_qrcode(port_, arg0),
-      parseSuccessData: _wire2api_String,
-      constMeta: kGenerateQrcodeConstMeta,
-      argValues: [amount],
-      hint: hint,
-    ));
-  }
-
-  FlutterRustBridgeTaskConstMeta get kGenerateQrcodeConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "generate_qrcode",
-        argNames: ["amount"],
-      );
-
   Future<int> initDb({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_init_db(port_),

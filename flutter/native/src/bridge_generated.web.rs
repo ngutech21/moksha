@@ -2,11 +2,6 @@ use super::*;
 // Section: wire functions
 
 #[wasm_bindgen]
-pub fn wire_generate_qrcode(port_: MessagePort, amount: u8) {
-    wire_generate_qrcode_impl(port_, amount)
-}
-
-#[wasm_bindgen]
 pub fn wire_init_db(port_: MessagePort) {
     wire_init_db_impl(port_)
 }
