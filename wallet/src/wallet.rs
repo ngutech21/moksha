@@ -209,10 +209,10 @@ impl Wallet {
         amount: u64,
         hash: String,
     ) -> Result<TokenV3, CashuWalletError> {
-        let splited_amount = split_amount(amount);
-        let secrets = self.create_secrets(&splited_amount);
+        let split_amount = split_amount(amount);
+        let secrets = self.create_secrets(&split_amount);
 
-        let blinded_messages = splited_amount
+        let blinded_messages = split_amount
             .into_iter()
             .zip(secrets.clone())
             .map(|(amount, secret)| {
