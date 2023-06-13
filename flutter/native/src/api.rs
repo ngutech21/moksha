@@ -121,21 +121,20 @@ pub fn mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
 
             match mint_result {
                 Ok(value) => {
-                    return value.total_amount();
+                    return Ok(value.total_amount());
                 }
                 Err(cashurs_wallet::error::CashuWalletError::InvoiceNotPaidYet(_, _)) => {
                     continue;
                 }
                 Err(e) => {
-                    println!("General Error: {}", e);
-                    return 0;
+                    return Err(e);
                 }
             }
         }
-    }); // FIXME return error
+    });
 
     drop(rt);
-    Ok(result)
+    result.map_err(anyhow::Error::from)
 }
 
 pub fn get_mint_payment_request(amount: u64) -> anyhow::Result<FlutterPaymentRequest> {
