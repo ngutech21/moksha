@@ -15,8 +15,3 @@ comment: false
 # Test files aren't important for coverage
 ignore:
   - "tests"
-
-# Make comments less noisy
-comment:
-  layout: "files"
-  require_changes: true
