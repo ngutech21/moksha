@@ -10,13 +10,15 @@ use serde_json::json;
 use thiserror::Error;
 use tracing::{event, Level};
 
+use crate::lnbits::LNBitsError;
+
 #[derive(Error, Debug)]
 pub enum CashuMintError {
     #[error("Failed to decode payment request {0} - Error {1}")]
     DecodeInvoice(String, ParseOrSemanticError),
 
     #[error("Failed to pay invoice {0} - Error {1}")]
-    PayInvoice(String, lnbits_rust::LNBitsError),
+    PayInvoice(String, LNBitsError),
 
     #[error("DB Error {0}")]
     Db(#[from] rocksdb::Error),
@@ -52,7 +54,7 @@ pub enum CashuMintError {
     InvalidAmount,
 
     #[error("Lightning Error {0}")]
-    Lightning(#[from] lnbits_rust::LNBitsError),
+    Lightning(#[from] LNBitsError),
 }
 
 impl IntoResponse for CashuMintError {

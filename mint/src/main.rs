@@ -29,6 +29,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 mod database;
 mod error;
 mod lightning;
+mod lnbits;
 mod mint;
 mod model;
 

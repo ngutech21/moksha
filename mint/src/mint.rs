@@ -210,12 +210,12 @@ impl Mint {
 #[cfg(test)]
 mod tests {
     use crate::lightning::MockLightning;
+    use crate::lnbits::PayInvoiceResult;
     use crate::mint::LightningFeeConfig;
     use crate::{database::MockDatabase, error::CashuMintError, Mint};
     use cashurs_core::dhke;
     use cashurs_core::model::{BlindedMessage, TokenV3, TotalAmount};
     use cashurs_core::model::{PostSplitRequest, Proofs};
-    use lnbits_rust::api::invoice::PayInvoiceResult;
     use std::str::FromStr;
     use std::sync::Arc;
 

@@ -1,10 +1,9 @@
 use async_trait::async_trait;
-use lnbits_rust::{
-    api::invoice::{CreateInvoiceParams, CreateInvoiceResult, PayInvoiceResult},
-    LNBitsClient,
-};
 
-use crate::error::CashuMintError;
+use crate::{
+    error::CashuMintError,
+    lnbits::{CreateInvoiceParams, CreateInvoiceResult, LNBitsClient, PayInvoiceResult},
+};
 
 use lightning_invoice::Invoice as LNInvoice;
 
@@ -58,7 +57,6 @@ impl Lightning for LnbitsLightning {
     }
 
     async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, CashuMintError> {
-        let amount: i64 = amount.try_into().unwrap(); // FIXME use u64
         Ok(self
             .client
             .create_invoice(&CreateInvoiceParams {

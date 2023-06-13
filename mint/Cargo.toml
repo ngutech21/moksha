@@ -22,11 +22,12 @@ tower-http = { version = "0.4.0", features = ["trace", "cors", "fs"] }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
 secp256k1 = {version="0.27.0", features = [ "rand", "serde" ]}
-lnbits_rust = { git = "https://github.com/ngutech21/lnbits_rust/", branch = "main" }
 thiserror = "1.0.40"
 cashurs-core = { path = "../core" }
 rocksdb = "0.21.0"
 lightning-invoice = "0.23.0"
+reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls-webpki-roots", "socks"] }
+url = "2.4.0"
 
 [dev-dependencies]
 tempfile = "3.6.0"
