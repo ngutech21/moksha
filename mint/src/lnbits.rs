@@ -1,11 +1,6 @@
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-pub enum LNBitsRequestKey {
-    Admin,
-    InvoiceRead,
-}
-
 #[derive(Debug, thiserror::Error)]
 pub enum LNBitsError {
     #[error("reqwest error: {0}")]
@@ -26,20 +21,14 @@ pub enum LNBitsError {
 
 #[derive(Clone)]
 pub struct LNBitsClient {
-    // wallet_id: String, // FIXME Can be used later
     admin_key: String,
-    invoice_read_key: String,
     lnbits_url: Url,
-    // tor_socket: Option<String>, // Can be used later
     reqwest_client: reqwest::Client,
 }
 
 impl LNBitsClient {
     pub fn new(
-        // FIXME Can be used later
-        _wallet_id: &str,
         admin_key: &str,
-        invoice_read_key: &str,
         lnbits_url: &str,
         tor_socket: Option<&str>,
     ) -> Result<LNBitsClient, LNBitsError> {
@@ -56,7 +45,6 @@ impl LNBitsClient {
 
         Ok(LNBitsClient {
             admin_key: admin_key.to_string(),
-            invoice_read_key: invoice_read_key.to_string(),
             lnbits_url,
             reqwest_client: client,
         })
@@ -64,21 +52,12 @@ impl LNBitsClient {
 }
 
 impl LNBitsClient {
-    pub async fn make_get(
-        &self,
-        endpoint: &str,
-        key: LNBitsRequestKey,
-    ) -> Result<String, LNBitsError> {
+    pub async fn make_get(&self, endpoint: &str) -> Result<String, LNBitsError> {
         let url = self.lnbits_url.join(endpoint)?;
         let response = self
             .reqwest_client
             .get(url)
-            .header("X-Api-Key", {
-                match key {
-                    LNBitsRequestKey::Admin => self.admin_key.clone(),
-                    LNBitsRequestKey::InvoiceRead => self.invoice_read_key.clone(),
-                }
-            })
+            .header("X-Api-Key", self.admin_key.clone())
             .send()
             .await?;
 
@@ -91,22 +70,12 @@ impl LNBitsClient {
         Ok(body)
     }
 
-    pub async fn make_post(
-        &self,
-        endpoint: &str,
-        key: LNBitsRequestKey,
-        body: &str,
-    ) -> Result<String, LNBitsError> {
+    pub async fn make_post(&self, endpoint: &str, body: &str) -> Result<String, LNBitsError> {
         let url = self.lnbits_url.join(endpoint)?;
         let response = self
             .reqwest_client
             .post(url)
-            .header("X-Api-Key", {
-                match key {
-                    LNBitsRequestKey::Admin => self.admin_key.clone(),
-                    LNBitsRequestKey::InvoiceRead => self.invoice_read_key.clone(),
-                }
-            })
+            .header("X-Api-Key", self.admin_key.clone())
             .body(body.to_string())
             .send()
             .await?;
@@ -163,11 +132,7 @@ impl LNBitsClient {
         });
 
         let body = self
-            .make_post(
-                "api/v1/payments",
-                LNBitsRequestKey::InvoiceRead,
-                &serde_json::to_string(&params)?,
-            )
+            .make_post("api/v1/payments", &serde_json::to_string(&params)?)
             .await?;
 
         let invoice_result: CreateInvoiceResult = serde_json::from_str(&body)?;
@@ -178,7 +143,6 @@ impl LNBitsClient {
         let body = self
             .make_post(
                 "api/v1/payments",
-                LNBitsRequestKey::Admin,
                 &serde_json::to_string(&serde_json::json!({ "out": true, "bolt11": bolt11 }))?,
             )
             .await?;
@@ -189,10 +153,7 @@ impl LNBitsClient {
 
     pub async fn is_invoice_paid(&self, payment_hash: &str) -> Result<bool, LNBitsError> {
         let body = self
-            .make_get(
-                &format!("api/v1/payments/{payment_hash}"),
-                LNBitsRequestKey::Admin,
-            )
+            .make_get(&format!("api/v1/payments/{payment_hash}"))
             .await?;
 
         let invoice_result: serde_json::Value = serde_json::from_str(&body)?;

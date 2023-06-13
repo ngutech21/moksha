@@ -63,9 +63,7 @@ async fn main() -> anyhow::Result<()> {
 
 fn create_mint() -> Mint {
     let ln = Arc::new(LnbitsLightning::new(
-        env::var("LNBITS_WALLET_ID").expect("LNBITS_WALLET_ID not found"),
         env::var("LNBITS_ADMIN_KEY").expect("LNBITS_ADMIN_KEY not found"),
-        env::var("LNBITS_INVOICE_READ_KEY").expect("LNBITS_INVOICE_READ_KEY not found"),
         env::var("LNBITS_URL").expect("LNBITS_URL not found"),
     ));
 

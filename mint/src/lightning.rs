@@ -33,14 +33,9 @@ pub trait Lightning: Send + Sync {
 }
 
 impl LnbitsLightning {
-    pub fn new(
-        wallet_id: String,
-        admin_key: String,
-        invoice_read_key: String,
-        url: String,
-    ) -> Self {
+    pub fn new(admin_key: String, url: String) -> Self {
         Self {
-            client: LNBitsClient::new(&wallet_id, &admin_key, &invoice_read_key, &url, None)
+            client: LNBitsClient::new(&admin_key, &url, None)
                 .expect("Can not create Lnbits client"),
         }
     }
