@@ -32,6 +32,10 @@ void wire_init_db(int64_t port_);
 
 void wire_get_balance(int64_t port_);
 
+void wire_mint_tokens(int64_t port_, uint64_t amount, struct wire_uint_8_list *hash);
+
+void wire_get_mint_payment_request(int64_t port_, uint64_t amount);
+
 void wire_pay_invoice(int64_t port_, struct wire_uint_8_list *invoice);
 
 void wire_import_token(int64_t port_, struct wire_uint_8_list *token);
@@ -45,6 +49,8 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_generate_qrcode);
     dummy_var ^= ((int64_t) (void*) wire_init_db);
     dummy_var ^= ((int64_t) (void*) wire_get_balance);
+    dummy_var ^= ((int64_t) (void*) wire_mint_tokens);
+    dummy_var ^= ((int64_t) (void*) wire_get_mint_payment_request);
     dummy_var ^= ((int64_t) (void*) wire_pay_invoice);
     dummy_var ^= ((int64_t) (void*) wire_import_token);
     dummy_var ^= ((int64_t) (void*) new_uint_8_list_0);

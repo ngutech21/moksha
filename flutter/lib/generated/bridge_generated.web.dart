@@ -26,6 +26,11 @@ class NativePlatform extends FlutterRustBridgeBase<NativeWire>
   }
 
   @protected
+  Object api2wire_u64(int raw) {
+    return castNativeBigInt(raw);
+  }
+
+  @protected
   Uint8List api2wire_uint_8_list(Uint8List raw) {
     return raw;
   }
@@ -49,6 +54,12 @@ class NativeWasmModule implements WasmModule {
 
   external dynamic /* void */ wire_get_balance(NativePortType port_);
 
+  external dynamic /* void */ wire_mint_tokens(
+      NativePortType port_, Object amount, String hash);
+
+  external dynamic /* void */ wire_get_mint_payment_request(
+      NativePortType port_, Object amount);
+
   external dynamic /* void */ wire_pay_invoice(
       NativePortType port_, String invoice);
 
@@ -69,6 +80,12 @@ class NativeWire extends FlutterRustBridgeWasmWireBase<NativeWasmModule> {
 
   void wire_get_balance(NativePortType port_) =>
       wasmModule.wire_get_balance(port_);
+
+  void wire_mint_tokens(NativePortType port_, Object amount, String hash) =>
+      wasmModule.wire_mint_tokens(port_, amount, hash);
+
+  void wire_get_mint_payment_request(NativePortType port_, Object amount) =>
+      wasmModule.wire_get_mint_payment_request(port_, amount);
 
   void wire_pay_invoice(NativePortType port_, String invoice) =>
       wasmModule.wire_pay_invoice(port_, invoice);

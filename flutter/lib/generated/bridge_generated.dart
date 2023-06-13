@@ -69,6 +69,44 @@ class NativeImpl implements Native {
         argNames: [],
       );
 
+  Future<int> mintTokens(
+      {required int amount, required String hash, dynamic hint}) {
+    var arg0 = _platform.api2wire_u64(amount);
+    var arg1 = _platform.api2wire_String(hash);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_mint_tokens(port_, arg0, arg1),
+      parseSuccessData: _wire2api_u64,
+      constMeta: kMintTokensConstMeta,
+      argValues: [amount, hash],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kMintTokensConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "mint_tokens",
+        argNames: ["amount", "hash"],
+      );
+
+  Future<FlutterPaymentRequest> getMintPaymentRequest(
+      {required int amount, dynamic hint}) {
+    var arg0 = _platform.api2wire_u64(amount);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_get_mint_payment_request(port_, arg0),
+      parseSuccessData: _wire2api_flutter_payment_request,
+      constMeta: kGetMintPaymentRequestConstMeta,
+      argValues: [amount],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetMintPaymentRequestConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_mint_payment_request",
+        argNames: ["amount"],
+      );
+
   Future<bool> payInvoice({required String invoice, dynamic hint}) {
     var arg0 = _platform.api2wire_String(invoice);
     return _platform.executeNormal(FlutterRustBridgeTask(
@@ -114,6 +152,16 @@ class NativeImpl implements Native {
 
   bool _wire2api_bool(dynamic raw) {
     return raw as bool;
+  }
+
+  FlutterPaymentRequest _wire2api_flutter_payment_request(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return FlutterPaymentRequest(
+      pr: _wire2api_String(arr[0]),
+      hash: _wire2api_String(arr[1]),
+    );
   }
 
   int _wire2api_u64(dynamic raw) {

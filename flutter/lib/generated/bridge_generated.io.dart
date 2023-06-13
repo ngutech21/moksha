@@ -23,6 +23,11 @@ class NativePlatform extends FlutterRustBridgeBase<NativeWire> {
   }
 
   @protected
+  int api2wire_u64(int raw) {
+    return raw;
+  }
+
+  @protected
   ffi.Pointer<wire_uint_8_list> api2wire_uint_8_list(Uint8List raw) {
     final ans = inner.new_uint_8_list_0(raw.length);
     ans.ref.ptr.asTypedList(raw.length).setAll(0, raw);
@@ -170,6 +175,41 @@ class NativeWire implements FlutterRustBridgeWireBase {
           'wire_get_balance');
   late final _wire_get_balance =
       _wire_get_balancePtr.asFunction<void Function(int)>();
+
+  void wire_mint_tokens(
+    int port_,
+    int amount,
+    ffi.Pointer<wire_uint_8_list> hash,
+  ) {
+    return _wire_mint_tokens(
+      port_,
+      amount,
+      hash,
+    );
+  }
+
+  late final _wire_mint_tokensPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Uint64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_mint_tokens');
+  late final _wire_mint_tokens = _wire_mint_tokensPtr
+      .asFunction<void Function(int, int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_get_mint_payment_request(
+    int port_,
+    int amount,
+  ) {
+    return _wire_get_mint_payment_request(
+      port_,
+      amount,
+    );
+  }
+
+  late final _wire_get_mint_payment_requestPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint64)>>(
+          'wire_get_mint_payment_request');
+  late final _wire_get_mint_payment_request =
+      _wire_get_mint_payment_requestPtr.asFunction<void Function(int, int)>();
 
   void wire_pay_invoice(
     int port_,

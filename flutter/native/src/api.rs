@@ -4,7 +4,9 @@
 
 use std::io::Error;
 use std::sync::Arc;
+use std::time::Duration;
 
+use cashurs_core::model::PaymentRequest;
 use cashurs_core::model::TokenV3;
 use cashurs_wallet::client::Client;
 use cashurs_wallet::client::HttpClient;
@@ -15,6 +17,7 @@ use lazy_static::lazy_static;
 use std::sync::Mutex as StdMutex;
 use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
+use tokio::time::{sleep_until, Instant};
 
 pub fn generate_qrcode(amount: u8) -> anyhow::Result<String> {
     let rt = Runtime::new().unwrap();
@@ -122,6 +125,66 @@ fn _create_local_wallet() -> anyhow::Result<Wallet> {
     });
     drop(rt);
     result
+}
+
+//let mint_result = wallet.mint_tokens(amount, hash.clone()).await;
+
+pub fn mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
+    let wallet = _create_local_wallet().map_err(anyhow::Error::from)?;
+    let rt = lock_runtime!();
+
+    let result = rt.block_on(async {
+        loop {
+            sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
+            let mint_result = wallet.mint_tokens(amount, hash.clone()).await;
+
+            match mint_result {
+                Ok(value) => {
+                    return value.total_amount();
+                }
+                Err(cashurs_wallet::error::CashuWalletError::InvoiceNotPaidYet(_, _)) => {
+                    continue;
+                }
+                Err(e) => {
+                    println!("General Error: {}", e);
+                    return 0;
+                }
+            }
+        }
+    });
+
+    drop(rt);
+    Ok(result)
+}
+
+pub fn get_mint_payment_request(amount: u64) -> anyhow::Result<FlutterPaymentRequest> {
+    let wallet = _create_local_wallet().map_err(anyhow::Error::from)?;
+    let rt = lock_runtime!();
+
+    let result = rt.block_on(async {
+        wallet
+            .get_mint_payment_request(amount)
+            .await
+            .map_err(anyhow::Error::from)
+    })?;
+
+    drop(rt);
+    Ok(result.into())
+}
+
+#[derive(Clone)]
+pub struct FlutterPaymentRequest {
+    pub pr: String,
+    pub hash: String,
+}
+
+impl From<PaymentRequest> for FlutterPaymentRequest {
+    fn from(value: PaymentRequest) -> Self {
+        Self {
+            pr: value.pr,
+            hash: value.hash,
+        }
+    }
 }
 
 pub fn pay_invoice(invoice: String) -> anyhow::Result<bool> {

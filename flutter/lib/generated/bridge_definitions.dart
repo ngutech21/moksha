@@ -23,6 +23,16 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kGetBalanceConstMeta;
 
+  Future<int> mintTokens(
+      {required int amount, required String hash, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kMintTokensConstMeta;
+
+  Future<FlutterPaymentRequest> getMintPaymentRequest(
+      {required int amount, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetMintPaymentRequestConstMeta;
+
   Future<bool> payInvoice({required String invoice, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kPayInvoiceConstMeta;
@@ -30,4 +40,14 @@ abstract class Native {
   Future<int> importToken({required String token, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kImportTokenConstMeta;
+}
+
+class FlutterPaymentRequest {
+  final String pr;
+  final String hash;
+
+  const FlutterPaymentRequest({
+    required this.pr,
+    required this.hash,
+  });
 }

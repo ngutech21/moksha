@@ -17,6 +17,16 @@ pub extern "C" fn wire_get_balance(port_: i64) {
 }
 
 #[no_mangle]
+pub extern "C" fn wire_mint_tokens(port_: i64, amount: u64, hash: *mut wire_uint_8_list) {
+    wire_mint_tokens_impl(port_, amount, hash)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_get_mint_payment_request(port_: i64, amount: u64) {
+    wire_get_mint_payment_request_impl(port_, amount)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_pay_invoice(port_: i64, invoice: *mut wire_uint_8_list) {
     wire_pay_invoice_impl(port_, invoice)
 }

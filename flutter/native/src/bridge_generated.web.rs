@@ -17,6 +17,16 @@ pub fn wire_get_balance(port_: MessagePort) {
 }
 
 #[wasm_bindgen]
+pub fn wire_mint_tokens(port_: MessagePort, amount: u64, hash: String) {
+    wire_mint_tokens_impl(port_, amount, hash)
+}
+
+#[wasm_bindgen]
+pub fn wire_get_mint_payment_request(port_: MessagePort, amount: u64) {
+    wire_get_mint_payment_request_impl(port_, amount)
+}
+
+#[wasm_bindgen]
 pub fn wire_pay_invoice(port_: MessagePort, invoice: String) {
     wire_pay_invoice_impl(port_, invoice)
 }
@@ -48,6 +58,11 @@ impl Wire2Api<Vec<u8>> for Box<[u8]> {
 impl Wire2Api<String> for JsValue {
     fn wire2api(self) -> String {
         self.as_string().expect("non-UTF-8 string, or not a string")
+    }
+}
+impl Wire2Api<u64> for JsValue {
+    fn wire2api(self) -> u64 {
+        ::std::convert::TryInto::try_into(self.dyn_into::<js_sys::BigInt>().unwrap()).unwrap()
     }
 }
 impl Wire2Api<u8> for JsValue {
