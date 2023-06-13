@@ -1,5 +1,6 @@
 [![Rust](https://github.com/ngutech21/cashu-rs/actions/workflows/rust.yml/badge.svg?branch=master)](https://github.com/ngutech21/cashu-rs/actions/workflows/rust.yml)
 ![coverage](https://img.shields.io/codecov/c/github/ngutech21/cashu-rs)
+[![Flutter](https://github.com/ngutech21/cashu-rs/actions/workflows/flutter.yml/badge.svg?branch=master)](https://github.com/ngutech21/cashu-rs/actions/workflows/flutter.yml)
 
 
 
