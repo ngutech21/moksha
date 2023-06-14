@@ -20,7 +20,13 @@ class MyApp extends StatelessWidget {
       theme: ThemeData.dark(),
       themeMode: ThemeMode.dark,
       darkTheme: ThemeData(
+        useMaterial3: true,
         brightness: Brightness.dark,
+        colorScheme: const ColorScheme.dark(
+          primary: Color.fromARGB(253, 2, 133, 240),
+          secondary: Color.fromARGB(253, 2, 133, 240),
+          background: Color.fromARGB(80, 103, 102, 102),
+        ),
       ),
       home: const MyHomePage(title: 'Home'),
     );
