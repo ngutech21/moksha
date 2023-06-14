@@ -19,7 +19,7 @@ use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
-use tracing::{debug, event, Level};
+use tracing::{event, Level};
 
 use crate::lightning::LnbitsLightning;
 use std::env;
@@ -152,8 +152,6 @@ async fn get_mint(
     State(mint): State<Mint>,
     Query(mint_query): Query<GetMintQuery>,
 ) -> Result<Json<PaymentRequest>, CashuMintError> {
-    debug!("amount: {mint_query:#?}");
-
     let (pr, hash) = mint.create_invoice(mint_query.amount).await?;
     Ok(Json(PaymentRequest { pr, hash }))
 }
