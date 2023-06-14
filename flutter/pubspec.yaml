@@ -37,6 +37,7 @@ dependencies:
   flutter_rust_bridge: ^1.45.0
   meta: ^1.8.0
   qr_flutter: ^4.1.0
+  share_plus: ^7.0.2
 
 dev_dependencies:
   flutter_test:

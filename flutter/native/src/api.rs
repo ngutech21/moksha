@@ -115,7 +115,7 @@ pub fn mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
     let rt = lock_runtime!();
 
     let result = rt.block_on(async {
-        loop {
+        for _ in 0..30 {
             sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
             let mint_result = wallet.mint_tokens(amount, hash.clone()).await;
 
@@ -131,6 +131,10 @@ pub fn mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
                 }
             }
         }
+        Err(cashurs_wallet::error::CashuWalletError::InvoiceNotPaidYet(
+            amount,
+            "Invoice not paid yet".to_string(),
+        ))
     });
 
     drop(rt);

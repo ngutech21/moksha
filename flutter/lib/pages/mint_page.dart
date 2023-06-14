@@ -2,6 +2,7 @@ import 'package:cashurs_wallet/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 class MintPage extends StatelessWidget {
   const MintPage({super.key});
@@ -66,35 +67,44 @@ class _MintWidgetState extends State<MintWidget> {
                     QrImageView(
                       data: paymentRequest!.pr,
                       version: QrVersions.auto,
-                      size: 200.0,
+                      size: 250.0,
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
                     ),
-                    SelectableText(
-                      paymentRequest!.pr,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    Row(
-                      children: [
-                        ElevatedButton(
-                            onPressed: () {
-                              Clipboard.setData(
-                                ClipboardData(
-                                  text: paymentRequest!.pr,
-                                ),
-                              );
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      margin: const EdgeInsets.all(8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Spacer(),
+                          ElevatedButton(
+                              onPressed: () {
+                                Clipboard.setData(
+                                  ClipboardData(
+                                    text: paymentRequest!.pr,
+                                  ),
+                                );
 
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(const SnackBar(
-                                content: Column(children: [
-                                  Text('Copied invoice to clipboard'),
-                                ]),
-                                showCloseIcon: true,
-                              ));
-                            },
-                            child: const Text('Copy'))
-                      ],
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(const SnackBar(
+                                  content: Column(children: [
+                                    Text('Copied invoice to clipboard'),
+                                  ]),
+                                  showCloseIcon: true,
+                                ));
+                              },
+                              child: const Text('Copy')),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                              onPressed: () {
+                                Share.share(paymentRequest!.pr);
+                              },
+                              child: const Text('Share')),
+                          const Spacer(),
+                        ],
+                      ),
                     )
                   ],
                 )
