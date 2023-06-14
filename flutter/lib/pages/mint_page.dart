@@ -40,16 +40,11 @@ class _MintWidgetState extends State<MintWidget> {
     super.initState();
 
     _textController.addListener(() {
-      // using Ashok's answer to format the text
       final regEx = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
       matchFunc(Match match) => '${match[1]},';
       final text = _textController.text;
-
       _textController.value = _textController.value.copyWith(
-        // we need to remove all the ',' from the values before reformatting
-        // if you use other formatting values, remember to remove them here
         text: text.replaceAll(',', '').replaceAllMapped(regEx, matchFunc),
-        // this will keep the cursor on the right as you type in values
         selection: TextSelection(
           baseOffset: text.length,
           extentOffset: text.length,
@@ -79,6 +74,28 @@ class _MintWidgetState extends State<MintWidget> {
                       paymentRequest!.pr,
                       style: const TextStyle(fontSize: 16),
                     ),
+                    Row(
+                      children: [
+                        ElevatedButton(
+                            onPressed: () {
+                              Clipboard.setData(
+                                ClipboardData(
+                                  text: paymentRequest!.pr,
+                                ),
+                              );
+
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(const SnackBar(
+                                content: Column(children: [
+                                  Text('Copied invoice to clipboard'),
+                                ]),
+                                showCloseIcon: true,
+                              ));
+                            },
+                            child: const Text('Copy'))
+                      ],
+                    )
                   ],
                 )
               : const Text(
@@ -119,17 +136,17 @@ class _MintWidgetState extends State<MintWidget> {
                     visible: !_isInvoiceCreated,
                     child: ElevatedButton(
                         onPressed: () async {
+                          var cleanAmount =
+                              int.parse(amount.replaceAll(",", ""));
                           var result = await api.getMintPaymentRequest(
-                              amount:
-                                  int.parse(amount)); // use decimalTextfield
+                              amount: cleanAmount); // use decimalTextfield
                           setState(() {
                             paymentRequest = result;
                             _isInvoiceCreated = true;
                           });
 
                           var mintedTokens = await api.mintTokens(
-                              amount: int.parse(amount),
-                              hash: paymentRequest!.hash);
+                              amount: cleanAmount, hash: paymentRequest!.hash);
                           setState(() {
                             paymentRequest = null;
                             _isInvoiceCreated = false;
