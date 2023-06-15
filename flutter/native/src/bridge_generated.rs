@@ -21,14 +21,17 @@ use std::sync::Arc;
 
 // Section: wire functions
 
-fn wire_init_db_impl(port_: MessagePort) {
+fn wire_init_cashu_impl(port_: MessagePort, db_path: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "init_db",
+            debug_name: "init_cashu",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
-        move || move |task_callback| init_db(),
+        move || {
+            let api_db_path = db_path.wire2api();
+            move |task_callback| init_cashu(api_db_path)
+        },
     )
 }
 fn wire_get_balance_impl(port_: MessagePort) {

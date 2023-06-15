@@ -2,8 +2,8 @@ use super::*;
 // Section: wire functions
 
 #[wasm_bindgen]
-pub fn wire_init_db(port_: MessagePort) {
-    wire_init_db_impl(port_)
+pub fn wire_init_cashu(port_: MessagePort, db_path: String) {
+    wire_init_cashu_impl(port_, db_path)
 }
 
 #[wasm_bindgen]

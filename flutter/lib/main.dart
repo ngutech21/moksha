@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cashurs_wallet/pages/mint_page.dart';
 import 'package:cashurs_wallet/pages/overview_page.dart';
 import 'package:cashurs_wallet/pages/receive_page.dart';
+import 'package:cashurs_wallet/ffi.dart';
 
 void main() {
   runApp(const MyApp());
@@ -47,6 +48,11 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    _initCashuWallet();
+  }
+
+  Future<void> _initCashuWallet() async {
+    await api.initCashu(dbPath: "../data/wallet/cashurs_wallet.db");
   }
 
   List<Widget> createWidget() {

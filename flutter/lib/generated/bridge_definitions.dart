@@ -11,9 +11,9 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'package:uuid/uuid.dart';
 
 abstract class Native {
-  Future<int> initDb({dynamic hint});
+  Future<void> initCashu({required String dbPath, dynamic hint});
 
-  FlutterRustBridgeTaskConstMeta get kInitDbConstMeta;
+  FlutterRustBridgeTaskConstMeta get kInitCashuConstMeta;
 
   Future<int> getBalance({dynamic hint});
 

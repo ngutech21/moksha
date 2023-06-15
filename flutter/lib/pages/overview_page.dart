@@ -13,12 +13,7 @@ class _OverviewPageState extends State<OverviewPage> {
   @override
   void initState() {
     super.initState();
-    _initCashuWallet();
     balance = api.getBalance();
-  }
-
-  Future<void> _initCashuWallet() async {
-    await api.initDb();
   }
 
   @override

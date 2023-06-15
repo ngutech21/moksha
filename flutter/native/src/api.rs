@@ -19,10 +19,10 @@ use tokio::sync::Mutex;
 use tokio::time::{sleep_until, Instant};
 
 lazy_static! {
-    static ref DB: Arc<Mutex<Option<SqliteLocalStore>>> = Arc::new(Mutex::new(None));
     static ref RUNTIME: Arc<StdMutex<Runtime>> = Arc::new(StdMutex::new(
         Runtime::new().expect("Failed to create runtime")
     ));
+    static ref LOCALSTORE: Arc<Mutex<Option<SqliteLocalStore>>> = Arc::new(Mutex::new(None));
     static ref HTTPCLIENT: Arc<Mutex<Option<HttpClient>>> = Arc::new(Mutex::new(None));
 }
 
@@ -39,18 +39,17 @@ macro_rules! lock_runtime {
     };
 }
 
-// FIXME only call once at startup
-pub fn init_db() -> anyhow::Result<u8> {
+pub fn init_cashu(db_path: String) -> anyhow::Result<()> {
     let rt = lock_runtime!();
 
     let new_localstore = rt.block_on(async {
-        SqliteLocalStore::with_path("../data/wallet/cashurs_wallet.db".to_string()) // FIXME make configurable
+        SqliteLocalStore::with_path(db_path)
             .await
             .map_err(anyhow::Error::from)
     })?;
 
     rt.block_on(async {
-        let mut db = DB.lock().await;
+        let mut db = LOCALSTORE.lock().await;
         new_localstore.migrate().await;
         *db = Some(new_localstore);
 
@@ -60,14 +59,14 @@ pub fn init_db() -> anyhow::Result<u8> {
     });
 
     drop(rt);
-    Ok(1)
+    Ok(())
 }
 
 pub fn get_balance() -> anyhow::Result<u64> {
     let rt = lock_runtime!();
 
     let result = rt.block_on(async {
-        let db = DB.lock().await;
+        let db = LOCALSTORE.lock().await;
 
         let total = match db.as_ref() {
             Some(db) => db.get_proofs().await?.total_amount(),
@@ -95,7 +94,7 @@ fn _create_local_wallet() -> anyhow::Result<Wallet> {
             .await
             .map_err(anyhow::Error::from)?;
 
-        let localstore = DB.lock().await;
+        let localstore = LOCALSTORE.lock().await;
         let localstore = localstore.as_ref().expect("DB not set");
 
         Ok(Wallet::new(

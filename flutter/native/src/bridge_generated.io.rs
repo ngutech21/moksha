@@ -2,8 +2,8 @@ use super::*;
 // Section: wire functions
 
 #[no_mangle]
-pub extern "C" fn wire_init_db(port_: i64) {
-    wire_init_db_impl(port_)
+pub extern "C" fn wire_init_cashu(port_: i64, db_path: *mut wire_uint_8_list) {
+    wire_init_cashu_impl(port_, db_path)
 }
 
 #[no_mangle]
