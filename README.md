@@ -43,7 +43,7 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 - [] [NUT-09](https://github.com/cashubtc/nuts/blob/main/09.md)
 
 ## Usage
-### Setup
+### Setup rust
 ```
 git clone https://github.com/ngutech21/cashu-rs.git
 cargo install just
@@ -69,6 +69,19 @@ just run-mint
 ```
 just run-wallet mint 42
 ```
+
+### Setup flutter
+If you want to use the flutter app you need to setup flutter and the rust bridge:
+- [Flutter SDK](https://docs.flutter.dev/get-started/install)
+- `flutter_rust_bridge_codegen` [cargo package](https://cjycode.com/flutter_rust_bridge/integrate/deps.html#build-time-dependencies)
+- Appropriate [Rust targets](https://rust-lang.github.io/rustup/cross-compilation.html) for cross-compiling to your device
+
+### Run flutter desktop app (MacOs only at the moment)
+```
+just flutter-run
+```
+
+
 
 
 

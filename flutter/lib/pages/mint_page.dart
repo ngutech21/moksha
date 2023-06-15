@@ -67,9 +67,12 @@ class _MintWidgetState extends State<MintWidget> {
                     QrImageView(
                       data: paymentRequest!.pr,
                       version: QrVersions.auto,
-                      size: 250.0,
+                      size: 230.0,
                       backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
+                      eyeStyle: const QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: Colors.black,
+                      ),
                     ),
                     Container(
                       padding: const EdgeInsets.all(8),
