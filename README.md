@@ -7,7 +7,7 @@
 ⚠️ **Don't be reckless:** This project is in early development, it does however work with real sats! Always use amounts you don't mind loosing. 
 
 # cashu-rs
-cashu-rs is a Chaumian Ecash library written in Rust.
+cashu-rs is a Chaumian Ecash library, mint, cli-wallet and flutter desktop-app. 
 
 Cashu is an Ecash implementation based on David Wagner's variant of Chaumian blinding. Token logic based
 on [minicash](https://github.com/phyro/minicash) ([description](https://gist.github.com/phyro/935badc682057f418842c72961cf096c))
@@ -15,7 +15,6 @@ which implements a [Blind Diffie-Hellman Key Exchange](https://cypherpunks.venon
 written down by Ruben Somsen [here](https://gist.github.com/RubenSomsen/be7a4760dd4596d06963d67baf140406). 
 Please read the [Cashu](https://github.com/callebtc/cashu) documentation for more detailed information.
 
-This project aims to replicate the python mint implementation of cashu.
 
 ## Progress
 Wallet Features:
@@ -47,7 +46,8 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 ```
 git clone https://github.com/ngutech21/cashu-rs.git
 cargo install just
-cargo install typos
+cargo install typos-cli
+cargo install sqlx-cli
 cd cashu-rs
 ```
 
@@ -76,7 +76,7 @@ If you want to use the flutter app you need to setup flutter and the rust bridge
 - `flutter_rust_bridge_codegen` [cargo package](https://cjycode.com/flutter_rust_bridge/integrate/deps.html#build-time-dependencies)
 - Appropriate [Rust targets](https://rust-lang.github.io/rustup/cross-compilation.html) for cross-compiling to your device
 
-### Run flutter desktop app (MacOs only at the moment)
+### Run flutter desktop app (macOS only at the moment)
 ```
 just flutter-run
 ```
