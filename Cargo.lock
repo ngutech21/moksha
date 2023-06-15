@@ -415,6 +415,7 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tokio",
+ "url",
 ]
 
 [[package]]
@@ -1472,6 +1473,7 @@ dependencies = [
  "cashurs-wallet",
  "flutter_rust_bridge",
  "lazy_static",
+ "reqwest",
  "tokio",
 ]
 

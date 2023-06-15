@@ -27,6 +27,7 @@ async-trait = "0.1.68"
 lightning-invoice = "0.23.0"
 dyn-clone = "1.0.11"
 sqlx = { version = "0.6.3", features = ["sqlite", "runtime-tokio-native-tls", "migrate"] }
+url = "2.4.0"
 
 
 

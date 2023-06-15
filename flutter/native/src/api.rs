@@ -13,6 +13,7 @@ use cashurs_wallet::localstore::LocalStore;
 use cashurs_wallet::localstore::SqliteLocalStore;
 use cashurs_wallet::wallet::Wallet;
 use lazy_static::lazy_static;
+use reqwest::Url;
 use std::sync::Mutex as StdMutex;
 use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
@@ -54,7 +55,7 @@ pub fn init_cashu(db_path: String) -> anyhow::Result<()> {
         *db = Some(new_localstore);
 
         let mut cl = HTTPCLIENT.lock().await;
-        let client = HttpClient::new("http://127.0.0.1:3338".to_string()); // FIXME make configurable
+        let client = HttpClient::new();
         *cl = Some(client);
     });
 
@@ -80,17 +81,20 @@ pub fn get_balance() -> anyhow::Result<u64> {
 }
 
 fn _create_local_wallet() -> anyhow::Result<Wallet> {
-    let mint_url = "http://127.0.0.1:3338".to_string(); // FIXME redundant
+    let mint_url = Url::parse("http://127.0.0.1:3338").expect("invalid url"); // FIXME redundant
     let rt = lock_runtime!();
 
     let result = rt.block_on(async move {
         let client = HTTPCLIENT.lock().await;
         let client = client.as_ref().expect("HTTPClient not set");
 
-        let keys = client.get_mint_keys().await.map_err(anyhow::Error::from)?;
+        let keys = client
+            .get_mint_keys(&mint_url)
+            .await
+            .map_err(anyhow::Error::from)?;
 
         let keysets = client
-            .get_mint_keysets()
+            .get_mint_keysets(&mint_url)
             .await
             .map_err(anyhow::Error::from)?;
 

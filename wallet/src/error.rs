@@ -48,4 +48,7 @@ pub enum CashuWalletError {
 
     #[error("Invalid invoice {0}")]
     InvalidInvoice(String),
+
+    #[error("URLParseError - {0}")]
+    Url(#[from] url::ParseError),
 }

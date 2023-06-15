@@ -9,6 +9,7 @@ use cashurs_wallet::wallet;
 
 use cashurs_wallet::client::Client;
 use cashurs_wallet::localstore::LocalStore;
+use reqwest::Url;
 use tokio::time::{sleep_until, Instant};
 
 #[derive(Parser)]
@@ -61,11 +62,11 @@ fn wait_for_user_input(prompt: String) -> String {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let mint_url = read_env("WALLET_MINT_URL");
+    let mint_url = Url::parse(&read_env("WALLET_MINT_URL"))?;
 
-    let client = cashurs_wallet::client::HttpClient::new(mint_url.clone());
-    let keys = client.get_mint_keys().await?;
-    let keysets = client.get_mint_keysets().await?;
+    let client = cashurs_wallet::client::HttpClient::new();
+    let keys = client.get_mint_keys(&mint_url).await?;
+    let keysets = client.get_mint_keysets(&mint_url).await?;
 
     let db_path = read_env("WALLET_DB_PATH");
     let localstore = Box::new(SqliteLocalStore::with_path(db_path).await?);
@@ -98,7 +99,8 @@ async fn main() -> anyhow::Result<()> {
             }
 
             let selected_proofs = wallet.get_proofs_for_amount(amount).await?;
-            let selected_tokens = TokenV3::from((mint_url.clone(), selected_proofs.clone()));
+            let selected_tokens =
+                TokenV3::from((mint_url.as_ref().to_owned(), selected_proofs.clone()));
 
             let (remaining_tokens, result) = wallet.split_tokens(&selected_tokens, amount).await?;
 
@@ -157,7 +159,7 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Command::Mint { amount } => {
-            let payment_request = client.get_mint_payment_request(amount).await?;
+            let payment_request = wallet.get_mint_payment_request(amount).await?;
             let hash = payment_request.clone().hash;
             let invoice = payment_request.clone().pr;
 

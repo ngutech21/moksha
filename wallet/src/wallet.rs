@@ -7,6 +7,7 @@ use cashurs_core::{
         Proof, Proofs, TokenV3, TotalAmount,
     },
 };
+use reqwest::Url;
 use secp256k1::{PublicKey, SecretKey};
 
 use crate::{client::Client, error::CashuWalletError, localstore::LocalStore};
@@ -20,7 +21,7 @@ pub struct Wallet {
     keysets: Keysets,
     dhke: Dhke,
     localstore: Box<dyn LocalStore + Sync + Send>,
-    mint_url: String,
+    mint_url: Url,
 }
 
 impl Clone for Wallet {
@@ -42,7 +43,7 @@ impl Wallet {
         mint_keys: HashMap<u64, PublicKey>,
         keysets: Keysets,
         localstore: Box<dyn LocalStore + Sync + Send>,
-        mint_url: String,
+        mint_url: Url,
     ) -> Self {
         Self {
             client,
@@ -58,7 +59,9 @@ impl Wallet {
         &self,
         amount: u64,
     ) -> Result<PaymentRequest, CashuWalletError> {
-        self.client.get_mint_payment_request(amount).await
+        self.client
+            .get_mint_payment_request(&self.mint_url, amount)
+            .await
     }
 
     pub async fn get_balance(&self) -> Result<u64, CashuWalletError> {
@@ -78,7 +81,10 @@ impl Wallet {
     pub async fn pay_invoice(&self, invoice: String) -> Result<PostMeltResponse, CashuWalletError> {
         let all_proofs = self.localstore.get_proofs().await?;
 
-        let fees = self.client.post_checkfees(invoice.clone()).await?;
+        let fees = self
+            .client
+            .post_checkfees(&self.mint_url, invoice.clone())
+            .await?;
         let ln_amount = self.get_invoice_amount(&invoice)? + (fees.fee / 1000);
 
         if ln_amount > all_proofs.total_amount() {
@@ -88,7 +94,8 @@ impl Wallet {
         let selected_proofs = self.get_proofs_for_amount(ln_amount).await?;
 
         let total_proofs = if selected_proofs.total_amount() > ln_amount {
-            let selected_tokens = TokenV3::from((self.mint_url.clone(), selected_proofs.clone()));
+            let selected_tokens =
+                TokenV3::from((self.mint_url.as_str().to_owned(), selected_proofs.clone()));
             let split_result = self.split_tokens(&selected_tokens, ln_amount).await?;
 
             self.localstore.delete_proofs(&selected_proofs).await?;
@@ -128,11 +135,11 @@ impl Wallet {
 
         let split_result = self
             .client
-            .post_split_tokens(splt_amount, tokens.proofs(), total_outputs)
+            .post_split_tokens(&self.mint_url, splt_amount, tokens.proofs(), total_outputs)
             .await?;
 
         let first_tokens = TokenV3::from((
-            self.mint_url.clone(),
+            self.mint_url.as_ref().to_owned(),
             self.create_proofs_from_blinded_signatures(
                 split_result.fst,
                 first_secrets,
@@ -141,7 +148,7 @@ impl Wallet {
         ));
 
         let second_tokens = TokenV3::from((
-            self.mint_url.clone(),
+            self.mint_url.as_ref().to_owned(),
             self.create_proofs_from_blinded_signatures(
                 split_result.snd,
                 second_secrets,
@@ -165,7 +172,7 @@ impl Wallet {
 
         let melt_response = self
             .client
-            .post_melt_tokens(proofs.clone(), pr, vec![])
+            .post_melt_tokens(&self.mint_url, proofs.clone(), pr, vec![])
             .await?;
 
         self.localstore.delete_proofs(proofs).await?;
@@ -224,6 +231,7 @@ impl Wallet {
         let post_mint_resp = self
             .client
             .post_mint_payment_request(
+                &self.mint_url,
                 hash,
                 blinded_messages
                     .clone()
@@ -260,7 +268,7 @@ impl Wallet {
                 .collect::<Vec<Proof>>(),
         );
 
-        let tokens = TokenV3::from((self.mint_url.clone(), proofs));
+        let tokens = TokenV3::from((self.mint_url.as_ref().to_owned(), proofs));
         self.localstore.add_proofs(&tokens.proofs()).await?;
 
         Ok(tokens)
@@ -371,6 +379,7 @@ mod tests {
         BlindedMessage, CheckFeesResponse, Keysets, PaymentRequest, PostMeltResponse,
         PostMintResponse, PostSplitResponse, Proofs, Token, TokenV3,
     };
+    use reqwest::Url;
     use secp256k1::PublicKey;
     use std::collections::HashMap;
 
@@ -449,6 +458,7 @@ mod tests {
     impl Client for MockClient {
         async fn post_split_tokens(
             &self,
+            _mint_url: &Url,
             _amount: u64,
             _proofs: Proofs,
             _output: Vec<BlindedMessage>,
@@ -461,6 +471,7 @@ mod tests {
 
         async fn post_mint_payment_request(
             &self,
+            _mint_url: &Url,
             _hash: String,
             _blinded_messages: Vec<BlindedMessage>,
         ) -> Result<PostMintResponse, CashuWalletError> {
@@ -469,6 +480,7 @@ mod tests {
 
         async fn post_melt_tokens(
             &self,
+            _mint_url: &Url,
             _proofs: Proofs,
             _pr: String,
             _outputs: Vec<BlindedMessage>,
@@ -476,20 +488,28 @@ mod tests {
             unimplemented!()
         }
 
-        async fn post_checkfees(&self, _pr: String) -> Result<CheckFeesResponse, CashuWalletError> {
+        async fn post_checkfees(
+            &self,
+            _mint_url: &Url,
+            _pr: String,
+        ) -> Result<CheckFeesResponse, CashuWalletError> {
             unimplemented!()
         }
 
-        async fn get_mint_keys(&self) -> Result<HashMap<u64, PublicKey>, CashuWalletError> {
+        async fn get_mint_keys(
+            &self,
+            _mint_url: &Url,
+        ) -> Result<HashMap<u64, PublicKey>, CashuWalletError> {
             unimplemented!()
         }
 
-        async fn get_mint_keysets(&self) -> Result<Keysets, CashuWalletError> {
+        async fn get_mint_keysets(&self, _mint_url: &Url) -> Result<Keysets, CashuWalletError> {
             unimplemented!()
         }
 
         async fn get_mint_payment_request(
             &self,
+            _mint_url: &Url,
             _amount: u64,
         ) -> Result<PaymentRequest, CashuWalletError> {
             unimplemented!()
@@ -498,14 +518,14 @@ mod tests {
 
     #[test]
     fn test_create_secrets() {
-        let client = HttpClient::new("http://localhost:8080".to_string());
+        let client = HttpClient::new();
         let localstore = Box::new(MockLocalStore::new());
         let wallet = Wallet::new(
             Box::new(client),
             HashMap::new(),
             Keysets { keysets: vec![] },
             localstore,
-            "mint_url".to_string(),
+            Url::parse("http://localhost:8080").expect("invalid url"),
         );
 
         let amounts = vec![1, 2, 3, 4, 5, 6, 7];
@@ -526,7 +546,7 @@ mod tests {
                 keysets: vec!["foo".to_string()],
             },
             localstore,
-            "mint_url".to_string(),
+            Url::parse("http://localhost:8080").expect("invalid url"),
         );
 
         // read file
@@ -535,9 +555,10 @@ mod tests {
         let tokens = TokenV3::deserialize(raw_token.trim().to_string())?;
 
         let result = wallet.split_tokens(&tokens, 20).await?;
-        // assert_eq!(20, result.0.total_amount());
-        // assert_eq!(44, result.1.total_amount());
         println!("{result:?}");
+        // assert_eq!(20, result.1.total_amount());
+        // assert_eq!(44, result.0.total_amount());
+        // FIXME implement post_split_tokens in mock
         Ok(())
     }
 
@@ -552,7 +573,7 @@ mod tests {
                 keysets: vec!["foo".to_string()],
             },
             Box::new(local_store),
-            "mint_url".to_string(),
+            Url::parse("http://localhost:8080").expect("invalid url"),
         );
 
         let result = wallet.get_proofs_for_amount(10).await;
@@ -573,7 +594,7 @@ mod tests {
                 keysets: vec!["foo".to_string()],
             },
             Box::new(local_store),
-            "mint_url".to_string(),
+            Url::parse("http://localhost:8080").expect("invalid url"),
         );
 
         let result = wallet.get_proofs_for_amount(10).await?;
