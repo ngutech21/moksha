@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
         colorScheme: const ColorScheme.dark(
           primary: Color.fromARGB(253, 2, 133, 240),
           secondary: Color.fromARGB(253, 2, 133, 240),
-          background: Color.fromARGB(80, 103, 102, 102),
+          //background: Color.fromARGB(80, 103, 102, 102),
         ),
       ),
       home: const MyHomePage(),
