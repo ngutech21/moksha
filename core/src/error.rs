@@ -14,4 +14,7 @@ pub enum CashuCoreError {
 
     #[error("SerdeJsonError {0}")]
     SerdeJsonError(#[from] serde_json::Error),
+
+    #[error("Invalid Keysetid")]
+    InvalidKeysetid,
 }

@@ -5,7 +5,7 @@ use serde_with::skip_serializing_none;
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    crypto::{derive_keys, derive_keyset_id, derive_pubkeys},
+    crypto::{self, derive_keys, derive_keyset_id, derive_pubkeys},
     error::CashuCoreError,
 };
 
@@ -232,9 +232,27 @@ impl MintKeyset {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Keysets {
-    pub keysets: Vec<String>,
+    keysets: Vec<String>,
+}
+
+impl Keysets {
+    pub fn new(keysets: Vec<String>) -> Self {
+        Self { keysets }
+    }
+
+    pub fn get_current_keyset(
+        &self,
+        mint_keys: &HashMap<u64, PublicKey>,
+    ) -> Result<String, CashuCoreError> {
+        let computed_id = crypto::derive_keyset_id(mint_keys);
+        if self.keysets.contains(&computed_id) {
+            Ok(computed_id)
+        } else {
+            Err(CashuCoreError::InvalidKeysetid)
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

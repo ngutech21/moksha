@@ -179,9 +179,7 @@ async fn get_keys(
 }
 
 async fn get_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, CashuMintError> {
-    Ok(Json(Keysets {
-        keysets: vec![mint.keyset.keyset_id],
-    }))
+    Ok(Json(Keysets::new(vec![mint.keyset.keyset_id])))
 }
 
 #[cfg(test)]
@@ -224,7 +222,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let body = hyper::body::to_bytes(response.into_body()).await?;
         let keysets = serde_json::from_slice::<Keysets>(&body)?;
-        assert_eq!(1, keysets.keysets.len());
+        assert_eq!(Keysets::new(vec!["53eJP2+qJyTd".to_string()]), keysets);
         Ok(())
     }
 
