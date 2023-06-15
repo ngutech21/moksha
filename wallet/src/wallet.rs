@@ -95,7 +95,7 @@ impl Wallet {
 
         let total_proofs = if selected_proofs.total_amount() > ln_amount {
             let selected_tokens =
-                TokenV3::from((self.mint_url.as_str().to_owned(), selected_proofs.clone()));
+                (self.mint_url.as_str().to_owned(), selected_proofs.clone()).into();
             let split_result = self.split_tokens(&selected_tokens, ln_amount).await?;
 
             self.localstore.delete_proofs(&selected_proofs).await?;
@@ -138,23 +138,25 @@ impl Wallet {
             .post_split_tokens(&self.mint_url, splt_amount, tokens.proofs(), total_outputs)
             .await?;
 
-        let first_tokens = TokenV3::from((
+        let first_tokens = (
             self.mint_url.as_ref().to_owned(),
             self.create_proofs_from_blinded_signatures(
                 split_result.fst,
                 first_secrets,
                 first_outputs,
             )?,
-        ));
+        )
+            .into();
 
-        let second_tokens = TokenV3::from((
+        let second_tokens = (
             self.mint_url.as_ref().to_owned(),
             self.create_proofs_from_blinded_signatures(
                 split_result.snd,
                 second_secrets,
                 second_outputs,
             )?,
-        ));
+        )
+            .into();
 
         Ok((first_tokens, second_tokens))
     }
@@ -268,7 +270,7 @@ impl Wallet {
                 .collect::<Vec<Proof>>(),
         );
 
-        let tokens = TokenV3::from((self.mint_url.as_ref().to_owned(), proofs));
+        let tokens: TokenV3 = (self.mint_url.as_ref().to_owned(), proofs).into();
         self.localstore.add_proofs(&tokens.proofs()).await?;
 
         Ok(tokens)
@@ -549,11 +551,7 @@ mod tests {
             Url::parse("http://localhost:8080").expect("invalid url"),
         );
 
-        // read file
-        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
-        let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/token_64.cashu"))?;
-        let tokens = TokenV3::deserialize(raw_token.trim().to_string())?;
-
+        let tokens = read_fixture("token_64.cashu")?;
         let result = wallet.split_tokens(&tokens, 20).await?;
         println!("{result:?}");
         // assert_eq!(20, result.1.total_amount());

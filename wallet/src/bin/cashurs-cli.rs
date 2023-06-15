@@ -99,8 +99,7 @@ async fn main() -> anyhow::Result<()> {
             }
 
             let selected_proofs = wallet.get_proofs_for_amount(amount).await?;
-            let selected_tokens =
-                TokenV3::from((mint_url.as_ref().to_owned(), selected_proofs.clone()));
+            let selected_tokens = (mint_url.as_ref().to_owned(), selected_proofs.clone()).into();
 
             let (remaining_tokens, result) = wallet.split_tokens(&selected_tokens, amount).await?;
 
