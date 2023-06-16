@@ -88,7 +88,6 @@ impl Wallet {
         let ln_amount = self.get_invoice_amount(&invoice)? + (fees.fee / 1000);
 
         if ln_amount > all_proofs.total_amount() {
-            println!("Not enough tokens");
             return Err(CashuWalletError::NotEnoughTokens);
         }
         let selected_proofs = self.get_proofs_for_amount(ln_amount).await?;
@@ -161,7 +160,7 @@ impl Wallet {
         Ok((first_tokens, second_tokens))
     }
 
-    pub async fn melt_token(
+    async fn melt_token(
         &self,
         pr: String,
         _invoice_amount: u64,
@@ -368,7 +367,7 @@ fn generate_random_string() -> String {
 mod tests {
     use super::Wallet;
     use crate::{
-        client::{Client, HttpClient},
+        client::Client,
         error::CashuWalletError,
         localstore::{LocalStore, WalletKeyset},
     };
@@ -522,13 +521,11 @@ mod tests {
 
     #[test]
     fn test_create_secrets() {
-        let client = HttpClient::new();
-        let localstore = Box::<MockLocalStore>::default();
         let wallet = Wallet::new(
-            Box::new(client),
+            Box::<MockClient>::default(),
             HashMap::new(),
             Keysets::new(vec![]),
-            localstore,
+            Box::<MockLocalStore>::default(),
             Url::parse("http://localhost:8080").expect("invalid url"),
         );
 
@@ -598,19 +595,22 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_proofs_for_amount_empty() -> anyhow::Result<()> {
-        let local_store = MockLocalStore::default();
-
         let wallet = Wallet::new(
             Box::<MockClient>::default(),
             HashMap::new(),
             Keysets::new(vec!["foo".to_string()]),
-            Box::new(local_store),
+            Box::<MockLocalStore>::default(),
             Url::parse("http://localhost:8080").expect("invalid url"),
         );
 
         let result = wallet.get_proofs_for_amount(10).await;
 
         assert!(result.is_err());
+        assert!(result
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("Not enough tokens"));
         Ok(())
     }
 
@@ -628,8 +628,6 @@ mod tests {
         );
 
         let result = wallet.get_proofs_for_amount(10).await?;
-        println!("{result:?}");
-
         assert_eq!(32, result.total_amount());
         assert_eq!(1, result.len());
         Ok(())
