@@ -389,15 +389,6 @@ mod tests {
     }
 
     impl MockLocalStore {
-        fn new() -> Self {
-            Self {
-                tokens: TokenV3::new(Token {
-                    mint: Some("mint_url".to_string()),
-                    proofs: Proofs::empty(),
-                }),
-            }
-        }
-
         fn with_tokens(tokens: TokenV3) -> Self {
             Self { tokens }
         }
@@ -405,7 +396,12 @@ mod tests {
 
     impl Default for MockLocalStore {
         fn default() -> Self {
-            Self::new()
+            Self {
+                tokens: TokenV3::new(Token {
+                    mint: Some("mint_url".to_string()),
+                    proofs: Proofs::empty(),
+                }),
+            }
         }
     }
 
@@ -527,7 +523,7 @@ mod tests {
     #[test]
     fn test_create_secrets() {
         let client = HttpClient::new();
-        let localstore = Box::new(MockLocalStore::new());
+        let localstore = Box::new(MockLocalStore::default());
         let wallet = Wallet::new(
             Box::new(client),
             HashMap::new(),
@@ -548,7 +544,7 @@ mod tests {
         let split_response = serde_json::from_str::<PostSplitResponse>(&raw_response)?;
 
         let client = MockClient::with_split_response(split_response);
-        let localstore = Box::new(MockLocalStore::new());
+        let localstore = Box::new(MockLocalStore::default());
 
         let mint_keyset = MintKeyset::new("mysecret".to_string(), "".to_string());
         let wallet = Wallet::new(
@@ -568,7 +564,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_proofs_for_amount_empty() -> anyhow::Result<()> {
-        let local_store = MockLocalStore::new();
+        let local_store = MockLocalStore::default();
 
         let wallet = Wallet::new(
             Box::new(MockClient::new()),

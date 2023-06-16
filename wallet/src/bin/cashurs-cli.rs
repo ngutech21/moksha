@@ -106,7 +106,7 @@ async fn main() -> anyhow::Result<()> {
             localstore.add_proofs(&remaining_tokens.proofs()).await?;
 
             let amount = result.total_amount();
-            let ser = result.serialize()?;
+            let ser: String = result.try_into()?;
 
             println!("Result {amount} sats:\n{ser}");
             println!("\nNew balance: {:?} sats", wallet.get_balance().await?);

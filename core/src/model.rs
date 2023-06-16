@@ -124,6 +124,14 @@ impl TokenV3 {
     }
 }
 
+impl TryFrom<TokenV3> for String {
+    type Error = CashuCoreError;
+
+    fn try_from(token: TokenV3) -> Result<Self, Self::Error> {
+        token.serialize()
+    }
+}
+
 impl TryFrom<String> for TokenV3 {
     type Error = CashuCoreError;
 
@@ -421,8 +429,7 @@ mod tests {
             memo: Some("my memo".to_string()),
         };
 
-        let serialized = tokens.serialize()?;
-        dbg!(&serialized);
+        let serialized: String = tokens.try_into()?;
         assert!(serialized.starts_with("cashuA"));
         Ok(())
     }
