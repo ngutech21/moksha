@@ -213,9 +213,10 @@ mod tests {
         Ok(())
     }
 
+    // FIXME move all helper functions to a separate file
     fn read_fixture(name: &str) -> anyhow::Result<TokenV3> {
         let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{name}"))?;
-        Ok(TokenV3::deserialize(raw_token.trim().to_string())?)
+        Ok(raw_token.trim().to_string().try_into()?)
     }
 }

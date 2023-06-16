@@ -6,7 +6,6 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use cashurs_core::model::PaymentRequest;
-use cashurs_core::model::TokenV3;
 use cashurs_wallet::client::Client;
 use cashurs_wallet::client::HttpClient;
 use cashurs_wallet::localstore::LocalStore;
@@ -190,17 +189,17 @@ pub fn pay_invoice(invoice: String) -> anyhow::Result<bool> {
 }
 
 pub fn import_token(token: String) -> anyhow::Result<u64> {
-    let de = TokenV3::deserialize(token).map_err(anyhow::Error::from)?;
+    let deserialized_token = token.try_into().map_err(anyhow::Error::from)?;
     let wallet = _create_local_wallet().map_err(anyhow::Error::from)?;
     let rt = lock_runtime!();
 
     rt.block_on(async {
         wallet
-            .receive_tokens(&de)
+            .receive_tokens(&deserialized_token)
             .await
             .map_err(anyhow::Error::from)
     })?;
 
     drop(rt);
-    Ok(de.total_amount())
+    Ok(deserialized_token.total_amount())
 }

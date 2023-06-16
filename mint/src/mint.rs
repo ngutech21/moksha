@@ -355,7 +355,7 @@ mod tests {
     fn create_token_from_fixture(fixture: String) -> Result<TokenV3, anyhow::Error> {
         let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{fixture}"))?;
-        Ok(TokenV3::deserialize(raw_token.trim().to_string())?)
+        Ok(raw_token.trim().to_string().try_into()?)
     }
 
     fn create_request_from_fixture(fixture: String) -> Result<PostSplitRequest, anyhow::Error> {

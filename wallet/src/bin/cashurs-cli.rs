@@ -84,8 +84,7 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Command::Receive { token } => {
-            let tokens = TokenV3::deserialize(token)?;
-            wallet.receive_tokens(&tokens).await?;
+            wallet.receive_tokens(&token.try_into()?).await?;
             println!(
                 "Tokens received successfully.\nNew balance {} sats",
                 wallet.get_balance().await?
@@ -123,7 +122,7 @@ async fn main() -> anyhow::Result<()> {
             let prompt = "Enter Token:\n".to_string();
             let serialized_token = wait_for_user_input(prompt);
 
-            let tokens = TokenV3::deserialize(serialized_token)?;
+            let tokens: TokenV3 = serialized_token.try_into()?;
             let total_token_amount = tokens.total_amount();
             if total_token_amount < splt_amount {
                 println!("Not enough tokens");

@@ -1,0 +1,31 @@
+{
+  "fst": [
+    {
+      "amount": 4,
+      "C_": "03b2e736e1280f1e64eedf3fc53eeb5fc74e6f1d1664e3b2b7b8e2934afd908673",
+      "id": "mR9PJ3MzjL1y"
+    },
+    {
+      "amount": 16,
+      "C_": "02aa7c77dad18fb2c18107b32f0f725b7075c9c6c5be049941b18c7b497a1ea21a",
+      "id": "mR9PJ3MzjL1y"
+    },
+    {
+      "amount": 4,
+      "C_": "036614b4844efe234e0ec2293938a84a42b6e803126b365074943dd338f813421f",
+      "id": "mR9PJ3MzjL1y"
+    }
+  ],
+  "snd": [
+    {
+      "amount": 8,
+      "C_": "03859164602a27319bcd5c377bec90eda6f9d5d9e9c7987fce5bff4b69151a122f",
+      "id": "mR9PJ3MzjL1y"
+    },
+    {
+      "amount": 32,
+      "C_": "03eb55564312308159f1dbc0a48d05f669b9f9ad370b3cd1ea1d714c99de67aa8a",
+      "id": "mR9PJ3MzjL1y"
+    }
+  ]
+}

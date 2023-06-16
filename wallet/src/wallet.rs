@@ -376,7 +376,7 @@ mod tests {
     };
     use async_trait::async_trait;
     use cashurs_core::model::{
-        BlindedMessage, CheckFeesResponse, Keysets, PaymentRequest, PostMeltResponse,
+        BlindedMessage, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest, PostMeltResponse,
         PostMintResponse, PostSplitResponse, Proofs, Token, TokenV3,
     };
     use reqwest::Url;
@@ -440,11 +440,22 @@ mod tests {
     }
 
     #[derive(Clone)]
-    struct MockClient {}
+    struct MockClient {
+        split_response: PostSplitResponse,
+    }
 
     impl MockClient {
         fn new() -> Self {
-            Self {}
+            Self {
+                split_response: PostSplitResponse {
+                    fst: vec![],
+                    snd: vec![],
+                },
+            }
+        }
+
+        fn with_split_response(split_response: PostSplitResponse) -> Self {
+            Self { split_response }
         }
     }
 
@@ -463,10 +474,7 @@ mod tests {
             _proofs: Proofs,
             _output: Vec<BlindedMessage>,
         ) -> Result<PostSplitResponse, CashuWalletError> {
-            Ok(PostSplitResponse {
-                fst: vec![],
-                snd: vec![],
-            })
+            Ok(self.split_response.clone())
         }
 
         async fn post_mint_payment_request(
@@ -534,28 +542,29 @@ mod tests {
         assert!(secrets.len() == amounts.len());
     }
 
-    // #[tokio::test]
-    // async fn test_split() -> anyhow::Result<()> {
-    //     let client = MockClient::new();
-    //     let localstore = Box::new(MockLocalStore::new());
+    #[tokio::test]
+    async fn test_split() -> anyhow::Result<()> {
+        let raw_response = read_fixture("post_split_response_24_40.json")?;
+        let split_response = serde_json::from_str::<PostSplitResponse>(&raw_response)?;
 
-    //     // FIXME create correct keys
-    //     let wallet = Wallet::new(
-    //         Box::new(client),
-    //         HashMap::new(),
-    //         Keysets::new(vec!["foo".to_string()]),
-    //         localstore,
-    //         Url::parse("http://localhost:8080").expect("invalid url"),
-    //     );
+        let client = MockClient::with_split_response(split_response);
+        let localstore = Box::new(MockLocalStore::new());
 
-    //     let tokens = read_fixture("token_64.cashu")?;
-    //     let result = wallet.split_tokens(&tokens, 20).await?;
-    //     println!("{result:?}");
-    //     // assert_eq!(20, result.1.total_amount());
-    //     // assert_eq!(44, result.0.total_amount());
-    //     // FIXME implement post_split_tokens in mock
-    //     Ok(())
-    // }
+        let mint_keyset = MintKeyset::new("mysecret".to_string(), "".to_string());
+        let wallet = Wallet::new(
+            Box::new(client),
+            mint_keyset.public_keys,
+            Keysets::new(vec![mint_keyset.keyset_id]),
+            localstore,
+            Url::parse("http://localhost:8080").expect("invalid url"),
+        );
+
+        let tokens = read_fixture("token_64.cashu")?.try_into()?;
+        let result = wallet.split_tokens(&tokens, 20).await?;
+        assert_eq!(24, result.0.total_amount());
+        assert_eq!(40, result.1.total_amount());
+        Ok(())
+    }
 
     #[tokio::test]
     async fn test_get_proofs_for_amount_empty() -> anyhow::Result<()> {
@@ -578,7 +587,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_proofs_for_amount_valid() -> anyhow::Result<()> {
         let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
-        let local_store = MockLocalStore::with_tokens(fixture);
+        let local_store = MockLocalStore::with_tokens(fixture.try_into()?);
 
         let wallet = Wallet::new(
             Box::new(MockClient::new()),
@@ -596,9 +605,9 @@ mod tests {
         Ok(())
     }
 
-    fn read_fixture(name: &str) -> anyhow::Result<TokenV3> {
+    fn read_fixture(name: &str) -> anyhow::Result<String> {
         let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{name}"))?;
-        Ok(TokenV3::deserialize(raw_token.trim().to_string())?)
+        Ok(raw_token.trim().to_string())
     }
 }

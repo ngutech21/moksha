@@ -115,17 +115,20 @@ impl TokenV3 {
     }
 
     pub fn deserialize(data: String) -> Result<TokenV3, CashuCoreError> {
-        if !data.starts_with(TOKEN_PREFIX_V3) {
-            return Err(CashuCoreError::InvalidTokenPrefix);
-        }
-
         let json = general_purpose::URL_SAFE.decode(
             data.strip_prefix(TOKEN_PREFIX_V3)
-                .expect("Token does not contain prefix")
+                .ok_or(CashuCoreError::InvalidTokenPrefix)?
                 .as_bytes(),
         )?;
-        let token = serde_json::from_slice::<TokenV3>(&json)?;
-        Ok(token)
+        Ok(serde_json::from_slice::<TokenV3>(&json)?)
+    }
+}
+
+impl TryFrom<String> for TokenV3 {
+    type Error = CashuCoreError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::deserialize(value)
     }
 }
 
