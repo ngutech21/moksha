@@ -278,7 +278,7 @@ pub struct PaymentRequest {
     pub hash: String, // TODO use sha256::Hash
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct PostMintResponse {
     pub promises: Vec<BlindedSignature>,
 }
@@ -319,7 +319,7 @@ pub struct PostSplitRequest {
     pub amount: u64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct PostSplitResponse {
     pub fst: Vec<BlindedSignature>,
     pub snd: Vec<BlindedSignature>,

@@ -252,22 +252,21 @@ impl Wallet {
             .map(|(_, secret)| secret)
             .collect::<Vec<SecretKey>>();
 
-        let proofs = Proofs::new(
-            post_mint_resp
-                .promises
-                .iter()
-                .zip(private_keys)
-                .zip(secrets)
-                .map(|((p, priv_key), secret)| {
-                    let key = self
-                        .mint_keys
-                        .get(&p.amount)
-                        .expect("msg amount not found in mint keys");
-                    let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
-                    Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
-                })
-                .collect::<Vec<Proof>>(),
-        );
+        let proofs = post_mint_resp
+            .promises
+            .iter()
+            .zip(private_keys)
+            .zip(secrets)
+            .map(|((p, priv_key), secret)| {
+                let key = self
+                    .mint_keys
+                    .get(&p.amount)
+                    .expect("msg amount not found in mint keys");
+                let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
+                Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
+            })
+            .collect::<Vec<Proof>>()
+            .into();
 
         let tokens: TokenV3 = (self.mint_url.as_ref().to_owned(), proofs).into();
         self.localstore.add_proofs(&tokens.proofs()).await?;
@@ -306,21 +305,20 @@ impl Wallet {
             .map(|(_, secret)| secret)
             .collect::<Vec<SecretKey>>();
 
-        Ok(Proofs::new(
-            signatures
-                .iter()
-                .zip(private_keys)
-                .zip(secrets)
-                .map(|((p, priv_key), secret)| {
-                    let key = self
-                        .mint_keys
-                        .get(&p.amount)
-                        .expect("msg amount not found in mint keys");
-                    let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
-                    Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
-                })
-                .collect::<Vec<Proof>>(),
-        ))
+        Ok(signatures
+            .iter()
+            .zip(private_keys)
+            .zip(secrets)
+            .map(|((p, priv_key), secret)| {
+                let key = self
+                    .mint_keys
+                    .get(&p.amount)
+                    .expect("msg amount not found in mint keys");
+                let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
+                Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
+            })
+            .collect::<Vec<Proof>>()
+            .into())
     }
 
     pub async fn get_proofs_for_amount(&self, amount: u64) -> Result<Proofs, CashuWalletError> {
@@ -410,7 +408,7 @@ mod tests {
         async fn migrate(&self) {}
 
         async fn add_proofs(&self, _: &Proofs) -> Result<(), crate::error::CashuWalletError> {
-            unimplemented!()
+            Ok(())
         }
 
         async fn get_proofs(
@@ -435,23 +433,25 @@ mod tests {
         }
     }
 
-    #[derive(Clone)]
+    #[derive(Clone, Default)]
     struct MockClient {
         split_response: PostSplitResponse,
+        post_mint_response: PostMintResponse,
     }
 
     impl MockClient {
-        fn new() -> Self {
+        fn with_split_response(split_response: PostSplitResponse) -> Self {
             Self {
-                split_response: PostSplitResponse {
-                    fst: vec![],
-                    snd: vec![],
-                },
+                split_response,
+                post_mint_response: PostMintResponse::default(),
             }
         }
 
-        fn with_split_response(split_response: PostSplitResponse) -> Self {
-            Self { split_response }
+        fn with_mint_response(post_mint_response: PostMintResponse) -> Self {
+            Self {
+                split_response: PostSplitResponse::default(),
+                post_mint_response,
+            }
         }
     }
 
@@ -479,7 +479,7 @@ mod tests {
             _hash: String,
             _blinded_messages: Vec<BlindedMessage>,
         ) -> Result<PostMintResponse, CashuWalletError> {
-            unimplemented!()
+            Ok(self.post_mint_response.clone())
         }
 
         async fn post_melt_tokens(
@@ -523,7 +523,7 @@ mod tests {
     #[test]
     fn test_create_secrets() {
         let client = HttpClient::new();
-        let localstore = Box::new(MockLocalStore::default());
+        let localstore = Box::<MockLocalStore>::default();
         let wallet = Wallet::new(
             Box::new(client),
             HashMap::new(),
@@ -539,12 +539,46 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_mint_tokens() -> anyhow::Result<()> {
+        let raw_response = read_fixture("post_mint_response_20.json")?;
+        let mint_response = serde_json::from_str::<PostMintResponse>(&raw_response)?;
+
+        let client = MockClient::with_mint_response(mint_response);
+        let localstore = Box::<MockLocalStore>::default();
+        let mint_url = "http://localhost:8080/";
+
+        let mint_keyset = MintKeyset::new("superprivatesecretkey".to_string(), "".to_string());
+        let wallet = Wallet::new(
+            Box::new(client),
+            mint_keyset.public_keys,
+            Keysets::new(vec![mint_keyset.keyset_id]),
+            localstore,
+            Url::parse(mint_url).expect("invalid url"),
+        );
+
+        let result = wallet.mint_tokens(20, "hash".to_string()).await?;
+        assert_eq!(20, result.total_amount());
+        assert_eq!(
+            mint_url.to_owned(),
+            result
+                .tokens
+                .get(0)
+                .expect("Tokens is empty")
+                .mint
+                .as_ref()
+                .expect("mint is empty")
+                .clone()
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_split() -> anyhow::Result<()> {
         let raw_response = read_fixture("post_split_response_24_40.json")?;
         let split_response = serde_json::from_str::<PostSplitResponse>(&raw_response)?;
 
         let client = MockClient::with_split_response(split_response);
-        let localstore = Box::new(MockLocalStore::default());
+        let localstore = Box::<MockLocalStore>::default();
 
         let mint_keyset = MintKeyset::new("mysecret".to_string(), "".to_string());
         let wallet = Wallet::new(
@@ -567,7 +601,7 @@ mod tests {
         let local_store = MockLocalStore::default();
 
         let wallet = Wallet::new(
-            Box::new(MockClient::new()),
+            Box::<MockClient>::default(),
             HashMap::new(),
             Keysets::new(vec!["foo".to_string()]),
             Box::new(local_store),
@@ -586,7 +620,7 @@ mod tests {
         let local_store = MockLocalStore::with_tokens(fixture.try_into()?);
 
         let wallet = Wallet::new(
-            Box::new(MockClient::new()),
+            Box::<MockClient>::default(),
             HashMap::new(),
             Keysets::new(vec!["foo".to_string()]),
             Box::new(local_store),
