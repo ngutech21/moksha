@@ -93,8 +93,8 @@ impl LocalStore for SqliteLocalStore {
                     script: None,
                 })
             })
-            .collect::<Result<Vec<Proof>, SqliteError>>()
-            .map(Proofs::from)?)
+            .collect::<Result<Vec<Proof>, SqliteError>>()?
+            .into())
     }
 
     async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), CashuWalletError> {
@@ -152,9 +152,9 @@ impl SqliteLocalStore {
 
 #[cfg(test)]
 mod tests {
-    use std::{sync::Arc, vec};
+    use std::sync::Arc;
 
-    use cashurs_core::model::{Proofs, TokenV3};
+    use cashurs_core::model::TokenV3;
 
     use super::SqliteLocalStore;
     use crate::localstore::LocalStore;
@@ -203,9 +203,7 @@ mod tests {
         let proof_4 = proofs.get(0).expect("Proof is empty").to_owned();
         print!("first {:?}", proof_4);
 
-        localstore
-            .delete_proofs(&Proofs::from(vec![proof_4]))
-            .await?;
+        localstore.delete_proofs(&proof_4.into()).await?;
 
         let result_tokens = localstore.get_proofs().await?;
         assert_eq!(56, result_tokens.total_amount());

@@ -216,6 +216,12 @@ impl From<Vec<Proof>> for Proofs {
     }
 }
 
+impl From<Proof> for Proofs {
+    fn from(from: Proof) -> Self {
+        Self(vec![from])
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct MintKeyset {
     pub private_keys: HashMap<u64, SecretKey>,
