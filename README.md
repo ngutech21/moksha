@@ -45,9 +45,8 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 ### Setup rust
 ```
 git clone https://github.com/ngutech21/cashu-rs.git
-cargo install just
-cargo install typos-cli
-cargo install sqlx-cli
+cargo install just typos-cli sqlx-cli grcov
+rustup component add llvm-tools-preview
 cd cashu-rs
 ```
 

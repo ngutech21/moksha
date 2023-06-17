@@ -26,6 +26,18 @@ final-check:
   just typos
   cargo test
 
+coverage:
+  #!/usr/bin/env bash
+  mkdir -p target/coverage
+  CARGO_INCREMENTAL=0 RUSTFLAGS='-Cinstrument-coverage' LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw' cargo test
+  grcov . --binary-path ./target/debug/deps/ -s . -t lcov --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o target/coverage/tests.lcov
+  grcov . --binary-path ./target/debug/deps/ -s . -t html --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o target/coverage/html
+  find . -name '*.profraw' -exec rm -r {} \;
+  >&2 echo '💡 Created the report in target/coverage/html`'
+  
+
+
+
 
 flutter-gen:
     cd flutter && \
