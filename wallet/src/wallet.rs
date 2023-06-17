@@ -420,7 +420,7 @@ mod tests {
             &self,
             _proofs: &Proofs,
         ) -> Result<(), crate::error::CashuWalletError> {
-            unimplemented!()
+            Ok(())
         }
 
         async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, CashuWalletError> {
@@ -436,20 +436,28 @@ mod tests {
     struct MockClient {
         split_response: PostSplitResponse,
         post_mint_response: PostMintResponse,
+        post_melt_response: PostMeltResponse,
     }
 
     impl MockClient {
         fn with_split_response(split_response: PostSplitResponse) -> Self {
             Self {
                 split_response,
-                post_mint_response: PostMintResponse::default(),
+                ..Default::default()
             }
         }
 
         fn with_mint_response(post_mint_response: PostMintResponse) -> Self {
             Self {
-                split_response: PostSplitResponse::default(),
                 post_mint_response,
+                ..Default::default()
+            }
+        }
+
+        fn with_melt_response(post_melt_response: PostMeltResponse) -> Self {
+            Self {
+                post_melt_response,
+                ..Default::default()
             }
         }
     }
@@ -488,7 +496,7 @@ mod tests {
             _pr: String,
             _outputs: Vec<BlindedMessage>,
         ) -> Result<PostMeltResponse, CashuWalletError> {
-            unimplemented!()
+            Ok(self.post_melt_response.clone())
         }
 
         async fn post_checkfees(
@@ -496,7 +504,7 @@ mod tests {
             _mint_url: &Url,
             _pr: String,
         ) -> Result<CheckFeesResponse, CashuWalletError> {
-            unimplemented!()
+            Ok(CheckFeesResponse { fee: 0 })
         }
 
         async fn get_mint_keys(
@@ -630,6 +638,33 @@ mod tests {
         let result = wallet.get_proofs_for_amount(10).await?;
         assert_eq!(32, result.total_amount());
         assert_eq!(1, result.len());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_pay_invoice() -> anyhow::Result<()> {
+        let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
+        let local_store = MockLocalStore::with_tokens(fixture.try_into()?);
+
+        let melt_response = read_fixture("post_melt_response_21.json")?; // 60 tokens (4,8,16,32)
+        let mock_client = MockClient::with_melt_response(serde_json::from_str::<PostMeltResponse>(
+            &melt_response,
+        )?);
+
+        let mint_keyset = MintKeyset::new("mysecret".to_string(), "".to_string());
+        let wallet = Wallet::new(
+            Box::new(mock_client),
+            mint_keyset.public_keys,
+            Keysets::new(vec![mint_keyset.keyset_id]),
+            Box::new(local_store),
+            Url::parse("http://localhost:8080").expect("invalid url"),
+        );
+
+        // 21 sats
+        let invoice = "lnbcrt210n1pjg6mqhpp5pza5wzh0csjjuvfpjpv4zdjmg30vedj9ycv5tyfes9x7dp8axy0sdqqcqzzsxqyz5vqsp5vtxg4c5tw2s2zxxya2a7an0psn9mcfmlqctxzntm3sngnpyk3muq9qyyssqf8z5f90yu3wrmsufnnza25qjlnvc6ukdr094ckzn63ktcy6z5fw5mxf9skndpg2p4648gfjfvvx4qg2lqvlryyycg5k7x9h4dw70t4qq37pegm".to_string();
+
+        let result = wallet.pay_invoice(invoice).await?;
+        assert!(result.paid);
         Ok(())
     }
 

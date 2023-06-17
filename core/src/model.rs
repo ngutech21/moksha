@@ -305,7 +305,7 @@ pub struct PostMeltRequest {
     pub outputs: Vec<BlindedMessage>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct PostMeltResponse {
     pub paid: bool,
     pub preimage: String,
