@@ -244,4 +244,43 @@ mod tests {
         );
         Ok(())
     }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn test_verify() -> anyhow::Result<()> {
+        // # a = PrivateKey()
+        // # A = a.pubkey
+        // # secret_msg = "test"
+        // # B_, r = step1_alice(secret_msg)
+        // # C_ = step2_bob(B_, a)
+        // # C = step3_alice(C_, r, A)
+        // # print("C:{}, secret_msg:{}".format(C, secret_msg))
+        // # assert verify(a, C, secret_msg)
+        // # assert verify(a, C + C, secret_msg) == False  # adding C twice shouldn't pass
+        // # assert verify(a, A, secret_msg) == False  # A shouldn't pass
+
+        let dhke = Dhke::new();
+
+        // Generate Alice's private key and public key
+        let a = private_key_from_hex(
+            "0000000000000000000000000000000000000000000000000000000000000001",
+        );
+        let A = a.public_key(&dhke.secp);
+
+        let blinding_factor =
+            hex_to_string("0000000000000000000000000000000000000000000000000000000000000002");
+
+        // Generate a shared secret
+        let secret_msg = "test".to_string();
+        let (B_, r) = dhke.step1_alice(secret_msg.clone(), Some(blinding_factor.as_bytes()))?;
+        let C_ = dhke.step2_bob(B_, &a)?;
+        let C = dhke.step3_alice(C_, r, A)?;
+
+        // Verify the shared secret
+        assert!(dhke.verify(a, C, secret_msg.clone())?);
+        assert!(!dhke.verify(a, C.combine(&C)?, secret_msg.clone())?); // adding C twice shouldn't pass
+        assert!(!dhke.verify(a, A, secret_msg)?); // A shouldn't pass
+
+        Ok(())
+    }
 }
