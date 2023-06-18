@@ -199,23 +199,6 @@ impl Proofs {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
-
-    pub fn has_duplicate_proofs(&self) -> bool {
-        let secrets = self
-            .proofs()
-            .into_iter()
-            .map(|x| x.secret)
-            .collect::<Vec<String>>();
-        secrets.len() != secrets.into_iter().collect::<HashSet<_>>().len()
-    }
-
-    pub fn remove(&self, remove_proofs: Vec<Proof>) -> Proofs {
-        let mut proofs = self.0.clone();
-        for remove_proof in remove_proofs {
-            proofs.retain(|proof| proof != &remove_proof);
-        }
-        proofs.into()
-    }
 }
 
 impl From<Vec<Proof>> for Proofs {
