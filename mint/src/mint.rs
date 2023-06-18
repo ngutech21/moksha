@@ -212,6 +212,7 @@ mod tests {
     use crate::lightning::MockLightning;
     use crate::lnbits::PayInvoiceResult;
     use crate::mint::LightningFeeConfig;
+    use crate::model::Invoice;
     use crate::{database::MockDatabase, error::CashuMintError, Mint};
     use cashurs_core::dhke;
     use cashurs_core::model::{BlindedMessage, TokenV3, TotalAmount};
@@ -221,7 +222,7 @@ mod tests {
 
     #[test]
     fn test_fee_reserve() -> anyhow::Result<()> {
-        let mint = create_mint_from_mocks(None);
+        let mint = create_mint_from_mocks(None, None);
         let fee = mint.fee_reserve(10000);
         assert_eq!(4000, fee);
         Ok(())
@@ -229,7 +230,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_blindsignatures() -> anyhow::Result<()> {
-        let mint = create_mint_from_mocks(None);
+        let mint = create_mint_from_mocks(None, None);
 
         let blinded_messages = vec![BlindedMessage {
             amount: 8,
@@ -252,9 +253,33 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_mint_empty() -> anyhow::Result<()> {
+        let mut lightning = MockLightning::new();
+        lightning.expect_is_invoice_paid().returning(|_| Ok(true));
+        let mint = create_mint_from_mocks(Some(create_mock_mint()), Some(lightning));
+
+        let outputs = vec![];
+        let result = mint.mint_tokens("somehash".to_string(), &outputs).await?;
+        assert!(result.is_empty());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_mint_valid() -> anyhow::Result<()> {
+        let mut lightning = MockLightning::new();
+        lightning.expect_is_invoice_paid().returning(|_| Ok(true));
+        let mint = create_mint_from_mocks(Some(create_mock_mint()), Some(lightning));
+
+        let outputs = create_blinded_msgs_from_fixture("blinded_messages_40.json".to_string())?;
+        let result = mint.mint_tokens("somehash".to_string(), &outputs).await?;
+        assert_eq!(40, result.total_amount());
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_split_zero() -> anyhow::Result<()> {
         let blinded_messages = vec![];
-        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
+        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
 
         let proofs = Proofs::empty();
         let (first, second) = mint.split(0, &proofs, &blinded_messages).await?;
@@ -266,7 +291,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_split_64_in_20() -> anyhow::Result<()> {
-        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
+        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
 
         let (first, second) = mint.split(20, &request.proofs, &request.outputs).await?;
@@ -279,7 +304,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_split_64_in_64() -> anyhow::Result<()> {
-        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
+        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
 
         let (first, second) = mint.split(64, &request.proofs, &request.outputs).await?;
@@ -291,7 +316,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_split_amount_is_too_high() -> anyhow::Result<()> {
-        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
+        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
 
         let result = mint.split(65, &request.proofs, &request.outputs).await;
@@ -304,7 +329,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_split_duplicate_key() -> anyhow::Result<()> {
-        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()));
+        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
         let request =
             create_request_from_fixture("post_split_request_duplicate_key.json".to_string())?;
 
@@ -372,13 +397,21 @@ mod tests {
         Ok(serde_json::from_str::<Vec<BlindedMessage>>(&raw_token)?)
     }
 
-    fn create_mint_from_mocks(mock_db: Option<MockDatabase>) -> Mint {
+    fn create_mint_from_mocks(
+        mock_db: Option<MockDatabase>,
+        mock_ln: Option<MockLightning>,
+    ) -> Mint {
         let db = match mock_db {
             Some(db) => Arc::new(db),
             None => Arc::new(MockDatabase::new()),
         };
 
-        let lightning = Arc::new(MockLightning::new());
+        let lightning = match mock_ln {
+            Some(ln) => Arc::new(ln),
+            None => Arc::new(MockLightning::new()),
+        };
+
+        //let lightning = Arc::new(MockLightning::new());
         Mint::new(
             "TEST_PRIVATE_KEY".to_string(),
             "0/0/0/0".to_string(),
@@ -393,6 +426,27 @@ mod tests {
         mock_db
             .expect_get_used_proofs()
             .returning(|| Ok(Proofs::empty()));
+        mock_db.expect_add_used_proofs().returning(|_| Ok(()));
+        mock_db
+    }
+
+    fn create_mock_mint() -> MockDatabase {
+        //use lightning_invoice::Invoice as LNInvoice;
+        let mut mock_db = MockDatabase::new();
+        //let invoice = LNInvoice::from_str("lnbcrt1u1pjgamjepp5cr2dzhcuy9tjwl7u45kxa9h02khvsd2a7f2x9yjxgst8trduld4sdqqcqzzsxqyz5vqsp5kaclwkq79ylef295qj7x6c9kvhaq6272ge4tgz7stlzv46csrzks9qyyssq9szxlvhh0uen2jmh07hp242nj5529wje3x5e434kepjzeqaq5hnsje8rzrl97s0j8cxxt3kgz5gfswrrchr45u8fq3twz2jjc029klqpd6jmgv").expect("invalid invoice");
+        let invoice = Invoice{
+            amount: 100,
+            payment_request: "lnbcrt1u1pjgamjepp5cr2dzhcuy9tjwl7u45kxa9h02khvsd2a7f2x9yjxgst8trduld4sdqqcqzzsxqyz5vqsp5kaclwkq79ylef295qj7x6c9kvhaq6272ge4tgz7stlzv46csrzks9qyyssq9szxlvhh0uen2jmh07hp242nj5529wje3x5e434kepjzeqaq5hnsje8rzrl97s0j8cxxt3kgz5gfswrrchr45u8fq3twz2jjc029klqpd6jmgv".to_string(),            
+        };
+        mock_db
+            .expect_get_used_proofs()
+            .returning(|| Ok(Proofs::empty()));
+        mock_db
+            .expect_remove_pending_invoice()
+            .returning(|_| Ok(()));
+        mock_db
+            .expect_get_pending_invoice()
+            .returning(move |_| Ok(invoice.clone()));
         mock_db.expect_add_used_proofs().returning(|_| Ok(()));
         mock_db
     }
