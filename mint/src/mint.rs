@@ -3,7 +3,7 @@ use std::{collections::HashSet, sync::Arc};
 use cashurs_core::{
     crypto,
     dhke::Dhke,
-    model::{split_amount, BlindedMessage, BlindedSignature, MintKeyset, Proofs},
+    model::{split_amount, BlindedMessage, BlindedSignature, MintKeyset, Proofs, TotalAmount},
 };
 
 use crate::{database::Database, error::CashuMintError, lightning::Lightning, model::Invoice};
@@ -134,8 +134,8 @@ impl Mint {
         let second_slice = blinded_messages[sum_first..blinded_messages.len()].to_vec();
         let second_sigs = self.create_blinded_signatures(&second_slice)?;
 
-        let amount_first = self.get_amount(&first_sigs);
-        let amount_second = self.get_amount(&second_sigs);
+        let amount_first = first_sigs.total_amount();
+        let amount_second = second_sigs.total_amount();
 
         if sum_proofs != (amount_first + amount_second) {
             return Err(CashuMintError::SplitAmountMismatch(format!(
@@ -146,13 +146,6 @@ impl Mint {
         self.db.add_used_proofs(proofs)?;
 
         Ok((first_sigs, second_sigs))
-    }
-
-    fn get_amount(&self, blinded_sigs: &[BlindedSignature]) -> u64 {
-        blinded_sigs
-            .iter()
-            .map(|blinded_sig| blinded_sig.amount)
-            .sum()
     }
 
     pub async fn melt(
