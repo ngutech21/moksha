@@ -623,6 +623,24 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_get_balance() -> anyhow::Result<()> {
+        let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
+        let local_store = MockLocalStore::with_tokens(fixture.try_into()?);
+
+        let wallet = Wallet::new(
+            Box::<MockClient>::default(),
+            HashMap::new(),
+            Keysets::new(vec!["foo".to_string()]),
+            Box::new(local_store),
+            Url::parse("http://localhost:8080").expect("invalid url"),
+        );
+
+        let result = wallet.get_balance().await?;
+        assert_eq!(60, result);
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_get_proofs_for_amount_valid() -> anyhow::Result<()> {
         let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
         let local_store = MockLocalStore::with_tokens(fixture.try_into()?);
