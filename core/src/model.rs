@@ -2,7 +2,7 @@ use base64::{engine::general_purpose, Engine as _};
 use secp256k1::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use crate::{
     crypto::{self, derive_keys, derive_keyset_id, derive_pubkeys},

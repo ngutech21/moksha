@@ -75,3 +75,38 @@ impl Lightning for LnbitsLightning {
             .map_err(|err| CashuMintError::PayInvoice(payment_request, err))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::lightning::Lightning;
+    use crate::LnbitsLightning;
+
+    #[tokio::test]
+    async fn test_decode_invoice() -> anyhow::Result<()> {
+        let invoice = "lnbcrt55550n1pjga687pp5ac8ja6n5hn90huztxxp746w48vtj8ys5uvze6749dvcsd5j5sdvsdqqcqzzsxqyz5vqsp5kzzq0ycxspxjygsxkfkexkkejjr5ggeyl56mwa7s0ygk2q8z92ns9qyyssqt7myq7sryffasx8v47al053ut4vqts32e9hvedvs7eml5h9vdrtj3k5m72yex5jv355jpuzk2xjjn5468cz87nhp50jyr2al2a5zjvgq2xs5uq".to_string();
+
+        let lightning =
+            LnbitsLightning::new("admin_key".to_string(), "http://localhost:5000".to_string());
+
+        let decoded_invoice = lightning.decode_invoice(invoice).await?;
+        assert_eq!(
+            decoded_invoice
+                .amount_milli_satoshis()
+                .expect("invalid amount"),
+            5_555 * 1_000
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_decode_invoice_invalid() -> anyhow::Result<()> {
+        let invoice = "lnbcrt55550n1pjga689pp5ac8ja6n5hn90huztyxp746w48vtj8ys5uvze6749dvcsd5j5sdvsdqqcqzzsxqyz5vqsp5kzzq0ycxspxjygsxkfkexkkejjr5ggeyl56mwa7s0ygk2q8z92ns9qyyssqt7myq7sryffasx8v47al053ut4vqts32e9hvedvs7eml5h9vdrtj3k5m72yex5jv355jpuzk2xjjn5468cz87nhp50jyr2al2a5zjvgq2xs5uw".to_string();
+
+        let lightning =
+            LnbitsLightning::new("admin_key".to_string(), "http://localhost:5000".to_string());
+
+        let decoded_invoice = lightning.decode_invoice(invoice).await;
+        assert!(decoded_invoice.is_err());
+        Ok(())
+    }
+}
