@@ -34,7 +34,7 @@ impl LNBitsClient {
     ) -> Result<LNBitsClient, LNBitsError> {
         let lnbits_url = Url::parse(lnbits_url)?;
 
-        let client = {
+        let reqwest_client = {
             if let Some(tor_socket) = tor_socket {
                 let proxy = reqwest::Proxy::all(tor_socket).expect("tor proxy should be there");
                 reqwest::Client::builder().proxy(proxy).build()?
@@ -46,7 +46,7 @@ impl LNBitsClient {
         Ok(LNBitsClient {
             admin_key: admin_key.to_string(),
             lnbits_url,
-            reqwest_client: client,
+            reqwest_client,
         })
     }
 }
@@ -65,9 +65,7 @@ impl LNBitsClient {
             return Err(LNBitsError::NotFound);
         }
 
-        let body = response.text().await?;
-
-        Ok(body)
+        Ok(response.text().await?)
     }
 
     pub async fn make_post(&self, endpoint: &str, body: &str) -> Result<String, LNBitsError> {
@@ -88,9 +86,7 @@ impl LNBitsClient {
             return Err(LNBitsError::Unauthorized);
         }
 
-        let body = response.text().await?;
-
-        Ok(body)
+        Ok(response.text().await?)
     }
 }
 
@@ -135,8 +131,7 @@ impl LNBitsClient {
             .make_post("api/v1/payments", &serde_json::to_string(&params)?)
             .await?;
 
-        let invoice_result: CreateInvoiceResult = serde_json::from_str(&body)?;
-        Ok(invoice_result)
+        Ok(serde_json::from_str(&body)?)
     }
 
     pub async fn pay_invoice(&self, bolt11: &str) -> Result<PayInvoiceResult, LNBitsError> {
@@ -147,8 +142,7 @@ impl LNBitsClient {
             )
             .await?;
 
-        let invoice_result: PayInvoiceResult = serde_json::from_str(&body)?;
-        Ok(invoice_result)
+        Ok(serde_json::from_str(&body)?)
     }
 
     pub async fn is_invoice_paid(&self, payment_hash: &str) -> Result<bool, LNBitsError> {
@@ -156,7 +150,8 @@ impl LNBitsClient {
             .make_get(&format!("api/v1/payments/{payment_hash}"))
             .await?;
 
-        let invoice_result: serde_json::Value = serde_json::from_str(&body)?;
-        Ok(invoice_result["paid"].as_bool().unwrap_or(false))
+        Ok(serde_json::from_str::<serde_json::Value>(&body)?["paid"]
+            .as_bool()
+            .unwrap_or(false))
     }
 }
