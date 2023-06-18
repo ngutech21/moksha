@@ -33,14 +33,13 @@ mod lnbits;
 mod mint;
 mod model;
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+pub async fn run_server(port: u16) -> anyhow::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .init();
     event!(Level::INFO, "startup");
 
-    let addr = "[::]:3338".parse()?;
+    let addr = format!("[::]:{port}").parse()?;
     event!(Level::INFO, "listening on {}", addr);
 
     dotenv().expect(".env file not found");

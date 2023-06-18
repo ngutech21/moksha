@@ -6,6 +6,17 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 
+[[bin]]
+name = "cashursd"
+path = "src/bin/cashursmint.rs"
+
+
+
+[lib]
+name = "cashursmint"
+path = "src/lib.rs"
+
+
 
 [dependencies]
 async-trait = "0.1.68"

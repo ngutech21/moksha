@@ -5,7 +5,8 @@ members = [
     "core",
     "wallet",
     "mint",
-    "flutter/native"
+    "flutter/native",
+    "integrationtests"
 ]
 
 [profile.dev]

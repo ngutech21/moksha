@@ -1,0 +1,21 @@
+[package]
+name = "integrationtests"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[test]]
+name = "fedimint-tests"
+path = "tests/tests.rs"
+
+
+[dev-dependencies]
+anyhow = {version="1.0.71", features = ["backtrace"] }
+tokio = { version = "1.28.2", features = ["full"] }
+reqwest = {version= "0.11.18"}
+cashurs-mint = { path = "../mint"}
+cashurs-wallet = { path = "../wallet"}
+
+
+
