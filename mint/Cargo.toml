@@ -7,7 +7,7 @@ edition = "2021"
 
 
 [[bin]]
-name = "cashursd"
+name = "cashurs-mint"
 path = "src/bin/cashursmint.rs"
 
 
