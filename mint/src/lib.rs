@@ -9,7 +9,6 @@ use cashurs_core::model::{
     CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
     PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
 };
-use dotenvy::dotenv;
 use error::CashuMintError;
 use hyper::Method;
 use mint::{LightningFeeConfig, Mint};
@@ -22,7 +21,6 @@ use tower_http::{
 use tracing::{event, Level};
 
 use crate::lightning::LnbitsLightning;
-use std::env;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
@@ -33,7 +31,70 @@ mod lnbits;
 mod mint;
 mod model;
 
-pub async fn run_server(port: u16) -> anyhow::Result<()> {
+#[derive(Debug, Default)]
+pub struct MintBuilder {
+    private_key: Option<String>,
+    lnbits_admin_key: Option<String>,
+    lnbits_url: Option<String>,
+    db_path: Option<String>,
+    fee_percent: Option<f32>,
+    fee_reserve_min: Option<u64>,
+}
+
+impl MintBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_private_key(mut self, private_key: String) -> MintBuilder {
+        self.private_key = Some(private_key);
+        self
+    }
+
+    pub fn with_db(mut self, db_path: String) -> MintBuilder {
+        self.db_path = Some(db_path);
+        self
+    }
+
+    pub fn with_lnbits(mut self, url: String, admin_key: String) -> MintBuilder {
+        self.lnbits_admin_key = Some(admin_key);
+        self.lnbits_url = Some(url);
+        self
+    }
+
+    pub fn with_fee(mut self, fee_percent: f32, fee_reserve_min: u64) -> MintBuilder {
+        self.fee_percent = Some(fee_percent);
+        self.fee_reserve_min = Some(fee_reserve_min);
+        self
+    }
+
+    pub fn build(self) -> Mint {
+        let ln = Arc::new(LnbitsLightning::new(
+            self.lnbits_admin_key.expect("LNBITS_ADMIN_KEY not set"),
+            self.lnbits_url.expect("LNBITS_URL not set"),
+        ));
+
+        let db = Arc::new(database::RocksDB::new(
+            self.db_path.expect("MINT_DB_PATH not set"),
+        ));
+
+        let fee_config = LightningFeeConfig::new(
+            self.fee_percent.expect("LIGHTNING_FEE_PERCENT not set"),
+            self.fee_reserve_min
+                .expect("LIGHTNING_RESERVE_FEE_MIN not set"),
+        );
+
+        Mint::new(
+            self.private_key.expect("MINT_PRIVATE_KEY not set"),
+            "".to_string(),
+            ln,
+            db,
+            fee_config,
+        )
+    }
+}
+
+pub async fn run_server(mint: Mint, port: u16) -> anyhow::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -41,9 +102,6 @@ pub async fn run_server(port: u16) -> anyhow::Result<()> {
 
     let addr = format!("[::]:{port}").parse()?;
     event!(Level::INFO, "listening on {}", addr);
-
-    dotenv().expect(".env file not found");
-    let mint = create_mint();
 
     axum::Server::bind(&addr)
         .serve(
@@ -58,36 +116,6 @@ pub async fn run_server(port: u16) -> anyhow::Result<()> {
         .await?;
 
     Ok(())
-}
-
-fn create_mint() -> Mint {
-    let ln = Arc::new(LnbitsLightning::new(
-        env::var("LNBITS_ADMIN_KEY").expect("LNBITS_ADMIN_KEY not found"),
-        env::var("LNBITS_URL").expect("LNBITS_URL not found"),
-    ));
-
-    let db = Arc::new(database::RocksDB::new(
-        env::var("MINT_DB_PATH").expect("MINT_DB_PATH not found"),
-    ));
-
-    let fee_config = LightningFeeConfig {
-        fee_percent: env::var("LIGHTNING_FEE_PERCENT")
-            .expect("LIGHTNING_FEE_PERCENT not found")
-            .parse()
-            .expect("LIGHTNING_FEE_PERCENT is not a valid number"),
-        fee_reserve_min: env::var("LIGHTNING_RESERVE_FEE_MIN")
-            .expect("LIGHTNING_RESERVE_FEE_MIN not found")
-            .parse()
-            .expect("LIGHTNING_RESERVE_FEE_MIN is not a valid number"),
-    };
-
-    Mint::new(
-        env::var("MINT_PRIVATE_KEY").expect("MINT_PRIVATE_KEY not found"),
-        "".to_string(),
-        ln,
-        db,
-        fee_config,
-    )
 }
 
 fn app(mint: Mint) -> Router {

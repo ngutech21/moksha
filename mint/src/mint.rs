@@ -24,6 +24,15 @@ pub struct LightningFeeConfig {
     // TODO check if fee_percent is in range
 }
 
+impl LightningFeeConfig {
+    pub fn new(fee_percent: f32, fee_reserve_min: u64) -> Self {
+        Self {
+            fee_percent,
+            fee_reserve_min,
+        }
+    }
+}
+
 impl Default for LightningFeeConfig {
     fn default() -> Self {
         Self {
