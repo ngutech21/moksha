@@ -1153,11 +1153,21 @@ name = "integrationtests"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "axum",
+ "bitcoin_hashes 0.11.0",
  "cashurs-mint",
  "cashurs-wallet",
+ "hyper",
+ "lightning",
+ "lightning-invoice",
  "reqwest",
+ "secp256k1 0.24.3",
+ "serde",
+ "serde_derive",
+ "serde_json",
  "tempfile",
  "tokio",
+ "tower-http",
 ]
 
 [[package]]
