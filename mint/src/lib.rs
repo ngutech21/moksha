@@ -28,7 +28,7 @@ mod database;
 mod error;
 mod lightning;
 mod lnbits;
-mod mint;
+pub mod mint;
 mod model;
 
 #[derive(Debug, Default)]

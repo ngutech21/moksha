@@ -6,7 +6,9 @@ use cashurs_core::{
     model::{split_amount, BlindedMessage, BlindedSignature, MintKeyset, Proofs, TotalAmount},
 };
 
-use crate::{database::Database, error::CashuMintError, lightning::Lightning, model::Invoice};
+use crate::{
+    database::Database, error::CashuMintError, lightning::Lightning, model::Invoice, MintBuilder,
+};
 
 #[derive(Clone)]
 pub struct Mint {
@@ -57,6 +59,10 @@ impl Mint {
             db,
             dhke: Dhke::new(),
         }
+    }
+
+    pub fn builder() -> MintBuilder {
+        MintBuilder::new()
     }
 
     pub fn fee_reserve(&self, amount_msat: u64) -> u64 {
