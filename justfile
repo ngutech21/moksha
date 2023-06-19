@@ -3,10 +3,10 @@ default:
 
 
 run-mint:
-  cargo run --bin cashurs-mint
+  cargo run -q --bin cashurs-mint
 
 run-wallet *ARGS:
-  cargo run --bin cashurs-cli {{ARGS}} 
+  cargo run -q --bin cashurs-cli {{ARGS}} 
 
 
 [no-exit-message]
@@ -35,8 +35,6 @@ coverage:
   find . -name '*.profraw' -exec rm -r {} \;
   >&2 echo '💡 Created the report in target/coverage/html`'
   
-
-
 
 
 flutter-gen:

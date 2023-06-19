@@ -1,5 +1,5 @@
 [![Rust](https://github.com/ngutech21/cashu-rs/actions/workflows/rust.yml/badge.svg?branch=master)](https://github.com/ngutech21/cashu-rs/actions/workflows/rust.yml)
-![coverage](https://img.shields.io/codecov/c/github/ngutech21/cashu-rs)
+[![coverage](https://img.shields.io/codecov/c/github/ngutech21/cashu-rs)](https://app.codecov.io/gh/ngutech21/cashu-rs/)
 [![Flutter](https://github.com/ngutech21/cashu-rs/actions/workflows/flutter.yml/badge.svg?branch=master)](https://github.com/ngutech21/cashu-rs/actions/workflows/flutter.yml)
 
 
@@ -41,6 +41,16 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 - [] [NUT-08](https://github.com/cashubtc/nuts/blob/main/08.md)
 - [] [NUT-09](https://github.com/cashubtc/nuts/blob/main/09.md)
 
+
+## About
+
+
+## Crates
+- [core](./core) The core of the cashu library. Contains all the logic for creating and verifying tokens.
+- [mint](./mint) Cashu mint server. Handles minting, melting and token requests.
+- [wallet](./wallet) Cashu cli-wallet and library
+- [flutter_bridge](./flutter/native) Thin wrapper using [flutter-rust-bridge](https://github.com/fzyzcjy/flutter_rust_bridge) around the wallet library for use in flutter. 
+
 ## Usage
 ### Setup rust
 ```
@@ -58,16 +68,38 @@ mv .env.example .env
 vim .env
 ```
 
-### Run mint (server)
+### Run mint (cashu-server)
+To run the mint you need to setup a lightning regtest environment like [Polar](https://lightningpolar.com) and a Lnbits instance. In Lnbits create a new wallet and copy the admin key into the .env file and set the url to your Lnbits instance. The mint uses RocksDB for storing used proofs and pending invoices. You can set the path to the database in the .env file.
 ```
 just run-mint
 ```
 
 
 ### Run cli-wallet
+#### Check Balance
+```
+just run-wallet balance
+```
+
+#### Mint tokens
+This command will return a Lightning invoice that you need to pay to mint new ecash tokens.
 ```
 just run-wallet mint 42
 ```
+
+#### Send tokens
+To send tokens to another user, enter. The tokens will get printed to STOUT. You can then send them to the recipient via any messaging app.
+```
+just run-wallet send 21
+```
+
+#### Receive tokens
+To receive tokens you need to enter the token as first argument to the receive command. The tokens will get verified and the value will be added to your balance.
+```
+just run-wallet receive cashuAeyJ0...
+```
+
+
 
 ### Setup flutter
 If you want to use the flutter app you need to setup flutter and the rust bridge:
@@ -78,6 +110,21 @@ If you want to use the flutter app you need to setup flutter and the rust bridge
 ### Run flutter desktop app (macOS only at the moment)
 ```
 just flutter-run
+```
+
+### Development
+To run coverage, check for typos, generate the flutter rust bridge etc. use the just commands:
+```
+Available recipes:
+    coverage
+    default
+    final-check
+    flutter-gen
+    flutter-run
+    run-mint
+    run-wallet *ARGS
+    typos
+    typos-fix-all
 ```
 
 
