@@ -12,8 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install Flutter SDK
-        uses: mobiledevops/flutter-sdk-action@v1.0.0
+        uses: subosito/flutter-action@v2
         with:
-          flutter-sdk-version: 3.10.4
+          flutter-version: 3.10.5
+          channel: "stable"
       - working-directory: "flutter"
         run: flutter build macos
