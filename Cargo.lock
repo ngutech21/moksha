@@ -375,6 +375,7 @@ dependencies = [
  "axum",
  "bitcoin_hashes 0.12.0",
  "cashurs-core",
+ "dotenvy",
  "hyper",
  "lightning-invoice",
  "mockall",
@@ -1160,6 +1161,7 @@ dependencies = [
  "hyper",
  "lightning",
  "lightning-invoice",
+ "rand",
  "reqwest",
  "secp256k1 0.24.3",
  "serde",
@@ -1168,6 +1170,8 @@ dependencies = [
  "tempfile",
  "tokio",
  "tower-http",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -1934,6 +1938,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6b1629c9c557ef9b293568b338dddfc8208c98a18c59d722a9d53f859d9c9b62"
 dependencies = [
  "bitcoin_hashes 0.11.0",
+ "rand",
  "secp256k1-sys 0.6.1",
 ]
 

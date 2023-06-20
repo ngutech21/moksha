@@ -1,4 +1,5 @@
-use axum::{response::IntoResponse, routing::get, Router};
+use axum::Json;
+use axum::{response::IntoResponse, routing::get, routing::post, Router};
 use hyper::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
@@ -16,7 +17,7 @@ struct CreateInvoiceRequest {
     amount: Option<u64>,
     bolt11: Option<String>,
     memo: Option<String>,
-    expiry: Option<i32>,
+    expiry: Option<u32>,
     unit: Option<String>,
     webhook: Option<String>,
     internal: Option<bool>,
@@ -25,7 +26,9 @@ struct CreateInvoiceRequest {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 struct CreateInvoiceResponse {
     payment_hash: String,
-    payment_request: String,
+    payment_request: Option<String>,
+    checking_id: Option<String>,
+    lnurl_response: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -42,15 +45,7 @@ async fn post_invoice(
     create_invoice: axum::Json<CreateInvoiceRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     if !create_invoice.out {
-        let private_key = SecretKey::from_slice(
-            &[
-                0xe1, 0x26, 0xf6, 0x8f, 0x7e, 0xaf, 0xcc, 0x8b, 0x74, 0xf5, 0x4d, 0x26, 0x9f, 0xe2,
-                0x06, 0xbe, 0x71, 0x50, 0x00, 0xf9, 0x4d, 0xac, 0x06, 0x7d, 0x1c, 0x04, 0xa8, 0xca,
-                0x3b, 0x2d, 0xb7, 0x34,
-            ][..],
-        )
-        .unwrap();
-
+        let private_key = SecretKey::new(&mut rand::thread_rng());
         let payment_hash = sha256::Hash::from_slice(&[0; 32][..]).unwrap();
         let payment_secret = PaymentSecret([42u8; 32]);
 
@@ -68,26 +63,36 @@ async fn post_invoice(
         let payment_request = invoice.to_string();
         let response = CreateInvoiceResponse {
             payment_hash,
-            payment_request,
+            payment_request: Some(payment_request),
+            checking_id: Some(
+                "caf224bb1dc543a3da2783c431d096428b7ea35807361a92868bdd0ac6de0f22".to_owned(),
+            ),
+            lnurl_response: None,
         };
-        Ok(serde_json::to_string(&response).unwrap())
+        Ok(Json(response))
     } else {
         let payment_hash = "1234567890abcdef".to_string();
-        let response = PayInvoiceResponse { payment_hash };
-        Ok(serde_json::to_string(&response).unwrap())
+        let response = CreateInvoiceResponse {
+            payment_hash,
+            payment_request: None,
+            checking_id: None,
+            lnurl_response: None,
+        };
+        Ok(Json(response))
     }
 }
 
 async fn get_payment(
     _payment_hash: axum::extract::Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    Ok(axum::Json(PaymentStatus { paid: true }))
+    Ok(Json(PaymentStatus { paid: true }))
 }
 
-#[tokio::main]
-async fn main() {
-    let app = Router::new().route("/api/v1/payments", get(get_payment).post(post_invoice));
-    let addr = SocketAddr::from(([127, 0, 0, 1], 5000));
+pub async fn run_server(port: u16) {
+    let app = Router::new()
+        .route("/api/v1/payments/:payment_hash", get(get_payment))
+        .route("/api/v1/payments", post(post_invoice));
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await

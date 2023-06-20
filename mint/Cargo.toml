@@ -36,6 +36,7 @@ rocksdb = "0.21.0"
 lightning-invoice = "0.23.0"
 reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls-webpki-roots", "socks"] }
 url = "2.4.0"
+dotenvy = "0.15.7"
 
 [dev-dependencies]
 tempfile = "3.6.0"

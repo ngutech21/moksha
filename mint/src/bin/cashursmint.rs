@@ -3,6 +3,7 @@ use std::env;
 
 #[tokio::main]
 pub async fn main() -> anyhow::Result<()> {
+    dotenvy::dotenv().ok();
     let mint = MintBuilder::new()
         .with_private_key(get_env("MINT_PRIVATE_KEY"))
         .with_db(get_env("MINT_DB_PATH"))

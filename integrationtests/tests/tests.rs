@@ -7,11 +7,21 @@ use cashurs_wallet::{
 use cashursmint::mint::Mint;
 use reqwest::Url;
 use std::thread;
+use std::time::Duration;
 use tokio::runtime::Runtime;
+use tokio::time::{sleep_until, Instant};
 
 /// starts a mint and a wallet, gets the keys and checks the local balance
 #[test]
 pub fn test_create_wallet() -> anyhow::Result<()> {
+    // start lnbits
+    let _lnbits_thread = thread::spawn(|| {
+        let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+        rt.block_on(async {
+            lnbitsmock::run_server(6100).await;
+        });
+    });
+
     // Create a channel to signal when the server has started
     let _server_thread = thread::spawn(|| {
         let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
@@ -23,7 +33,7 @@ pub fn test_create_wallet() -> anyhow::Result<()> {
                 .with_private_key("my_private_key".to_string())
                 .with_db(tmp_dir.to_string())
                 .with_lnbits(
-                    "http://127.0.0.1:5000".to_string(),
+                    "http://127.0.0.1:6100".to_string(),
                     "my_admin_key".to_string(),
                 )
                 .with_fee(0.0, 0)
@@ -75,8 +85,21 @@ pub fn test_create_wallet() -> anyhow::Result<()> {
             mint_url.clone(),
         );
 
+        // get initial balance
         let balance = wallet.get_balance().await.expect("Could not get balance");
-        assert_eq!(balance, 0);
+        assert_eq!(0, balance, "Initial balance should be 0");
+
+        // mint some tokens
+        let mint_amount = 6_000;
+        let payment_request = wallet.get_mint_payment_request(mint_amount).await.unwrap();
+        let hash = payment_request.clone().hash;
+
+        sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
+        let mint_result = wallet.mint_tokens(mint_amount, hash.clone()).await.unwrap();
+        assert_eq!(6_000, mint_result.total_amount());
+
+        let balance = wallet.get_balance().await.expect("Could not get balance");
+        assert_eq!(6_000, balance);
     });
 
     Ok(())

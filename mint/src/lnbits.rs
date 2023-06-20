@@ -1,4 +1,6 @@
+use hyper::{header::CONTENT_TYPE, http::HeaderValue};
 use serde::{Deserialize, Serialize};
+use tracing::info;
 use url::Url;
 
 #[derive(Debug, thiserror::Error)]
@@ -74,6 +76,10 @@ impl LNBitsClient {
             .reqwest_client
             .post(url)
             .header("X-Api-Key", self.admin_key.clone())
+            .header(
+                CONTENT_TYPE,
+                HeaderValue::from_str("application/json").unwrap(),
+            ) // FIXME
             .body(body.to_string())
             .send()
             .await?;
@@ -126,10 +132,12 @@ impl LNBitsClient {
             "internal": params.internal,
             "expiry": params.expiry,
         });
+        info!(">>>>> params: {}", serde_json::to_string(&params)?);
 
         let body = self
             .make_post("api/v1/payments", &serde_json::to_string(&params)?)
             .await?;
+        info!(">>>>> create_invoice body: {}", &body);
 
         Ok(serde_json::from_str(&body)?)
     }
