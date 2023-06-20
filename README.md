@@ -3,17 +3,25 @@
 [![Flutter](https://github.com/ngutech21/cashu-rs/actions/workflows/flutter.yml/badge.svg?branch=master)](https://github.com/ngutech21/cashu-rs/actions/workflows/flutter.yml)
 
 
-
 ⚠️ **Don't be reckless:** This project is in early development, it does however work with real sats! Always use amounts you don't mind loosing. 
 
 # cashu-rs
 cashu-rs is a Chaumian Ecash library, mint, cli-wallet and flutter desktop-app. 
 
+## Contents
+- [About](#about)
+- [Progress](#progress)
+- [Crates](#crates)
+- [Usage](#usage)
+- [License](#license)
+
+## About
 Cashu is an Ecash implementation based on David Wagner's variant of Chaumian blinding. Token logic based
 on [minicash](https://github.com/phyro/minicash) ([description](https://gist.github.com/phyro/935badc682057f418842c72961cf096c))
 which implements a [Blind Diffie-Hellman Key Exchange](https://cypherpunks.venona.com/date/1996/03/msg01848.html) scheme
 written down by Ruben Somsen [here](https://gist.github.com/RubenSomsen/be7a4760dd4596d06963d67baf140406). 
 Please read the [Cashu](https://github.com/callebtc/cashu) documentation for more detailed information.
+
 
 
 ## Progress
@@ -26,6 +34,7 @@ Wallet Features:
 - [x] receiving tokens
 - [x] melting tokens
 - [] check if tokens are spent
+- [] multi mint support
 
 
 Implemented [NUTs](https://github.com/cashubtc/nuts/):
@@ -42,7 +51,9 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 - [] [NUT-09](https://github.com/cashubtc/nuts/blob/main/09.md)
 
 
-## About
+
+
+
 
 
 ## Crates
@@ -126,6 +137,13 @@ Available recipes:
     typos
     typos-fix-all
 ```
+
+
+
+## License
+
+cashu-rs is distributed under the terms of the MIT license.
+See [LICENSE](LICENSE).
 
 
 
