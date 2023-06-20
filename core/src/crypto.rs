@@ -25,14 +25,6 @@ pub fn derive_keys(master_key: &str, derivation_path: &str) -> HashMap<u64, Secr
     keys
 }
 
-pub fn derive_pubkey(master_key: &str) -> PublicKey {
-    let secp = Secp256k1::new();
-    let binding = sha256::Hash::hash(master_key.as_bytes());
-    let hash = binding.as_byte_array();
-    let private_key = SecretKey::from_slice(hash).unwrap();
-    private_key.public_key(&secp)
-}
-
 pub fn derive_pubkeys(keys: &HashMap<u64, SecretKey>) -> HashMap<u64, PublicKey> {
     let secp = Secp256k1::new();
     keys.keys()
