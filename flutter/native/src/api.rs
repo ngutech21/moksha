@@ -203,3 +203,17 @@ pub fn import_token(token: String) -> anyhow::Result<u64> {
     drop(rt);
     Ok(deserialized_token.total_amount())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{get_balance, init_cashu};
+
+    #[test]
+    fn test_get_balance() {
+        let tmp = tempfile::tempdir().expect("Could not create tmp dir");
+        let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
+        let _ = init_cashu(format!("{}/wallet.db", tmp_dir));
+        let balance = get_balance().expect("Could not get balance");
+        assert_eq!(0, balance);
+    }
+}

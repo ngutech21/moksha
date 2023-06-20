@@ -1468,6 +1468,7 @@ dependencies = [
  "flutter_rust_bridge",
  "lazy_static",
  "reqwest",
+ "tempfile",
  "tokio",
 ]
 

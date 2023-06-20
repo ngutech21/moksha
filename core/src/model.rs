@@ -75,13 +75,6 @@ impl TokenV3 {
         }
     }
 
-    pub fn empty() -> Self {
-        Self {
-            tokens: vec![],
-            memo: None,
-        }
-    }
-
     pub fn total_amount(&self) -> u64 {
         self.tokens
             .iter()

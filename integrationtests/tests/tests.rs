@@ -47,7 +47,7 @@ pub fn test_integration() -> anyhow::Result<()> {
     // Wait for the server to start
     std::thread::sleep(std::time::Duration::from_millis(500));
 
-    let client = HttpClient::new();
+    let client = HttpClient::default();
     let mint_url = Url::parse("http://127.0.0.1:8686")?;
     let rt = Runtime::new()?;
     rt.block_on(async move {
