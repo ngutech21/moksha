@@ -1161,7 +1161,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
- "bitcoin_hashes 0.11.0",
+ "bitcoin_hashes 0.12.0",
  "cashurs-core",
  "cashurs-mint",
  "cashurs-wallet",
