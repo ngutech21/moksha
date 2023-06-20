@@ -11,9 +11,8 @@ use std::time::Duration;
 use tokio::runtime::Runtime;
 use tokio::time::{sleep_until, Instant};
 
-/// starts a mint and a wallet, gets the keys and checks the local balance
 #[test]
-pub fn test_create_wallet() -> anyhow::Result<()> {
+pub fn test_integration() -> anyhow::Result<()> {
     // start lnbits
     let _lnbits_thread = thread::spawn(|| {
         let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
@@ -100,7 +99,28 @@ pub fn test_create_wallet() -> anyhow::Result<()> {
 
         let balance = wallet.get_balance().await.expect("Could not get balance");
         assert_eq!(6_000, balance);
+
+        // pay ln-invoice
+        let invoice_1000 = read_fixture("invoice_1000.txt").unwrap();
+        let result_pay_invoice = wallet.pay_invoice(invoice_1000).await;
+        assert!(result_pay_invoice.is_ok());
+        let balance = wallet.get_balance().await.expect("Could not get balance");
+        assert_eq!(5_000, balance);
+
+        // receive 10 sats
+        let token_10: cashurs_core::model::TokenV3 =
+            read_fixture("token_10.cashu").unwrap().try_into().unwrap();
+        let result_receive = wallet.receive_tokens(&token_10).await;
+        assert!(result_receive.is_ok());
+        let balance = wallet.get_balance().await.expect("Could not get balance");
+        assert_eq!(5_010, balance);
     });
 
     Ok(())
+}
+
+fn read_fixture(name: &str) -> anyhow::Result<String> {
+    let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+    let raw_token = std::fs::read_to_string(format!("{base_dir}/tests/fixtures/{name}"))?;
+    Ok(raw_token.trim().to_string())
 }

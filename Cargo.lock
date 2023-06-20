@@ -1156,6 +1156,7 @@ dependencies = [
  "anyhow",
  "axum",
  "bitcoin_hashes 0.11.0",
+ "cashurs-core",
  "cashurs-mint",
  "cashurs-wallet",
  "hyper",
