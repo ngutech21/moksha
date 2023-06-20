@@ -17,7 +17,7 @@ pub fn test_integration() -> anyhow::Result<()> {
     let _lnbits_thread = thread::spawn(|| {
         let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
         rt.block_on(async {
-            lnbitsmock::run_server(6100).await;
+            let _ = lnbitsmock::run_server(6100).await;
         });
     });
 
@@ -42,7 +42,6 @@ pub fn test_integration() -> anyhow::Result<()> {
             drop(tmp);
             assert!(result.is_ok());
         });
-        println!("server_thread finished");
     });
 
     // Wait for the server to start
@@ -66,8 +65,6 @@ pub fn test_integration() -> anyhow::Result<()> {
             .path()
             .to_str()
             .expect("Could not create tmp dir for wallet");
-
-        println!(">>>> db_path: {}", tmp_dir);
 
         let localstore = Box::new(
             SqliteLocalStore::with_path(format!("{tmp_dir}/test_wallet.db"))
