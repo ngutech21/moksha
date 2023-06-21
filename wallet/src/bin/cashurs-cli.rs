@@ -4,8 +4,8 @@ use cashurs_core::model::TokenV3;
 use clap::{Parser, Subcommand};
 use dotenvy::dotenv;
 
-use cashurs_wallet::localstore::SqliteLocalStore;
 use cashurs_wallet::wallet;
+use cashurs_wallet::{localstore::SqliteLocalStore, wallet::Wallet};
 
 use cashurs_wallet::client::Client;
 use cashurs_wallet::localstore::LocalStore;
@@ -41,7 +41,7 @@ enum Command {
 }
 
 fn read_env(variable: &str) -> String {
-    dotenv().expect(".env file not found");
+    dotenv().expect(".env file not found"); // FIXME remove dotenv-check
     env::var(variable).expect("MINT_URL not found")
 }
 
@@ -68,7 +68,8 @@ async fn main() -> anyhow::Result<()> {
     let keys = client.get_mint_keys(&mint_url).await?;
     let keysets = client.get_mint_keysets(&mint_url).await?;
 
-    let db_path = read_env("WALLET_DB_PATH");
+    let db_path = Wallet::db_path();
+    println!("Using db path: {}", db_path);
     let localstore = Box::new(SqliteLocalStore::with_path(db_path).await?);
     localstore.migrate().await;
 

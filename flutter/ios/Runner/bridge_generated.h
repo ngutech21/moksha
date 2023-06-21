@@ -26,7 +26,7 @@ uintptr_t new_dart_opaque(Dart_Handle handle);
 
 intptr_t init_frb_dart_api_dl(void *obj);
 
-void wire_init_cashu(int64_t port_, struct wire_uint_8_list *db_path);
+void wire_init_cashu(int64_t port_);
 
 void wire_get_balance(int64_t port_);
 

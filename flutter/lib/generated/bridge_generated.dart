@@ -19,13 +19,12 @@ class NativeImpl implements Native {
   factory NativeImpl.wasm(FutureOr<WasmModule> module) =>
       NativeImpl(module as ExternalLibrary);
   NativeImpl.raw(this._platform);
-  Future<void> initCashu({required String dbPath, dynamic hint}) {
-    var arg0 = _platform.api2wire_String(dbPath);
+  Future<String> initCashu({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_init_cashu(port_, arg0),
-      parseSuccessData: _wire2api_unit,
+      callFfi: (port_) => _platform.inner.wire_init_cashu(port_),
+      parseSuccessData: _wire2api_String,
       constMeta: kInitCashuConstMeta,
-      argValues: [dbPath],
+      argValues: [],
       hint: hint,
     ));
   }
@@ -33,7 +32,7 @@ class NativeImpl implements Native {
   FlutterRustBridgeTaskConstMeta get kInitCashuConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
         debugName: "init_cashu",
-        argNames: ["dbPath"],
+        argNames: [],
       );
 
   Future<int> getBalance({dynamic hint}) {
@@ -157,10 +156,6 @@ class NativeImpl implements Native {
 
   Uint8List _wire2api_uint_8_list(dynamic raw) {
     return raw as Uint8List;
-  }
-
-  void _wire2api_unit(dynamic raw) {
-    return;
   }
 }
 

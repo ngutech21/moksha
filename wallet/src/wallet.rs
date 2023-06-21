@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::create_dir};
 
 use cashurs_core::{
     dhke::Dhke,
@@ -7,6 +7,7 @@ use cashurs_core::{
         Proof, Proofs, TokenV3, TotalAmount,
     },
 };
+use dirs::home_dir;
 use reqwest::Url;
 use secp256k1::{PublicKey, SecretKey};
 
@@ -14,6 +15,8 @@ use crate::{client::Client, error::CashuWalletError, localstore::LocalStore};
 use lightning_invoice::Invoice as LNInvoice;
 use rand::{distributions::Alphanumeric, Rng};
 use std::str::FromStr;
+
+const ENV_DB_PATH: &str = "WALLET_DB_PATH";
 
 pub struct Wallet {
     client: Box<dyn Client>,
@@ -52,6 +55,35 @@ impl Wallet {
             dhke: Dhke::new(),
             localstore,
             mint_url,
+        }
+    }
+
+    /// Returns the path to the wallet database file.
+    ///
+    /// The path is determined by the value of the `WALLET_DB_PATH` environment variable. If the
+    /// variable is not set, the function creates a `.cashurs` directory in the user's home directory
+    /// and returns a path to a `wallet.db` file in that directory.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let db_path = cashurs_wallet::wallet::Wallet::db_path();
+    /// println!("Database path: {}", db_path);
+    /// ```
+    pub fn db_path() -> String {
+        match std::env::var(ENV_DB_PATH) {
+            Ok(val) => val,
+            Err(_) => {
+                let home = home_dir().expect("home dir not found");
+                let cashu_dir = format!("{}/.cashurs", home.to_str().expect("home dir is invalid"));
+
+                if !std::path::Path::new(&cashu_dir).exists() {
+                    create_dir(std::path::Path::new(&cashu_dir))
+                        .expect("failed to create cashurs dir");
+                }
+
+                format!("{cashu_dir}/wallet.db")
+            }
         }
     }
 

@@ -5,17 +5,27 @@ import 'package:cashurs_wallet/pages/mint_page.dart';
 import 'package:cashurs_wallet/pages/overview_page.dart';
 import 'package:cashurs_wallet/pages/receive_page.dart';
 import 'package:cashurs_wallet/ffi.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final dbPathProvider = FutureProvider<String>((ref) async {
+  return await api.initCashu();
+});
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({Key? key}) : super(key: key);
 
   // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(dbPathProvider); // this is a hack to trigger the provider
     return MaterialApp(
       title: 'Flutter Cashu Wallet',
       debugShowCheckedModeBanner: false,
@@ -48,12 +58,12 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _initCashuWallet();
+    //_initCashuWallet();
   }
 
-  Future<void> _initCashuWallet() async {
-    await api.initCashu(dbPath: "../data/wallet/cashurs_wallet.db");
-  }
+  // Future<void> _initCashuWallet() async {
+  //   var dbPath = await api.initCashu();
+  // }
 
   List<Widget> createWidget() {
     return <Widget>[

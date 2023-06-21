@@ -10,7 +10,7 @@ import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 
 abstract class Native {
-  Future<void> initCashu({required String dbPath, dynamic hint});
+  Future<String> initCashu({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kInitCashuConstMeta;
 

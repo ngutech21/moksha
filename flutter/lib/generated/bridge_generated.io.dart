@@ -136,20 +136,17 @@ class NativeWire implements FlutterRustBridgeWireBase {
 
   void wire_init_cashu(
     int port_,
-    ffi.Pointer<wire_uint_8_list> db_path,
   ) {
     return _wire_init_cashu(
       port_,
-      db_path,
     );
   }
 
-  late final _wire_init_cashuPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_init_cashu');
-  late final _wire_init_cashu = _wire_init_cashuPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+  late final _wire_init_cashuPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_init_cashu');
+  late final _wire_init_cashu =
+      _wire_init_cashuPtr.asFunction<void Function(int)>();
 
   void wire_get_balance(
     int port_,

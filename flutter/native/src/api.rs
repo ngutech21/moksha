@@ -39,11 +39,13 @@ macro_rules! lock_runtime {
     };
 }
 
-pub fn init_cashu(db_path: String) -> anyhow::Result<()> {
+pub fn init_cashu() -> anyhow::Result<String> {
     let rt = lock_runtime!();
 
+    let db_path = Wallet::db_path();
+
     let new_localstore = rt.block_on(async {
-        SqliteLocalStore::with_path(db_path)
+        SqliteLocalStore::with_path(db_path.clone())
             .await
             .map_err(anyhow::Error::from)
     })?;
@@ -59,7 +61,7 @@ pub fn init_cashu(db_path: String) -> anyhow::Result<()> {
     });
 
     drop(rt);
-    Ok(())
+    Ok(db_path)
 }
 
 pub fn get_balance() -> anyhow::Result<u64> {
@@ -212,7 +214,10 @@ mod tests {
     fn test_get_balance() {
         let tmp = tempfile::tempdir().expect("Could not create tmp dir");
         let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
-        let _ = init_cashu(format!("{}/wallet.db", tmp_dir));
+        //FIXME use const Wallet::ENV_DB_PATH;
+        std::env::set_var("WALLET_DB_PATH", format!("{}/wallet.db", tmp_dir));
+        let db_path = init_cashu();
+        println!("{:?}", &db_path);
         let balance = get_balance().expect("Could not get balance");
         assert_eq!(0, balance);
     }

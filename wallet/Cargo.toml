@@ -28,6 +28,7 @@ lightning-invoice = "0.23.0"
 dyn-clone = "1.0.11"
 sqlx = { version = "0.7.0-alpha.3", features = ["sqlite", "runtime-tokio-rustls", "migrate"] }
 url = "2.4.0"
+dirs = "5.0.1"
 
 
 
