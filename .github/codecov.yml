@@ -12,4 +12,4 @@ comment: false
 # Test files aren't important for coverage
 ignore:
   - "tests"
-  - "*generated*.rs"
+  - "**/*generated*.rs"
