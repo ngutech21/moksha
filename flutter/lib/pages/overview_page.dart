@@ -39,7 +39,15 @@ class _OverviewPageState extends State<OverviewPage> {
                   if (data == null) return const CircularProgressIndicator();
 
                   var value = data[0];
-                  return Text('$value (sats)',
+
+                  final regExSeparator = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+                  matchFunc(Match match) => '${match[1]},';
+                  var formattedValue = value
+                      .toString()
+                      .replaceAll(',', '')
+                      .replaceAllMapped(regExSeparator, matchFunc);
+
+                  return Text('$formattedValue (sats)',
                       style: const TextStyle(fontSize: 42));
                 })
           ]),

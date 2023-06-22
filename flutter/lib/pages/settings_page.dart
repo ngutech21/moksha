@@ -37,12 +37,10 @@ class SettingsPage extends ConsumerWidget {
                     labelText: 'Mint URL',
                   ),
                 ),
-                TextField(
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      labelText: 'Database Path: $dbPath',
-                    ))
+                Text(
+                  'DB Path: $dbPath',
+                  style: Theme.of(context).textTheme.titleSmall,
+                )
               ],
             ),
           ),

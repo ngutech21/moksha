@@ -149,8 +149,21 @@ class _MintWidgetState extends State<MintWidget> {
                     visible: !_isInvoiceCreated,
                     child: ElevatedButton(
                         onPressed: () async {
+                          if (amount == '' || amount == '0') {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(const SnackBar(
+                              content: Column(children: [
+                                Text('Amount must be greater than 0')
+                              ]),
+                              showCloseIcon: true,
+                            ));
+                            return;
+                          }
+
                           var cleanAmount =
                               int.parse(amount.replaceAll(",", ""));
+
                           var result = await api.getMintPaymentRequest(
                               amount: cleanAmount); // use decimalTextfield
                           setState(() {
