@@ -1,31 +1,39 @@
+# list all tasks
 default:
   @just --list
 
 
+# run the cashu-mint
 run-mint:
   cargo run -q --bin cashurs-mint
 
+# run the cli-wallet with given args
 run-wallet *ARGS:
   cargo run --bin cashurs-cli {{ARGS}} 
 
 
+# check code for typos
 [no-exit-message]
 typos:
   #!/usr/bin/env bash
   >&2 echo '💡 Valid new words can be added to `typos.toml`'
   typos
 
+
+# fix all typos
 [no-exit-message]
 typos-fix-all:
   #!/usr/bin/env bash
   >&2 echo '💡 Valid new words can be added to `typos.toml`'
   typos --write-changes
 
+# format code, check typos and run tests
 final-check:
   cargo fmt --all
   just typos
   cargo test
 
+#run converage
 coverage:
   #!/usr/bin/env bash
   mkdir -p target/coverage
@@ -37,6 +45,7 @@ coverage:
   
 
 
+# generate flutter-rust bridge
 flutter-gen:
     cd flutter && \
     flutter pub get && \
@@ -48,6 +57,13 @@ flutter-gen:
         --dart-decl-output lib/generated/bridge_definitions.dart \
         --wasm
 
+# run flutter app on macos
 flutter-run:
     cd flutter && \
     flutter run -d macos
+
+
+# build flutter app on macos
+flutter-build:
+    cd flutter && \
+    flutter build macos
