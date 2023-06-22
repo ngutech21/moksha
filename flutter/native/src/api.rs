@@ -6,7 +6,6 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use cashurs_core::model::PaymentRequest;
-use cashurs_wallet::client::Client;
 use cashurs_wallet::client::HttpClient;
 use cashurs_wallet::localstore::LocalStore;
 use cashurs_wallet::localstore::SqliteLocalStore;
@@ -89,26 +88,15 @@ fn _create_local_wallet() -> anyhow::Result<Wallet> {
         let client = HTTPCLIENT.lock().await;
         let client = client.as_ref().expect("HTTPClient not set");
 
-        let keys = client
-            .get_mint_keys(&mint_url)
-            .await
-            .map_err(anyhow::Error::from)?;
-
-        let keysets = client
-            .get_mint_keysets(&mint_url)
-            .await
-            .map_err(anyhow::Error::from)?;
-
         let localstore = LOCALSTORE.lock().await;
         let localstore = localstore.as_ref().expect("DB not set");
 
-        Ok(Wallet::new(
-            Box::new(client.to_owned()), // FIXME use borrow
-            keys,
-            keysets,
-            Box::new(localstore.to_owned()),
-            mint_url,
-        ))
+        Ok(Wallet::builder()
+            .with_client(Box::new(client.to_owned()))
+            .with_localstore(Box::new(localstore.to_owned()))
+            .with_mint_url(mint_url)
+            .build()
+            .await?)
     });
     drop(rt);
     result

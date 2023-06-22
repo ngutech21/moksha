@@ -227,7 +227,7 @@ impl MintKeyset {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Keysets {
-    keysets: Vec<String>,
+    pub keysets: Vec<String>,
 }
 
 impl Keysets {

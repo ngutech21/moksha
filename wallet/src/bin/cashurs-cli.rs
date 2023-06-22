@@ -1,14 +1,10 @@
 use std::{env, time::Duration};
 
 use cashurs_core::model::TokenV3;
+use cashurs_wallet::localstore::LocalStore;
+use cashurs_wallet::{localstore::SqliteLocalStore, wallet::Wallet};
 use clap::{Parser, Subcommand};
 use dotenvy::dotenv;
-
-use cashurs_wallet::wallet;
-use cashurs_wallet::{localstore::SqliteLocalStore, wallet::Wallet};
-
-use cashurs_wallet::client::Client;
-use cashurs_wallet::localstore::LocalStore;
 use reqwest::Url;
 use tokio::time::{sleep_until, Instant};
 
@@ -62,24 +58,20 @@ fn wait_for_user_input(prompt: String) -> String {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let mint_url = Url::parse(&read_env("WALLET_MINT_URL"))?;
-
-    let client = cashurs_wallet::client::HttpClient::new();
-    let keys = client.get_mint_keys(&mint_url).await?;
-    let keysets = client.get_mint_keysets(&mint_url).await?;
-
     let db_path = Wallet::db_path();
     println!("Using db path: {}", db_path);
     let localstore = Box::new(SqliteLocalStore::with_path(db_path).await?);
     localstore.migrate().await;
 
-    let wallet = wallet::Wallet::new(
-        Box::new(client.clone()),
-        keys,
-        keysets,
-        localstore.clone(),
-        mint_url.clone(),
-    );
+    let mint_url = Url::parse(&read_env("WALLET_MINT_URL"))?;
+    let client = Box::new(cashurs_wallet::client::HttpClient::new());
+
+    let wallet = Wallet::builder()
+        .with_client(client)
+        .with_localstore(localstore)
+        .with_mint_url(mint_url)
+        .build()
+        .await?;
 
     let cli = Opts::parse();
 
@@ -92,21 +84,14 @@ async fn main() -> anyhow::Result<()> {
             );
         }
         Command::Send { amount } => {
-            let balance = wallet.get_balance().await?;
-            if amount > balance {
-                println!("Not enough balance");
-                return Ok(());
-            }
+            let result = wallet.send_tokens(amount).await?;
+            // FIXME handle error not enough tokens
 
-            let selected_proofs = wallet.get_proofs_for_amount(amount).await?;
-            let selected_tokens = (mint_url.as_ref().to_owned(), selected_proofs.clone()).into();
-
-            let (remaining_tokens, result) = wallet.split_tokens(&selected_tokens, amount).await?;
-
-            localstore.delete_proofs(&selected_proofs).await?;
-            localstore.add_proofs(&remaining_tokens.proofs()).await?;
-
-            let amount = result.total_amount();
+            // let balance = wallet.get_balance().await?;
+            // if amount > balance {
+            //     println!("Not enough balance");
+            //     return Ok(());
+            // }
             let ser: String = result.try_into()?;
 
             println!("Result {amount} sats:\n{ser}");

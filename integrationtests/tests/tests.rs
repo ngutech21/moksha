@@ -1,5 +1,5 @@
 use cashurs_wallet::localstore::LocalStore;
-use cashurs_wallet::wallet::{self};
+use cashurs_wallet::wallet::Wallet;
 use cashurs_wallet::{
     client::{Client, HttpClient},
     localstore::SqliteLocalStore,
@@ -53,11 +53,9 @@ pub fn test_integration() -> anyhow::Result<()> {
     rt.block_on(async move {
         let keys = client.get_mint_keys(&mint_url).await;
         assert!(keys.is_ok());
-        let keys = keys.unwrap();
 
         let keysets = client.get_mint_keysets(&mint_url).await;
         assert!(keysets.is_ok());
-        let keysets = keysets.unwrap();
 
         // create wallet
         let tmp = tempfile::tempdir().expect("Could not create tmp dir for wallet");
@@ -73,13 +71,13 @@ pub fn test_integration() -> anyhow::Result<()> {
         );
         localstore.migrate().await;
 
-        let wallet = wallet::Wallet::new(
-            Box::new(client.clone()),
-            keys,
-            keysets,
-            localstore.clone(),
-            mint_url.clone(),
-        );
+        let wallet = Wallet::builder()
+            .with_client(Box::new(client))
+            .with_localstore(localstore)
+            .with_mint_url(mint_url)
+            .build()
+            .await
+            .expect("Could not create wallet");
 
         // get initial balance
         let balance = wallet.get_balance().await.expect("Could not get balance");
@@ -111,6 +109,13 @@ pub fn test_integration() -> anyhow::Result<()> {
         assert!(result_receive.is_ok());
         let balance = wallet.get_balance().await.expect("Could not get balance");
         assert_eq!(5_010, balance);
+
+        // send 10 tokens
+        let result_send = wallet.send_tokens(10).await;
+        assert!(result_send.is_ok());
+        assert_eq!(10, result_send.unwrap().total_amount());
+        let balance = wallet.get_balance().await.expect("Could not get balance");
+        assert_eq!(5_000, balance);
     });
 
     Ok(())

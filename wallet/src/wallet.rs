@@ -11,7 +11,11 @@ use dirs::home_dir;
 use reqwest::Url;
 use secp256k1::{PublicKey, SecretKey};
 
-use crate::{client::Client, error::CashuWalletError, localstore::LocalStore};
+use crate::{
+    client::Client,
+    error::CashuWalletError,
+    localstore::{LocalStore, WalletKeyset},
+};
 use lightning_invoice::Invoice as LNInvoice;
 use rand::{distributions::Alphanumeric, Rng};
 use std::str::FromStr;
@@ -40,8 +44,66 @@ impl Clone for Wallet {
     }
 }
 
+#[derive(Default)]
+pub struct WalletBuilder {
+    client: Option<Box<dyn Client>>,
+    localstore: Option<Box<dyn LocalStore + Sync + Send>>,
+    mint_url: Option<Url>,
+}
+
+impl WalletBuilder {
+    pub fn with_client(mut self, client: Box<dyn Client>) -> Self {
+        self.client = Some(client);
+        self
+    }
+
+    pub fn with_localstore(mut self, localstore: Box<dyn LocalStore + Sync + Send>) -> Self {
+        self.localstore = Some(localstore);
+        self
+    }
+
+    pub fn with_mint_url(mut self, mint_url: Url) -> Self {
+        self.mint_url = Some(mint_url);
+        self
+    }
+
+    pub async fn build(self) -> Result<Wallet, CashuWalletError> {
+        let client = self.client.expect("client is required");
+        let localstore = self.localstore.expect("localstore is required");
+        let mint_url = self.mint_url.expect("mint_url is required");
+
+        let load_keysets = localstore.get_keysets().await?;
+
+        let mint_keysets = client.get_mint_keysets(&mint_url).await?;
+        if load_keysets.is_empty() {
+            let wallet_keysets = mint_keysets
+                .keysets
+                .iter()
+                .map(|m| WalletKeyset {
+                    id: m.to_owned(),
+                    mint_url: mint_url.to_string(),
+                })
+                .collect::<Vec<WalletKeyset>>();
+
+            for wkeyset in wallet_keysets {
+                localstore.add_keyset(&wkeyset).await?;
+            }
+        }
+
+        let keys = client.get_mint_keys(&mint_url).await?;
+
+        Ok(Wallet::new(
+            client,
+            keys,
+            mint_keysets,
+            localstore,
+            mint_url,
+        ))
+    }
+}
+
 impl Wallet {
-    pub fn new(
+    fn new(
         client: Box<dyn Client>,
         mint_keys: HashMap<u64, PublicKey>,
         keysets: Keysets,
@@ -56,6 +118,10 @@ impl Wallet {
             localstore,
             mint_url,
         }
+    }
+
+    pub fn builder() -> WalletBuilder {
+        WalletBuilder::default()
     }
 
     /// Returns the path to the wallet database file.
@@ -97,8 +163,26 @@ impl Wallet {
     }
 
     pub async fn get_balance(&self) -> Result<u64, CashuWalletError> {
-        let total = self.localstore.get_proofs().await?.total_amount();
-        Ok(total)
+        Ok(self.localstore.get_proofs().await?.total_amount())
+    }
+
+    pub async fn send_tokens(&self, amount: u64) -> Result<TokenV3, CashuWalletError> {
+        let balance = self.get_balance().await?;
+        if amount > balance {
+            return Err(CashuWalletError::NotEnoughTokens);
+        }
+
+        let selected_proofs = self.get_proofs_for_amount(amount).await?;
+        let selected_tokens = (self.mint_url.as_ref().to_owned(), selected_proofs.clone()).into();
+
+        let (remaining_tokens, result) = self.split_tokens(&selected_tokens, amount).await?;
+
+        self.localstore.delete_proofs(&selected_proofs).await?;
+        self.localstore
+            .add_proofs(&remaining_tokens.proofs())
+            .await?;
+
+        Ok(result)
     }
 
     pub async fn receive_tokens(&self, tokens: &TokenV3) -> Result<(), CashuWalletError> {
