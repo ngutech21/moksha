@@ -140,8 +140,15 @@ impl Wallet {
         match std::env::var(ENV_DB_PATH) {
             Ok(val) => val,
             Err(_) => {
-                let home = home_dir().expect("home dir not found");
-                let cashu_dir = format!("{}/.cashurs", home.to_str().expect("home dir is invalid"));
+                let home = home_dir()
+                    .expect("home dir not found")
+                    .to_str()
+                    .expect("home dir is invalid")
+                    .to_owned();
+                // in a sansboxed environment on mac the path looks like
+                // /Users/$USER_NAME/Library/Containers/..... so we have are just ising the first 2 parts
+                let home = home.split('/').take(3).collect::<Vec<&str>>().join("/");
+                let cashu_dir = format!("{}/.cashurs", home);
 
                 if !std::path::Path::new(&cashu_dir).exists() {
                     create_dir(std::path::Path::new(&cashu_dir))
