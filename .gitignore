@@ -4,3 +4,4 @@ target
 data
 .DS_Store
 *.profraw
+build

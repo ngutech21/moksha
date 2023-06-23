@@ -4,4 +4,4 @@ check-file = false
 
 
 [files]
-extend-exclude = ["flutter/*"]
+extend-exclude = ["flutter/*","build/*"]

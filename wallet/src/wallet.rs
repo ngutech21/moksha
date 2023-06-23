@@ -145,7 +145,7 @@ impl Wallet {
                     .to_str()
                     .expect("home dir is invalid")
                     .to_owned();
-                // in a sansboxed environment on mac the path looks like
+                // in a sandboxed environment on mac the path looks like
                 // /Users/$USER_NAME/Library/Containers/..... so we have are just ising the first 2 parts
                 let home = home.split('/').take(3).collect::<Vec<&str>>().join("/");
                 let cashu_dir = format!("{}/.cashurs", home);
@@ -582,12 +582,6 @@ mod tests {
                 post_melt_response,
                 ..Default::default()
             }
-        }
-    }
-
-    impl PartialEq for MockClient {
-        fn eq(&self, _other: &Self) -> bool {
-            true
         }
     }
 
