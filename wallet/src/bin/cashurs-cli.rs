@@ -1,6 +1,5 @@
 use std::{env, time::Duration};
 
-use cashurs_core::model::TokenV3;
 use cashurs_wallet::localstore::LocalStore;
 use cashurs_wallet::{localstore::SqliteLocalStore, wallet::Wallet};
 use clap::{Parser, Subcommand};
@@ -31,29 +30,11 @@ enum Command {
 
     /// Show local balance
     Balance,
-
-    /// Split tokens without storing them
-    Split { amount: u64 },
 }
 
 fn read_env(variable: &str) -> String {
     dotenv().expect(".env file not found"); // FIXME remove dotenv-check
     env::var(variable).expect("MINT_URL not found")
-}
-
-fn wait_for_user_input(prompt: String) -> String {
-    println!("{prompt}");
-    let mut result = String::new();
-    loop {
-        let mut line = String::new();
-        std::io::stdin()
-            .read_line(&mut line)
-            .expect("Error: Could not read a line");
-        result.push_str(&line);
-        if line == "\n" {
-            return result.trim().to_string();
-        }
-    }
 }
 
 #[tokio::main]
@@ -101,31 +82,6 @@ async fn main() -> anyhow::Result<()> {
         Command::Balance => {
             let balance = wallet.get_balance().await?;
             println!("Balance: {balance:?} sats");
-        }
-        Command::Split {
-            amount: splt_amount,
-        } => {
-            let prompt = "Enter Token:\n".to_string();
-            let serialized_token = wait_for_user_input(prompt);
-
-            let tokens: TokenV3 = serialized_token.try_into()?;
-            let total_token_amount = tokens.total_amount();
-            if total_token_amount < splt_amount {
-                println!("Not enough tokens");
-                return Ok(());
-            }
-            let (first_tokens, second_tokens) = wallet.split_tokens(&tokens, splt_amount).await?;
-
-            println!(
-                "\nTokens ({:?} sats):\n{}",
-                second_tokens.total_amount(),
-                second_tokens.serialize()?
-            );
-            println!(
-                "\nTokens ({:?} sats):\n{}",
-                first_tokens.total_amount(),
-                first_tokens.serialize()?
-            );
         }
         Command::Pay { invoice } => {
             let response = wallet.pay_invoice(invoice).await?;

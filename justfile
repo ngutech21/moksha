@@ -66,4 +66,5 @@ flutter-run:
 # build flutter app on macos
 flutter-build:
     cd flutter && \
+    flutter clean && \
     flutter build macos
