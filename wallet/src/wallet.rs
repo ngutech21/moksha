@@ -20,7 +20,7 @@ use lightning_invoice::Invoice as LNInvoice;
 use rand::{distributions::Alphanumeric, Rng};
 use std::str::FromStr;
 
-const ENV_DB_PATH: &str = "WALLET_DB_PATH";
+pub const ENV_DB_PATH: &str = "WALLET_DB_PATH";
 
 pub struct Wallet {
     client: Box<dyn Client>,
@@ -147,8 +147,12 @@ impl Wallet {
                     .to_owned();
                 // in a sandboxed environment on mac the path looks like
                 // /Users/$USER_NAME/Library/Containers/..... so we have are just ising the first 2 parts
-                let home = home.split('/').take(3).collect::<Vec<&str>>().join("/");
-                let cashu_dir = format!("{}/.cashurs", home);
+                let home = home
+                    .split('/')
+                    .take(3)
+                    .collect::<Vec<&str>>()
+                    .join(std::path::MAIN_SEPARATOR_STR);
+                let cashu_dir = format!("{}{}.cashurs", home, std::path::MAIN_SEPARATOR);
 
                 if !std::path::Path::new(&cashu_dir).exists() {
                     create_dir(std::path::Path::new(&cashu_dir))

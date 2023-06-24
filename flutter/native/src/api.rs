@@ -199,14 +199,17 @@ mod tests {
     use super::{get_balance, init_cashu};
 
     #[test]
-    fn test_get_balance() {
+    fn test_get_balance() -> anyhow::Result<()> {
         let tmp = tempfile::tempdir().expect("Could not create tmp dir");
         let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
-        //FIXME use const Wallet::ENV_DB_PATH;
-        std::env::set_var("WALLET_DB_PATH", format!("{}/wallet.db", tmp_dir));
-        let db_path = init_cashu();
-        println!("{:?}", &db_path);
+
+        std::env::set_var(
+            cashurs_wallet::wallet::ENV_DB_PATH,
+            format!("{}/wallet.db", tmp_dir),
+        );
+        let _ = init_cashu()?;
         let balance = get_balance().expect("Could not get balance");
         assert_eq!(0, balance);
+        Ok(())
     }
 }
