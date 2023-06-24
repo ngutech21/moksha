@@ -118,6 +118,12 @@ If you want to use the flutter app you need to setup flutter and the rust bridge
 - `flutter_rust_bridge_codegen` [cargo package](https://cjycode.com/flutter_rust_bridge/integrate/deps.html#build-time-dependencies)
 - Appropriate [Rust targets](https://rust-lang.github.io/rustup/cross-compilation.html) for cross-compiling to your device
 
+### update flutter dependencies
+```
+cd flutter
+flutter pub get
+```
+
 ### Run flutter desktop app (macOS only at the moment)
 ```
 just flutter-run
