@@ -124,7 +124,7 @@ cd flutter
 flutter pub get
 ```
 
-### Run flutter desktop app (macOS only at the moment)
+### Run flutter desktop app
 ```
 just flutter-run
 ```

@@ -1,3 +1,5 @@
+platform := if os_family() == "unix" { "macos"} else {os_family()}
+
 # list all tasks
 default:
   @just --list
@@ -57,14 +59,14 @@ flutter-gen:
         --dart-decl-output lib/generated/bridge_definitions.dart \
         --wasm
 
-# run flutter app on macos
+# run flutter desktop-app 
 flutter-run:
     cd flutter && \
-    flutter run -d macos
+    flutter run -d {{ platform }}
 
 
-# build flutter app on macos
+# build flutter desktop-app
 flutter-build:
     cd flutter && \
     flutter clean && \
-    flutter build macos
+    flutter build {{ platform }}
