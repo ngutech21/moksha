@@ -35,7 +35,7 @@ final-check:
   just typos
   cargo test
 
-#run converage
+#run coverage
 coverage:
   #!/usr/bin/env bash
   mkdir -p target/coverage

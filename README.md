@@ -133,15 +133,16 @@ just flutter-run
 To run coverage, check for typos, generate the flutter rust bridge etc. use the just commands:
 ```
 Available recipes:
-    coverage
-    default
-    final-check
-    flutter-gen
-    flutter-run
-    run-mint
-    run-wallet *ARGS
-    typos
-    typos-fix-all
+    coverage         # run coverage
+    default          # list all tasks
+    final-check      # format code, check typos and run tests
+    flutter-build    # build flutter desktop-app
+    flutter-gen      # generate flutter-rust bridge
+    flutter-run      # run flutter desktop-app
+    run-mint         # run the cashu-mint
+    run-wallet *ARGS # run the cli-wallet with given args
+    typos            # check code for typos
+    typos-fix-all    # fix all typos
 ```
 
 
