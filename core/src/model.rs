@@ -271,7 +271,7 @@ pub struct CheckFeesRequest {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CheckFeesResponse {
-    pub fee: u64,
+    pub fee: u64, // fee in satoshis
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

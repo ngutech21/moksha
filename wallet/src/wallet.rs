@@ -212,7 +212,8 @@ impl Wallet {
             .client
             .post_checkfees(&self.mint_url, invoice.clone())
             .await?;
-        let ln_amount = self.get_invoice_amount(&invoice)? + (fees.fee / 1000);
+
+        let ln_amount = self.get_invoice_amount(&invoice)? + fees.fee;
 
         if ln_amount > all_proofs.total_amount() {
             return Err(CashuWalletError::NotEnoughTokens);
