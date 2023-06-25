@@ -211,18 +211,12 @@ async fn extract_response_data<T: serde::de::DeserializeOwned>(
     match response.status() {
         StatusCode::OK => {
             let response_text = response.text().await?;
-            //println!("{}", &response_text);
+            //println!("OK >{}<", &response_text);
             match serde_json::from_str::<T>(&response_text) {
                 Ok(data) => Ok(data),
-                Err(..) => Err(CashuWalletError::UnexpectedResponse(response_text)),
-            }
-        }
-        _ => match &response.headers().get(CONTENT_TYPE) {
-            Some(content_type) => {
-                if *content_type == "application/json" {
-                    let txt = response.text().await?;
-                    let data = serde_json::from_str::<CashuErrorResponse>(&txt)
-                        .map_err(|_| CashuWalletError::UnexpectedResponse(txt))
+                Err(..) => {
+                    let data = serde_json::from_str::<CashuErrorResponse>(&response_text)
+                        .map_err(|_| CashuWalletError::UnexpectedResponse(response_text))
                         .unwrap();
 
                     // FIXME: use the error code to return a proper error
@@ -232,11 +226,34 @@ async fn extract_response_data<T: serde::de::DeserializeOwned>(
                         }
                         _ => Err(CashuWalletError::MintError(data.error)),
                     }
-                } else {
-                    Err(CashuWalletError::UnexpectedResponse(response.text().await?))
                 }
             }
-            None => Err(CashuWalletError::UnexpectedResponse(response.text().await?)),
-        },
+        }
+        _ => {
+            let txt = response.text().await?;
+            let data = serde_json::from_str::<CashuErrorResponse>(&txt)
+                .map_err(|_| CashuWalletError::UnexpectedResponse(txt))
+                .unwrap();
+
+            // FIXME: use the error code to return a proper error
+            match data.error.as_str() {
+                "Lightning invoice not paid yet." => {
+                    Err(CashuWalletError::InvoiceNotPaidYet(data.code, data.error))
+                }
+                _ => Err(CashuWalletError::MintError(data.error)),
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_deserialize_error() -> anyhow::Result<()> {
+        let input = "{\"code\":0,\"error\":\"Lightning invoice not paid yet.\"}";
+        let data = serde_json::from_str::<super::CashuErrorResponse>(input)?;
+        assert_eq!(data.code, 0);
+        assert_eq!(data.error, "Lightning invoice not paid yet.");
+        Ok(())
     }
 }

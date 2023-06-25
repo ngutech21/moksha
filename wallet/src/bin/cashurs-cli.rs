@@ -40,7 +40,7 @@ fn read_env(variable: &str) -> String {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let db_path = Wallet::db_path();
-    println!("Using db path: {}", db_path);
+    println!("Using db: {}", db_path);
     let localstore = Box::new(SqliteLocalStore::with_path(db_path).await?);
     localstore.migrate().await;
 
