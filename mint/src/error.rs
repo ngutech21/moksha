@@ -62,7 +62,8 @@ impl IntoResponse for CashuMintError {
         event!(Level::ERROR, "error in mint: {:?}", self);
 
         let status = match self {
-            CashuMintError::Db(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::Db(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::InvoiceNotPaidYet => StatusCode::OK,
             _ => StatusCode::BAD_REQUEST,
         };
 

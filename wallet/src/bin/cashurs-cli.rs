@@ -1,15 +1,21 @@
-use std::{env, time::Duration};
+use std::path::PathBuf;
+use std::time::Duration;
 
 use cashurs_wallet::localstore::LocalStore;
 use cashurs_wallet::{localstore::SqliteLocalStore, wallet::Wallet};
 use clap::{Parser, Subcommand};
-use dotenvy::dotenv;
 use reqwest::Url;
 use tokio::time::{sleep_until, Instant};
 
 #[derive(Parser)]
 #[command(version)]
 struct Opts {
+    #[clap(short, long)]
+    mint_url: Url,
+
+    #[clap(short, long)]
+    db_dir: Option<PathBuf>,
+
     #[clap(subcommand)]
     command: Command,
 }
@@ -32,29 +38,28 @@ enum Command {
     Balance,
 }
 
-fn read_env(variable: &str) -> String {
-    dotenv().expect(".env file not found"); // FIXME remove dotenv-check
-    env::var(variable).expect("MINT_URL not found")
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let db_path = Wallet::db_path();
-    println!("Using db: {}", db_path);
+    let cli = Opts::parse();
+
+    let db_path = match cli.db_dir {
+        Some(dir) => dir.join("wallet.db").to_str().unwrap().to_string(),
+        None => Wallet::db_path(),
+    };
+
+    println!("DB: {}\nMint: {}", db_path, cli.mint_url.clone());
+
     let localstore = Box::new(SqliteLocalStore::with_path(db_path).await?);
     localstore.migrate().await;
 
-    let mint_url = Url::parse(&read_env("WALLET_MINT_URL"))?;
     let client = Box::new(cashurs_wallet::client::HttpClient::new());
 
     let wallet = Wallet::builder()
         .with_client(client)
         .with_localstore(localstore)
-        .with_mint_url(mint_url)
+        .with_mint_url(cli.mint_url)
         .build()
         .await?;
-
-    let cli = Opts::parse();
 
     match cli.command {
         Command::Receive { token } => {
@@ -66,13 +71,6 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::Send { amount } => {
             let result = wallet.send_tokens(amount).await?;
-            // FIXME handle error not enough tokens
-
-            // let balance = wallet.get_balance().await?;
-            // if amount > balance {
-            //     println!("Not enough balance");
-            //     return Ok(());
-            // }
             let ser: String = result.try_into()?;
 
             println!("Result {amount} sats:\n{ser}");

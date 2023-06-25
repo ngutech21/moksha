@@ -416,7 +416,6 @@ dependencies = [
  "cashurs-core",
  "clap",
  "dirs",
- "dotenvy",
  "dyn-clone",
  "lightning-invoice",
  "rand",

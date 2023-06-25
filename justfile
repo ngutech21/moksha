@@ -11,7 +11,7 @@ run-mint:
 
 # run the cli-wallet with given args
 run-wallet *ARGS:
-  WALLET_DB_PATH=./data/wallet/wallet.db cargo run --bin cashurs-cli {{ARGS}} 
+  cargo run --bin cashurs-cli -- -m http://127.0.0.1:3338 -d ./data/wallet  {{ARGS}} 
 
 
 # check code for typos
