@@ -192,6 +192,30 @@ impl Proofs {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    pub fn proofs_for_amount(&self, amount: u64) -> Result<Proofs, CashuCoreError> {
+        let mut all_proofs = self.0.clone();
+        if amount > self.total_amount() {
+            return Err(CashuCoreError::NotEnoughTokens);
+        }
+
+        all_proofs.sort_by(|a, b| a.amount.cmp(&b.amount));
+
+        let mut selected_proofs = vec![];
+        let mut selected_amount = 0;
+
+        while selected_amount < amount {
+            if all_proofs.is_empty() {
+                break;
+            }
+
+            let proof = all_proofs.pop().expect("proofs is empty");
+            selected_amount += proof.amount;
+            selected_proofs.push(proof);
+        }
+
+        Ok(selected_proofs.into())
+    }
 }
 
 impl From<Vec<Proof>> for Proofs {
@@ -325,6 +349,32 @@ mod tests {
     use serde_json::json;
 
     #[test]
+    fn test_proofs_for_amount_empty() -> anyhow::Result<()> {
+        let proofs = Proofs::empty();
+
+        let result = proofs.proofs_for_amount(10);
+
+        assert!(result.is_err());
+        assert!(result
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("Not enough tokens"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_proofs_for_amount_valid() -> anyhow::Result<()> {
+        let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
+        let token: TokenV3 = fixture.try_into()?;
+
+        let result = token.proofs().proofs_for_amount(10)?;
+        assert_eq!(32, result.total_amount());
+        assert_eq!(1, result.len());
+        Ok(())
+    }
+
+    #[test]
     fn test_split_amount() -> anyhow::Result<()> {
         let bits = super::split_amount(13);
         assert_eq!(bits, vec![1, 4, 8]);
@@ -390,7 +440,7 @@ mod tests {
     fn test_tokens_serialize() -> anyhow::Result<()> {
         let token = Token {
             mint: Some("mymint".to_string()),
-            proofs: Proofs::new(vec![Proof {
+            proofs: Proof {
                 amount: 21,
                 secret: "secret".to_string(),
                 c: dhke::public_key_from_hex(
@@ -398,7 +448,8 @@ mod tests {
                 ),
                 id: "someid".to_string(),
                 script: None,
-            }]),
+            }
+            .into(),
         };
         let tokens = super::TokenV3 {
             tokens: vec![token],
@@ -417,5 +468,11 @@ mod tests {
         assert_eq!(tokens.memo, Some("Thankyou.".to_string()),);
         assert_eq!(tokens.tokens.len(), 1);
         Ok(())
+    }
+
+    fn read_fixture(name: &str) -> anyhow::Result<String> {
+        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+        let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{name}"))?;
+        Ok(raw_token.trim().to_string())
     }
 }

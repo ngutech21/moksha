@@ -17,4 +17,7 @@ pub enum CashuCoreError {
 
     #[error("Invalid Keysetid")]
     InvalidKeysetid,
+
+    #[error("Not enough tokens")]
+    NotEnoughTokens,
 }

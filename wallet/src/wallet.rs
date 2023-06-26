@@ -183,7 +183,9 @@ impl Wallet {
             return Err(CashuWalletError::NotEnoughTokens);
         }
 
-        let selected_proofs = self.get_proofs_for_amount(amount).await?;
+        let all_proofs = self.localstore.get_proofs().await?;
+
+        let selected_proofs = all_proofs.proofs_for_amount(amount)?;
         let selected_tokens = (self.mint_url.as_ref().to_owned(), selected_proofs.clone()).into();
 
         let (remaining_tokens, result) = self.split_tokens(&selected_tokens, amount).await?;
@@ -218,9 +220,9 @@ impl Wallet {
         if ln_amount > all_proofs.total_amount() {
             return Err(CashuWalletError::NotEnoughTokens);
         }
-        let selected_proofs = self.get_proofs_for_amount(ln_amount).await?;
+        let selected_proofs = all_proofs.proofs_for_amount(ln_amount)?;
 
-        let total_proofs = if selected_proofs.total_amount() > ln_amount {
+        let total_proofs = {
             let selected_tokens =
                 (self.mint_url.as_str().to_owned(), selected_proofs.clone()).into();
             let split_result = self.split_tokens(&selected_tokens, ln_amount).await?;
@@ -229,8 +231,6 @@ impl Wallet {
             self.localstore.add_proofs(&split_result.0.proofs()).await?;
 
             split_result.1.proofs()
-        } else {
-            selected_proofs
         };
 
         self.melt_token(invoice, ln_amount, &total_proofs).await
@@ -448,31 +448,31 @@ impl Wallet {
             .into())
     }
 
-    pub async fn get_proofs_for_amount(&self, amount: u64) -> Result<Proofs, CashuWalletError> {
-        let all_proofs = self.localstore.get_proofs().await?;
+    // pub async fn get_proofs_for_amount(&self, amount: u64) -> Result<Proofs, CashuWalletError> {
+    //     let all_proofs = self.localstore.get_proofs().await?;
 
-        if amount > all_proofs.total_amount() {
-            return Err(CashuWalletError::NotEnoughTokens);
-        }
+    //     if amount > all_proofs.total_amount() {
+    //         return Err(CashuWalletError::NotEnoughTokens);
+    //     }
 
-        let mut all_proofs = all_proofs.proofs();
-        all_proofs.sort_by(|a, b| a.amount.cmp(&b.amount));
+    //     let mut all_proofs = all_proofs.proofs();
+    //     all_proofs.sort_by(|a, b| a.amount.cmp(&b.amount));
 
-        let mut selected_proofs = vec![];
-        let mut selected_amount = 0;
+    //     let mut selected_proofs = vec![];
+    //     let mut selected_amount = 0;
 
-        while selected_amount < amount {
-            if all_proofs.is_empty() {
-                break;
-            }
+    //     while selected_amount < amount {
+    //         if all_proofs.is_empty() {
+    //             break;
+    //         }
 
-            let proof = all_proofs.pop().expect("proofs is empty");
-            selected_amount += proof.amount;
-            selected_proofs.push(proof);
-        }
+    //         let proof = all_proofs.pop().expect("proofs is empty");
+    //         selected_amount += proof.amount;
+    //         selected_proofs.push(proof);
+    //     }
 
-        Ok(Proofs::new(selected_proofs))
-    }
+    //     Ok(selected_proofs.into())
+    // }
 }
 
 // FIXME implement for Vec<BlindedMessage, Secretkey>
@@ -724,27 +724,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_proofs_for_amount_empty() -> anyhow::Result<()> {
-        let wallet = Wallet::new(
-            Box::<MockClient>::default(),
-            HashMap::new(),
-            Keysets::new(vec!["foo".to_string()]),
-            Box::<MockLocalStore>::default(),
-            Url::parse("http://localhost:8080").expect("invalid url"),
-        );
-
-        let result = wallet.get_proofs_for_amount(10).await;
-
-        assert!(result.is_err());
-        assert!(result
-            .err()
-            .unwrap()
-            .to_string()
-            .contains("Not enough tokens"));
-        Ok(())
-    }
-
-    #[tokio::test]
     async fn test_get_balance() -> anyhow::Result<()> {
         let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
         let local_store = MockLocalStore::with_tokens(fixture.try_into()?);
@@ -759,25 +738,6 @@ mod tests {
 
         let result = wallet.get_balance().await?;
         assert_eq!(60, result);
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_get_proofs_for_amount_valid() -> anyhow::Result<()> {
-        let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
-        let local_store = MockLocalStore::with_tokens(fixture.try_into()?);
-
-        let wallet = Wallet::new(
-            Box::<MockClient>::default(),
-            HashMap::new(),
-            Keysets::new(vec!["foo".to_string()]),
-            Box::new(local_store),
-            Url::parse("http://localhost:8080").expect("invalid url"),
-        );
-
-        let result = wallet.get_proofs_for_amount(10).await?;
-        assert_eq!(32, result.total_amount());
-        assert_eq!(1, result.len());
         Ok(())
     }
 
