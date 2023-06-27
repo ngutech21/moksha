@@ -246,7 +246,6 @@ impl Wallet {
                 Ok(response)
             }
             Err(e) => {
-                println!("Payment error, returning tokens");
                 self.localstore.add_proofs(&total_proofs).await?;
                 Err(e)
             }
