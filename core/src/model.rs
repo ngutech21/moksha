@@ -1,4 +1,6 @@
 use base64::{engine::general_purpose, Engine as _};
+use rand::distributions::Alphanumeric;
+use rand::Rng;
 use secp256k1::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -325,6 +327,37 @@ pub struct PostSplitResponse {
     pub snd: Vec<BlindedSignature>,
 }
 
+#[derive(Clone)]
+pub struct Amount(pub u64);
+
+impl Amount {
+    pub fn split(&self) -> SplitAmount {
+        split_amount(self.0).into()
+    }
+}
+
+pub struct SplitAmount(Vec<u64>);
+
+impl From<Vec<u64>> for SplitAmount {
+    fn from(from: Vec<u64>) -> Self {
+        Self(from)
+    }
+}
+
+impl SplitAmount {
+    pub fn create_secrets(&self) -> Vec<String> {
+        (0..self.0.len())
+            .map(|_| generate_random_string())
+            .collect::<Vec<String>>()
+    }
+}
+
+impl From<u64> for Amount {
+    fn from(amount: u64) -> Self {
+        Self(amount)
+    }
+}
+
 /// split a decimal amount into a vector of powers of 2
 pub fn split_amount(amount: u64) -> Vec<u64> {
     format!("{amount:b}")
@@ -338,6 +371,14 @@ pub fn split_amount(amount: u64) -> Vec<u64> {
             None
         })
         .collect::<Vec<u64>>()
+}
+
+fn generate_random_string() -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(24)
+        .map(char::from)
+        .collect()
 }
 
 #[cfg(test)]

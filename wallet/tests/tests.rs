@@ -116,7 +116,6 @@ async fn test_pay_invoice_can_not_melt() -> anyhow::Result<()> {
     );
     localstore.migrate().await;
 
-    println!("tokens: {:?}", tokens);
     localstore.add_proofs(&tokens.proofs()).await?;
     assert_eq!(64, localstore.get_proofs().await?.total_amount());
 
