@@ -213,7 +213,7 @@ async fn extract_response_data<T: serde::de::DeserializeOwned>(
             let response_text = response.text().await?;
             match serde_json::from_str::<T>(&response_text) {
                 Ok(data) => Ok(data),
-                Err(err) => {
+                Err(_) => {
                     let data = serde_json::from_str::<CashuErrorResponse>(&response_text)
                         .map_err(|_| CashuWalletError::UnexpectedResponse(response_text))
                         .unwrap();
