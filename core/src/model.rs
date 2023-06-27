@@ -249,7 +249,7 @@ impl MintKeyset {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 pub struct Keysets {
     pub keysets: Vec<String>,
 }

@@ -227,13 +227,30 @@ impl Wallet {
                 (self.mint_url.as_str().to_owned(), selected_proofs.clone()).into();
             let split_result = self.split_tokens(&selected_tokens, ln_amount).await?;
 
+            // FIXME create transaction
             self.localstore.delete_proofs(&selected_proofs).await?;
             self.localstore.add_proofs(&split_result.0.proofs()).await?;
 
             split_result.1.proofs()
         };
 
-        self.melt_token(invoice, ln_amount, &total_proofs).await
+        match self.melt_token(invoice, ln_amount, &total_proofs).await {
+            Ok(response) => {
+                if !response.paid {
+                    println!(
+                        "Payment failed, returning tokens {}",
+                        &total_proofs.total_amount()
+                    );
+                    self.localstore.add_proofs(&total_proofs).await?;
+                }
+                Ok(response)
+            }
+            Err(e) => {
+                println!("Payment error, returning tokens");
+                self.localstore.add_proofs(&total_proofs).await?;
+                Err(e)
+            }
+        }
     }
 
     pub async fn split_tokens(
@@ -304,7 +321,9 @@ impl Wallet {
             .post_melt_tokens(&self.mint_url, proofs.clone(), pr, vec![])
             .await?;
 
-        self.localstore.delete_proofs(proofs).await?;
+        if melt_response.paid {
+            self.localstore.delete_proofs(proofs).await?;
+        }
 
         // let change = melt_response.change.clone();
 
@@ -447,32 +466,6 @@ impl Wallet {
             .collect::<Vec<Proof>>()
             .into())
     }
-
-    // pub async fn get_proofs_for_amount(&self, amount: u64) -> Result<Proofs, CashuWalletError> {
-    //     let all_proofs = self.localstore.get_proofs().await?;
-
-    //     if amount > all_proofs.total_amount() {
-    //         return Err(CashuWalletError::NotEnoughTokens);
-    //     }
-
-    //     let mut all_proofs = all_proofs.proofs();
-    //     all_proofs.sort_by(|a, b| a.amount.cmp(&b.amount));
-
-    //     let mut selected_proofs = vec![];
-    //     let mut selected_amount = 0;
-
-    //     while selected_amount < amount {
-    //         if all_proofs.is_empty() {
-    //             break;
-    //         }
-
-    //         let proof = all_proofs.pop().expect("proofs is empty");
-    //         selected_amount += proof.amount;
-    //         selected_proofs.push(proof);
-    //     }
-
-    //     Ok(selected_proofs.into())
-    // }
 }
 
 // FIXME implement for Vec<BlindedMessage, Secretkey>
