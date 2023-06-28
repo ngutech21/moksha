@@ -434,6 +434,7 @@ mod tests {
         let amounts = vec![1, 2, 3, 4, 5, 6, 7];
         let secrets = SplitAmount::from(amounts.clone()).create_secrets();
         assert!(secrets.len() == amounts.len());
+        assert_eq!(secrets.get(0).unwrap().len(), 24);
     }
 
     #[test]

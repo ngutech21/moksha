@@ -183,12 +183,12 @@ impl Wallet {
         }
 
         let all_proofs = self.localstore.get_proofs().await?;
-
         let selected_proofs = all_proofs.proofs_for_amount(amount)?;
         let selected_tokens = (self.mint_url.as_ref().to_owned(), selected_proofs.clone()).into();
 
         let (remaining_tokens, result) = self.split_tokens(&selected_tokens, amount.into()).await?;
 
+        // FIXME create transaction
         self.localstore.delete_proofs(&selected_proofs).await?;
         self.localstore
             .add_proofs(&remaining_tokens.proofs())
@@ -312,11 +312,6 @@ impl Wallet {
         _invoice_amount: u64,
         proofs: &Proofs,
     ) -> Result<PostMeltResponse, CashuWalletError> {
-        //   let remaining = proofs.get_total_amount() - invoice_amount;
-        // let secrets = self.create_secrets(&split_amount(remaining));
-        // let outputs_full = self.create_blinded_messages(remaining, secrets.clone())?;
-        // let outputs = get_blinded_msg(outputs_full.clone());
-
         let melt_response = self
             .client
             .post_melt_tokens(&self.mint_url, proofs.clone(), pr, vec![])
@@ -325,19 +320,6 @@ impl Wallet {
         if melt_response.paid {
             self.localstore.delete_proofs(proofs).await?;
         }
-
-        // let change = melt_response.change.clone();
-
-        // let change_proofs =
-        //     self.create_proofs_from_blinded_signatures(change, secrets, outputs_full)?;
-
-        // println!("change_proofs: {change_proofs:?}");
-
-        // self.localstore.add_tokens(Tokens::new(Token {
-        //     mint: Some(self.mint_url.clone()),
-        //     proofs: change_proofs,
-        // }))?;
-
         Ok(melt_response)
     }
 
