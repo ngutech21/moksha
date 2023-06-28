@@ -17,7 +17,7 @@ use crate::error::CashuWalletError;
 use dyn_clone::DynClone;
 
 #[async_trait]
-pub trait Client: Send + Sync + DynClone {
+pub trait Client: DynClone {
     async fn post_split_tokens(
         &self,
         mint_url: &Url,

@@ -26,7 +26,7 @@ pub struct Wallet {
     mint_keys: HashMap<u64, PublicKey>, // FIXME use specific type
     keysets: Keysets,
     dhke: Dhke,
-    localstore: Box<dyn LocalStore + Sync + Send>,
+    localstore: Box<dyn LocalStore>,
     mint_url: Url,
 }
 
@@ -46,7 +46,7 @@ impl Clone for Wallet {
 #[derive(Default)]
 pub struct WalletBuilder {
     client: Option<Box<dyn Client>>,
-    localstore: Option<Box<dyn LocalStore + Sync + Send>>,
+    localstore: Option<Box<dyn LocalStore>>,
     mint_url: Option<Url>,
 }
 
@@ -56,7 +56,7 @@ impl WalletBuilder {
         self
     }
 
-    pub fn with_localstore(mut self, localstore: Box<dyn LocalStore + Sync + Send>) -> Self {
+    pub fn with_localstore(mut self, localstore: Box<dyn LocalStore>) -> Self {
         self.localstore = Some(localstore);
         self
     }
@@ -106,7 +106,7 @@ impl Wallet {
         client: Box<dyn Client>,
         mint_keys: HashMap<u64, PublicKey>,
         keysets: Keysets,
-        localstore: Box<dyn LocalStore + Sync + Send>,
+        localstore: Box<dyn LocalStore>,
         mint_url: Url,
     ) -> Self {
         Self {
