@@ -336,7 +336,8 @@ impl Amount {
     }
 }
 
-pub struct SplitAmount(Vec<u64>);
+#[derive(Clone)]
+pub struct SplitAmount(pub Vec<u64>);
 
 impl From<Vec<u64>> for SplitAmount {
     fn from(from: Vec<u64>) -> Self {
@@ -385,7 +386,7 @@ fn generate_random_string() -> String {
 mod tests {
     use crate::{
         dhke,
-        model::{Proof, Proofs, Token, TokenV3},
+        model::{Proof, Proofs, SplitAmount, Token, TokenV3},
     };
     use serde_json::json;
 
@@ -426,6 +427,13 @@ mod tests {
         let bits = super::split_amount(64);
         assert_eq!(bits, vec![64]);
         Ok(())
+    }
+
+    #[test]
+    fn test_create_secrets() {
+        let amounts = vec![1, 2, 3, 4, 5, 6, 7];
+        let secrets = SplitAmount::from(amounts.clone()).create_secrets();
+        assert!(secrets.len() == amounts.len());
     }
 
     #[test]

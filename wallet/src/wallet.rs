@@ -17,7 +17,6 @@ use crate::{
     localstore::{LocalStore, WalletKeyset},
 };
 use lightning_invoice::Invoice as LNInvoice;
-use rand::{distributions::Alphanumeric, Rng};
 use std::str::FromStr;
 
 pub const ENV_DB_PATH: &str = "WALLET_DB_PATH";
@@ -257,7 +256,6 @@ impl Wallet {
     ) -> Result<(TokenV3, TokenV3), CashuWalletError> {
         let total_token_amount = tokens.total_amount();
         let first_amount: Amount = (total_token_amount - splt_amount.0).into();
-        //let first_secrets = self.create_secrets(&split_amount(first_amount));
         let first_secrets = first_amount.split().create_secrets();
         let first_outputs = self.create_blinded_messages(first_amount.0, &first_secrets)?;
 
@@ -356,21 +354,16 @@ impl Wallet {
             / 1000)
     }
 
-    fn create_secrets(&self, split_amount: &[u64]) -> Vec<String> {
-        (0..split_amount.len())
-            .map(|_| generate_random_string())
-            .collect::<Vec<String>>()
-    }
-
     pub async fn mint_tokens(
         &self,
-        amount: u64,
+        amount: Amount,
         hash: String,
     ) -> Result<TokenV3, CashuWalletError> {
-        let split_amount = split_amount(amount);
-        let secrets = self.create_secrets(&split_amount);
+        let split_amount = amount.split();
+        let secrets = split_amount.create_secrets();
 
         let blinded_messages = split_amount
+            .0
             .into_iter()
             .zip(secrets.clone())
             .map(|(amount, secret)| {
@@ -423,6 +416,7 @@ impl Wallet {
         Ok(tokens)
     }
 
+    // FIXME implement for Amount
     fn create_blinded_messages(
         &self,
         amount: u64,
@@ -477,14 +471,6 @@ fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, SecretKey)>) -> Vec<Bl
         .into_iter()
         .map(|(msg, _)| msg)
         .collect::<Vec<BlindedMessage>>()
-}
-
-fn generate_random_string() -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(24)
-        .map(char::from)
-        .collect()
 }
 
 #[cfg(test)]
@@ -645,22 +631,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_create_secrets() {
-        let wallet = Wallet::new(
-            Box::<MockClient>::default(),
-            HashMap::new(),
-            Keysets::new(vec![]),
-            Box::<MockLocalStore>::default(),
-            Url::parse("http://localhost:8080").expect("invalid url"),
-        );
-
-        let amounts = vec![1, 2, 3, 4, 5, 6, 7];
-        let secrets = wallet.create_secrets(&amounts);
-
-        assert!(secrets.len() == amounts.len());
-    }
-
     #[tokio::test]
     async fn test_mint_tokens() -> anyhow::Result<()> {
         let raw_response = read_fixture("post_mint_response_20.json")?;
@@ -679,7 +649,7 @@ mod tests {
             Url::parse(mint_url).expect("invalid url"),
         );
 
-        let result = wallet.mint_tokens(20, "hash".to_string()).await?;
+        let result = wallet.mint_tokens(20.into(), "hash".to_string()).await?;
         assert_eq!(20, result.total_amount());
         assert_eq!(
             mint_url.to_owned(),

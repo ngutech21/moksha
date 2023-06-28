@@ -109,7 +109,7 @@ pub fn mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
     let result = rt.block_on(async {
         for _ in 0..30 {
             sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
-            let mint_result = wallet.mint_tokens(amount, hash.clone()).await;
+            let mint_result = wallet.mint_tokens(amount.into(), hash.clone()).await;
 
             match mint_result {
                 Ok(value) => {

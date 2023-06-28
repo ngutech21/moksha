@@ -89,7 +89,10 @@ pub fn test_integration() -> anyhow::Result<()> {
         let hash = payment_request.clone().hash;
 
         sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
-        let mint_result = wallet.mint_tokens(mint_amount, hash.clone()).await.unwrap();
+        let mint_result = wallet
+            .mint_tokens(mint_amount.into(), hash.clone())
+            .await
+            .unwrap();
         assert_eq!(6_000, mint_result.total_amount());
 
         let balance = wallet.get_balance().await.expect("Could not get balance");

@@ -105,7 +105,7 @@ async fn main() -> anyhow::Result<()> {
 
             loop {
                 sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
-                let mint_result = wallet.mint_tokens(amount, hash.clone()).await;
+                let mint_result = wallet.mint_tokens(amount.into(), hash.clone()).await;
 
                 match mint_result {
                     Ok(_) => {
