@@ -1,4 +1,4 @@
-use cashursmint::MintBuilder;
+use mokshamint::MintBuilder;
 use std::env;
 
 #[tokio::main]
@@ -14,7 +14,7 @@ pub async fn main() -> anyhow::Result<()> {
         )
         .build();
 
-    cashursmint::run_server(mint, 3338).await
+    mokshamint::run_server(mint, 3338).await
 }
 
 fn get_env(key: &str) -> String {

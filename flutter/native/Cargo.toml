@@ -12,8 +12,8 @@ crate-type = ["cdylib", "staticlib"]
 anyhow = "1.0.71"
 flutter_rust_bridge = "1.78.0"
 tokio = { version = "1.29.0", features = ["rt-multi-thread"] }
-cashurs-wallet = { path = "../../wallet" }
-cashurs-core = { path = "../../core" }
+moksha-wallet = { path = "../../moksha-wallet" }
+moksha-core = { path = "../../moksha-core" }
 lazy_static = "1.4.0"
 reqwest = {version= "0.11.18", features = ["serde_json","json","rustls-tls"], default-features = false}
 

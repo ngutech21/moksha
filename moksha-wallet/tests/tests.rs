@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use cashurs_core::model::{
+use moksha_core::model::{
     BlindedMessage, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest, PostMeltResponse,
     PostMintResponse, PostSplitResponse, Proofs, TokenV3,
 };
-use cashurs_wallet::localstore::LocalStore;
-use cashurs_wallet::{
+use moksha_wallet::localstore::LocalStore;
+use moksha_wallet::{
     client::Client, error::CashuWalletError, localstore::SqliteLocalStore, wallet::Wallet,
 };
 use reqwest::Url;

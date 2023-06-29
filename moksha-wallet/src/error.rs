@@ -26,7 +26,7 @@ pub enum CashuWalletError {
     UnexpectedResponse(String),
 
     #[error("CashuCoreError - {0}")]
-    CashuCore(#[from] cashurs_core::error::CashuCoreError),
+    CashuCore(#[from] moksha_core::error::CashuCoreError),
 
     #[error("DB Error {0}")]
     Db(#[from] sqlx::Error),

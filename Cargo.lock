@@ -362,75 +362,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cashurs-core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "base64",
- "bitcoin_hashes 0.12.0",
- "hex",
- "itertools 0.11.0",
- "rand",
- "secp256k1 0.27.0",
- "serde",
- "serde_json",
- "serde_with",
- "thiserror",
-]
-
-[[package]]
-name = "cashurs-mint"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "axum",
- "bitcoin_hashes 0.12.0",
- "cashurs-core",
- "dotenvy",
- "hyper",
- "lightning-invoice",
- "mockall",
- "reqwest",
- "rocksdb",
- "secp256k1 0.27.0",
- "serde",
- "serde_derive",
- "serde_json",
- "tempfile",
- "thiserror",
- "tokio",
- "tower",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "url",
-]
-
-[[package]]
-name = "cashurs-wallet"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "cashurs-core",
- "clap",
- "dirs",
- "dyn-clone",
- "lightning-invoice",
- "rand",
- "reqwest",
- "secp256k1 0.27.0",
- "serde",
- "serde_json",
- "sqlx",
- "tempfile",
- "thiserror",
- "tokio",
- "url",
-]
-
-[[package]]
 name = "cc"
 version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1257,12 +1188,12 @@ dependencies = [
  "anyhow",
  "axum",
  "bitcoin_hashes 0.11.0",
- "cashurs-core",
- "cashurs-mint",
- "cashurs-wallet",
  "hyper",
  "lightning",
  "lightning-invoice",
+ "moksha-core",
+ "moksha-mint",
+ "moksha-wallet",
  "rand",
  "reqwest",
  "secp256k1 0.24.3",
@@ -1581,14 +1512,83 @@ dependencies = [
 ]
 
 [[package]]
+name = "moksha-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64",
+ "bitcoin_hashes 0.12.0",
+ "hex",
+ "itertools 0.11.0",
+ "rand",
+ "secp256k1 0.27.0",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "thiserror",
+]
+
+[[package]]
+name = "moksha-mint"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "bitcoin_hashes 0.12.0",
+ "dotenvy",
+ "hyper",
+ "lightning-invoice",
+ "mockall",
+ "moksha-core",
+ "reqwest",
+ "rocksdb",
+ "secp256k1 0.27.0",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+]
+
+[[package]]
+name = "moksha-wallet"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "clap",
+ "dirs",
+ "dyn-clone",
+ "lightning-invoice",
+ "moksha-core",
+ "rand",
+ "reqwest",
+ "secp256k1 0.27.0",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "url",
+]
+
+[[package]]
 name = "native"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cashurs-core",
- "cashurs-wallet",
  "flutter_rust_bridge",
  "lazy_static",
+ "moksha-core",
+ "moksha-wallet",
  "reqwest",
  "tempfile",
  "tokio",

@@ -1,6 +1,6 @@
 use std::{collections::HashSet, sync::Arc};
 
-use cashurs_core::{
+use moksha_core::{
     crypto,
     dhke::Dhke,
     model::{split_amount, BlindedMessage, BlindedSignature, MintKeyset, Proofs, TotalAmount},
@@ -222,9 +222,9 @@ mod tests {
     use crate::mint::LightningFeeConfig;
     use crate::model::Invoice;
     use crate::{database::MockDatabase, error::CashuMintError, Mint};
-    use cashurs_core::dhke;
-    use cashurs_core::model::{BlindedMessage, TokenV3, TotalAmount};
-    use cashurs_core::model::{PostSplitRequest, Proofs};
+    use moksha_core::dhke;
+    use moksha_core::model::{BlindedMessage, TokenV3, TotalAmount};
+    use moksha_core::model::{PostSplitRequest, Proofs};
     use std::str::FromStr;
     use std::sync::Arc;
 

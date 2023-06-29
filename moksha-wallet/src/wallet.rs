@@ -1,13 +1,13 @@
 use std::{collections::HashMap, fs::create_dir};
 
-use cashurs_core::{
+use dirs::home_dir;
+use moksha_core::{
     dhke::Dhke,
     model::{
         split_amount, Amount, BlindedMessage, BlindedSignature, Keysets, PaymentRequest,
         PostMeltResponse, Proof, Proofs, TokenV3, TotalAmount,
     },
 };
-use dirs::home_dir;
 use reqwest::Url;
 use secp256k1::{PublicKey, SecretKey};
 
@@ -132,7 +132,7 @@ impl Wallet {
     /// # Examples
     ///
     /// ```
-    /// let db_path = cashurs_wallet::wallet::Wallet::db_path();
+    /// let db_path = moksha_wallet::wallet::Wallet::db_path();
     /// println!("Database path: {}", db_path);
     /// ```
     pub fn db_path() -> String {
@@ -464,7 +464,7 @@ mod tests {
         localstore::{LocalStore, WalletKeyset},
     };
     use async_trait::async_trait;
-    use cashurs_core::model::{
+    use moksha_core::model::{
         BlindedMessage, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest, PostMeltResponse,
         PostMintResponse, PostSplitResponse, Proofs, Token, TokenV3,
     };
@@ -504,7 +504,7 @@ mod tests {
 
         async fn get_proofs(
             &self,
-        ) -> Result<cashurs_core::model::Proofs, crate::error::CashuWalletError> {
+        ) -> Result<moksha_core::model::Proofs, crate::error::CashuWalletError> {
             Ok(self.tokens.clone().proofs())
         }
 

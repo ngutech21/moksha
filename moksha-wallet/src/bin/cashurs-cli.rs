@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 use std::time::Duration;
 
-use cashurs_wallet::localstore::LocalStore;
-use cashurs_wallet::{localstore::SqliteLocalStore, wallet::Wallet};
 use clap::{Parser, Subcommand};
+use moksha_wallet::localstore::LocalStore;
+use moksha_wallet::{localstore::SqliteLocalStore, wallet::Wallet};
 use reqwest::Url;
 use tokio::time::{sleep_until, Instant};
 
@@ -52,7 +52,7 @@ async fn main() -> anyhow::Result<()> {
     let localstore = Box::new(SqliteLocalStore::with_path(db_path).await?);
     localstore.migrate().await;
 
-    let client = Box::new(cashurs_wallet::client::HttpClient::new());
+    let client = Box::new(moksha_wallet::client::HttpClient::new());
 
     let wallet = Wallet::builder()
         .with_client(client)
@@ -115,7 +115,7 @@ async fn main() -> anyhow::Result<()> {
                         );
                         break;
                     }
-                    Err(cashurs_wallet::error::CashuWalletError::InvoiceNotPaidYet(_, _)) => {
+                    Err(moksha_wallet::error::CashuWalletError::InvoiceNotPaidYet(_, _)) => {
                         continue;
                     }
                     Err(e) => {

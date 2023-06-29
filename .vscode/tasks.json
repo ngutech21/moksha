@@ -7,7 +7,7 @@
       "label": "wallet mint ",
       "type": "shell",
       "command": "cargo", // note: full path to the cargo
-      "args": ["run", "--bin", "cashurs-wallet", "mint", "10"],
+      "args": ["run", "--bin", "moksha-wallet", "mint", "10"],
       "group": {
         "kind": "build",
         "isDefault": true

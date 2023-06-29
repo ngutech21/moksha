@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use cashurs_core::model::Proofs;
+use moksha_core::model::Proofs;
 use rocksdb::DB;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -132,7 +132,7 @@ impl Database for RocksDB {
 mod tests {
     use std::sync::Arc;
 
-    use cashurs_core::{
+    use moksha_core::{
         dhke,
         model::{Proof, Proofs},
     };

@@ -5,12 +5,12 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use cashurs_core::model::PaymentRequest;
-use cashurs_wallet::client::HttpClient;
-use cashurs_wallet::localstore::LocalStore;
-use cashurs_wallet::localstore::SqliteLocalStore;
-use cashurs_wallet::wallet::Wallet;
 use lazy_static::lazy_static;
+use moksha_core::model::PaymentRequest;
+use moksha_wallet::client::HttpClient;
+use moksha_wallet::localstore::LocalStore;
+use moksha_wallet::localstore::SqliteLocalStore;
+use moksha_wallet::wallet::Wallet;
 use reqwest::Url;
 use std::sync::Mutex as StdMutex;
 use tokio::runtime::Runtime;
@@ -115,7 +115,7 @@ pub fn mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
                 Ok(value) => {
                     return Ok(value.total_amount());
                 }
-                Err(cashurs_wallet::error::CashuWalletError::InvoiceNotPaidYet(_, _)) => {
+                Err(moksha_wallet::error::CashuWalletError::InvoiceNotPaidYet(_, _)) => {
                     continue;
                 }
                 Err(e) => {
@@ -123,7 +123,7 @@ pub fn mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
                 }
             }
         }
-        Err(cashurs_wallet::error::CashuWalletError::InvoiceNotPaidYet(
+        Err(moksha_wallet::error::CashuWalletError::InvoiceNotPaidYet(
             amount,
             "Invoice not paid yet".to_string(),
         ))
@@ -204,7 +204,7 @@ mod tests {
         let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
 
         std::env::set_var(
-            cashurs_wallet::wallet::ENV_DB_PATH,
+            moksha_wallet::wallet::ENV_DB_PATH,
             format!("{}/wallet.db", tmp_dir),
         );
         let _ = init_cashu()?;

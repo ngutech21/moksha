@@ -1,10 +1,10 @@
-use cashurs_wallet::localstore::LocalStore;
-use cashurs_wallet::wallet::Wallet;
-use cashurs_wallet::{
+use moksha_wallet::localstore::LocalStore;
+use moksha_wallet::wallet::Wallet;
+use moksha_wallet::{
     client::{Client, HttpClient},
     localstore::SqliteLocalStore,
 };
-use cashursmint::mint::Mint;
+use mokshamint::mint::Mint;
 use reqwest::Url;
 use std::thread;
 use std::time::Duration;
@@ -38,7 +38,7 @@ pub fn test_integration() -> anyhow::Result<()> {
                 .with_fee(0.0, 0)
                 .build();
 
-            let result = cashursmint::run_server(mint, 8686).await;
+            let result = mokshamint::run_server(mint, 8686).await;
             drop(tmp);
             assert!(result.is_ok());
         });
@@ -106,7 +106,7 @@ pub fn test_integration() -> anyhow::Result<()> {
         assert_eq!(5_000, balance);
 
         // receive 10 sats
-        let token_10: cashurs_core::model::TokenV3 =
+        let token_10: moksha_core::model::TokenV3 =
             read_fixture("token_10.cashu").unwrap().try_into().unwrap();
         let result_receive = wallet.receive_tokens(&token_10).await;
         assert!(result_receive.is_ok());

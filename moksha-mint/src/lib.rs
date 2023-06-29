@@ -5,14 +5,14 @@ use axum::extract::{Query, State};
 use axum::routing::post;
 use axum::Router;
 use axum::{routing::get, Json};
-use cashurs_core::model::{
-    CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
-    PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
-};
 use error::CashuMintError;
 use hyper::Method;
 use mint::{LightningFeeConfig, Mint};
 use model::{GetMintQuery, PostMintQuery};
+use moksha_core::model::{
+    CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
+    PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+};
 use secp256k1::PublicKey;
 use tower_http::{
     cors::{Any, CorsLayer},
@@ -213,8 +213,8 @@ async fn get_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, CashuMin
 mod tests {
     use std::{collections::HashMap, sync::Arc};
 
-    use cashurs_core::model::Keysets;
     use hyper::{Body, Request, StatusCode};
+    use moksha_core::model::Keysets;
     use secp256k1::PublicKey;
     use tower::ServiceExt;
 

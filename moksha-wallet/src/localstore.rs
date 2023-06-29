@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use cashurs_core::model::{Proof, Proofs};
+use moksha_core::model::{Proof, Proofs};
 use sqlx::{sqlite::SqliteError, SqlitePool};
 
 use crate::error::CashuWalletError;
@@ -33,7 +33,7 @@ pub struct SqliteLocalStore {
 #[async_trait]
 impl LocalStore for SqliteLocalStore {
     async fn migrate(&self) {
-        sqlx::migrate!("../wallet/migrations")
+        sqlx::migrate!("../moksha-wallet/migrations")
             .run(&self.pool)
             .await
             .expect("Could not run migrations");
@@ -154,7 +154,7 @@ impl SqliteLocalStore {
 mod tests {
     use std::sync::Arc;
 
-    use cashurs_core::model::TokenV3;
+    use moksha_core::model::TokenV3;
 
     use super::SqliteLocalStore;
     use crate::localstore::LocalStore;

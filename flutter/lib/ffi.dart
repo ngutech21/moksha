@@ -3,8 +3,8 @@
 
 import 'dart:ffi';
 
-import 'generated/bridge_generated.dart';
 import 'generated/bridge_definitions.dart';
+import 'generated/bridge_generated.dart';
 export 'generated/bridge_definitions.dart';
 
 // Re-export the bridge so it is only necessary to import this file.

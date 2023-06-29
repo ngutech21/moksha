@@ -2,9 +2,9 @@
 resolver= "2"
 
 members = [
-    "core",
-    "wallet",
-    "mint",
+    "moksha-core",
+    "moksha-wallet",
+    "moksha-mint",
     "flutter/native",
     "integrationtests"
 ]
@@ -17,9 +17,9 @@ strip = true  # Automatically strip symbols from the binary.
 lto = true # Enable link-time optimization.
 
 [workspace.metadata]
-authors = ["The cashu-rs Developers"]
+authors = ["The moksha Developers"]
 edition = "2021"
-description = "cashu-rs"
+description = "moksha is a cashu wallet and mint"
 readme = "README.md"
 repository = "https://github.com/ngutech21/cashu-rs"
 license-file = "LICENSE"
