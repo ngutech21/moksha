@@ -87,6 +87,13 @@ just run-mint
 
 
 ### Run cli-wallet
+
+#### Show info
+Shows the current version, database-dir and mint-url.
+```
+just run-cli info
+```
+
 #### Check Balance
 ```
 just run-cli balance
