@@ -4,6 +4,9 @@ platform := if os_family() == "unix" { "macos"} else {os_family()}
 default:
   @just --list
 
+clean:
+  cargo clean
+  cd flutter && flutter clean
 
 # run the cashu-mint
 run-mint:
