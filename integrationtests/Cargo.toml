@@ -22,7 +22,7 @@ serde_derive = "1.0.160"
 serde_json = "1.0.99"
 lightning-invoice = "0.23.0"
 lightning = "0.0.115"
-tokio = { version = "1.29.0", features = ["full"] }
+tokio = { version = "1.29.1", features = ["full"] }
 tower-http = { version = "0.4.1", features = ["trace", "cors"] }
 hyper = { version = "0.14", features = ["full"] }
 bitcoin_hashes = { version = "0.11.0", default-features = false }
@@ -32,7 +32,7 @@ tracing-subscriber = "0.3.17"
 
 [dev-dependencies]
 anyhow = {version="1.0.71", features = ["backtrace"] }
-tokio = { version = "1.29.0", features = ["full"] }
+tokio = { version = "1.29.1", features = ["full"] }
 reqwest = {version= "0.11.18", default-features = false}
 moksha-mint = { path = "../moksha-mint"}
 moksha-wallet = { path = "../moksha-wallet"}
