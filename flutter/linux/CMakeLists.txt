@@ -4,11 +4,11 @@ project(runner LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "cashurs-wallet")
+set(BINARY_NAME "moksha-wallet")
 
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.github.cashurs.cashurs-wallet")
+set(APPLICATION_ID "com.github.cashurs.moksha-wallet")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

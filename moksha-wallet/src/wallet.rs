@@ -13,7 +13,7 @@ use secp256k1::{PublicKey, SecretKey};
 
 use crate::{
     client::Client,
-    error::CashuWalletError,
+    error::MokshaWalletError,
     localstore::{LocalStore, WalletKeyset},
 };
 use lightning_invoice::Invoice as LNInvoice;
@@ -66,7 +66,7 @@ impl WalletBuilder {
         self
     }
 
-    pub async fn build(self) -> Result<Wallet, CashuWalletError> {
+    pub async fn build(self) -> Result<Wallet, MokshaWalletError> {
         let client = self.client.expect("client is required");
         let localstore = self.localstore.expect("localstore is required");
         let mint_url = self.mint_url.expect("mint_url is required");
@@ -166,20 +166,20 @@ impl Wallet {
     pub async fn get_mint_payment_request(
         &self,
         amount: u64,
-    ) -> Result<PaymentRequest, CashuWalletError> {
+    ) -> Result<PaymentRequest, MokshaWalletError> {
         self.client
             .get_mint_payment_request(&self.mint_url, amount)
             .await
     }
 
-    pub async fn get_balance(&self) -> Result<u64, CashuWalletError> {
+    pub async fn get_balance(&self) -> Result<u64, MokshaWalletError> {
         Ok(self.localstore.get_proofs().await?.total_amount())
     }
 
-    pub async fn send_tokens(&self, amount: u64) -> Result<TokenV3, CashuWalletError> {
+    pub async fn send_tokens(&self, amount: u64) -> Result<TokenV3, MokshaWalletError> {
         let balance = self.get_balance().await?;
         if amount > balance {
-            return Err(CashuWalletError::NotEnoughTokens);
+            return Err(MokshaWalletError::NotEnoughTokens);
         }
 
         let all_proofs = self.localstore.get_proofs().await?;
@@ -197,7 +197,7 @@ impl Wallet {
         Ok(result)
     }
 
-    pub async fn receive_tokens(&self, tokens: &TokenV3) -> Result<(), CashuWalletError> {
+    pub async fn receive_tokens(&self, tokens: &TokenV3) -> Result<(), MokshaWalletError> {
         let total_amount = tokens.total_amount();
         let (_, redeemed_tokens) = self.split_tokens(tokens, total_amount.into()).await?;
         self.localstore
@@ -206,7 +206,10 @@ impl Wallet {
         Ok(())
     }
 
-    pub async fn pay_invoice(&self, invoice: String) -> Result<PostMeltResponse, CashuWalletError> {
+    pub async fn pay_invoice(
+        &self,
+        invoice: String,
+    ) -> Result<PostMeltResponse, MokshaWalletError> {
         let all_proofs = self.localstore.get_proofs().await?;
 
         let fees = self
@@ -217,7 +220,7 @@ impl Wallet {
         let ln_amount = self.get_invoice_amount(&invoice)? + fees.fee;
 
         if ln_amount > all_proofs.total_amount() {
-            return Err(CashuWalletError::NotEnoughTokens);
+            return Err(MokshaWalletError::NotEnoughTokens);
         }
         let selected_proofs = all_proofs.proofs_for_amount(ln_amount)?;
 
@@ -253,7 +256,7 @@ impl Wallet {
         &self,
         tokens: &TokenV3,
         splt_amount: Amount,
-    ) -> Result<(TokenV3, TokenV3), CashuWalletError> {
+    ) -> Result<(TokenV3, TokenV3), MokshaWalletError> {
         let total_token_amount = tokens.total_amount();
         let first_amount: Amount = (total_token_amount - splt_amount.0).into();
         let first_secrets = first_amount.split().create_secrets();
@@ -270,7 +273,7 @@ impl Wallet {
         total_outputs.extend(get_blinded_msg(second_outputs.clone()));
 
         if tokens.total_amount() != total_outputs.total_amount() {
-            return Err(CashuWalletError::InvalidProofs);
+            return Err(MokshaWalletError::InvalidProofs);
         }
 
         let split_result = self
@@ -311,7 +314,7 @@ impl Wallet {
         pr: String,
         _invoice_amount: u64,
         proofs: &Proofs,
-    ) -> Result<PostMeltResponse, CashuWalletError> {
+    ) -> Result<PostMeltResponse, MokshaWalletError> {
         let melt_response = self
             .client
             .post_melt_tokens(&self.mint_url, proofs.clone(), pr, vec![])
@@ -323,16 +326,16 @@ impl Wallet {
         Ok(melt_response)
     }
 
-    fn decode_invoice(&self, payment_request: &str) -> Result<LNInvoice, CashuWalletError> {
+    fn decode_invoice(&self, payment_request: &str) -> Result<LNInvoice, MokshaWalletError> {
         LNInvoice::from_str(payment_request)
-            .map_err(|err| CashuWalletError::DecodeInvoice(payment_request.to_owned(), err))
+            .map_err(|err| MokshaWalletError::DecodeInvoice(payment_request.to_owned(), err))
     }
 
-    fn get_invoice_amount(&self, payment_request: &str) -> Result<u64, CashuWalletError> {
+    fn get_invoice_amount(&self, payment_request: &str) -> Result<u64, MokshaWalletError> {
         let invoice = self.decode_invoice(payment_request)?;
         Ok(invoice
             .amount_milli_satoshis()
-            .ok_or_else(|| CashuWalletError::InvalidInvoice(payment_request.to_owned()))?
+            .ok_or_else(|| MokshaWalletError::InvalidInvoice(payment_request.to_owned()))?
             / 1000)
     }
 
@@ -340,7 +343,7 @@ impl Wallet {
         &self,
         amount: Amount,
         hash: String,
-    ) -> Result<TokenV3, CashuWalletError> {
+    ) -> Result<TokenV3, MokshaWalletError> {
         let split_amount = amount.split();
         let secrets = split_amount.create_secrets();
 
@@ -403,7 +406,7 @@ impl Wallet {
         &self,
         amount: u64,
         secrets: &[String],
-    ) -> Result<Vec<(BlindedMessage, SecretKey)>, CashuWalletError> {
+    ) -> Result<Vec<(BlindedMessage, SecretKey)>, MokshaWalletError> {
         let split_amount = split_amount(amount);
 
         Ok(split_amount
@@ -422,7 +425,7 @@ impl Wallet {
         signatures: Vec<BlindedSignature>,
         secrets: Vec<String>,
         outputs: Vec<(BlindedMessage, SecretKey)>,
-    ) -> Result<Proofs, CashuWalletError> {
+    ) -> Result<Proofs, MokshaWalletError> {
         let current_keyset = self.keysets.get_current_keyset(&self.mint_keys)?;
 
         let private_keys = outputs
@@ -460,7 +463,7 @@ mod tests {
     use super::Wallet;
     use crate::{
         client::Client,
-        error::CashuWalletError,
+        error::MokshaWalletError,
         localstore::{LocalStore, WalletKeyset},
     };
     use async_trait::async_trait;
@@ -498,28 +501,28 @@ mod tests {
     impl LocalStore for MockLocalStore {
         async fn migrate(&self) {}
 
-        async fn add_proofs(&self, _: &Proofs) -> Result<(), crate::error::CashuWalletError> {
+        async fn add_proofs(&self, _: &Proofs) -> Result<(), crate::error::MokshaWalletError> {
             Ok(())
         }
 
         async fn get_proofs(
             &self,
-        ) -> Result<moksha_core::model::Proofs, crate::error::CashuWalletError> {
+        ) -> Result<moksha_core::model::Proofs, crate::error::MokshaWalletError> {
             Ok(self.tokens.clone().proofs())
         }
 
         async fn delete_proofs(
             &self,
             _proofs: &Proofs,
-        ) -> Result<(), crate::error::CashuWalletError> {
+        ) -> Result<(), crate::error::MokshaWalletError> {
             Ok(())
         }
 
-        async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, CashuWalletError> {
+        async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
             unimplemented!()
         }
 
-        async fn add_keyset(&self, _keyset: &WalletKeyset) -> Result<(), CashuWalletError> {
+        async fn add_keyset(&self, _keyset: &WalletKeyset) -> Result<(), MokshaWalletError> {
             unimplemented!()
         }
     }
@@ -562,7 +565,7 @@ mod tests {
             _amount: u64,
             _proofs: Proofs,
             _output: Vec<BlindedMessage>,
-        ) -> Result<PostSplitResponse, CashuWalletError> {
+        ) -> Result<PostSplitResponse, MokshaWalletError> {
             Ok(self.split_response.clone())
         }
 
@@ -571,7 +574,7 @@ mod tests {
             _mint_url: &Url,
             _hash: String,
             _blinded_messages: Vec<BlindedMessage>,
-        ) -> Result<PostMintResponse, CashuWalletError> {
+        ) -> Result<PostMintResponse, MokshaWalletError> {
             Ok(self.post_mint_response.clone())
         }
 
@@ -581,7 +584,7 @@ mod tests {
             _proofs: Proofs,
             _pr: String,
             _outputs: Vec<BlindedMessage>,
-        ) -> Result<PostMeltResponse, CashuWalletError> {
+        ) -> Result<PostMeltResponse, MokshaWalletError> {
             Ok(self.post_melt_response.clone())
         }
 
@@ -589,18 +592,18 @@ mod tests {
             &self,
             _mint_url: &Url,
             _pr: String,
-        ) -> Result<CheckFeesResponse, CashuWalletError> {
+        ) -> Result<CheckFeesResponse, MokshaWalletError> {
             Ok(CheckFeesResponse { fee: 0 })
         }
 
         async fn get_mint_keys(
             &self,
             _mint_url: &Url,
-        ) -> Result<HashMap<u64, PublicKey>, CashuWalletError> {
+        ) -> Result<HashMap<u64, PublicKey>, MokshaWalletError> {
             unimplemented!()
         }
 
-        async fn get_mint_keysets(&self, _mint_url: &Url) -> Result<Keysets, CashuWalletError> {
+        async fn get_mint_keysets(&self, _mint_url: &Url) -> Result<Keysets, MokshaWalletError> {
             unimplemented!()
         }
 
@@ -608,7 +611,7 @@ mod tests {
             &self,
             _mint_url: &Url,
             _amount: u64,
-        ) -> Result<PaymentRequest, CashuWalletError> {
+        ) -> Result<PaymentRequest, MokshaWalletError> {
             unimplemented!()
         }
     }

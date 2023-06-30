@@ -13,7 +13,7 @@ use reqwest::{
 };
 use secp256k1::PublicKey;
 
-use crate::error::CashuWalletError;
+use crate::error::MokshaWalletError;
 use dyn_clone::DynClone;
 
 #[async_trait]
@@ -24,14 +24,14 @@ pub trait Client: DynClone {
         amount: u64,
         proofs: Proofs,
         output: Vec<BlindedMessage>,
-    ) -> Result<PostSplitResponse, CashuWalletError>;
+    ) -> Result<PostSplitResponse, MokshaWalletError>;
 
     async fn post_mint_payment_request(
         &self,
         mint_url: &Url,
         hash: String,
         blinded_messages: Vec<BlindedMessage>,
-    ) -> Result<PostMintResponse, CashuWalletError>;
+    ) -> Result<PostMintResponse, MokshaWalletError>;
 
     async fn post_melt_tokens(
         &self,
@@ -39,26 +39,26 @@ pub trait Client: DynClone {
         proofs: Proofs,
         pr: String,
         outputs: Vec<BlindedMessage>,
-    ) -> Result<PostMeltResponse, CashuWalletError>;
+    ) -> Result<PostMeltResponse, MokshaWalletError>;
 
     async fn post_checkfees(
         &self,
         mint_url: &Url,
         pr: String,
-    ) -> Result<CheckFeesResponse, CashuWalletError>;
+    ) -> Result<CheckFeesResponse, MokshaWalletError>;
 
     async fn get_mint_keys(
         &self,
         mint_url: &Url,
-    ) -> Result<HashMap<u64, PublicKey>, CashuWalletError>;
+    ) -> Result<HashMap<u64, PublicKey>, MokshaWalletError>;
 
-    async fn get_mint_keysets(&self, mint_url: &Url) -> Result<Keysets, CashuWalletError>;
+    async fn get_mint_keysets(&self, mint_url: &Url) -> Result<Keysets, MokshaWalletError>;
 
     async fn get_mint_payment_request(
         &self,
         mint_url: &Url,
         amount: u64,
-    ) -> Result<PaymentRequest, CashuWalletError>;
+    ) -> Result<PaymentRequest, MokshaWalletError>;
 }
 
 #[derive(Debug, Clone)]
@@ -93,7 +93,7 @@ impl Client for HttpClient {
         amount: u64,
         proofs: Proofs,
         outputs: Vec<BlindedMessage>,
-    ) -> Result<PostSplitResponse, CashuWalletError> {
+    ) -> Result<PostSplitResponse, MokshaWalletError> {
         let body = serde_json::to_string(&PostSplitRequest {
             amount,
             proofs,
@@ -117,7 +117,7 @@ impl Client for HttpClient {
         proofs: Proofs,
         pr: String,
         outputs: Vec<BlindedMessage>,
-    ) -> Result<PostMeltResponse, CashuWalletError> {
+    ) -> Result<PostMeltResponse, MokshaWalletError> {
         let body = serde_json::to_string(&PostMeltRequest {
             pr,
             proofs,
@@ -138,7 +138,7 @@ impl Client for HttpClient {
         &self,
         mint_url: &Url,
         pr: String,
-    ) -> Result<CheckFeesResponse, CashuWalletError> {
+    ) -> Result<CheckFeesResponse, MokshaWalletError> {
         let body = serde_json::to_string(&CheckFeesRequest { pr })?;
 
         let resp = self
@@ -155,7 +155,7 @@ impl Client for HttpClient {
     async fn get_mint_keys(
         &self,
         mint_url: &Url,
-    ) -> Result<HashMap<u64, PublicKey>, CashuWalletError> {
+    ) -> Result<HashMap<u64, PublicKey>, MokshaWalletError> {
         let resp = self
             .request_client
             .get(mint_url.join("keys")?)
@@ -164,7 +164,7 @@ impl Client for HttpClient {
         extract_response_data::<HashMap<u64, PublicKey>>(resp).await
     }
 
-    async fn get_mint_keysets(&self, mint_url: &Url) -> Result<Keysets, CashuWalletError> {
+    async fn get_mint_keysets(&self, mint_url: &Url) -> Result<Keysets, MokshaWalletError> {
         let resp = self
             .request_client
             .get(mint_url.join("keysets")?)
@@ -177,7 +177,7 @@ impl Client for HttpClient {
         &self,
         mint_url: &Url,
         amount: u64,
-    ) -> Result<PaymentRequest, CashuWalletError> {
+    ) -> Result<PaymentRequest, MokshaWalletError> {
         let url = mint_url.join(&format!("mint?amount={}", amount))?;
         let resp = self.request_client.get(url).send().await?;
         extract_response_data::<PaymentRequest>(resp).await
@@ -188,7 +188,7 @@ impl Client for HttpClient {
         mint_url: &Url,
         hash: String,
         blinded_messages: Vec<BlindedMessage>,
-    ) -> Result<PostMintResponse, CashuWalletError> {
+    ) -> Result<PostMintResponse, MokshaWalletError> {
         let url = mint_url.join(&format!("mint?hash={}", hash))?;
         let body = serde_json::to_string(&PostMintRequest {
             outputs: blinded_messages,
@@ -207,7 +207,7 @@ impl Client for HttpClient {
 
 async fn extract_response_data<T: serde::de::DeserializeOwned>(
     response: Response,
-) -> Result<T, CashuWalletError> {
+) -> Result<T, MokshaWalletError> {
     match response.status() {
         StatusCode::OK => {
             let response_text = response.text().await?;
@@ -215,15 +215,15 @@ async fn extract_response_data<T: serde::de::DeserializeOwned>(
                 Ok(data) => Ok(data),
                 Err(_) => {
                     let data = serde_json::from_str::<CashuErrorResponse>(&response_text)
-                        .map_err(|_| CashuWalletError::UnexpectedResponse(response_text))
+                        .map_err(|_| MokshaWalletError::UnexpectedResponse(response_text))
                         .unwrap();
 
                     // FIXME: use the error code to return a proper error
                     match data.error.as_str() {
                         "Lightning invoice not paid yet." => {
-                            Err(CashuWalletError::InvoiceNotPaidYet(data.code, data.error))
+                            Err(MokshaWalletError::InvoiceNotPaidYet(data.code, data.error))
                         }
-                        _ => Err(CashuWalletError::MintError(data.error)),
+                        _ => Err(MokshaWalletError::MintError(data.error)),
                     }
                 }
             }
@@ -231,15 +231,15 @@ async fn extract_response_data<T: serde::de::DeserializeOwned>(
         _ => {
             let txt = response.text().await?;
             let data = serde_json::from_str::<CashuErrorResponse>(&txt)
-                .map_err(|_| CashuWalletError::UnexpectedResponse(txt))
+                .map_err(|_| MokshaWalletError::UnexpectedResponse(txt))
                 .unwrap();
 
             // FIXME: use the error code to return a proper error
             match data.error.as_str() {
                 "Lightning invoice not paid yet." => {
-                    Err(CashuWalletError::InvoiceNotPaidYet(data.code, data.error))
+                    Err(MokshaWalletError::InvoiceNotPaidYet(data.code, data.error))
                 }
-                _ => Err(CashuWalletError::MintError(data.error)),
+                _ => Err(MokshaWalletError::MintError(data.error)),
             }
         }
     }

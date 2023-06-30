@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use moksha_core::model::{Proof, Proofs};
 use sqlx::{sqlite::SqliteError, SqlitePool};
 
-use crate::error::CashuWalletError;
+use crate::error::MokshaWalletError;
 
 use dyn_clone::DynClone;
 use sqlx::Row;
@@ -15,12 +15,12 @@ pub struct WalletKeyset {
 
 #[async_trait]
 pub trait LocalStore: DynClone {
-    async fn delete_proofs(&self, proofs: &Proofs) -> Result<(), CashuWalletError>;
-    async fn add_proofs(&self, proofs: &Proofs) -> Result<(), CashuWalletError>;
-    async fn get_proofs(&self) -> Result<Proofs, CashuWalletError>;
+    async fn delete_proofs(&self, proofs: &Proofs) -> Result<(), MokshaWalletError>;
+    async fn add_proofs(&self, proofs: &Proofs) -> Result<(), MokshaWalletError>;
+    async fn get_proofs(&self) -> Result<Proofs, MokshaWalletError>;
 
-    async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, CashuWalletError>;
-    async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), CashuWalletError>;
+    async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError>;
+    async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), MokshaWalletError>;
 
     async fn migrate(&self);
 }
@@ -39,7 +39,7 @@ impl LocalStore for SqliteLocalStore {
             .expect("Could not run migrations");
     }
 
-    async fn delete_proofs(&self, proofs: &Proofs) -> Result<(), CashuWalletError> {
+    async fn delete_proofs(&self, proofs: &Proofs) -> Result<(), MokshaWalletError> {
         let proof_secrets = proofs
             .proofs()
             .iter()
@@ -54,7 +54,7 @@ impl LocalStore for SqliteLocalStore {
         Ok(())
     }
 
-    async fn add_proofs(&self, proofs: &Proofs) -> Result<(), CashuWalletError> {
+    async fn add_proofs(&self, proofs: &Proofs) -> Result<(), MokshaWalletError> {
         let tx = self.start_transaction().await?;
         for proof in proofs.proofs() {
             sqlx::query(
@@ -72,7 +72,7 @@ impl LocalStore for SqliteLocalStore {
         Ok(())
     }
 
-    async fn get_proofs(&self) -> Result<Proofs, CashuWalletError> {
+    async fn get_proofs(&self) -> Result<Proofs, MokshaWalletError> {
         let rows = sqlx::query("SELECT * FROM proofs;")
             .fetch_all(&self.pool)
             .await?;
@@ -97,7 +97,7 @@ impl LocalStore for SqliteLocalStore {
             .into())
     }
 
-    async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), CashuWalletError> {
+    async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), MokshaWalletError> {
         sqlx::query(
             r#"INSERT INTO keysets (id, mint_url) VALUES ($1, $2);
             "#,
@@ -109,7 +109,7 @@ impl LocalStore for SqliteLocalStore {
         Ok(())
     }
 
-    async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, CashuWalletError> {
+    async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
         let rows = sqlx::query("SELECT * FROM keysets;")
             .fetch_all(&self.pool)
             .await?;
@@ -130,7 +130,7 @@ impl SqliteLocalStore {
         Self { pool }
     }
 
-    pub async fn with_path(absolute_path: String) -> Result<Self, CashuWalletError> {
+    pub async fn with_path(absolute_path: String) -> Result<Self, MokshaWalletError> {
         let pool = sqlx::SqlitePool::connect(format!("sqlite://{absolute_path}?mode=rwc").as_str())
             .await?;
         Ok(Self { pool })

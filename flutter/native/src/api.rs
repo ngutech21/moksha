@@ -115,7 +115,7 @@ pub fn mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
                 Ok(value) => {
                     return Ok(value.total_amount());
                 }
-                Err(moksha_wallet::error::CashuWalletError::InvoiceNotPaidYet(_, _)) => {
+                Err(moksha_wallet::error::MokshaWalletError::InvoiceNotPaidYet(_, _)) => {
                     continue;
                 }
                 Err(e) => {
@@ -123,7 +123,7 @@ pub fn mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
                 }
             }
         }
-        Err(moksha_wallet::error::CashuWalletError::InvoiceNotPaidYet(
+        Err(moksha_wallet::error::MokshaWalletError::InvoiceNotPaidYet(
             amount,
             "Invoice not paid yet".to_string(),
         ))

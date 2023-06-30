@@ -7,7 +7,7 @@ use moksha_core::model::{
 };
 use moksha_wallet::localstore::LocalStore;
 use moksha_wallet::{
-    client::Client, error::CashuWalletError, localstore::SqliteLocalStore, wallet::Wallet,
+    client::Client, error::MokshaWalletError, localstore::SqliteLocalStore, wallet::Wallet,
 };
 use reqwest::Url;
 use secp256k1::PublicKey;
@@ -46,7 +46,7 @@ impl Client for MockClient {
         _amount: u64,
         _proofs: Proofs,
         _output: Vec<BlindedMessage>,
-    ) -> Result<PostSplitResponse, CashuWalletError> {
+    ) -> Result<PostSplitResponse, MokshaWalletError> {
         Ok(self.split_response.clone())
     }
 
@@ -55,7 +55,7 @@ impl Client for MockClient {
         _mint_url: &Url,
         _hash: String,
         _blinded_messages: Vec<BlindedMessage>,
-    ) -> Result<PostMintResponse, CashuWalletError> {
+    ) -> Result<PostMintResponse, MokshaWalletError> {
         Ok(self.post_mint_response.clone())
     }
 
@@ -65,7 +65,7 @@ impl Client for MockClient {
         _proofs: Proofs,
         _pr: String,
         _outputs: Vec<BlindedMessage>,
-    ) -> Result<PostMeltResponse, CashuWalletError> {
+    ) -> Result<PostMeltResponse, MokshaWalletError> {
         Ok(self.post_melt_response.clone())
     }
 
@@ -73,18 +73,18 @@ impl Client for MockClient {
         &self,
         _mint_url: &Url,
         _pr: String,
-    ) -> Result<CheckFeesResponse, CashuWalletError> {
+    ) -> Result<CheckFeesResponse, MokshaWalletError> {
         Ok(CheckFeesResponse { fee: 0 })
     }
 
     async fn get_mint_keys(
         &self,
         _mint_url: &Url,
-    ) -> Result<HashMap<u64, PublicKey>, CashuWalletError> {
+    ) -> Result<HashMap<u64, PublicKey>, MokshaWalletError> {
         Ok(self.mint_keys.clone())
     }
 
-    async fn get_mint_keysets(&self, _mint_url: &Url) -> Result<Keysets, CashuWalletError> {
+    async fn get_mint_keysets(&self, _mint_url: &Url) -> Result<Keysets, MokshaWalletError> {
         Ok(self.keysets.clone())
     }
 
@@ -92,7 +92,7 @@ impl Client for MockClient {
         &self,
         _mint_url: &Url,
         _amount: u64,
-    ) -> Result<PaymentRequest, CashuWalletError> {
+    ) -> Result<PaymentRequest, MokshaWalletError> {
         unimplemented!()
     }
 }

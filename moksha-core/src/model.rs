@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 use crate::{
     crypto::{self, derive_keys, derive_keyset_id, derive_pubkeys},
-    error::CashuCoreError,
+    error::MokshaCoreError,
 };
 
 const TOKEN_PREFIX_V3: &str = "cashuA";
@@ -100,7 +100,7 @@ impl TokenV3 {
         )
     }
 
-    pub fn serialize(&self) -> Result<String, CashuCoreError> {
+    pub fn serialize(&self) -> Result<String, MokshaCoreError> {
         let json = serde_json::to_string(&self)?;
         Ok(format!(
             "{}{}",
@@ -109,10 +109,10 @@ impl TokenV3 {
         ))
     }
 
-    pub fn deserialize(data: String) -> Result<TokenV3, CashuCoreError> {
+    pub fn deserialize(data: String) -> Result<TokenV3, MokshaCoreError> {
         let json = general_purpose::URL_SAFE.decode(
             data.strip_prefix(TOKEN_PREFIX_V3)
-                .ok_or(CashuCoreError::InvalidTokenPrefix)?
+                .ok_or(MokshaCoreError::InvalidTokenPrefix)?
                 .as_bytes(),
         )?;
         Ok(serde_json::from_slice::<TokenV3>(&json)?)
@@ -120,7 +120,7 @@ impl TokenV3 {
 }
 
 impl TryFrom<TokenV3> for String {
-    type Error = CashuCoreError;
+    type Error = MokshaCoreError;
 
     fn try_from(token: TokenV3) -> Result<Self, Self::Error> {
         token.serialize()
@@ -128,7 +128,7 @@ impl TryFrom<TokenV3> for String {
 }
 
 impl TryFrom<String> for TokenV3 {
-    type Error = CashuCoreError;
+    type Error = MokshaCoreError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::deserialize(value)
@@ -195,10 +195,10 @@ impl Proofs {
         self.0.is_empty()
     }
 
-    pub fn proofs_for_amount(&self, amount: u64) -> Result<Proofs, CashuCoreError> {
+    pub fn proofs_for_amount(&self, amount: u64) -> Result<Proofs, MokshaCoreError> {
         let mut all_proofs = self.0.clone();
         if amount > self.total_amount() {
-            return Err(CashuCoreError::NotEnoughTokens);
+            return Err(MokshaCoreError::NotEnoughTokens);
         }
 
         all_proofs.sort_by(|a, b| a.amount.cmp(&b.amount));
@@ -264,12 +264,12 @@ impl Keysets {
     pub fn get_current_keyset(
         &self,
         mint_keys: &HashMap<u64, PublicKey>,
-    ) -> Result<String, CashuCoreError> {
+    ) -> Result<String, MokshaCoreError> {
         let computed_id = crypto::derive_keyset_id(mint_keys);
         if self.keysets.contains(&computed_id) {
             Ok(computed_id)
         } else {
-            Err(CashuCoreError::InvalidKeysetid)
+            Err(MokshaCoreError::InvalidKeysetid)
         }
     }
 }

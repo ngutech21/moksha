@@ -89,25 +89,25 @@ just run-mint
 ### Run cli-wallet
 #### Check Balance
 ```
-just run-wallet balance
+just run-cli balance
 ```
 
 #### Mint tokens
 This command will return a Lightning invoice that you need to pay to mint new ecash tokens.
 ```
-just run-wallet mint 42
+just run-cli mint 42
 ```
 
 #### Send tokens
 To send tokens to another user, enter. The tokens will get printed to STOUT. You can then send them to the recipient via any messaging app.
 ```
-just run-wallet send 21
+just run-cli send 21
 ```
 
 #### Receive tokens
 To receive tokens you need to enter the token as first argument to the receive command. The tokens will get verified and the value will be added to your balance.
 ```
-just run-wallet receive cashuAeyJ0...
+just run-cli receive cashuAeyJ0...
 ```
 
 
@@ -140,7 +140,7 @@ Available recipes:
     flutter-gen      # generate flutter-rust bridge
     flutter-run      # run flutter desktop-app
     run-mint         # run the cashu-mint
-    run-wallet *ARGS # run the cli-wallet with given args
+    run-cli *ARGS    # run the cli-wallet with given args
     typos            # check code for typos
     typos-fix-all    # fix all typos
 ```

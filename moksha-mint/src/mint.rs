@@ -7,7 +7,7 @@ use moksha_core::{
 };
 
 use crate::{
-    database::Database, error::CashuMintError, lightning::Lightning, model::Invoice, MintBuilder,
+    database::Database, error::MokshaMintError, lightning::Lightning, model::Invoice, MintBuilder,
 };
 
 #[derive(Clone)]
@@ -74,7 +74,7 @@ impl Mint {
     pub fn create_blinded_signatures(
         &self,
         blinded_messages: &[BlindedMessage],
-    ) -> Result<Vec<BlindedSignature>, CashuMintError> {
+    ) -> Result<Vec<BlindedSignature>, MokshaMintError> {
         let promises = blinded_messages
             .iter()
             .map(|blinded_msg| {
@@ -90,7 +90,7 @@ impl Mint {
         Ok(promises)
     }
 
-    pub async fn create_invoice(&self, amount: u64) -> Result<(String, String), CashuMintError> {
+    pub async fn create_invoice(&self, amount: u64) -> Result<(String, String), MokshaMintError> {
         let pr = self.lightning.create_invoice(amount).await?.payment_request;
         let key = crypto::generate_hash();
         self.db
@@ -102,7 +102,7 @@ impl Mint {
         &self,
         invoice_hash: String,
         outputs: &[BlindedMessage],
-    ) -> Result<Vec<BlindedSignature>, CashuMintError> {
+    ) -> Result<Vec<BlindedSignature>, MokshaMintError> {
         let invoice = self.db.get_pending_invoice(invoice_hash.clone())?;
 
         let is_paid = self
@@ -111,7 +111,7 @@ impl Mint {
             .await?;
 
         if !is_paid {
-            return Err(CashuMintError::InvoiceNotPaidYet);
+            return Err(MokshaMintError::InvoiceNotPaidYet);
         }
 
         self.db.remove_pending_invoice(invoice_hash)?;
@@ -128,17 +128,17 @@ impl Mint {
         amount: u64,
         proofs: &Proofs,
         blinded_messages: &[BlindedMessage],
-    ) -> Result<(Vec<BlindedSignature>, Vec<BlindedSignature>), CashuMintError> {
+    ) -> Result<(Vec<BlindedSignature>, Vec<BlindedSignature>), MokshaMintError> {
         self.check_used_proofs(proofs)?;
 
         if Self::has_duplicate_pubkeys(blinded_messages) {
-            return Err(CashuMintError::SplitHasDuplicatePromises);
+            return Err(MokshaMintError::SplitHasDuplicatePromises);
         }
 
         let sum_proofs = proofs.total_amount();
 
         if amount > sum_proofs {
-            return Err(CashuMintError::SplitAmountTooHigh);
+            return Err(MokshaMintError::SplitAmountTooHigh);
         }
         let sum_first = split_amount(sum_proofs - amount).len();
 
@@ -153,7 +153,7 @@ impl Mint {
         let amount_second = second_sigs.total_amount();
 
         if sum_proofs != (amount_first + amount_second) {
-            return Err(CashuMintError::SplitAmountMismatch(format!(
+            return Err(MokshaMintError::SplitAmountMismatch(format!(
                 "Split amount mismatch: {sum_proofs} != {amount_first} + {amount_second}"
             )));
         }
@@ -168,7 +168,7 @@ impl Mint {
         payment_request: String,
         proofs: &Proofs,
         blinded_messages: &[BlindedMessage],
-    ) -> Result<(bool, String, Vec<BlindedSignature>), CashuMintError> {
+    ) -> Result<(bool, String, Vec<BlindedSignature>), MokshaMintError> {
         let invoice = self
             .lightning
             .decode_invoice(payment_request.clone())
@@ -186,7 +186,7 @@ impl Mint {
             .expect("Invoice amount is missing");
 
         if amount_msat < (proofs_amount / 1000) {
-            return Err(CashuMintError::InvoiceAmountTooLow(format!(
+            return Err(MokshaMintError::InvoiceAmountTooLow(format!(
                 "Invoice amount is too low: {amount_msat}",
             )));
         }
@@ -204,11 +204,11 @@ impl Mint {
         Ok((true, result.payment_hash, output))
     }
 
-    pub fn check_used_proofs(&self, proofs: &Proofs) -> Result<(), CashuMintError> {
+    pub fn check_used_proofs(&self, proofs: &Proofs) -> Result<(), MokshaMintError> {
         let used_proofs = self.db.get_used_proofs()?.proofs();
         for used_proof in used_proofs {
             if proofs.proofs().contains(&used_proof) {
-                return Err(CashuMintError::ProofAlreadyUsed(format!("{used_proof:?}")));
+                return Err(MokshaMintError::ProofAlreadyUsed(format!("{used_proof:?}")));
             }
         }
         Ok(())
@@ -221,7 +221,7 @@ mod tests {
     use crate::lnbits::PayInvoiceResult;
     use crate::mint::LightningFeeConfig;
     use crate::model::Invoice;
-    use crate::{database::MockDatabase, error::CashuMintError, Mint};
+    use crate::{database::MockDatabase, error::MokshaMintError, Mint};
     use moksha_core::dhke;
     use moksha_core::model::{BlindedMessage, TokenV3, TotalAmount};
     use moksha_core::model::{PostSplitRequest, Proofs};
@@ -330,7 +330,7 @@ mod tests {
         let result = mint.split(65, &request.proofs, &request.outputs).await;
         assert!(result.is_err());
         let _err = result.unwrap_err();
-        assert!(matches!(CashuMintError::SplitAmountTooHigh, _err));
+        assert!(matches!(MokshaMintError::SplitAmountTooHigh, _err));
 
         Ok(())
     }

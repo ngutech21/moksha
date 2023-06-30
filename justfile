@@ -13,7 +13,7 @@ run-mint:
   cargo run -q --bin moksha-mint
 
 # run the cli-wallet with given args
-run-wallet *ARGS:
+run-cli *ARGS:
   cargo run --bin moksha-cli -- -m http://127.0.0.1:3338 -d ./data/wallet  {{ARGS}} 
 
 

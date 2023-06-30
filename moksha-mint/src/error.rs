@@ -13,7 +13,7 @@ use tracing::{event, Level};
 use crate::lnbits::LNBitsError;
 
 #[derive(Error, Debug)]
-pub enum CashuMintError {
+pub enum MokshaMintError {
     #[error("Failed to decode payment request {0} - Error {1}")]
     DecodeInvoice(String, ParseOrSemanticError),
 
@@ -57,7 +57,7 @@ pub enum CashuMintError {
     Lightning(#[from] LNBitsError),
 }
 
-impl IntoResponse for CashuMintError {
+impl IntoResponse for MokshaMintError {
     fn into_response(self) -> Response {
         event!(Level::ERROR, "error in mint: {:?}", self);
 

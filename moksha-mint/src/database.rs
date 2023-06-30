@@ -4,7 +4,7 @@ use moksha_core::model::Proofs;
 use rocksdb::DB;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{error::CashuMintError, model::Invoice};
+use crate::{error::MokshaMintError, model::Invoice};
 #[cfg(test)]
 use mockall::automock;
 
@@ -22,13 +22,13 @@ pub enum DbKeyPrefix {
 
 #[cfg_attr(test, automock)]
 pub trait Database {
-    fn add_used_proofs(&self, proofs: &Proofs) -> Result<(), CashuMintError>;
-    fn get_used_proofs(&self) -> Result<Proofs, CashuMintError>;
+    fn add_used_proofs(&self, proofs: &Proofs) -> Result<(), MokshaMintError>;
+    fn get_used_proofs(&self) -> Result<Proofs, MokshaMintError>;
 
-    fn get_pending_invoice(&self, key: String) -> Result<Invoice, CashuMintError>;
-    fn get_pending_invoices(&self) -> Result<HashMap<String, Invoice>, CashuMintError>;
-    fn add_pending_invoice(&self, key: String, invoice: Invoice) -> Result<(), CashuMintError>;
-    fn remove_pending_invoice(&self, key: String) -> Result<(), CashuMintError>;
+    fn get_pending_invoice(&self, key: String) -> Result<Invoice, MokshaMintError>;
+    fn get_pending_invoices(&self) -> Result<HashMap<String, Invoice>, MokshaMintError>;
+    fn add_pending_invoice(&self, key: String, invoice: Invoice) -> Result<(), MokshaMintError>;
+    fn remove_pending_invoice(&self, key: String) -> Result<(), MokshaMintError>;
 }
 
 impl RocksDB {
@@ -42,20 +42,20 @@ impl RocksDB {
         &self,
         key: DbKeyPrefix,
         value: &T,
-    ) -> Result<(), CashuMintError> {
+    ) -> Result<(), MokshaMintError> {
         match serde_json::to_string(&value) {
             Ok(serialized) => self
                 .db
                 .put(vec![key as u8], serialized.into_bytes())
-                .map_err(CashuMintError::from),
-            Err(err) => Err(CashuMintError::from(err)),
+                .map_err(MokshaMintError::from),
+            Err(err) => Err(MokshaMintError::from(err)),
         }
     }
 
     fn get_serialized<T: DeserializeOwned>(
         &self,
         key: DbKeyPrefix,
-    ) -> Result<Option<T>, CashuMintError> {
+    ) -> Result<Option<T>, MokshaMintError> {
         let entry = self.db.get(vec![key as u8])?;
         match entry {
             Some(found) => {
@@ -68,7 +68,7 @@ impl RocksDB {
 }
 
 impl Database for RocksDB {
-    fn add_used_proofs(&self, proofs: &Proofs) -> Result<(), CashuMintError> {
+    fn add_used_proofs(&self, proofs: &Proofs) -> Result<(), MokshaMintError> {
         let used_proofs = self.get_used_proofs()?;
 
         let insert = Proofs::new(
@@ -83,17 +83,17 @@ impl Database for RocksDB {
         Ok(())
     }
 
-    fn get_used_proofs(&self) -> Result<Proofs, CashuMintError> {
+    fn get_used_proofs(&self) -> Result<Proofs, MokshaMintError> {
         self.get_serialized::<Proofs>(DbKeyPrefix::UsedProofs)
             .map(|maybe_proofs| maybe_proofs.unwrap_or_else(Proofs::empty))
     }
 
-    fn get_pending_invoices(&self) -> Result<HashMap<String, Invoice>, CashuMintError> {
+    fn get_pending_invoices(&self) -> Result<HashMap<String, Invoice>, MokshaMintError> {
         self.get_serialized::<HashMap<String, Invoice>>(DbKeyPrefix::PendingInvoices)
             .map(|maybe_proofs| maybe_proofs.unwrap_or_default())
     }
 
-    fn get_pending_invoice(&self, key: String) -> Result<Invoice, CashuMintError> {
+    fn get_pending_invoice(&self, key: String) -> Result<Invoice, MokshaMintError> {
         let invoices = self
             .get_serialized::<HashMap<String, Invoice>>(DbKeyPrefix::PendingInvoices)
             .map(|maybe_proofs| maybe_proofs.unwrap_or_default());
@@ -101,11 +101,11 @@ impl Database for RocksDB {
             invoices
                 .get(&key)
                 .cloned()
-                .ok_or_else(|| CashuMintError::InvoiceNotFound(key))
+                .ok_or_else(|| MokshaMintError::InvoiceNotFound(key))
         })
     }
 
-    fn add_pending_invoice(&self, key: String, invoice: Invoice) -> Result<(), CashuMintError> {
+    fn add_pending_invoice(&self, key: String, invoice: Invoice) -> Result<(), MokshaMintError> {
         let invoices = self.get_pending_invoices();
 
         invoices.and_then(|mut invoices| {
@@ -116,7 +116,7 @@ impl Database for RocksDB {
         Ok(())
     }
 
-    fn remove_pending_invoice(&self, key: String) -> Result<(), CashuMintError> {
+    fn remove_pending_invoice(&self, key: String) -> Result<(), MokshaMintError> {
         let invoices = self.get_pending_invoices();
 
         invoices.and_then(|mut invoices| {

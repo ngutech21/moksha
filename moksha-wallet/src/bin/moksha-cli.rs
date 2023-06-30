@@ -115,7 +115,7 @@ async fn main() -> anyhow::Result<()> {
                         );
                         break;
                     }
-                    Err(moksha_wallet::error::CashuWalletError::InvoiceNotPaidYet(_, _)) => {
+                    Err(moksha_wallet::error::MokshaWalletError::InvoiceNotPaidYet(_, _)) => {
                         continue;
                     }
                     Err(e) => {

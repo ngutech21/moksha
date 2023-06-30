@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use crate::{
-    error::CashuMintError,
+    error::MokshaMintError,
     lnbits::{CreateInvoiceParams, CreateInvoiceResult, LNBitsClient, PayInvoiceResult},
 };
 
@@ -19,16 +19,16 @@ pub struct LnbitsLightning {
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait Lightning: Send + Sync {
-    async fn is_invoice_paid(&self, invoice: String) -> Result<bool, CashuMintError>;
-    async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, CashuMintError>;
+    async fn is_invoice_paid(&self, invoice: String) -> Result<bool, MokshaMintError>;
+    async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, MokshaMintError>;
     async fn pay_invoice(
         &self,
         payment_request: String,
-    ) -> Result<PayInvoiceResult, CashuMintError>;
+    ) -> Result<PayInvoiceResult, MokshaMintError>;
 
-    async fn decode_invoice(&self, payment_request: String) -> Result<LNInvoice, CashuMintError> {
+    async fn decode_invoice(&self, payment_request: String) -> Result<LNInvoice, MokshaMintError> {
         LNInvoice::from_str(&payment_request)
-            .map_err(|err| CashuMintError::DecodeInvoice(payment_request, err))
+            .map_err(|err| MokshaMintError::DecodeInvoice(payment_request, err))
     }
 }
 
@@ -43,7 +43,7 @@ impl LnbitsLightning {
 
 #[async_trait]
 impl Lightning for LnbitsLightning {
-    async fn is_invoice_paid(&self, invoice: String) -> Result<bool, CashuMintError> {
+    async fn is_invoice_paid(&self, invoice: String) -> Result<bool, MokshaMintError> {
         let decoded_invoice = self.decode_invoice(invoice).await?;
         Ok(self
             .client
@@ -51,7 +51,7 @@ impl Lightning for LnbitsLightning {
             .await?)
     }
 
-    async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, CashuMintError> {
+    async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, MokshaMintError> {
         Ok(self
             .client
             .create_invoice(&CreateInvoiceParams {
@@ -68,11 +68,11 @@ impl Lightning for LnbitsLightning {
     async fn pay_invoice(
         &self,
         payment_request: String,
-    ) -> Result<PayInvoiceResult, CashuMintError> {
+    ) -> Result<PayInvoiceResult, MokshaMintError> {
         self.client
             .pay_invoice(&payment_request)
             .await
-            .map_err(|err| CashuMintError::PayInvoice(payment_request, err))
+            .map_err(|err| MokshaMintError::PayInvoice(payment_request, err))
     }
 }
 

@@ -1,7 +1,7 @@
 use bitcoin_hashes::{sha256, Hash};
 use secp256k1::{All, PublicKey, Scalar, Secp256k1, SecretKey};
 
-use crate::error::CashuCoreError;
+use crate::error::MokshaCoreError;
 
 /*
 Implementation of https://gist.github.com/RubenSomsen/be7a4760dd4596d06963d67baf140406
@@ -79,7 +79,7 @@ impl Dhke {
         &self,
         secret_msg: String,
         blinding_factor: Option<&[u8]>,
-    ) -> Result<(PublicKey, SecretKey), CashuCoreError> {
+    ) -> Result<(PublicKey, SecretKey), MokshaCoreError> {
         let mut rng = rand::thread_rng();
 
         let y = Dhke::hash_to_curve(secret_msg.as_bytes());
@@ -91,9 +91,9 @@ impl Dhke {
         Ok((b, secret_key))
     }
 
-    pub fn step2_bob(&self, b: PublicKey, a: &SecretKey) -> Result<PublicKey, CashuCoreError> {
+    pub fn step2_bob(&self, b: PublicKey, a: &SecretKey) -> Result<PublicKey, MokshaCoreError> {
         b.mul_tweak(&self.secp, &Scalar::from(*a))
-            .map_err(CashuCoreError::Secp256k1Error)
+            .map_err(MokshaCoreError::Secp256k1Error)
     }
 
     pub fn step3_alice(
@@ -101,13 +101,13 @@ impl Dhke {
         c_: PublicKey,
         r: SecretKey,
         a: PublicKey,
-    ) -> Result<PublicKey, CashuCoreError> {
+    ) -> Result<PublicKey, MokshaCoreError> {
         c_.combine(
             &a.mul_tweak(&self.secp, &Scalar::from(r))
-                .map_err(CashuCoreError::Secp256k1Error)?
+                .map_err(MokshaCoreError::Secp256k1Error)?
                 .negate(&self.secp),
         )
-        .map_err(CashuCoreError::Secp256k1Error)
+        .map_err(MokshaCoreError::Secp256k1Error)
     }
 
     pub fn verify(
@@ -115,11 +115,11 @@ impl Dhke {
         a: SecretKey,
         c: PublicKey,
         secret_msg: String,
-    ) -> Result<bool, CashuCoreError> {
+    ) -> Result<bool, MokshaCoreError> {
         let y = Dhke::hash_to_curve(secret_msg.as_bytes());
-        Some(c == y.mul_tweak(&self.secp, &Scalar::from(a))?).ok_or(CashuCoreError::Secp256k1Error(
-            secp256k1::Error::InvalidPublicKey,
-        ))
+        Some(c == y.mul_tweak(&self.secp, &Scalar::from(a))?).ok_or(
+            MokshaCoreError::Secp256k1Error(secp256k1::Error::InvalidPublicKey),
+        )
     }
 }
 

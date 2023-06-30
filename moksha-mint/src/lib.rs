@@ -5,7 +5,7 @@ use axum::extract::{Query, State};
 use axum::routing::post;
 use axum::Router;
 use axum::{routing::get, Json};
-use error::CashuMintError;
+use error::MokshaMintError;
 use hyper::Method;
 use mint::{LightningFeeConfig, Mint};
 use model::{GetMintQuery, PostMintQuery};
@@ -133,7 +133,7 @@ fn app(mint: Mint) -> Router {
 async fn post_split(
     State(mint): State<Mint>,
     Json(split_request): Json<PostSplitRequest>,
-) -> Result<Json<PostSplitResponse>, CashuMintError> {
+) -> Result<Json<PostSplitResponse>, MokshaMintError> {
     let (fst, snd) = mint
         .split(
             split_request.amount,
@@ -148,7 +148,7 @@ async fn post_split(
 async fn post_melt(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltRequest>,
-) -> Result<Json<PostMeltResponse>, CashuMintError> {
+) -> Result<Json<PostMeltResponse>, MokshaMintError> {
     let (paid, preimage, change) = mint
         .melt(melt_request.pr, &melt_request.proofs, &melt_request.outputs)
         .await?;
@@ -163,14 +163,14 @@ async fn post_melt(
 async fn post_check_fees(
     State(mint): State<Mint>,
     Json(_check_fees): Json<CheckFeesRequest>,
-) -> Result<Json<CheckFeesResponse>, CashuMintError> {
+) -> Result<Json<CheckFeesResponse>, MokshaMintError> {
     let invoice = mint.lightning.decode_invoice(_check_fees.pr).await?;
 
     Ok(Json(CheckFeesResponse {
         fee: mint.fee_reserve(
             invoice
                 .amount_milli_satoshis()
-                .ok_or_else(|| error::CashuMintError::InvalidAmount)?,
+                .ok_or_else(|| error::MokshaMintError::InvalidAmount)?,
         ),
     }))
 }
@@ -178,7 +178,7 @@ async fn post_check_fees(
 async fn get_mint(
     State(mint): State<Mint>,
     Query(mint_query): Query<GetMintQuery>,
-) -> Result<Json<PaymentRequest>, CashuMintError> {
+) -> Result<Json<PaymentRequest>, MokshaMintError> {
     let (pr, hash) = mint.create_invoice(mint_query.amount).await?;
     Ok(Json(PaymentRequest { pr, hash }))
 }
@@ -187,7 +187,7 @@ async fn post_mint(
     State(mint): State<Mint>,
     Query(mint_query): Query<PostMintQuery>,
     Json(blinded_messages): Json<PostMintRequest>,
-) -> Result<Json<PostMintResponse>, CashuMintError> {
+) -> Result<Json<PostMintResponse>, MokshaMintError> {
     event!(
         Level::INFO,
         "post_mint: {mint_query:#?} {blinded_messages:#?}"
@@ -201,11 +201,11 @@ async fn post_mint(
 
 async fn get_keys(
     State(mint): State<Mint>,
-) -> Result<Json<HashMap<u64, PublicKey>>, CashuMintError> {
+) -> Result<Json<HashMap<u64, PublicKey>>, MokshaMintError> {
     Ok(Json(mint.keyset.public_keys))
 }
 
-async fn get_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, CashuMintError> {
+async fn get_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, MokshaMintError> {
     Ok(Json(Keysets::new(vec![mint.keyset.keyset_id])))
 }
 

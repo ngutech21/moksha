@@ -8,7 +8,7 @@ edition = "2021"
 
 [[bin]]
 name = "moksha-mint"
-path = "src/bin/cashursmint.rs"
+path = "src/bin/moksha-mint.rs"
 
 
 [lib]

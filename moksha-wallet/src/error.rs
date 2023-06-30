@@ -6,7 +6,7 @@ use sqlx::sqlite::SqliteError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum CashuWalletError {
+pub enum MokshaWalletError {
     #[error("SerdeJsonError - {0}")]
     Json(#[from] serde_json::Error),
 
@@ -26,7 +26,7 @@ pub enum CashuWalletError {
     UnexpectedResponse(String),
 
     #[error("CashuCoreError - {0}")]
-    CashuCore(#[from] moksha_core::error::CashuCoreError),
+    CashuCore(#[from] moksha_core::error::MokshaCoreError),
 
     #[error("DB Error {0}")]
     Db(#[from] sqlx::Error),
