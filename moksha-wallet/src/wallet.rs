@@ -126,7 +126,7 @@ impl Wallet {
     /// Returns the path to the wallet database file.
     ///
     /// The path is determined by the value of the `WALLET_DB_PATH` environment variable. If the
-    /// variable is not set, the function creates a `.cashurs` directory in the user's home directory
+    /// variable is not set, the function creates a `.moksha` directory in the user's home directory
     /// and returns a path to a `wallet.db` file in that directory.
     ///
     /// # Examples
@@ -151,14 +151,14 @@ impl Wallet {
                     .take(3)
                     .collect::<Vec<&str>>()
                     .join(std::path::MAIN_SEPARATOR_STR);
-                let cashu_dir = format!("{}{}.cashurs", home, std::path::MAIN_SEPARATOR);
+                let moksha_dir = format!("{}{}.moksha", home, std::path::MAIN_SEPARATOR);
 
-                if !std::path::Path::new(&cashu_dir).exists() {
-                    create_dir(std::path::Path::new(&cashu_dir))
-                        .expect("failed to create cashurs dir");
+                if !std::path::Path::new(&moksha_dir).exists() {
+                    create_dir(std::path::Path::new(&moksha_dir))
+                        .expect("failed to create .moksha dir");
                 }
 
-                format!("{cashu_dir}/wallet.db")
+                format!("{moksha_dir}/wallet.db")
             }
         }
     }

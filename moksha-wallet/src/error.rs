@@ -25,8 +25,8 @@ pub enum MokshaWalletError {
     #[error("UnexpectedResponse - {0}")]
     UnexpectedResponse(String),
 
-    #[error("CashuCoreError - {0}")]
-    CashuCore(#[from] moksha_core::error::MokshaCoreError),
+    #[error("MokshaCoreError - {0}")]
+    MokshaCore(#[from] moksha_core::error::MokshaCoreError),
 
     #[error("DB Error {0}")]
     Db(#[from] sqlx::Error),
