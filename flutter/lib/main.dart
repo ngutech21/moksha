@@ -1,10 +1,10 @@
-import 'package:cashurs_wallet/pages/pay_invoice_page.dart';
-import 'package:cashurs_wallet/pages/settings_page.dart';
+import 'package:moksha_wallet/pages/pay_invoice_page.dart';
+import 'package:moksha_wallet/pages/settings_page.dart';
 import 'package:flutter/material.dart';
-import 'package:cashurs_wallet/pages/mint_page.dart';
-import 'package:cashurs_wallet/pages/overview_page.dart';
-import 'package:cashurs_wallet/pages/receive_page.dart';
-import 'package:cashurs_wallet/ffi.dart';
+import 'package:moksha_wallet/pages/mint_page.dart';
+import 'package:moksha_wallet/pages/overview_page.dart';
+import 'package:moksha_wallet/pages/receive_page.dart';
+import 'package:moksha_wallet/ffi.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final dbPathProvider = FutureProvider<String>((ref) async {
@@ -27,7 +27,7 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(dbPathProvider); // this is a hack to trigger the provider
     return MaterialApp(
-      title: 'Flutter Cashu Wallet',
+      title: 'Moksha e-cash Wallet',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
       themeMode: ThemeMode.dark,

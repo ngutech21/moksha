@@ -1,4 +1,4 @@
-import 'package:cashurs_wallet/ffi.dart';
+import 'package:moksha_wallet/ffi.dart';
 import 'package:flutter/material.dart';
 
 class OverviewPage extends StatefulWidget {

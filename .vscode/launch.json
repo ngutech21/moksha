@@ -7,8 +7,8 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug Wallet",
-      "program": "${workspaceFolder}/target/debug/cashurs-ui",
+      "name": "Debug CLI",
+      "program": "${workspaceFolder}/target/debug/moksha-cli",
       //"args": ["mint", "10"],
       "cwd": "${workspaceFolder}"
     }
