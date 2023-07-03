@@ -78,8 +78,8 @@ impl LNBitsClient {
             .header("X-Api-Key", self.admin_key.clone())
             .header(
                 CONTENT_TYPE,
-                HeaderValue::from_str("application/json").unwrap(),
-            ) // FIXME
+                HeaderValue::from_str("application/json").expect("Invalid header value"),
+            )
             .body(body.to_string())
             .send()
             .await?;
