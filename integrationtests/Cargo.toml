@@ -19,7 +19,7 @@ axum = "0.6.18"
 anyhow = {version="1.0.71", features = ["backtrace"] }
 serde = { version = "1.0.164", features = ["derive"] }
 serde_derive = "1.0.160"
-serde_json = "1.0.99"
+serde_json = "1.0.100"
 lightning-invoice = "0.23.0"
 lightning = "0.0.115"
 tokio = { version = "1.29.1", features = ["full"] }
