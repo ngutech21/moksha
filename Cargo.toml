@@ -5,6 +5,7 @@ members = [
     "moksha-core",
     "moksha-wallet",
     "moksha-mint",
+    "moksha-fedimint",
     "flutter/native",
     "integrationtests"
 ]
@@ -24,3 +25,27 @@ readme = "README.md"
 repository = "https://github.com/ngutech21/cashu-rs"
 license-file = "LICENSE"
 keywords = ["bitcoin", "e-cash"]
+
+
+
+[patch.crates-io]
+secp256k1-zkp = { git = "https://github.com/dpc/rust-secp256k1-zkp/", branch = "sanket-pr" }
+ring = { git = "https://github.com/Maan2003/ring", rev = "52a1294a8fc066cc0656911ec22b8358fb763ef1" }
+
+
+[profile.dev.package]
+secp256k1 = { opt-level = 3 }
+secp256k1-zkp = { opt-level = 3 }
+secp256k1-sys = { opt-level = 3 }
+secp256k1-zkp-sys = { opt-level = 3 }
+bitcoin_hashes = { opt-level = 3 }
+ff = { opt-level = 3 }
+group = { opt-level = 3 }
+pairing = { opt-level = 3 }
+rand_core = { opt-level = 3 }
+byteorder = { opt-level = 3 }
+zeroize = { opt-level = 3 }
+bls12_381 = { opt-level = 3 }
+subtle = { opt-level = 3 }
+ring = { opt-level = 3 }
+threshold_crypto = { opt-level = 3 }
