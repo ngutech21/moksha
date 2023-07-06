@@ -17,7 +17,7 @@ use fedimint_mint_client::{MintClientGen, MintClientModule};
 use fedimint_wallet_client::WalletClientGen;
 use std::fs::create_dir_all;
 use std::fs::File;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::vec;
 use std::{str::FromStr, sync::Arc};
 
@@ -26,18 +26,19 @@ use futures::StreamExt;
 #[derive(Clone)]
 pub struct FedimintWallet {
     client: fedimint_client::Client,
+    workdir: PathBuf,
 }
 
 impl FedimintWallet {
-    pub async fn new() -> anyhow::Result<Self> {
+    pub async fn new(workdir: PathBuf) -> anyhow::Result<Self> {
         Ok(Self {
-            client: Self::create_client().await?,
+            client: Self::create_client(&workdir).await?,
+            workdir,
         })
     }
 
-    pub async fn connect(connect: &str) -> anyhow::Result<()> {
+    pub async fn connect(workdir: PathBuf, connect: &str) -> anyhow::Result<()> {
         println!("Connecting to {}", connect);
-        let workdir = Self::workdir()?;
         let connect_obj: WsClientConnectInfo = WsClientConnectInfo::from_str(connect)?;
         let api = Arc::new(WsFederationApi::from_connect_info(&[connect_obj.clone()]))
             as Arc<dyn IGlobalFederationApi + Send + Sync + 'static>;
@@ -53,8 +54,7 @@ impl FedimintWallet {
     }
 
     pub async fn mint(&self, amount: u64) -> anyhow::Result<LnReceiveState> {
-        let workdir = Self::workdir()?;
-        println!("Workdir: {:?}", workdir);
+        println!("Workdir: {:?}", self.workdir);
         println!("Minting {} tokens", amount);
         self.client.select_active_gateway().await?;
 
@@ -100,34 +100,30 @@ impl FedimintWallet {
         Ok(summary.total_amount().msats * 1_000)
     }
 
-    fn workdir() -> anyhow::Result<std::path::PathBuf> {
-        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
-        PathBuf::from_str(&format!("{base_dir}/data")).map_err(|e| anyhow::anyhow!(e))
-    }
-
-    async fn create_client() -> Result<fedimint_client::Client> {
+    async fn create_client(workdir: &Path) -> Result<fedimint_client::Client> {
         let module_gens = ClientModuleGenRegistry::from(vec![
             DynClientModuleGen::from(LightningClientGen),
             DynClientModuleGen::from(MintClientGen),
             DynClientModuleGen::from(WalletClientGen::default()),
         ]);
 
-        let config = Self::load_config()?;
+        let config = Self::load_config(workdir)?;
         Self::load_decoders(&config, &module_gens);
-        Self::build_client(&config, &module_gens).await
+        Self::build_client(&config, &module_gens, workdir).await
     }
 
-    fn load_config() -> anyhow::Result<ClientConfig> {
-        let cfg_path = Self::workdir()?.join("client.json");
+    fn load_config(workdir: &Path) -> anyhow::Result<ClientConfig> {
+        let cfg_path = workdir.join("client.json");
         load_from_file(&cfg_path)
     }
 
     async fn build_client(
         cfg: &ClientConfig,
         module_gens: &ClientModuleGenRegistry,
+        workdir: &Path,
     ) -> anyhow::Result<fedimint_client::Client> {
         let mut tg = TaskGroup::new();
-        let db = Self::load_db().await?;
+        let db = Self::load_db(workdir).await?;
 
         let mut client_builder = ClientBuilder::default();
         client_builder.with_module_gens(module_gens.clone());
@@ -139,8 +135,8 @@ impl FedimintWallet {
             .await
     }
 
-    async fn load_db() -> anyhow::Result<fedimint_sqlite::SqliteDb> {
-        let db_path = Self::workdir()?.join("client.db");
+    async fn load_db(workdir: &Path) -> anyhow::Result<fedimint_sqlite::SqliteDb> {
+        let db_path = workdir.join("client.db");
         fedimint_sqlite::SqliteDb::open(db_path.to_str().unwrap())
             .await
             .map_err(anyhow::Error::new)
