@@ -4,12 +4,12 @@ use std::str::FromStr;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    println!("Hello, world!");
     let workdir = workdir()?;
+    FedimintWallet::connect(workdir.clone(), "fed115zsqx0frxykrhf00294tms3qtt4tsuvrmn2q5hyyk7yj62gjygq2tytc63lrxly5mljd35k8udyexqq5waen5te0xyerwt3s9cczuvf68qcnwdp0lrcks9alpj0legwfx02szhs6nf").await?;
     let wallet = FedimintWallet::new(workdir).await?;
-    //FedimintWallet::connect(workdir, "connect-string").await?;
-    wallet.balance().await?;
-    wallet.mint(100).await?;
+    let balance = wallet.balance().await?;
+    println!("Balance: {}", balance);
+    wallet.mint(1_000).await?;
     Ok(())
 }
 
