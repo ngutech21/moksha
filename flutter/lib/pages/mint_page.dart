@@ -1,6 +1,9 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:moksha_wallet/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:moksha_wallet/pages/util.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -164,27 +167,43 @@ class _MintWidgetState extends State<MintWidget> {
                           var cleanAmount =
                               int.parse(amount.replaceAll(",", ""));
 
-                          var result = await api.getMintPaymentRequest(
-                              amount: cleanAmount); // use decimalTextfield
-                          setState(() {
-                            paymentRequest = result;
-                            _isInvoiceCreated = true;
-                          });
+                          try {
+                            var result = await api.getMintPaymentRequest(
+                                amount: cleanAmount); // use decimalTextfield
+                            setState(() {
+                              paymentRequest = result;
+                              _isInvoiceCreated = true;
+                            });
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            showErrorSnackBar(
+                                context, e, "Error creating invoice");
+                            return;
+                          }
 
-                          var mintedTokens = await api.mintTokens(
-                              amount: cleanAmount, hash: paymentRequest!.hash);
-                          setState(() {
-                            paymentRequest = null;
-                            _isInvoiceCreated = false;
-                            amount = ''; // FIMXE clear textfield
-                          });
+                          try {
+                            var mintedTokens = await api.mintTokens(
+                                amount: cleanAmount,
+                                hash: paymentRequest!.hash);
+                            setState(() {
+                              paymentRequest = null;
+                              _isInvoiceCreated = false;
+                              amount = ''; // FIMXE clear textfield
+                            });
 
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Column(
-                                children: [Text('Minted $mintedTokens sats')]),
-                            showCloseIcon: true,
-                          ));
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Column(children: [
+                                Text('Minted $mintedTokens sats')
+                              ]),
+                              showCloseIcon: true,
+                            ));
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            showErrorSnackBar(
+                                context, e, "Error creating invoice");
+                            return;
+                          }
                         },
                         child: const Text('Mint tokens'))),
                 const Spacer(),

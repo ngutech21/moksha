@@ -12,6 +12,44 @@ final dbPathProvider = FutureProvider<String>((ref) async {
 });
 
 void main() {
+  //await myErrorsHandler.initialize();
+  // FlutterError.onError = (details) {
+  //   FlutterError.presentError(details);
+  //   myErrorsHandler.onErrorDetails(details);
+  // };
+  // PlatformDispatcher.instance.onError = (error, stack) {
+  //   myErrorsHandler.onError(error, stack);
+  //   return true;
+  // };
+
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    // In release builds, show a yellow-on-blue message instead:
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Container(
+            alignment: Alignment.center,
+            width: 250,
+            height: 200,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.amber[300],
+              boxShadow: const [
+                BoxShadow(color: Colors.green, spreadRadius: 3),
+              ],
+            ),
+            child: Text(
+              ' Error!\n ${details.exception}',
+              style: const TextStyle(color: Colors.red, fontSize: 20),
+              textAlign: TextAlign.center,
+              textDirection: TextDirection.ltr,
+            ),
+          ),
+        ),
+      ),
+    );
+  };
+
   runApp(
     const ProviderScope(
       child: MyApp(),

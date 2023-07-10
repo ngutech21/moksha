@@ -1,5 +1,8 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:moksha_wallet/ffi.dart';
 import 'package:flutter/material.dart';
+import 'package:moksha_wallet/pages/util.dart';
 
 class ReceivePage extends StatefulWidget {
   const ReceivePage({super.key});
@@ -33,14 +36,18 @@ class _ReceivePageState extends State<ReceivePage> {
           const Spacer(),
           ElevatedButton(
               onPressed: () async {
-                // FIXME add error handling
-                var amountImported = await api.importToken(token: token);
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content:
-                      Column(children: [Text('Imported $amountImported sats')]),
-                  showCloseIcon: true,
-                ));
+                try {
+                  var amountImported = await api.importToken(token: token);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Column(
+                        children: [Text('Imported $amountImported sats')]),
+                    showCloseIcon: true,
+                  ));
+                } catch (e) {
+                  if (!context.mounted) return;
+                  showErrorSnackBar(context, e, 'Error importing token');
+                }
               },
               child: const Text("Import token"))
         ],
