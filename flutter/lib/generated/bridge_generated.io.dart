@@ -231,6 +231,23 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _wire_import_token = _wire_import_tokenPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
+  void wire_join_federation(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> federation,
+  ) {
+    return _wire_join_federation(
+      port_,
+      federation,
+    );
+  }
+
+  late final _wire_join_federationPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_join_federation');
+  late final _wire_join_federation = _wire_join_federationPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
   ffi.Pointer<wire_uint_8_list> new_uint_8_list_0(
     int len,
   ) {

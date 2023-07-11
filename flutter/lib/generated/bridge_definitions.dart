@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
+import 'package:uuid/uuid.dart';
 
 abstract class Native {
   Future<String> initCashu({dynamic hint});
@@ -35,6 +36,10 @@ abstract class Native {
   Future<int> importToken({required String token, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kImportTokenConstMeta;
+
+  Future<void> joinFederation({required String federation, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kJoinFederationConstMeta;
 }
 
 class FlutterPaymentRequest {

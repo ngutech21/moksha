@@ -31,6 +31,11 @@ pub fn wire_import_token(port_: MessagePort, token: String) {
     wire_import_token_impl(port_, token)
 }
 
+#[wasm_bindgen]
+pub fn wire_join_federation(port_: MessagePort, federation: String) {
+    wire_join_federation_impl(port_, federation)
+}
+
 // Section: allocate functions
 
 // Section: related functions

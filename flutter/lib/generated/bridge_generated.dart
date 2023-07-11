@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
+import 'package:uuid/uuid.dart';
 import 'bridge_generated.io.dart'
     if (dart.library.html) 'bridge_generated.web.dart';
 
@@ -123,6 +124,23 @@ class NativeImpl implements Native {
         argNames: ["token"],
       );
 
+  Future<void> joinFederation({required String federation, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(federation);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_join_federation(port_, arg0),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kJoinFederationConstMeta,
+      argValues: [federation],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kJoinFederationConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "join_federation",
+        argNames: ["federation"],
+      );
+
   void dispose() {
     _platform.dispose();
   }
@@ -156,6 +174,10 @@ class NativeImpl implements Native {
 
   Uint8List _wire2api_uint_8_list(dynamic raw) {
     return raw as Uint8List;
+  }
+
+  void _wire2api_unit(dynamic raw) {
+    return;
   }
 }
 

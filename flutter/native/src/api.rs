@@ -7,6 +7,7 @@ use std::time::Duration;
 
 use lazy_static::lazy_static;
 use moksha_core::model::PaymentRequest;
+use moksha_fedimint::FedimintWallet;
 use moksha_wallet::client::HttpClient;
 use moksha_wallet::localstore::LocalStore;
 use moksha_wallet::localstore::SqliteLocalStore;
@@ -193,6 +194,33 @@ pub fn import_token(token: String) -> anyhow::Result<u64> {
     drop(rt);
     Ok(deserialized_token.total_amount())
 }
+
+pub fn join_federation(federation: String) -> anyhow::Result<()> {
+    let rt = lock_runtime!();
+    let workdir = Wallet::config_dir();
+
+    rt.block_on(async {
+        FedimintWallet::connect(workdir, &federation)
+            .await
+            .map_err(anyhow::Error::from)
+    })?;
+
+    drop(rt);
+    Ok(())
+}
+
+// pub fn fedimint_mint_token(amount: u64, hash: String) -> anyhow::Result<LnReceiveState> {
+//     let rt = lock_runtime!();
+//     let workdir = Wallet::config_dir();
+
+//     let result = rt.block_on(async {
+//         let wallet = FedimintWallet::new(workdir).await?;
+//         wallet.mint(amount).await.map_err(anyhow::Error::from)
+//     })?;
+
+//     drop(rt);
+//     Ok(result)
+// }
 
 #[cfg(test)]
 mod tests {

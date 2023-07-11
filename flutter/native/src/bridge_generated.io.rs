@@ -31,6 +31,11 @@ pub extern "C" fn wire_import_token(port_: i64, token: *mut wire_uint_8_list) {
     wire_import_token_impl(port_, token)
 }
 
+#[no_mangle]
+pub extern "C" fn wire_join_federation(port_: i64, federation: *mut wire_uint_8_list) {
+    wire_join_federation_impl(port_, federation)
+}
+
 // Section: allocate functions
 
 #[no_mangle]

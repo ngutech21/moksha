@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::create_dir};
+use std::{collections::HashMap, fs::create_dir, path::PathBuf};
 
 use dirs::home_dir;
 use moksha_core::{
@@ -161,6 +161,27 @@ impl Wallet {
                 format!("{moksha_dir}/wallet.db")
             }
         }
+    }
+
+    pub fn config_dir() -> PathBuf {
+        let home = home_dir()
+            .expect("home dir not found")
+            .to_str()
+            .expect("home dir is invalid")
+            .to_owned();
+        // in a sandboxed environment on mac the path looks like
+        // /Users/$USER_NAME/Library/Containers/..... so we have are just ising the first 2 parts
+        let home = home
+            .split('/')
+            .take(3)
+            .collect::<Vec<&str>>()
+            .join(std::path::MAIN_SEPARATOR_STR);
+        let moksha_dir = format!("{}{}.moksha", home, std::path::MAIN_SEPARATOR);
+
+        if !std::path::Path::new(&moksha_dir).exists() {
+            create_dir(std::path::Path::new(&moksha_dir)).expect("failed to create .moksha dir");
+        }
+        PathBuf::from(moksha_dir)
     }
 
     pub async fn get_mint_payment_request(

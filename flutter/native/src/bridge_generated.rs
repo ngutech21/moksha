@@ -98,6 +98,19 @@ fn wire_import_token_impl(port_: MessagePort, token: impl Wire2Api<String> + Unw
         },
     )
 }
+fn wire_join_federation_impl(port_: MessagePort, federation: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "join_federation",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_federation = federation.wire2api();
+            move |task_callback| join_federation(api_federation)
+        },
+    )
+}
 // Section: wrapper structs
 
 // Section: static checks

@@ -2495,6 +2495,7 @@ dependencies = [
  "flutter_rust_bridge",
  "lazy_static",
  "moksha-core",
+ "moksha-fedimint",
  "moksha-wallet",
  "reqwest",
  "tempfile",

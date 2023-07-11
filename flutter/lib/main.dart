@@ -112,18 +112,18 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(toolbarHeight: 50, actions: <Widget>[
-        IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'Settings',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const SettingsPage(),
-                ),
-              );
-            })
-      ]),
+      // appBar: AppBar(toolbarHeight: 50, actions: <Widget>[
+      //   IconButton(
+      //       icon: const Icon(Icons.settings),
+      //       tooltip: 'Settings',
+      //       onPressed: () {
+      //         Navigator.of(context).push(
+      //           MaterialPageRoute(
+      //             builder: (context) => const SettingsPage(),
+      //           ),
+      //         );
+      //       })
+      // ]),
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: (int index) {
@@ -152,6 +152,11 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: Icon(Icons.bolt),
             label: 'Pay',
           ),
+          NavigationDestination(
+            tooltip: '',
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
         ],
       ),
       body: <Widget>[
@@ -170,6 +175,10 @@ class _MyHomePageState extends State<MyHomePage> {
         Container(
           alignment: Alignment.center,
           child: const PayInvoicePage(),
+        ),
+        Container(
+          alignment: Alignment.center,
+          child: const SettingsPage(),
         ),
       ][currentIndex],
     );

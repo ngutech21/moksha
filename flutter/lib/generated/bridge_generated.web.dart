@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
+import 'package:uuid/uuid.dart';
 import 'bridge_generated.dart';
 export 'bridge_generated.dart';
 
@@ -61,6 +62,9 @@ class NativeWasmModule implements WasmModule {
 
   external dynamic /* void */ wire_import_token(
       NativePortType port_, String token);
+
+  external dynamic /* void */ wire_join_federation(
+      NativePortType port_, String federation);
 }
 
 // Section: WASM wire connector
@@ -86,4 +90,7 @@ class NativeWire extends FlutterRustBridgeWasmWireBase<NativeWasmModule> {
 
   void wire_import_token(NativePortType port_, String token) =>
       wasmModule.wire_import_token(port_, token);
+
+  void wire_join_federation(NativePortType port_, String federation) =>
+      wasmModule.wire_join_federation(port_, federation);
 }
