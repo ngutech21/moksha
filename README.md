@@ -30,7 +30,7 @@ Wallet Features:
 - [x] connect to mint (load keys)
 - [x] request minting tokens
 - [x] minting tokens
-- [x] sending tokens (get encoded token for chosen value)
+- [x] sending tokens (get an encoded token for chosen value)
 - [x] receiving tokens
 - [x] melting tokens
 - [] check if tokens are spent
@@ -57,9 +57,9 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 
 
 ## Crates
-- [core](./core) The core of the cashu library. Contains all the logic for creating and verifying tokens.
-- [mint](./mint) Cashu mint server. Handles minting, melting and token requests.
-- [wallet](./wallet) Cashu cli-wallet and library
+- [core](./moksha-core) The core of the cashu library. Contains all the logic for creating and verifying tokens.
+- [mint](./moksha-mint) Cashu mint server. Handles minting, melting and token requests.
+- [wallet](./moksha-wallet) Cashu cli-wallet and library
 - [flutter_bridge](./flutter/native) Thin wrapper using [flutter-rust-bridge](https://github.com/fzyzcjy/flutter_rust_bridge) around the wallet library for use in flutter. 
 
 ## Usage
