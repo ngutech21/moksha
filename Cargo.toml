@@ -22,7 +22,7 @@ authors = ["The moksha Developers"]
 edition = "2021"
 description = "moksha is a cashu wallet and mint"
 readme = "README.md"
-repository = "https://github.com/ngutech21/cashu-rs"
+repository = "https://github.com/ngutech21/moksha"
 license-file = "LICENSE"
 keywords = ["bitcoin", "e-cash"]
 
