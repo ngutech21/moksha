@@ -1,12 +1,12 @@
-[![Rust](https://github.com/ngutech21/cashu-rs/actions/workflows/rust.yml/badge.svg?branch=master)](https://github.com/ngutech21/cashu-rs/actions/workflows/rust.yml)
-[![coverage](https://img.shields.io/codecov/c/github/ngutech21/cashu-rs)](https://app.codecov.io/gh/ngutech21/cashu-rs/)
-[![Flutter](https://github.com/ngutech21/cashu-rs/actions/workflows/flutter.yml/badge.svg?branch=master)](https://github.com/ngutech21/cashu-rs/actions/workflows/flutter.yml)
+[![Rust](https://github.com/ngutech21/moksha/actions/workflows/rust.yml/badge.svg?branch=master)](https://github.com/ngutech21/moksha/actions/workflows/rust.yml)
+[![coverage](https://img.shields.io/codecov/c/github/ngutech21/moksha)](https://app.codecov.io/gh/ngutech21/moksha/)
+[![Flutter](https://github.com/ngutech21/moksha/actions/workflows/flutter.yml/badge.svg?branch=master)](https://github.com/ngutech21/moksha/actions/workflows/flutter.yml)
 
 
 ⚠️ **Don't be reckless:** This project is in early development, it does however work with real sats! Always use amounts you don't mind loosing. 
 
-# cashu-rs
-cashu-rs is a Chaumian Ecash library, mint, cli-wallet and flutter desktop-app. 
+# moksha
+moksha is a cashu mint, cli-wallet and flutter desktop-app. 
 
 ## Contents
 - [About](#about)
@@ -65,10 +65,10 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 ## Usage
 ### Setup rust
 ```
-git clone https://github.com/ngutech21/cashu-rs.git
+git clone https://github.com/ngutech21/moksha.git
 cargo install just typos-cli sqlx-cli grcov
 rustup component add llvm-tools-preview
-cd cashu-rs
+cd moksha
 ```
 
 
@@ -156,7 +156,7 @@ Available recipes:
 
 ## License
 
-cashu-rs is distributed under the terms of the MIT license.
+moksha is distributed under the terms of the MIT license.
 See [LICENSE](LICENSE).
 
 
