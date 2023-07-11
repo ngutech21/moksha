@@ -22,7 +22,7 @@ bitcoin_hashes = "0.12.0"
 anyhow = {version="1.0.71", features = ["backtrace"] }
 axum = "0.6.18"
 hyper = "0.14.27"
-serde = { version = "1.0.167", features = ["derive"] }
+serde = { version = "1.0.168", features = ["derive"] }
 serde_derive = "1.0.160"
 serde_json = "1.0.99"
 tokio = { version = "1.29.1", features = ["full"] }
