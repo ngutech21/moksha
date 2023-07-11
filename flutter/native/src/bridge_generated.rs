@@ -31,44 +31,81 @@ fn wire_init_cashu_impl(port_: MessagePort) {
         move || move |task_callback| init_cashu(),
     )
 }
-fn wire_get_balance_impl(port_: MessagePort) {
+fn wire_get_cashu_balance_impl(port_: MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "get_balance",
+            debug_name: "get_cashu_balance",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
-        move || move |task_callback| get_balance(),
+        move || move |task_callback| get_cashu_balance(),
     )
 }
-fn wire_mint_tokens_impl(
+fn wire_cashu_mint_tokens_impl(
     port_: MessagePort,
     amount: impl Wire2Api<u64> + UnwindSafe,
     hash: impl Wire2Api<String> + UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "mint_tokens",
+            debug_name: "cashu_mint_tokens",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
             let api_amount = amount.wire2api();
             let api_hash = hash.wire2api();
-            move |task_callback| mint_tokens(api_amount, api_hash)
+            move |task_callback| cashu_mint_tokens(api_amount, api_hash)
         },
     )
 }
-fn wire_get_mint_payment_request_impl(port_: MessagePort, amount: impl Wire2Api<u64> + UnwindSafe) {
+fn wire_get_cashu_mint_payment_request_impl(
+    port_: MessagePort,
+    amount: impl Wire2Api<u64> + UnwindSafe,
+) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "get_mint_payment_request",
+            debug_name: "get_cashu_mint_payment_request",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
             let api_amount = amount.wire2api();
-            move |task_callback| get_mint_payment_request(api_amount)
+            move |task_callback| get_cashu_mint_payment_request(api_amount)
+        },
+    )
+}
+fn wire_get_fedimint_payment_request_impl(
+    port_: MessagePort,
+    amount: impl Wire2Api<u64> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_fedimint_payment_request",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_amount = amount.wire2api();
+            move |task_callback| get_fedimint_payment_request(api_amount)
+        },
+    )
+}
+fn wire_fedimint_mint_tokens_impl(
+    port_: MessagePort,
+    amount: impl Wire2Api<u64> + UnwindSafe,
+    operation_id: impl Wire2Api<String> + UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "fedimint_mint_tokens",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_amount = amount.wire2api();
+            let api_operation_id = operation_id.wire2api();
+            move |task_callback| fedimint_mint_tokens(api_amount, api_operation_id)
         },
     )
 }
@@ -146,6 +183,13 @@ impl Wire2Api<u8> for u8 {
 }
 
 // Section: impl IntoDart
+
+impl support::IntoDart for FedimintPaymentRequest {
+    fn into_dart(self) -> support::DartAbi {
+        vec![self.pr.into_dart(), self.operation_id.into_dart()].into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for FedimintPaymentRequest {}
 
 impl support::IntoDart for FlutterPaymentRequest {
     fn into_dart(self) -> support::DartAbi {

@@ -9,7 +9,9 @@ async fn main() -> anyhow::Result<()> {
     let wallet = FedimintWallet::new(workdir).await?;
     let balance = wallet.balance().await?;
     println!("Balance: {}", balance);
-    wallet.mint(1_000).await?;
+    let (operation_id, invoice) = wallet.get_mint_payment_request(1_000).await?;
+    println!("Invoice: \n{}", invoice);
+    wallet.mint(operation_id, 1_000).await?;
     Ok(())
 }
 

@@ -49,13 +49,19 @@ class NativeWasmModule implements WasmModule {
   external NativeWasmModule bind(dynamic thisArg, String moduleName);
   external dynamic /* void */ wire_init_cashu(NativePortType port_);
 
-  external dynamic /* void */ wire_get_balance(NativePortType port_);
+  external dynamic /* void */ wire_get_cashu_balance(NativePortType port_);
 
-  external dynamic /* void */ wire_mint_tokens(
+  external dynamic /* void */ wire_cashu_mint_tokens(
       NativePortType port_, Object amount, String hash);
 
-  external dynamic /* void */ wire_get_mint_payment_request(
+  external dynamic /* void */ wire_get_cashu_mint_payment_request(
       NativePortType port_, Object amount);
+
+  external dynamic /* void */ wire_get_fedimint_payment_request(
+      NativePortType port_, Object amount);
+
+  external dynamic /* void */ wire_fedimint_mint_tokens(
+      NativePortType port_, Object amount, String operation_id);
 
   external dynamic /* void */ wire_pay_invoice(
       NativePortType port_, String invoice);
@@ -76,14 +82,23 @@ class NativeWire extends FlutterRustBridgeWasmWireBase<NativeWasmModule> {
   void wire_init_cashu(NativePortType port_) =>
       wasmModule.wire_init_cashu(port_);
 
-  void wire_get_balance(NativePortType port_) =>
-      wasmModule.wire_get_balance(port_);
+  void wire_get_cashu_balance(NativePortType port_) =>
+      wasmModule.wire_get_cashu_balance(port_);
 
-  void wire_mint_tokens(NativePortType port_, Object amount, String hash) =>
-      wasmModule.wire_mint_tokens(port_, amount, hash);
+  void wire_cashu_mint_tokens(
+          NativePortType port_, Object amount, String hash) =>
+      wasmModule.wire_cashu_mint_tokens(port_, amount, hash);
 
-  void wire_get_mint_payment_request(NativePortType port_, Object amount) =>
-      wasmModule.wire_get_mint_payment_request(port_, amount);
+  void wire_get_cashu_mint_payment_request(
+          NativePortType port_, Object amount) =>
+      wasmModule.wire_get_cashu_mint_payment_request(port_, amount);
+
+  void wire_get_fedimint_payment_request(NativePortType port_, Object amount) =>
+      wasmModule.wire_get_fedimint_payment_request(port_, amount);
+
+  void wire_fedimint_mint_tokens(
+          NativePortType port_, Object amount, String operation_id) =>
+      wasmModule.wire_fedimint_mint_tokens(port_, amount, operation_id);
 
   void wire_pay_invoice(NativePortType port_, String invoice) =>
       wasmModule.wire_pay_invoice(port_, invoice);

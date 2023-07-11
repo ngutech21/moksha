@@ -7,18 +7,28 @@ pub fn wire_init_cashu(port_: MessagePort) {
 }
 
 #[wasm_bindgen]
-pub fn wire_get_balance(port_: MessagePort) {
-    wire_get_balance_impl(port_)
+pub fn wire_get_cashu_balance(port_: MessagePort) {
+    wire_get_cashu_balance_impl(port_)
 }
 
 #[wasm_bindgen]
-pub fn wire_mint_tokens(port_: MessagePort, amount: u64, hash: String) {
-    wire_mint_tokens_impl(port_, amount, hash)
+pub fn wire_cashu_mint_tokens(port_: MessagePort, amount: u64, hash: String) {
+    wire_cashu_mint_tokens_impl(port_, amount, hash)
 }
 
 #[wasm_bindgen]
-pub fn wire_get_mint_payment_request(port_: MessagePort, amount: u64) {
-    wire_get_mint_payment_request_impl(port_, amount)
+pub fn wire_get_cashu_mint_payment_request(port_: MessagePort, amount: u64) {
+    wire_get_cashu_mint_payment_request_impl(port_, amount)
+}
+
+#[wasm_bindgen]
+pub fn wire_get_fedimint_payment_request(port_: MessagePort, amount: u64) {
+    wire_get_fedimint_payment_request_impl(port_, amount)
+}
+
+#[wasm_bindgen]
+pub fn wire_fedimint_mint_tokens(port_: MessagePort, amount: u64, operation_id: String) {
+    wire_fedimint_mint_tokens_impl(port_, amount, operation_id)
 }
 
 #[wasm_bindgen]

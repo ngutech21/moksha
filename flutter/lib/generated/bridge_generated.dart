@@ -36,58 +36,98 @@ class NativeImpl implements Native {
         argNames: [],
       );
 
-  Future<int> getBalance({dynamic hint}) {
+  Future<int> getCashuBalance({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_get_balance(port_),
+      callFfi: (port_) => _platform.inner.wire_get_cashu_balance(port_),
       parseSuccessData: _wire2api_u64,
-      constMeta: kGetBalanceConstMeta,
+      constMeta: kGetCashuBalanceConstMeta,
       argValues: [],
       hint: hint,
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kGetBalanceConstMeta =>
+  FlutterRustBridgeTaskConstMeta get kGetCashuBalanceConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
-        debugName: "get_balance",
+        debugName: "get_cashu_balance",
         argNames: [],
       );
 
-  Future<int> mintTokens(
+  Future<int> cashuMintTokens(
       {required int amount, required String hash, dynamic hint}) {
     var arg0 = _platform.api2wire_u64(amount);
     var arg1 = _platform.api2wire_String(hash);
     return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_mint_tokens(port_, arg0, arg1),
+      callFfi: (port_) =>
+          _platform.inner.wire_cashu_mint_tokens(port_, arg0, arg1),
       parseSuccessData: _wire2api_u64,
-      constMeta: kMintTokensConstMeta,
+      constMeta: kCashuMintTokensConstMeta,
       argValues: [amount, hash],
       hint: hint,
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kMintTokensConstMeta =>
+  FlutterRustBridgeTaskConstMeta get kCashuMintTokensConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
-        debugName: "mint_tokens",
+        debugName: "cashu_mint_tokens",
         argNames: ["amount", "hash"],
       );
 
-  Future<FlutterPaymentRequest> getMintPaymentRequest(
+  Future<FlutterPaymentRequest> getCashuMintPaymentRequest(
       {required int amount, dynamic hint}) {
     var arg0 = _platform.api2wire_u64(amount);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) =>
-          _platform.inner.wire_get_mint_payment_request(port_, arg0),
+          _platform.inner.wire_get_cashu_mint_payment_request(port_, arg0),
       parseSuccessData: _wire2api_flutter_payment_request,
-      constMeta: kGetMintPaymentRequestConstMeta,
+      constMeta: kGetCashuMintPaymentRequestConstMeta,
       argValues: [amount],
       hint: hint,
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kGetMintPaymentRequestConstMeta =>
+  FlutterRustBridgeTaskConstMeta get kGetCashuMintPaymentRequestConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
-        debugName: "get_mint_payment_request",
+        debugName: "get_cashu_mint_payment_request",
         argNames: ["amount"],
+      );
+
+  Future<FedimintPaymentRequest> getFedimintPaymentRequest(
+      {required int amount, dynamic hint}) {
+    var arg0 = _platform.api2wire_u64(amount);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_get_fedimint_payment_request(port_, arg0),
+      parseSuccessData: _wire2api_fedimint_payment_request,
+      constMeta: kGetFedimintPaymentRequestConstMeta,
+      argValues: [amount],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetFedimintPaymentRequestConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_fedimint_payment_request",
+        argNames: ["amount"],
+      );
+
+  Future<int> fedimintMintTokens(
+      {required int amount, required String operationId, dynamic hint}) {
+    var arg0 = _platform.api2wire_u64(amount);
+    var arg1 = _platform.api2wire_String(operationId);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) =>
+          _platform.inner.wire_fedimint_mint_tokens(port_, arg0, arg1),
+      parseSuccessData: _wire2api_u64,
+      constMeta: kFedimintMintTokensConstMeta,
+      argValues: [amount, operationId],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kFedimintMintTokensConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "fedimint_mint_tokens",
+        argNames: ["amount", "operationId"],
       );
 
   Future<bool> payInvoice({required String invoice, dynamic hint}) {
@@ -152,6 +192,16 @@ class NativeImpl implements Native {
 
   bool _wire2api_bool(dynamic raw) {
     return raw as bool;
+  }
+
+  FedimintPaymentRequest _wire2api_fedimint_payment_request(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return FedimintPaymentRequest(
+      pr: _wire2api_String(arr[0]),
+      operationId: _wire2api_String(arr[1]),
+    );
   }
 
   FlutterPaymentRequest _wire2api_flutter_payment_request(dynamic raw) {

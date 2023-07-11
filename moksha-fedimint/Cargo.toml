@@ -9,19 +9,17 @@ edition = "2021"
 name = "moksha_fedimint"
 path = "src/lib.rs"
 
-
 [dependencies]
-anyhow = {version="1.0.71", features = ["backtrace"] }
+anyhow = { version = "1.0.71", features = ["backtrace"] }
 tokio = { version = "1.29.1", features = ["full"] }
 serde_json = "1.0.100"
 dirs = "5.0.1"
 futures = "0.3.28"
-lightning-invoice = { version = "0.21.0", features = [ "serde" ] }
-fedimint-sqlite ={ git = "https://github.com/fedimint/fedimint", rev = "97cd553dfbc190ff1082e66606bffe4d5adf0586" }
-fedimint-client ={ git = "https://github.com/fedimint/fedimint", rev = "97cd553dfbc190ff1082e66606bffe4d5adf0586" }
-fedimint-core ={ git = "https://github.com/fedimint/fedimint", rev = "97cd553dfbc190ff1082e66606bffe4d5adf0586" }
-fedimint-mint-client ={ git = "https://github.com/fedimint/fedimint", rev = "97cd553dfbc190ff1082e66606bffe4d5adf0586" }
-fedimint-ln-client ={ git = "https://github.com/fedimint/fedimint", rev = "97cd553dfbc190ff1082e66606bffe4d5adf0586" }
-fedimint-wallet-client ={ git = "https://github.com/fedimint/fedimint", rev = "97cd553dfbc190ff1082e66606bffe4d5adf0586" }
-
-
+lightning-invoice = { version = "0.21.0", features = ["serde"] }
+fedimint-sqlite = { git = "https://github.com/fedimint/fedimint", rev = "97cd553dfbc190ff1082e66606bffe4d5adf0586" }
+fedimint-client = { git = "https://github.com/fedimint/fedimint", rev = "97cd553dfbc190ff1082e66606bffe4d5adf0586" }
+fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "97cd553dfbc190ff1082e66606bffe4d5adf0586" }
+fedimint-mint-client = { git = "https://github.com/fedimint/fedimint", rev = "97cd553dfbc190ff1082e66606bffe4d5adf0586" }
+fedimint-ln-client = { git = "https://github.com/fedimint/fedimint", rev = "97cd553dfbc190ff1082e66606bffe4d5adf0586" }
+fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", rev = "97cd553dfbc190ff1082e66606bffe4d5adf0586" }
+moksha-core = { path = "../moksha-core" }

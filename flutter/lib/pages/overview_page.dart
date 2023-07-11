@@ -13,7 +13,7 @@ class _OverviewPageState extends State<OverviewPage> {
   @override
   void initState() {
     super.initState();
-    balance = api.getBalance();
+    balance = api.getCashuBalance();
   }
 
   @override

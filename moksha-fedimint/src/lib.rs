@@ -2,6 +2,7 @@ use anyhow::Result;
 use fedimint_client::module::gen::DynClientModuleGen;
 use fedimint_client::module::gen::{ClientModuleGenRegistry, IClientModuleGen};
 use fedimint_client::secret::PlainRootSecretStrategy;
+use fedimint_client::sm::OperationId;
 use fedimint_client::ClientBuilder;
 use fedimint_core::api::GlobalFederationApi;
 use fedimint_core::config::load_from_file;
@@ -15,6 +16,7 @@ use fedimint_core::{
 use fedimint_ln_client::{LightningClientExt, LightningClientGen, LnReceiveState};
 use fedimint_mint_client::{MintClientGen, MintClientModule};
 use fedimint_wallet_client::WalletClientGen;
+use lightning_invoice::Invoice;
 use std::fs::create_dir_all;
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -53,20 +55,24 @@ impl FedimintWallet {
         Ok(())
     }
 
-    pub async fn mint(&self, amount: u64) -> anyhow::Result<LnReceiveState> {
-        println!("Workdir: {:?}", self.workdir);
-        println!("Minting {} tokens", amount);
+    pub async fn get_mint_payment_request(&self, amount: u64) -> anyhow::Result<(String, Invoice)> {
         self.client.select_active_gateway().await?;
 
         let (operation_id, invoice) = self
             .client
             .create_bolt11_invoice(Amount::from_sats(amount), "test".to_owned(), None)
             .await?;
-        println!("Invoice: {}", invoice);
+        Ok((operation_id.to_string(), invoice))
+    }
+
+    pub async fn mint(&self, operation_id: String, amount: u64) -> anyhow::Result<LnReceiveState> {
+        println!("Workdir: {:?}", self.workdir);
+        println!("Minting {} tokens", amount);
+        self.client.select_active_gateway().await?;
 
         let mut updates = self
             .client
-            .subscribe_ln_receive(operation_id)
+            .subscribe_ln_receive(OperationId::from_str(&operation_id)?)
             .await?
             .into_stream();
         while let Some(update) = updates.next().await {

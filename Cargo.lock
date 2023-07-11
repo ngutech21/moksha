@@ -2431,6 +2431,7 @@ dependencies = [
  "fedimint-wallet-client",
  "futures",
  "lightning-invoice 0.21.0",
+ "moksha-core",
  "serde_json",
  "tokio",
 ]
@@ -2494,6 +2495,7 @@ dependencies = [
  "anyhow",
  "flutter_rust_bridge",
  "lazy_static",
+ "lightning-invoice 0.23.0",
  "moksha-core",
  "moksha-fedimint",
  "moksha-wallet",

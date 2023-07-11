@@ -29,6 +29,7 @@ class MintWidget extends StatefulWidget {
 
 class _MintWidgetState extends State<MintWidget> {
   bool _isInvoiceCreated = false;
+  String? _selectedEcashType = "Cashu";
   String amount = '';
   FlutterPaymentRequest? paymentRequest;
   final _textController = TextEditingController();
@@ -127,24 +128,41 @@ class _MintWidgetState extends State<MintWidget> {
                 const Spacer(),
                 Visibility(
                     visible: !_isInvoiceCreated,
+                    child: DropdownButton(
+                        value: "$_selectedEcashType",
+                        items: const [
+                          DropdownMenuItem(
+                              value: "Cashu", child: Text("Cashu")),
+                          DropdownMenuItem(
+                              value: "Fedimint", child: Text("Fedimint"))
+                        ],
+                        onChanged: (value) {
+                          _selectedEcashType = value;
+                        })),
+                Visibility(
+                    visible: !_isInvoiceCreated,
                     child: Flexible(
                       fit: FlexFit.loose,
                       child: Padding(
                         padding: const EdgeInsets.all(8),
-                        child: TextField(
-                          controller: _textController,
-                          inputFormatters: [
-                            LengthLimitingTextInputFormatter(9),
-                            FilteringTextInputFormatter.digitsOnly,
+                        child: Column(
+                          children: [
+                            TextField(
+                              controller: _textController,
+                              inputFormatters: [
+                                LengthLimitingTextInputFormatter(9),
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: 'Amount (sats)',
+                              ),
+                              onChanged: (value) => setState(() {
+                                amount = value;
+                              }),
+                            ),
                           ],
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Amount (sats)',
-                          ),
-                          onChanged: (value) => setState(() {
-                            amount = value;
-                          }),
                         ),
                       ),
                     )),
@@ -168,7 +186,7 @@ class _MintWidgetState extends State<MintWidget> {
                               int.parse(amount.replaceAll(",", ""));
 
                           try {
-                            var result = await api.getMintPaymentRequest(
+                            var result = await api.getCashuMintPaymentRequest(
                                 amount: cleanAmount); // use decimalTextfield
                             setState(() {
                               paymentRequest = result;
@@ -182,7 +200,7 @@ class _MintWidgetState extends State<MintWidget> {
                           }
 
                           try {
-                            var mintedTokens = await api.mintTokens(
+                            var mintedTokens = await api.cashuMintTokens(
                                 amount: cleanAmount,
                                 hash: paymentRequest!.hash);
                             setState(() {

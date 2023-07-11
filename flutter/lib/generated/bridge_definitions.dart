@@ -15,19 +15,29 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kInitCashuConstMeta;
 
-  Future<int> getBalance({dynamic hint});
+  Future<int> getCashuBalance({dynamic hint});
 
-  FlutterRustBridgeTaskConstMeta get kGetBalanceConstMeta;
+  FlutterRustBridgeTaskConstMeta get kGetCashuBalanceConstMeta;
 
-  Future<int> mintTokens(
+  Future<int> cashuMintTokens(
       {required int amount, required String hash, dynamic hint});
 
-  FlutterRustBridgeTaskConstMeta get kMintTokensConstMeta;
+  FlutterRustBridgeTaskConstMeta get kCashuMintTokensConstMeta;
 
-  Future<FlutterPaymentRequest> getMintPaymentRequest(
+  Future<FlutterPaymentRequest> getCashuMintPaymentRequest(
       {required int amount, dynamic hint});
 
-  FlutterRustBridgeTaskConstMeta get kGetMintPaymentRequestConstMeta;
+  FlutterRustBridgeTaskConstMeta get kGetCashuMintPaymentRequestConstMeta;
+
+  Future<FedimintPaymentRequest> getFedimintPaymentRequest(
+      {required int amount, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetFedimintPaymentRequestConstMeta;
+
+  Future<int> fedimintMintTokens(
+      {required int amount, required String operationId, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kFedimintMintTokensConstMeta;
 
   Future<bool> payInvoice({required String invoice, dynamic hint});
 
@@ -40,6 +50,16 @@ abstract class Native {
   Future<void> joinFederation({required String federation, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kJoinFederationConstMeta;
+}
+
+class FedimintPaymentRequest {
+  final String pr;
+  final String operationId;
+
+  const FedimintPaymentRequest({
+    required this.pr,
+    required this.operationId,
+  });
 }
 
 class FlutterPaymentRequest {

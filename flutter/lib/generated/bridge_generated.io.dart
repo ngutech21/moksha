@@ -148,54 +148,91 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _wire_init_cashu =
       _wire_init_cashuPtr.asFunction<void Function(int)>();
 
-  void wire_get_balance(
+  void wire_get_cashu_balance(
     int port_,
   ) {
-    return _wire_get_balance(
+    return _wire_get_cashu_balance(
       port_,
     );
   }
 
-  late final _wire_get_balancePtr =
+  late final _wire_get_cashu_balancePtr =
       _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_get_balance');
-  late final _wire_get_balance =
-      _wire_get_balancePtr.asFunction<void Function(int)>();
+          'wire_get_cashu_balance');
+  late final _wire_get_cashu_balance =
+      _wire_get_cashu_balancePtr.asFunction<void Function(int)>();
 
-  void wire_mint_tokens(
+  void wire_cashu_mint_tokens(
     int port_,
     int amount,
     ffi.Pointer<wire_uint_8_list> hash,
   ) {
-    return _wire_mint_tokens(
+    return _wire_cashu_mint_tokens(
       port_,
       amount,
       hash,
     );
   }
 
-  late final _wire_mint_tokensPtr = _lookup<
+  late final _wire_cashu_mint_tokensPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(ffi.Int64, ffi.Uint64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_mint_tokens');
-  late final _wire_mint_tokens = _wire_mint_tokensPtr
+              ffi.Pointer<wire_uint_8_list>)>>('wire_cashu_mint_tokens');
+  late final _wire_cashu_mint_tokens = _wire_cashu_mint_tokensPtr
       .asFunction<void Function(int, int, ffi.Pointer<wire_uint_8_list>)>();
 
-  void wire_get_mint_payment_request(
+  void wire_get_cashu_mint_payment_request(
     int port_,
     int amount,
   ) {
-    return _wire_get_mint_payment_request(
+    return _wire_get_cashu_mint_payment_request(
       port_,
       amount,
     );
   }
 
-  late final _wire_get_mint_payment_requestPtr =
+  late final _wire_get_cashu_mint_payment_requestPtr =
       _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint64)>>(
-          'wire_get_mint_payment_request');
-  late final _wire_get_mint_payment_request =
-      _wire_get_mint_payment_requestPtr.asFunction<void Function(int, int)>();
+          'wire_get_cashu_mint_payment_request');
+  late final _wire_get_cashu_mint_payment_request =
+      _wire_get_cashu_mint_payment_requestPtr
+          .asFunction<void Function(int, int)>();
+
+  void wire_get_fedimint_payment_request(
+    int port_,
+    int amount,
+  ) {
+    return _wire_get_fedimint_payment_request(
+      port_,
+      amount,
+    );
+  }
+
+  late final _wire_get_fedimint_payment_requestPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint64)>>(
+          'wire_get_fedimint_payment_request');
+  late final _wire_get_fedimint_payment_request =
+      _wire_get_fedimint_payment_requestPtr
+          .asFunction<void Function(int, int)>();
+
+  void wire_fedimint_mint_tokens(
+    int port_,
+    int amount,
+    ffi.Pointer<wire_uint_8_list> operation_id,
+  ) {
+    return _wire_fedimint_mint_tokens(
+      port_,
+      amount,
+      operation_id,
+    );
+  }
+
+  late final _wire_fedimint_mint_tokensPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Uint64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_fedimint_mint_tokens');
+  late final _wire_fedimint_mint_tokens = _wire_fedimint_mint_tokensPtr
+      .asFunction<void Function(int, int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_pay_invoice(
     int port_,

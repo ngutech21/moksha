@@ -2,6 +2,7 @@
 // When adding new code to your project, note that only items used
 // here will be transformed to their Dart equivalents.
 
+use std::fs;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -64,7 +65,7 @@ pub fn init_cashu() -> anyhow::Result<String> {
     Ok(db_path)
 }
 
-pub fn get_balance() -> anyhow::Result<u64> {
+pub fn get_cashu_balance() -> anyhow::Result<u64> {
     let rt = lock_runtime!();
 
     let result = rt.block_on(async {
@@ -103,7 +104,7 @@ fn _create_local_wallet() -> anyhow::Result<Wallet> {
     result
 }
 
-pub fn mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
+pub fn cashu_mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
     let wallet = _create_local_wallet().map_err(anyhow::Error::from)?;
     let rt = lock_runtime!();
 
@@ -134,7 +135,7 @@ pub fn mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
     result.map_err(anyhow::Error::from)
 }
 
-pub fn get_mint_payment_request(amount: u64) -> anyhow::Result<FlutterPaymentRequest> {
+pub fn get_cashu_mint_payment_request(amount: u64) -> anyhow::Result<FlutterPaymentRequest> {
     let wallet = _create_local_wallet().map_err(anyhow::Error::from)?;
     let rt = lock_runtime!();
 
@@ -147,6 +148,57 @@ pub fn get_mint_payment_request(amount: u64) -> anyhow::Result<FlutterPaymentReq
 
     drop(rt);
     Ok(result.into())
+}
+
+pub fn get_fedimint_payment_request(amount: u64) -> anyhow::Result<FedimintPaymentRequest> {
+    let workdir = Wallet::config_dir().join("fedimint");
+    let _ = fs::create_dir_all(&workdir);
+
+    let rt = lock_runtime!();
+
+    let result = rt.block_on(async {
+        let wallet = FedimintWallet::new(workdir)
+            .await
+            .map_err(anyhow::Error::from)?;
+
+        wallet
+            .get_mint_payment_request(amount)
+            .await
+            .map_err(anyhow::Error::from)
+    })?;
+
+    drop(rt);
+    Ok(FedimintPaymentRequest {
+        pr: result.1.to_string(),
+        operation_id: result.0,
+    })
+}
+
+pub fn fedimint_mint_tokens(amount: u64, operation_id: String) -> anyhow::Result<u64> {
+    let workdir = Wallet::config_dir().join("fedimint");
+    let _ = fs::create_dir_all(&workdir);
+
+    let rt = lock_runtime!();
+
+    // FIXME return amount of tokens minted
+    let result = rt.block_on(async {
+        let wallet = FedimintWallet::new(workdir)
+            .await
+            .map_err(anyhow::Error::from)?;
+
+        wallet
+            .mint(operation_id, amount)
+            .await
+            .map_err(anyhow::Error::from)
+    })?;
+
+    drop(rt);
+    Ok(23)
+}
+
+pub struct FedimintPaymentRequest {
+    pub pr: String,
+    pub operation_id: String,
 }
 
 #[derive(Clone)]
@@ -224,7 +276,7 @@ pub fn join_federation(federation: String) -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{get_balance, init_cashu};
+    use super::{get_cashu_balance, init_cashu};
 
     #[test]
     fn test_get_balance() -> anyhow::Result<()> {
@@ -236,7 +288,7 @@ mod tests {
             format!("{}/wallet.db", tmp_dir),
         );
         let _ = init_cashu()?;
-        let balance = get_balance().expect("Could not get balance");
+        let balance = get_cashu_balance().expect("Could not get balance");
         assert_eq!(0, balance);
         Ok(())
     }
