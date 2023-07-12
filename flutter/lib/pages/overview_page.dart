@@ -1,5 +1,6 @@
 import 'package:moksha_wallet/ffi.dart';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class OverviewPage extends StatefulWidget {
   const OverviewPage({super.key});
@@ -47,10 +48,61 @@ class _OverviewPageState extends State<OverviewPage> {
                       .replaceAll(',', '')
                       .replaceAllMapped(regExSeparator, matchFunc);
 
-                  return Text('$formattedValue (sats)',
-                      style: const TextStyle(fontSize: 42));
+                  return Column(
+                    children: [
+                      Text('$formattedValue (sats)',
+                          style: const TextStyle(fontSize: 42)),
+                      SizedBox(
+                          height: 300.0,
+                          width: 300.0,
+                          child: PieChart(
+                            PieChartData(
+                              sections: showingSections(),
+                            ),
+                            swapAnimationDuration:
+                                const Duration(milliseconds: 150), // Optional
+                            swapAnimationCurve: Curves.linear, // Optional
+                          ))
+                    ],
+                  );
                 })
           ]),
         ));
   }
+}
+
+List<PieChartSectionData> showingSections() {
+  return List.generate(2, (i) {
+    final isTouched = i == 0;
+    const color0 = Colors.blue;
+    const color1 = Colors.pink;
+
+    switch (i) {
+      case 0:
+        return PieChartSectionData(
+          color: color0,
+          value: 270,
+          title: 'Cashu',
+          radius: 80,
+          titlePositionPercentageOffset: 0.55,
+          borderSide: isTouched
+              ? const BorderSide(color: Colors.white, width: 6)
+              : const BorderSide(color: Colors.black),
+        );
+      case 1:
+        return PieChartSectionData(
+          color: color1,
+          value: 90,
+          title: 'Fedimint',
+          radius: 65,
+          titlePositionPercentageOffset: 0.55,
+          borderSide: isTouched
+              ? const BorderSide(color: Colors.white, width: 6)
+              : const BorderSide(color: Colors.black),
+        );
+
+      default:
+        throw Error();
+    }
+  });
 }

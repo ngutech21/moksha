@@ -39,6 +39,7 @@ dependencies:
   qr_flutter: ^4.1.0
   share_plus: ^7.0.2
   flutter_riverpod: ^2.3.6
+  fl_chart: ^0.63.0
 
 dev_dependencies:
   flutter_test:
