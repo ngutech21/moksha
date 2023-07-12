@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
-import 'package:uuid/uuid.dart';
 import 'bridge_generated.io.dart'
     if (dart.library.html) 'bridge_generated.web.dart';
 
@@ -130,6 +129,24 @@ class NativeImpl implements Native {
         argNames: ["amount", "operationId"],
       );
 
+  Future<FlutterInvoice> decodeInvoice(
+      {required String invoice, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(invoice);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_decode_invoice(port_, arg0),
+      parseSuccessData: _wire2api_flutter_invoice,
+      constMeta: kDecodeInvoiceConstMeta,
+      argValues: [invoice],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kDecodeInvoiceConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "decode_invoice",
+        argNames: ["invoice"],
+      );
+
   Future<bool> payInvoice({required String invoice, dynamic hint}) {
     var arg0 = _platform.api2wire_String(invoice);
     return _platform.executeNormal(FlutterRustBridgeTask(
@@ -201,6 +218,17 @@ class NativeImpl implements Native {
     return FedimintPaymentRequest(
       pr: _wire2api_String(arr[0]),
       operationId: _wire2api_String(arr[1]),
+    );
+  }
+
+  FlutterInvoice _wire2api_flutter_invoice(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return FlutterInvoice(
+      pr: _wire2api_String(arr[0]),
+      amountSats: _wire2api_u64(arr[1]),
+      expiryTime: _wire2api_u64(arr[2]),
     );
   }
 

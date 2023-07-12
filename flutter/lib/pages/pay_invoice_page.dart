@@ -13,6 +13,7 @@ class PayInvoicePage extends StatefulWidget {
 
 class _PayInvoicePageState extends State<PayInvoicePage> {
   String invoice = '';
+  FlutterInvoice? decodedInvoice;
 
   @override
   Widget build(BuildContext context) {
@@ -25,14 +26,27 @@ class _PayInvoicePageState extends State<PayInvoicePage> {
             obscureText: false,
             maxLines: 2,
             autofocus: true,
-            onChanged: (value) => setState(() {
-              invoice = value;
-            }),
+            onChanged: (value) async {
+              try {
+                var decoded = await api.decodeInvoice(invoice: value);
+                setState(() {
+                  invoice = value;
+                  decodedInvoice = decoded;
+                });
+              } catch (e) {
+                if (!context.mounted) return;
+                showErrorSnackBar(context, e, 'Error decoding invoice');
+              }
+            },
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
               labelText: 'Paste invoice',
             ),
           ),
+          Visibility(
+              visible: invoice.isNotEmpty,
+              child: Text(
+                  "Amount: ${decodedInvoice?.amountSats} (sats)\nExpires in: ${decodedInvoice?.expiryTime} (seconds)")),
           const Spacer(),
           ElevatedButton(
               onPressed: () async {

@@ -36,6 +36,11 @@ pub extern "C" fn wire_fedimint_mint_tokens(
 }
 
 #[no_mangle]
+pub extern "C" fn wire_decode_invoice(port_: i64, invoice: *mut wire_uint_8_list) {
+    wire_decode_invoice_impl(port_, invoice)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_pay_invoice(port_: i64, invoice: *mut wire_uint_8_list) {
     wire_pay_invoice_impl(port_, invoice)
 }

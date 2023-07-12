@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
-import 'package:uuid/uuid.dart';
 import 'bridge_generated.dart';
 export 'bridge_generated.dart';
 
@@ -63,6 +62,9 @@ class NativeWasmModule implements WasmModule {
   external dynamic /* void */ wire_fedimint_mint_tokens(
       NativePortType port_, Object amount, String operation_id);
 
+  external dynamic /* void */ wire_decode_invoice(
+      NativePortType port_, String invoice);
+
   external dynamic /* void */ wire_pay_invoice(
       NativePortType port_, String invoice);
 
@@ -99,6 +101,9 @@ class NativeWire extends FlutterRustBridgeWasmWireBase<NativeWasmModule> {
   void wire_fedimint_mint_tokens(
           NativePortType port_, Object amount, String operation_id) =>
       wasmModule.wire_fedimint_mint_tokens(port_, amount, operation_id);
+
+  void wire_decode_invoice(NativePortType port_, String invoice) =>
+      wasmModule.wire_decode_invoice(port_, invoice);
 
   void wire_pay_invoice(NativePortType port_, String invoice) =>
       wasmModule.wire_pay_invoice(port_, invoice);

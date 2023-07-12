@@ -32,6 +32,11 @@ pub fn wire_fedimint_mint_tokens(port_: MessagePort, amount: u64, operation_id: 
 }
 
 #[wasm_bindgen]
+pub fn wire_decode_invoice(port_: MessagePort, invoice: String) {
+    wire_decode_invoice_impl(port_, invoice)
+}
+
+#[wasm_bindgen]
 pub fn wire_pay_invoice(port_: MessagePort, invoice: String) {
     wire_pay_invoice_impl(port_, invoice)
 }

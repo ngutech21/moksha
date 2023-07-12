@@ -238,7 +238,7 @@ impl Wallet {
             .post_checkfees(&self.mint_url, invoice.clone())
             .await?;
 
-        let ln_amount = self.get_invoice_amount(&invoice)? + fees.fee;
+        let ln_amount = Self::get_invoice_amount(&invoice)? + fees.fee;
 
         if ln_amount > all_proofs.total_amount() {
             return Err(MokshaWalletError::NotEnoughTokens);
@@ -347,13 +347,13 @@ impl Wallet {
         Ok(melt_response)
     }
 
-    fn decode_invoice(&self, payment_request: &str) -> Result<LNInvoice, MokshaWalletError> {
+    fn decode_invoice(payment_request: &str) -> Result<LNInvoice, MokshaWalletError> {
         LNInvoice::from_str(payment_request)
             .map_err(|err| MokshaWalletError::DecodeInvoice(payment_request.to_owned(), err))
     }
 
-    fn get_invoice_amount(&self, payment_request: &str) -> Result<u64, MokshaWalletError> {
-        let invoice = self.decode_invoice(payment_request)?;
+    fn get_invoice_amount(payment_request: &str) -> Result<u64, MokshaWalletError> {
+        let invoice = Self::decode_invoice(payment_request)?;
         Ok(invoice
             .amount_milli_satoshis()
             .ok_or_else(|| MokshaWalletError::InvalidInvoice(payment_request.to_owned()))?

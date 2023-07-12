@@ -8,7 +8,6 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
-import 'package:uuid/uuid.dart';
 
 abstract class Native {
   Future<String> initCashu({dynamic hint});
@@ -39,6 +38,10 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kFedimintMintTokensConstMeta;
 
+  Future<FlutterInvoice> decodeInvoice({required String invoice, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kDecodeInvoiceConstMeta;
+
   Future<bool> payInvoice({required String invoice, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kPayInvoiceConstMeta;
@@ -59,6 +62,18 @@ class FedimintPaymentRequest {
   const FedimintPaymentRequest({
     required this.pr,
     required this.operationId,
+  });
+}
+
+class FlutterInvoice {
+  final String pr;
+  final int amountSats;
+  final int expiryTime;
+
+  const FlutterInvoice({
+    required this.pr,
+    required this.amountSats,
+    required this.expiryTime,
   });
 }
 

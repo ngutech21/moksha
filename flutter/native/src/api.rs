@@ -7,6 +7,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use lazy_static::lazy_static;
+use lightning_invoice::Invoice;
 use moksha_core::model::PaymentRequest;
 use moksha_fedimint::FedimintWallet;
 use moksha_wallet::client::HttpClient;
@@ -14,6 +15,7 @@ use moksha_wallet::localstore::LocalStore;
 use moksha_wallet::localstore::SqliteLocalStore;
 use moksha_wallet::wallet::Wallet;
 use reqwest::Url;
+use std::str::FromStr;
 use std::sync::Mutex as StdMutex;
 use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
@@ -196,6 +198,30 @@ pub fn fedimint_mint_tokens(amount: u64, operation_id: String) -> anyhow::Result
     Ok(23)
 }
 
+pub fn decode_invoice(invoice: String) -> anyhow::Result<FlutterInvoice> {
+    let invoice = Invoice::from_str(&invoice).map_err(anyhow::Error::from)?;
+    Ok(invoice.into())
+}
+
+pub struct FlutterInvoice {
+    pub pr: String,
+    pub amount_sats: u64,
+    pub expiry_time: u64,
+}
+
+impl From<Invoice> for FlutterInvoice {
+    fn from(invoice: Invoice) -> Self {
+        Self {
+            pr: invoice.to_string(),
+            amount_sats: match invoice.amount_milli_satoshis() {
+                Some(amount) => amount / 1000,
+                None => 0,
+            },
+            expiry_time: invoice.expiry_time().as_secs(),
+        }
+    }
+}
+
 pub struct FedimintPaymentRequest {
     pub pr: String,
     pub operation_id: String,
@@ -260,19 +286,6 @@ pub fn join_federation(federation: String) -> anyhow::Result<()> {
     drop(rt);
     Ok(())
 }
-
-// pub fn fedimint_mint_token(amount: u64, hash: String) -> anyhow::Result<LnReceiveState> {
-//     let rt = lock_runtime!();
-//     let workdir = Wallet::config_dir();
-
-//     let result = rt.block_on(async {
-//         let wallet = FedimintWallet::new(workdir).await?;
-//         wallet.mint(amount).await.map_err(anyhow::Error::from)
-//     })?;
-
-//     drop(rt);
-//     Ok(result)
-// }
 
 #[cfg(test)]
 mod tests {

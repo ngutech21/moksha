@@ -109,6 +109,19 @@ fn wire_fedimint_mint_tokens_impl(
         },
     )
 }
+fn wire_decode_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "decode_invoice",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_invoice = invoice.wire2api();
+            move |task_callback| decode_invoice(api_invoice)
+        },
+    )
+}
 fn wire_pay_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> + UnwindSafe) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
@@ -190,6 +203,18 @@ impl support::IntoDart for FedimintPaymentRequest {
     }
 }
 impl support::IntoDartExceptPrimitive for FedimintPaymentRequest {}
+
+impl support::IntoDart for FlutterInvoice {
+    fn into_dart(self) -> support::DartAbi {
+        vec![
+            self.pr.into_dart(),
+            self.amount_sats.into_dart(),
+            self.expiry_time.into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl support::IntoDartExceptPrimitive for FlutterInvoice {}
 
 impl support::IntoDart for FlutterPaymentRequest {
     fn into_dart(self) -> support::DartAbi {
