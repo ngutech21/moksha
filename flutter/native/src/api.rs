@@ -181,7 +181,7 @@ pub fn fedimint_mint_tokens(amount: u64, operation_id: String) -> anyhow::Result
     let rt = lock_runtime!();
 
     // FIXME return amount of tokens minted
-    let result = rt.block_on(async {
+    let _result = rt.block_on(async {
         let wallet = FedimintWallet::new(workdir)
             .await
             .map_err(anyhow::Error::from)?;

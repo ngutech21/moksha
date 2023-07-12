@@ -7,6 +7,8 @@ import 'package:moksha_wallet/pages/util.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
+enum MintType { cashu, fedimint }
+
 class MintPage extends StatelessWidget {
   const MintPage({super.key});
 
@@ -29,9 +31,9 @@ class MintWidget extends StatefulWidget {
 
 class _MintWidgetState extends State<MintWidget> {
   bool _isInvoiceCreated = false;
-  String? _selectedEcashType = "Cashu";
+  MintType? selectedMintType = MintType.cashu;
   String amount = '';
-  FlutterPaymentRequest? paymentRequest;
+  String? paymentRequest;
   final _textController = TextEditingController();
 
   @override
@@ -69,7 +71,7 @@ class _MintWidgetState extends State<MintWidget> {
               ? Column(
                   children: [
                     QrImageView(
-                      data: paymentRequest!.pr,
+                      data: paymentRequest!,
                       version: QrVersions.auto,
                       size: 200.0,
                       backgroundColor: Colors.white,
@@ -89,7 +91,7 @@ class _MintWidgetState extends State<MintWidget> {
                               onPressed: () {
                                 Clipboard.setData(
                                   ClipboardData(
-                                    text: paymentRequest!.pr,
+                                    text: paymentRequest!,
                                   ),
                                 );
 
@@ -106,7 +108,7 @@ class _MintWidgetState extends State<MintWidget> {
                           const SizedBox(width: 8),
                           ElevatedButton(
                               onPressed: () {
-                                Share.share(paymentRequest!.pr);
+                                Share.share(paymentRequest!);
                               },
                               child: const Text('Share')),
                           const Spacer(),
@@ -116,7 +118,7 @@ class _MintWidgetState extends State<MintWidget> {
                   ],
                 )
               : const Text(
-                  'Pay a lighting invoice to mint cashu tokens',
+                  "Pay a lighting invoice to mint tokens",
                   style: TextStyle(fontSize: 20),
                 ),
           Container(
@@ -128,16 +130,18 @@ class _MintWidgetState extends State<MintWidget> {
                 const Spacer(),
                 Visibility(
                     visible: !_isInvoiceCreated,
-                    child: DropdownButton(
-                        value: "$_selectedEcashType",
+                    child: DropdownButton<MintType>(
+                        value: selectedMintType,
                         items: const [
                           DropdownMenuItem(
-                              value: "Cashu", child: Text("Cashu")),
+                              value: MintType.cashu, child: Text("Cashu")),
                           DropdownMenuItem(
-                              value: "Fedimint", child: Text("Fedimint"))
+                              value: MintType.fedimint, child: Text("Fedimint"))
                         ],
                         onChanged: (value) {
-                          _selectedEcashType = value;
+                          setState(() {
+                            selectedMintType = value;
+                          });
                         })),
                 Visibility(
                     visible: !_isInvoiceCreated,
@@ -185,42 +189,75 @@ class _MintWidgetState extends State<MintWidget> {
                           var cleanAmount =
                               int.parse(amount.replaceAll(",", ""));
 
-                          try {
-                            var result = await api.getCashuMintPaymentRequest(
-                                amount: cleanAmount); // use decimalTextfield
-                            setState(() {
-                              paymentRequest = result;
-                              _isInvoiceCreated = true;
-                            });
-                          } catch (e) {
-                            if (!context.mounted) return;
-                            showErrorSnackBar(
-                                context, e, "Error creating invoice");
-                            return;
-                          }
+                          if (selectedMintType == MintType.cashu) {
+                            try {
+                              var cashuPaymentRequest =
+                                  await api.getCashuMintPaymentRequest(
+                                      amount:
+                                          cleanAmount); // use decimalTextfield
+                              setState(() {
+                                paymentRequest = cashuPaymentRequest.pr;
+                                _isInvoiceCreated = true;
+                              });
 
-                          try {
-                            var mintedTokens = await api.cashuMintTokens(
-                                amount: cleanAmount,
-                                hash: paymentRequest!.hash);
-                            setState(() {
-                              paymentRequest = null;
-                              _isInvoiceCreated = false;
-                              amount = ''; // FIMXE clear textfield
-                            });
+                              var mintedTokens = await api.cashuMintTokens(
+                                  amount: cleanAmount,
+                                  hash: cashuPaymentRequest.hash);
+                              setState(() {
+                                paymentRequest = null;
+                                _isInvoiceCreated = false;
+                                amount = ''; // FIMXE clear textfield
+                              });
 
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Column(children: [
-                                Text('Minted $mintedTokens sats')
-                              ]),
-                              showCloseIcon: true,
-                            ));
-                          } catch (e) {
-                            if (!context.mounted) return;
-                            showErrorSnackBar(
-                                context, e, "Error creating invoice");
-                            return;
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
+                                content: Column(children: [
+                                  Text('Minted $mintedTokens sats')
+                                ]),
+                                showCloseIcon: true,
+                              ));
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              showErrorSnackBar(
+                                  context, e, "Error creating invoice");
+                              return;
+                            }
+                          } else if (selectedMintType == MintType.fedimint) {
+                            try {
+                              var fedimintPaymentRequest =
+                                  await api.getFedimintPaymentRequest(
+                                      amount:
+                                          cleanAmount); // use decimalTextfield
+                              setState(() {
+                                paymentRequest = fedimintPaymentRequest.pr;
+                                _isInvoiceCreated = true;
+                              });
+
+                              var mintedTokens = await api.fedimintMintTokens(
+                                  amount: cleanAmount,
+                                  operationId:
+                                      fedimintPaymentRequest.operationId);
+                              setState(() {
+                                paymentRequest = null;
+                                _isInvoiceCreated = false;
+                                amount = ''; // FIMXE clear textfield
+                              });
+
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
+                                content: Column(children: [
+                                  Text('Minted $mintedTokens sats')
+                                ]),
+                                showCloseIcon: true,
+                              ));
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              showErrorSnackBar(
+                                  context, e, "Error creating invoice");
+                              return;
+                            }
                           }
                         },
                         child: const Text('Mint tokens'))),
