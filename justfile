@@ -51,7 +51,7 @@ coverage:
 
 
 # generate flutter-rust bridge
-flutter-gen:
+gen-flutter-bridge:
     cd flutter && \
     flutter pub get && \
     flutter_rust_bridge_codegen \
@@ -63,13 +63,13 @@ flutter-gen:
         --wasm
 
 # run flutter desktop-app 
-flutter-run:
+run-flutter:
     cd flutter && \
     flutter run -d {{ platform }}
 
 
 # build flutter desktop-app
-flutter-build:
+build-flutter:
     cd flutter && \
     flutter clean && \
     flutter build {{ platform }}

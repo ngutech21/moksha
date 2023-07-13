@@ -2,13 +2,14 @@
 [![coverage](https://img.shields.io/codecov/c/github/ngutech21/moksha)](https://app.codecov.io/gh/ngutech21/moksha/)
 [![Flutter](https://github.com/ngutech21/moksha/actions/workflows/flutter.yml/badge.svg?branch=master)](https://github.com/ngutech21/moksha/actions/workflows/flutter.yml)
 
-
-⚠️ **Don't be reckless:** This project is in early development, it does however work with real sats! Always use amounts you don't mind loosing. 
+⚠️ **Don't be reckless:** This project is in early development, it does however work with real sats! Always use amounts you don't mind loosing.
 
 # moksha
-moksha is a cashu mint, cli-wallet and flutter desktop-app. 
+
+moksha is a cashu mint, cli-wallet and flutter desktop-app.
 
 ## Contents
+
 - [About](#about)
 - [Progress](#progress)
 - [Crates](#crates)
@@ -16,15 +17,15 @@ moksha is a cashu mint, cli-wallet and flutter desktop-app.
 - [License](#license)
 
 ## About
+
 Cashu is an Ecash implementation based on David Wagner's variant of Chaumian blinding. Token logic based
 on [minicash](https://github.com/phyro/minicash) ([description](https://gist.github.com/phyro/935badc682057f418842c72961cf096c))
 which implements a [Blind Diffie-Hellman Key Exchange](https://cypherpunks.venona.com/date/1996/03/msg01848.html) scheme
-written down by Ruben Somsen [here](https://gist.github.com/RubenSomsen/be7a4760dd4596d06963d67baf140406). 
+written down by Ruben Somsen [here](https://gist.github.com/RubenSomsen/be7a4760dd4596d06963d67baf140406).
 Please read the [Cashu](https://github.com/callebtc/cashu) documentation for more detailed information.
 
-
-
 ## Progress
+
 Wallet Features:
 
 - [x] connect to mint (load keys)
@@ -35,7 +36,6 @@ Wallet Features:
 - [x] melting tokens
 - [] check if tokens are spent
 - [] multi mint support
-
 
 Implemented [NUTs](https://github.com/cashubtc/nuts/):
 
@@ -50,20 +50,17 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 - [] [NUT-08](https://github.com/cashubtc/nuts/blob/main/08.md)
 - [] [NUT-09](https://github.com/cashubtc/nuts/blob/main/09.md)
 
-
-
-
-
-
-
 ## Crates
+
 - [core](./moksha-core) The core of the cashu library. Contains all the logic for creating and verifying tokens.
 - [mint](./moksha-mint) Cashu mint server. Handles minting, melting and token requests.
 - [wallet](./moksha-wallet) Cashu cli-wallet and library
-- [flutter_bridge](./flutter/native) Thin wrapper using [flutter-rust-bridge](https://github.com/fzyzcjy/flutter_rust_bridge) around the wallet library for use in flutter. 
+- [flutter_bridge](./flutter/native) Thin wrapper using [flutter-rust-bridge](https://github.com/fzyzcjy/flutter_rust_bridge) around the wallet library for use in flutter.
 
 ## Usage
+
 ### Setup rust
+
 ```
 git clone https://github.com/ngutech21/moksha.git
 cargo install just typos-cli sqlx-cli grcov
@@ -71,8 +68,8 @@ rustup component add llvm-tools-preview
 cd moksha
 ```
 
-
 ### Config
+
 ```bash
 mv .env.example .env
 # edit .env file
@@ -80,87 +77,94 @@ vim .env
 ```
 
 ### Run mint (cashu-server)
+
 To run the mint you need to setup a lightning regtest environment like [Polar](https://lightningpolar.com) and a Lnbits instance. In Lnbits create a new wallet and copy the admin key into the .env file and set the url to your Lnbits instance. The mint uses RocksDB for storing used proofs and pending invoices. You can set the path to the database in the .env file.
+
 ```
 just run-mint
 ```
 
-
 ### Run cli-wallet
 
 #### Show info
+
 Shows the current version, database-dir and mint-url.
+
 ```
 just run-cli info
 ```
 
 #### Check Balance
+
 ```
 just run-cli balance
 ```
 
 #### Mint tokens
+
 This command will return a Lightning invoice that you need to pay to mint new ecash tokens.
+
 ```
 just run-cli mint 42
 ```
 
 #### Send tokens
+
 To send tokens to another user, enter. The tokens will get printed to STOUT. You can then send them to the recipient via any messaging app.
+
 ```
 just run-cli send 21
 ```
 
 #### Receive tokens
+
 To receive tokens you need to enter the token as first argument to the receive command. The tokens will get verified and the value will be added to your balance.
+
 ```
 just run-cli receive cashuAeyJ0...
 ```
 
-
-
 ### Setup flutter
+
 If you want to use the flutter app you need to setup flutter and the rust bridge:
+
 - [Flutter SDK](https://docs.flutter.dev/get-started/install)
 - `flutter_rust_bridge_codegen` [cargo package](https://cjycode.com/flutter_rust_bridge/integrate/deps.html#build-time-dependencies)
 - Appropriate [Rust targets](https://rust-lang.github.io/rustup/cross-compilation.html) for cross-compiling to your device
 
 ### update flutter dependencies
+
 ```
 cd flutter
 flutter pub get
 ```
 
 ### Run flutter desktop app
+
 ```
-just flutter-run
+just run-flutter
 ```
 
 ### Development
+
 To run coverage, check for typos, generate the flutter rust bridge etc. use the just commands:
-```
-Available recipes:
-    coverage         # run coverage
-    default          # list all tasks
-    final-check      # format code, check typos and run tests
-    flutter-build    # build flutter desktop-app
-    flutter-gen      # generate flutter-rust bridge
-    flutter-run      # run flutter desktop-app
-    run-mint         # run the cashu-mint
-    run-cli *ARGS    # run the cli-wallet with given args
-    typos            # check code for typos
-    typos-fix-all    # fix all typos
-```
 
-
+```
+AAvailable recipes:
+    build-flutter      # build flutter desktop-app
+    clean
+    coverage           # run coverage
+    default            # list all tasks
+    final-check        # format code, check typos and run tests
+    gen-flutter-bridge # generate flutter-rust bridge
+    run-cli *ARGS      # run the cli-wallet with given args
+    run-flutter        # run flutter desktop-app
+    run-mint           # run the cashu-mint
+    typos              # check code for typos
+    typos-fix-all      # fix all typos
+```
 
 ## License
 
 moksha is distributed under the terms of the MIT license.
 See [LICENSE](LICENSE).
-
-
-
-
-
-
