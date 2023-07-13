@@ -161,6 +161,16 @@ fn wire_join_federation_impl(port_: MessagePort, federation: impl Wire2Api<Strin
         },
     )
 }
+fn wire_get_fedimint_balance_impl(port_: MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "get_fedimint_balance",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| get_fedimint_balance(),
+    )
+}
 // Section: wrapper structs
 
 // Section: static checks

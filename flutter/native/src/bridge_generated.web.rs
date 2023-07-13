@@ -51,6 +51,11 @@ pub fn wire_join_federation(port_: MessagePort, federation: String) {
     wire_join_federation_impl(port_, federation)
 }
 
+#[wasm_bindgen]
+pub fn wire_get_fedimint_balance(port_: MessagePort) {
+    wire_get_fedimint_balance_impl(port_)
+}
+
 // Section: allocate functions
 
 // Section: related functions

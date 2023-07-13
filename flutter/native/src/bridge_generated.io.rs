@@ -55,6 +55,11 @@ pub extern "C" fn wire_join_federation(port_: i64, federation: *mut wire_uint_8_
     wire_join_federation_impl(port_, federation)
 }
 
+#[no_mangle]
+pub extern "C" fn wire_get_fedimint_balance(port_: i64) {
+    wire_get_fedimint_balance_impl(port_)
+}
+
 // Section: allocate functions
 
 #[no_mangle]

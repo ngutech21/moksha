@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
+import 'package:uuid/uuid.dart';
 import 'bridge_generated.io.dart'
     if (dart.library.html) 'bridge_generated.web.dart';
 
@@ -196,6 +197,22 @@ class NativeImpl implements Native {
       const FlutterRustBridgeTaskConstMeta(
         debugName: "join_federation",
         argNames: ["federation"],
+      );
+
+  Future<int> getFedimintBalance({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_fedimint_balance(port_),
+      parseSuccessData: _wire2api_u64,
+      constMeta: kGetFedimintBalanceConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetFedimintBalanceConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_fedimint_balance",
+        argNames: [],
       );
 
   void dispose() {

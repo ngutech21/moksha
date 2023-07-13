@@ -287,6 +287,27 @@ pub fn join_federation(federation: String) -> anyhow::Result<()> {
     Ok(())
 }
 
+pub fn get_fedimint_balance() -> anyhow::Result<u64> {
+    let rt = lock_runtime!();
+    let workdir = Wallet::config_dir();
+
+    let result = rt.block_on(async {
+        if !FedimintWallet::is_initialized(&workdir) {
+            return Ok(0);
+        }
+
+        FedimintWallet::new(workdir)
+            .await
+            .map_err(anyhow::Error::from)?
+            .balance()
+            .await
+            .map_err(anyhow::Error::from)
+    })?;
+
+    drop(rt);
+    Ok(result)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{get_cashu_balance, init_cashu};

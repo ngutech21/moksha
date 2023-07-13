@@ -10,11 +10,13 @@ class OverviewPage extends StatefulWidget {
 }
 
 class _OverviewPageState extends State<OverviewPage> {
-  late Future<int> balance;
+  late Future<int> cashuBalance;
+  late Future<int> fedimintBalance;
   @override
   void initState() {
     super.initState();
-    balance = api.getCashuBalance();
+    cashuBalance = api.getCashuBalance();
+    fedimintBalance = api.getFedimintBalance();
   }
 
   @override
@@ -24,7 +26,7 @@ class _OverviewPageState extends State<OverviewPage> {
         child: Center(
           child: Column(children: [
             FutureBuilder(
-                future: Future.wait([balance]),
+                future: Future.wait([cashuBalance, fedimintBalance]),
                 builder: (context, snap) {
                   if (snap.error != null) {
                     // An error has been encountered, so give an appropriate response and
@@ -39,11 +41,14 @@ class _OverviewPageState extends State<OverviewPage> {
                   final data = snap.data;
                   if (data == null) return const CircularProgressIndicator();
 
-                  var value = data[0];
+                  var cashuBalance = data[0];
+                  var fedimintBalance = data[1];
+
+                  var totalBalance = cashuBalance + fedimintBalance;
 
                   final regExSeparator = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
                   matchFunc(Match match) => '${match[1]},';
-                  var formattedValue = value
+                  var formattedValue = totalBalance
                       .toString()
                       .replaceAll(',', '')
                       .replaceAllMapped(regExSeparator, matchFunc);
@@ -57,7 +62,9 @@ class _OverviewPageState extends State<OverviewPage> {
                           width: 300.0,
                           child: PieChart(
                             PieChartData(
-                              sections: showingSections(),
+                              sections: showingSections(
+                                  cashuBalance: cashuBalance,
+                                  fedimintBalance: fedimintBalance), // Required
                             ),
                             swapAnimationDuration:
                                 const Duration(milliseconds: 150), // Optional
@@ -71,17 +78,22 @@ class _OverviewPageState extends State<OverviewPage> {
   }
 }
 
-List<PieChartSectionData> showingSections() {
+List<PieChartSectionData> showingSections(
+    {cashuBalance = int, fedimintBalance = int}) {
+  var totalBalance = cashuBalance + fedimintBalance;
+
+  if (totalBalance == 0) {
+    return [];
+  }
+
   return List.generate(2, (i) {
-    final isTouched = i == 0;
-    const color0 = Colors.blue;
-    const color1 = Colors.pink;
+    final isTouched = i == 0; // FIXME
 
     switch (i) {
       case 0:
         return PieChartSectionData(
-          color: color0,
-          value: 270,
+          color: Colors.pink,
+          value: (cashuBalance.toDouble() / totalBalance.toDouble()) * 360,
           title: 'Cashu',
           radius: 80,
           titlePositionPercentageOffset: 0.55,
@@ -91,8 +103,8 @@ List<PieChartSectionData> showingSections() {
         );
       case 1:
         return PieChartSectionData(
-          color: color1,
-          value: 90,
+          color: Colors.blue,
+          value: (fedimintBalance.toDouble() / totalBalance.toDouble()) * 360,
           title: 'Fedimint',
           radius: 65,
           titlePositionPercentageOffset: 0.55,

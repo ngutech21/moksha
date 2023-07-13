@@ -302,6 +302,20 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _wire_join_federation = _wire_join_federationPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
+  void wire_get_fedimint_balance(
+    int port_,
+  ) {
+    return _wire_get_fedimint_balance(
+      port_,
+    );
+  }
+
+  late final _wire_get_fedimint_balancePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_get_fedimint_balance');
+  late final _wire_get_fedimint_balance =
+      _wire_get_fedimint_balancePtr.asFunction<void Function(int)>();
+
   ffi.Pointer<wire_uint_8_list> new_uint_8_list_0(
     int len,
   ) {

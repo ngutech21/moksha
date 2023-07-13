@@ -25,6 +25,8 @@ use std::{str::FromStr, sync::Arc};
 
 use futures::StreamExt;
 
+const CLIENT_CFG: &str = "client.json";
+
 #[derive(Clone)]
 pub struct FedimintWallet {
     client: fedimint_client::Client,
@@ -40,13 +42,12 @@ impl FedimintWallet {
     }
 
     pub async fn connect(workdir: PathBuf, connect: &str) -> anyhow::Result<()> {
-        println!("Connecting to {}", connect);
         let connect_obj: WsClientConnectInfo = WsClientConnectInfo::from_str(connect)?;
         let api = Arc::new(WsFederationApi::from_connect_info(&[connect_obj.clone()]))
             as Arc<dyn IGlobalFederationApi + Send + Sync + 'static>;
         let cfg: ClientConfig = api.download_client_config(&connect_obj).await?;
         create_dir_all(workdir.clone())?;
-        let cfg_path = workdir.join("client.json");
+        let cfg_path = workdir.join(CLIENT_CFG);
         let writer = File::options()
             .create_new(true)
             .write(true)
@@ -119,8 +120,13 @@ impl FedimintWallet {
     }
 
     fn load_config(workdir: &Path) -> anyhow::Result<ClientConfig> {
-        let cfg_path = workdir.join("client.json");
+        let cfg_path = workdir.join(CLIENT_CFG);
         load_from_file(&cfg_path)
+    }
+
+    // FIXME: this is a hack
+    pub fn is_initialized(workdir: &Path) -> bool {
+        workdir.join(CLIENT_CFG).exists()
     }
 
     async fn build_client(
