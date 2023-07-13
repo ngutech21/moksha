@@ -104,7 +104,7 @@ impl FedimintWallet {
                     .with_module_prefix(1),
             )
             .await;
-        Ok(summary.total_amount().msats * 1_000)
+        Ok(summary.total_amount().msats / 1_000)
     }
 
     async fn create_client(workdir: &Path) -> Result<fedimint_client::Client> {

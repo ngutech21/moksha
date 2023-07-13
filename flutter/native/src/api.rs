@@ -193,9 +193,10 @@ pub fn fedimint_mint_tokens(amount: u64, operation_id: String) -> anyhow::Result
             .await
             .map_err(anyhow::Error::from)
     })?;
+    // FIXME check return type
 
     drop(rt);
-    Ok(23)
+    Ok(amount)
 }
 
 pub fn decode_invoice(invoice: String) -> anyhow::Result<FlutterInvoice> {
@@ -275,7 +276,7 @@ pub fn import_token(token: String) -> anyhow::Result<u64> {
 
 pub fn join_federation(federation: String) -> anyhow::Result<()> {
     let rt = lock_runtime!();
-    let workdir = Wallet::config_dir();
+    let workdir = Wallet::config_dir().join("fedimint"); // FIXME extract
 
     rt.block_on(async {
         FedimintWallet::connect(workdir, &federation)
@@ -302,7 +303,7 @@ pub fn get_btcprice() -> anyhow::Result<f64> {
 
 pub fn get_fedimint_balance() -> anyhow::Result<u64> {
     let rt = lock_runtime!();
-    let workdir = Wallet::config_dir();
+    let workdir = Wallet::config_dir().join("fedimint");
 
     let result = rt.block_on(async {
         if !FedimintWallet::is_initialized(&workdir) {
