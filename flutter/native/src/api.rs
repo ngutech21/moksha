@@ -287,6 +287,19 @@ pub fn join_federation(federation: String) -> anyhow::Result<()> {
     Ok(())
 }
 
+pub fn get_btcprice() -> anyhow::Result<f64> {
+    let rt = lock_runtime!();
+
+    let result = rt.block_on(async {
+        moksha_wallet::btcprice::get_btcprice()
+            .await
+            .map_err(anyhow::Error::from)
+    })?;
+
+    drop(rt);
+    Ok(result)
+}
+
 pub fn get_fedimint_balance() -> anyhow::Result<u64> {
     let rt = lock_runtime!();
     let workdir = Wallet::config_dir();

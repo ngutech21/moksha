@@ -56,6 +56,11 @@ pub extern "C" fn wire_join_federation(port_: i64, federation: *mut wire_uint_8_
 }
 
 #[no_mangle]
+pub extern "C" fn wire_get_btcprice(port_: i64) {
+    wire_get_btcprice_impl(port_)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_get_fedimint_balance(port_: i64) {
     wire_get_fedimint_balance_impl(port_)
 }

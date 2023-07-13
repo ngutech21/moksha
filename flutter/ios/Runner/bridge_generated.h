@@ -48,6 +48,8 @@ void wire_import_token(int64_t port_, struct wire_uint_8_list *token);
 
 void wire_join_federation(int64_t port_, struct wire_uint_8_list *federation);
 
+void wire_get_btcprice(int64_t port_);
+
 void wire_get_fedimint_balance(int64_t port_);
 
 struct wire_uint_8_list *new_uint_8_list_0(int32_t len);
@@ -66,6 +68,7 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_pay_invoice);
     dummy_var ^= ((int64_t) (void*) wire_import_token);
     dummy_var ^= ((int64_t) (void*) wire_join_federation);
+    dummy_var ^= ((int64_t) (void*) wire_get_btcprice);
     dummy_var ^= ((int64_t) (void*) wire_get_fedimint_balance);
     dummy_var ^= ((int64_t) (void*) new_uint_8_list_0);
     dummy_var ^= ((int64_t) (void*) free_WireSyncReturn);

@@ -55,6 +55,10 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kJoinFederationConstMeta;
 
+  Future<double> getBtcprice({dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kGetBtcpriceConstMeta;
+
   Future<int> getFedimintBalance({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetFedimintBalanceConstMeta;

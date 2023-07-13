@@ -12,11 +12,13 @@ class OverviewPage extends StatefulWidget {
 class _OverviewPageState extends State<OverviewPage> {
   late Future<int> cashuBalance;
   late Future<int> fedimintBalance;
+  late Future<double> btcPrice;
   @override
   void initState() {
     super.initState();
     cashuBalance = api.getCashuBalance();
     fedimintBalance = api.getFedimintBalance();
+    btcPrice = api.getBtcprice();
   }
 
   @override
@@ -26,7 +28,7 @@ class _OverviewPageState extends State<OverviewPage> {
         child: Center(
           child: Column(children: [
             FutureBuilder(
-                future: Future.wait([cashuBalance, fedimintBalance]),
+                future: Future.wait([cashuBalance, fedimintBalance, btcPrice]),
                 builder: (context, snap) {
                   if (snap.error != null) {
                     // An error has been encountered, so give an appropriate response and
@@ -43,6 +45,9 @@ class _OverviewPageState extends State<OverviewPage> {
 
                   var cashuBalance = data[0];
                   var fedimintBalance = data[1];
+                  var btcPriceUsd = data[2];
+
+                  var pricePerSat = btcPriceUsd / 100000000;
 
                   var totalBalance = cashuBalance + fedimintBalance;
 
@@ -55,8 +60,11 @@ class _OverviewPageState extends State<OverviewPage> {
 
                   return Column(
                     children: [
-                      Text('$formattedValue (sats)',
+                      Text('$formattedValue sats',
                           style: const TextStyle(fontSize: 42)),
+                      Text(
+                          '${(totalBalance * pricePerSat).toStringAsFixed(2)} \$',
+                          style: const TextStyle(fontSize: 32)),
                       SizedBox(
                           height: 300.0,
                           width: 300.0,

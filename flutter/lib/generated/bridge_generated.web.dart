@@ -75,6 +75,8 @@ class NativeWasmModule implements WasmModule {
   external dynamic /* void */ wire_join_federation(
       NativePortType port_, String federation);
 
+  external dynamic /* void */ wire_get_btcprice(NativePortType port_);
+
   external dynamic /* void */ wire_get_fedimint_balance(NativePortType port_);
 }
 
@@ -116,6 +118,9 @@ class NativeWire extends FlutterRustBridgeWasmWireBase<NativeWasmModule> {
 
   void wire_join_federation(NativePortType port_, String federation) =>
       wasmModule.wire_join_federation(port_, federation);
+
+  void wire_get_btcprice(NativePortType port_) =>
+      wasmModule.wire_get_btcprice(port_);
 
   void wire_get_fedimint_balance(NativePortType port_) =>
       wasmModule.wire_get_fedimint_balance(port_);

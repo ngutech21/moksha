@@ -52,6 +52,11 @@ pub fn wire_join_federation(port_: MessagePort, federation: String) {
 }
 
 #[wasm_bindgen]
+pub fn wire_get_btcprice(port_: MessagePort) {
+    wire_get_btcprice_impl(port_)
+}
+
+#[wasm_bindgen]
 pub fn wire_get_fedimint_balance(port_: MessagePort) {
     wire_get_fedimint_balance_impl(port_)
 }

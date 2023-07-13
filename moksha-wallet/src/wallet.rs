@@ -184,6 +184,8 @@ impl Wallet {
         PathBuf::from(moksha_dir)
     }
 
+    
+
     pub async fn get_mint_payment_request(
         &self,
         amount: u64,

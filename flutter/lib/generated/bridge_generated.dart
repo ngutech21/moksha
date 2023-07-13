@@ -199,6 +199,22 @@ class NativeImpl implements Native {
         argNames: ["federation"],
       );
 
+  Future<double> getBtcprice({dynamic hint}) {
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_btcprice(port_),
+      parseSuccessData: _wire2api_f64,
+      constMeta: kGetBtcpriceConstMeta,
+      argValues: [],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kGetBtcpriceConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "get_btcprice",
+        argNames: [],
+      );
+
   Future<int> getFedimintBalance({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_get_fedimint_balance(port_),
@@ -226,6 +242,10 @@ class NativeImpl implements Native {
 
   bool _wire2api_bool(dynamic raw) {
     return raw as bool;
+  }
+
+  double _wire2api_f64(dynamic raw) {
+    return raw as double;
   }
 
   FedimintPaymentRequest _wire2api_fedimint_payment_request(dynamic raw) {
