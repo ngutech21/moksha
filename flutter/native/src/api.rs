@@ -154,8 +154,6 @@ pub fn get_cashu_mint_payment_request(amount: u64) -> anyhow::Result<FlutterPaym
 
 pub fn get_fedimint_payment_request(amount: u64) -> anyhow::Result<FedimintPaymentRequest> {
     let workdir = Wallet::config_dir().join("fedimint");
-    let _ = fs::create_dir_all(&workdir);
-
     let rt = lock_runtime!();
 
     let result = rt.block_on(async {
@@ -178,11 +176,8 @@ pub fn get_fedimint_payment_request(amount: u64) -> anyhow::Result<FedimintPayme
 
 pub fn fedimint_mint_tokens(amount: u64, operation_id: String) -> anyhow::Result<u64> {
     let workdir = Wallet::config_dir().join("fedimint");
-    let _ = fs::create_dir_all(&workdir);
-
     let rt = lock_runtime!();
 
-    // FIXME return amount of tokens minted
     let _result = rt.block_on(async {
         let wallet = FedimintWallet::new(workdir)
             .await
@@ -193,6 +188,8 @@ pub fn fedimint_mint_tokens(amount: u64, operation_id: String) -> anyhow::Result
             .await
             .map_err(anyhow::Error::from)
     })?;
+    println!("fedimint mint tokens {_result:?}");
+
     // FIXME check return type
 
     drop(rt);
@@ -277,6 +274,7 @@ pub fn import_token(token: String) -> anyhow::Result<u64> {
 pub fn join_federation(federation: String) -> anyhow::Result<()> {
     let rt = lock_runtime!();
     let workdir = Wallet::config_dir().join("fedimint"); // FIXME extract
+    let _ = fs::create_dir_all(&workdir);
 
     rt.block_on(async {
         FedimintWallet::connect(workdir, &federation)
