@@ -52,7 +52,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
             ElevatedButton(
                 onPressed: () async {
-                  print("join clicked $federationConnectString");
                   try {
                     await api.joinFederation(
                         federation: federationConnectString);

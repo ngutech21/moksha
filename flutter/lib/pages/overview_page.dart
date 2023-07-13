@@ -46,9 +46,6 @@ class _OverviewPageState extends State<OverviewPage> {
                   var cashuBalance = data[0];
                   var fedimintBalance = data[1];
                   var btcPriceUsd = data[2];
-
-                  print("fedimintBalance $fedimintBalance");
-
                   var pricePerSat = btcPriceUsd / 100000000;
 
                   var totalBalance = cashuBalance + fedimintBalance;

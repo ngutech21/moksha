@@ -188,7 +188,6 @@ class _MintWidgetState extends State<MintWidget> {
 
                           var cleanAmount =
                               int.parse(amount.replaceAll(",", ""));
-                          print("mint amount $cleanAmount");
 
                           if (selectedMintType == MintType.cashu) {
                             try {
@@ -225,7 +224,6 @@ class _MintWidgetState extends State<MintWidget> {
                               return;
                             }
                           } else if (selectedMintType == MintType.fedimint) {
-                            print("fedimint selected");
                             try {
                               var fedimintPaymentRequest =
                                   await api.getFedimintPaymentRequest(
@@ -235,7 +233,6 @@ class _MintWidgetState extends State<MintWidget> {
                                 paymentRequest = fedimintPaymentRequest.pr;
                                 _isInvoiceCreated = true;
                               });
-                              print("fedimint mint tokens");
 
                               var mintedTokens = await api.fedimintMintTokens(
                                   amount: cleanAmount,
