@@ -8,7 +8,7 @@ set(BINARY_NAME "moksha-wallet")
 
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.github.cashurs.moksha-wallet")
+set(APPLICATION_ID "com.github.ngutech21.moksha-wallet")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
