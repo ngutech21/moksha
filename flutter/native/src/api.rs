@@ -2,7 +2,6 @@
 // When adding new code to your project, note that only items used
 // here will be transformed to their Dart equivalents.
 
-use std::fs;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -152,50 +151,6 @@ pub fn get_cashu_mint_payment_request(amount: u64) -> anyhow::Result<FlutterPaym
     Ok(result.into())
 }
 
-pub fn get_fedimint_payment_request(amount: u64) -> anyhow::Result<FedimintPaymentRequest> {
-    let workdir = Wallet::config_dir().join("fedimint");
-    let rt = lock_runtime!();
-
-    let result = rt.block_on(async {
-        let wallet = FedimintWallet::new(workdir)
-            .await
-            .map_err(anyhow::Error::from)?;
-
-        wallet
-            .get_mint_payment_request(amount)
-            .await
-            .map_err(anyhow::Error::from)
-    })?;
-
-    drop(rt);
-    Ok(FedimintPaymentRequest {
-        pr: result.1.to_string(),
-        operation_id: result.0,
-    })
-}
-
-pub fn fedimint_mint_tokens(amount: u64, operation_id: String) -> anyhow::Result<u64> {
-    let workdir = Wallet::config_dir().join("fedimint");
-    let rt = lock_runtime!();
-
-    let _result = rt.block_on(async {
-        let wallet = FedimintWallet::new(workdir)
-            .await
-            .map_err(anyhow::Error::from)?;
-
-        wallet
-            .mint(operation_id, amount)
-            .await
-            .map_err(anyhow::Error::from)
-    })?;
-    println!("fedimint mint tokens {_result:?}");
-
-    // FIXME check return type
-
-    drop(rt);
-    Ok(amount)
-}
-
 pub fn decode_invoice(invoice: String) -> anyhow::Result<FlutterInvoice> {
     let invoice = Invoice::from_str(&invoice).map_err(anyhow::Error::from)?;
     Ok(invoice.into())
@@ -271,10 +226,13 @@ pub fn import_token(token: String) -> anyhow::Result<u64> {
     Ok(deserialized_token.total_amount())
 }
 
+fn fedimint_workdir() -> std::path::PathBuf {
+    Wallet::config_dir().join("fedimint")
+}
+
 pub fn join_federation(federation: String) -> anyhow::Result<()> {
     let rt = lock_runtime!();
-    let workdir = Wallet::config_dir().join("fedimint"); // FIXME extract
-    let _ = fs::create_dir_all(&workdir);
+    let workdir = fedimint_workdir();
 
     rt.block_on(async {
         FedimintWallet::connect(workdir, &federation)
@@ -286,22 +244,47 @@ pub fn join_federation(federation: String) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn get_btcprice() -> anyhow::Result<f64> {
+pub fn get_fedimint_payment_request(amount: u64) -> anyhow::Result<FedimintPaymentRequest> {
+    let workdir = fedimint_workdir();
     let rt = lock_runtime!();
 
     let result = rt.block_on(async {
-        moksha_wallet::btcprice::get_btcprice()
+        let wallet = FedimintWallet::new(workdir)
+            .await
+            .map_err(anyhow::Error::from)?;
+
+        wallet
+            .get_mint_payment_request(amount)
             .await
             .map_err(anyhow::Error::from)
     })?;
 
     drop(rt);
-    Ok(result)
+    Ok(FedimintPaymentRequest {
+        pr: result.1.to_string(),
+        operation_id: result.0,
+    })
+}
+
+pub fn fedimint_mint_tokens(amount: u64, operation_id: String) -> anyhow::Result<u64> {
+    let workdir = fedimint_workdir();
+    let rt = lock_runtime!();
+
+    rt.block_on(async {
+        let wallet = FedimintWallet::new(workdir)
+            .await
+            .map_err(anyhow::Error::from)?;
+
+        wallet.mint(operation_id).await.map_err(anyhow::Error::from)
+    })?;
+
+    drop(rt);
+    Ok(amount)
 }
 
 pub fn get_fedimint_balance() -> anyhow::Result<u64> {
     let rt = lock_runtime!();
-    let workdir = Wallet::config_dir().join("fedimint");
+    let workdir = fedimint_workdir();
 
     let result = rt.block_on(async {
         if !FedimintWallet::is_initialized(&workdir) {
@@ -312,6 +295,19 @@ pub fn get_fedimint_balance() -> anyhow::Result<u64> {
             .await
             .map_err(anyhow::Error::from)?
             .balance()
+            .await
+            .map_err(anyhow::Error::from)
+    })?;
+
+    drop(rt);
+    Ok(result)
+}
+
+pub fn get_btcprice() -> anyhow::Result<f64> {
+    let rt = lock_runtime!();
+
+    let result = rt.block_on(async {
+        moksha_wallet::btcprice::get_btcprice()
             .await
             .map_err(anyhow::Error::from)
     })?;

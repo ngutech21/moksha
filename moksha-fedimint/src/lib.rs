@@ -30,14 +30,12 @@ const CLIENT_CFG: &str = "client.json";
 #[derive(Clone)]
 pub struct FedimintWallet {
     client: fedimint_client::Client,
-    workdir: PathBuf,
 }
 
 impl FedimintWallet {
     pub async fn new(workdir: PathBuf) -> anyhow::Result<Self> {
         Ok(Self {
             client: Self::create_client(&workdir).await?,
-            workdir,
         })
     }
 
@@ -66,9 +64,7 @@ impl FedimintWallet {
         Ok((operation_id.to_string(), invoice))
     }
 
-    pub async fn mint(&self, operation_id: String, amount: u64) -> anyhow::Result<LnReceiveState> {
-        println!("Workdir: {:?}", self.workdir);
-        println!("Minting {} tokens", amount);
+    pub async fn mint(&self, operation_id: String) -> anyhow::Result<()> {
         self.client.select_active_gateway().await?;
 
         let mut updates = self
@@ -79,7 +75,7 @@ impl FedimintWallet {
         while let Some(update) = updates.next().await {
             match update {
                 LnReceiveState::Claimed => {
-                    return Ok(LnReceiveState::Claimed);
+                    return Ok(());
                 }
                 LnReceiveState::Canceled { reason } => {
                     return Err(reason.into());
