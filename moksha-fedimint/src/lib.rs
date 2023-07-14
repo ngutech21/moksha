@@ -6,22 +6,26 @@ use fedimint_client::sm::OperationId;
 use fedimint_client::ClientBuilder;
 use fedimint_core::api::GlobalFederationApi;
 use fedimint_core::config::load_from_file;
+use fedimint_core::encoding::Encodable;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::task::TaskGroup;
-use fedimint_core::Amount;
 use fedimint_core::{
     api::{IGlobalFederationApi, WsClientConnectInfo, WsFederationApi},
     config::ClientConfig,
 };
+use fedimint_core::{Amount, TieredMulti};
 use fedimint_ln_client::{
     LightningClientExt, LightningClientGen, LnPayState, LnReceiveState, PayType,
 };
-use fedimint_mint_client::{MintClientGen, MintClientModule};
+use fedimint_mint_client::{
+    parse_ecash, MintClientExt, MintClientGen, MintClientModule, SpendableNote,
+};
 use fedimint_wallet_client::WalletClientGen;
 use lightning_invoice::Invoice;
 use std::fs::create_dir_all;
 use std::fs::File;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 use std::vec;
 use std::{str::FromStr, sync::Arc};
 
@@ -92,6 +96,44 @@ impl FedimintWallet {
                 _ => {}
             }
         }
+    }
+
+    pub async fn receive_tokens(&self, tokens: String) -> anyhow::Result<u64> {
+        let notes = parse_ecash(&tokens)?;
+        let total_amount = notes.total_amount().msats / 1_000;
+
+        let operation_id = self.client.reissue_external_notes(notes, ()).await?;
+        let mut updates = self
+            .client
+            .subscribe_reissue_external_notes(operation_id)
+            .await
+            .unwrap()
+            .into_stream();
+
+        while let Some(update) = updates.next().await {
+            if let fedimint_mint_client::ReissueExternalNotesState::Failed(e) = update {
+                return Err(anyhow::Error::msg(format!("Reissue failed: {e}")));
+            }
+        }
+        Ok(total_amount)
+    }
+
+    pub fn serialize_ecash(c: &TieredMulti<SpendableNote>) -> String {
+        let mut bytes = Vec::new();
+        Encodable::consensus_encode(c, &mut bytes).expect("encodes correctly");
+        base64::encode(&bytes)
+    }
+
+    pub async fn send_tokens(
+        &self,
+        min_amount: u64,
+        try_cancel_after: Duration,
+    ) -> anyhow::Result<String> {
+        let (_, notes) = self
+            .client
+            .spend_notes(Amount::from_sats(min_amount), try_cancel_after, ())
+            .await?;
+        Ok(Self::serialize_ecash(&notes))
     }
 
     pub async fn mint(&self, operation_id: String) -> anyhow::Result<()> {

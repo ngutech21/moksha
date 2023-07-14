@@ -32,8 +32,8 @@ pub extern "C" fn wire_cashu_pay_invoice(port_: i64, invoice: *mut wire_uint_8_l
 }
 
 #[no_mangle]
-pub extern "C" fn wire_import_token(port_: i64, token: *mut wire_uint_8_list) {
-    wire_import_token_impl(port_, token)
+pub extern "C" fn wire_cashu_import_token(port_: i64, token: *mut wire_uint_8_list) {
+    wire_cashu_import_token_impl(port_, token)
 }
 
 #[no_mangle]
@@ -63,6 +63,11 @@ pub extern "C" fn wire_get_fedimint_balance(port_: i64) {
 #[no_mangle]
 pub extern "C" fn wire_fedimint_pay_invoice(port_: i64, invoice: *mut wire_uint_8_list) {
     wire_fedimint_pay_invoice_impl(port_, invoice)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_fedimint_receive_tokens(port_: i64, tokens: *mut wire_uint_8_list) {
+    wire_fedimint_receive_tokens_impl(port_, tokens)
 }
 
 #[no_mangle]
