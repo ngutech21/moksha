@@ -184,6 +184,19 @@ fn wire_fedimint_pay_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<Str
         },
     )
 }
+fn wire_import_token_impl(port_: MessagePort, token: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "import_token",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_token = token.wire2api();
+            move |task_callback| import_token(api_token)
+        },
+    )
+}
 fn wire_fedimint_receive_tokens_impl(
     port_: MessagePort,
     tokens: impl Wire2Api<String> + UnwindSafe,

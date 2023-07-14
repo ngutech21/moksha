@@ -333,6 +333,23 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _wire_fedimint_pay_invoice = _wire_fedimint_pay_invoicePtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
+  void wire_import_token(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> token,
+  ) {
+    return _wire_import_token(
+      port_,
+      token,
+    );
+  }
+
+  late final _wire_import_tokenPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_import_token');
+  late final _wire_import_token = _wire_import_tokenPtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
   void wire_fedimint_receive_tokens(
     int port_,
     ffi.Pointer<wire_uint_8_list> tokens,

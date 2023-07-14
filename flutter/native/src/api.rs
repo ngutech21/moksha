@@ -324,6 +324,14 @@ pub fn fedimint_pay_invoice(invoice: String) -> anyhow::Result<bool> {
     Ok(result)
 }
 
+pub fn import_token(token: String) -> anyhow::Result<u64> {
+    if token.starts_with("cashu") {
+        cashu_import_token(token)
+    } else {
+        fedimint_receive_tokens(token)
+    }
+}
+
 pub fn fedimint_receive_tokens(tokens: String) -> anyhow::Result<u64> {
     let rt = lock_runtime!();
     let workdir = fedimint_workdir();

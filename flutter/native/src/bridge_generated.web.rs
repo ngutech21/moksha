@@ -62,6 +62,11 @@ pub fn wire_fedimint_pay_invoice(port_: MessagePort, invoice: String) {
 }
 
 #[wasm_bindgen]
+pub fn wire_import_token(port_: MessagePort, token: String) {
+    wire_import_token_impl(port_, token)
+}
+
+#[wasm_bindgen]
 pub fn wire_fedimint_receive_tokens(port_: MessagePort, tokens: String) {
     wire_fedimint_receive_tokens_impl(port_, tokens)
 }

@@ -63,6 +63,10 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kFedimintPayInvoiceConstMeta;
 
+  Future<int> importToken({required String token, dynamic hint});
+
+  FlutterRustBridgeTaskConstMeta get kImportTokenConstMeta;
+
   Future<int> fedimintReceiveTokens({required String tokens, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kFedimintReceiveTokensConstMeta;

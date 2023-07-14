@@ -233,6 +233,23 @@ class NativeImpl implements Native {
         argNames: ["invoice"],
       );
 
+  Future<int> importToken({required String token, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(token);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_import_token(port_, arg0),
+      parseSuccessData: _wire2api_u64,
+      constMeta: kImportTokenConstMeta,
+      argValues: [token],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kImportTokenConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "import_token",
+        argNames: ["token"],
+      );
+
   Future<int> fedimintReceiveTokens({required String tokens, dynamic hint}) {
     var arg0 = _platform.api2wire_String(tokens);
     return _platform.executeNormal(FlutterRustBridgeTask(
