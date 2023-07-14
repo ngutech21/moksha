@@ -13,7 +13,9 @@ use fedimint_core::{
     api::{IGlobalFederationApi, WsClientConnectInfo, WsFederationApi},
     config::ClientConfig,
 };
-use fedimint_ln_client::{LightningClientExt, LightningClientGen, LnReceiveState};
+use fedimint_ln_client::{
+    LightningClientExt, LightningClientGen, LnPayState, LnReceiveState, PayType,
+};
 use fedimint_mint_client::{MintClientGen, MintClientModule};
 use fedimint_wallet_client::WalletClientGen;
 use lightning_invoice::Invoice;
@@ -62,6 +64,34 @@ impl FedimintWallet {
             .create_bolt11_invoice(Amount::from_sats(amount), "test".to_owned(), None)
             .await?;
         Ok((operation_id.to_string(), invoice))
+    }
+
+    pub async fn pay_ln_invoice(&self, invoice: String) -> anyhow::Result<bool> {
+        self.client.select_active_gateway().await?;
+
+        let ln_invoice = Invoice::from_str(&invoice)?;
+
+        let (pay_types, _) = self.client.pay_bolt11_invoice(ln_invoice).await?;
+        let PayType::Lightning(operation_id) = pay_types else { unreachable!("paying invoice over lightning"); };
+        let mut updates = self
+            .client
+            .subscribe_ln_pay(operation_id)
+            .await?
+            .into_stream();
+
+        loop {
+            match updates.next().await {
+                // FIXME return enum
+                Some(LnPayState::Success { preimage: _ }) => {
+                    return Ok(true);
+                }
+                Some(LnPayState::Refunded { gateway_error }) => {
+                    return Err(anyhow::anyhow!("refunded {gateway_error}"));
+                }
+                None => return Err(anyhow::anyhow!("Lightning send failed")),
+                _ => {}
+            }
+        }
     }
 
     pub async fn mint(&self, operation_id: String) -> anyhow::Result<()> {

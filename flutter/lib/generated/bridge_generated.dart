@@ -91,6 +91,75 @@ class NativeImpl implements Native {
         argNames: ["amount"],
       );
 
+  Future<FlutterInvoice> decodeInvoice(
+      {required String invoice, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(invoice);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_decode_invoice(port_, arg0),
+      parseSuccessData: _wire2api_flutter_invoice,
+      constMeta: kDecodeInvoiceConstMeta,
+      argValues: [invoice],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kDecodeInvoiceConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "decode_invoice",
+        argNames: ["invoice"],
+      );
+
+  Future<bool> cashuPayInvoice({required String invoice, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(invoice);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_cashu_pay_invoice(port_, arg0),
+      parseSuccessData: _wire2api_bool,
+      constMeta: kCashuPayInvoiceConstMeta,
+      argValues: [invoice],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kCashuPayInvoiceConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "cashu_pay_invoice",
+        argNames: ["invoice"],
+      );
+
+  Future<int> importToken({required String token, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(token);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_import_token(port_, arg0),
+      parseSuccessData: _wire2api_u64,
+      constMeta: kImportTokenConstMeta,
+      argValues: [token],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kImportTokenConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "import_token",
+        argNames: ["token"],
+      );
+
+  Future<void> joinFederation({required String federation, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(federation);
+    return _platform.executeNormal(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_join_federation(port_, arg0),
+      parseSuccessData: _wire2api_unit,
+      constMeta: kJoinFederationConstMeta,
+      argValues: [federation],
+      hint: hint,
+    ));
+  }
+
+  FlutterRustBridgeTaskConstMeta get kJoinFederationConstMeta =>
+      const FlutterRustBridgeTaskConstMeta(
+        debugName: "join_federation",
+        argNames: ["federation"],
+      );
+
   Future<FedimintPaymentRequest> getFedimintPaymentRequest(
       {required int amount, dynamic hint}) {
     var arg0 = _platform.api2wire_u64(amount);
@@ -130,73 +199,38 @@ class NativeImpl implements Native {
         argNames: ["amount", "operationId"],
       );
 
-  Future<FlutterInvoice> decodeInvoice(
-      {required String invoice, dynamic hint}) {
-    var arg0 = _platform.api2wire_String(invoice);
+  Future<int> getFedimintBalance({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_decode_invoice(port_, arg0),
-      parseSuccessData: _wire2api_flutter_invoice,
-      constMeta: kDecodeInvoiceConstMeta,
-      argValues: [invoice],
-      hint: hint,
-    ));
-  }
-
-  FlutterRustBridgeTaskConstMeta get kDecodeInvoiceConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "decode_invoice",
-        argNames: ["invoice"],
-      );
-
-  Future<bool> payInvoice({required String invoice, dynamic hint}) {
-    var arg0 = _platform.api2wire_String(invoice);
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_pay_invoice(port_, arg0),
-      parseSuccessData: _wire2api_bool,
-      constMeta: kPayInvoiceConstMeta,
-      argValues: [invoice],
-      hint: hint,
-    ));
-  }
-
-  FlutterRustBridgeTaskConstMeta get kPayInvoiceConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "pay_invoice",
-        argNames: ["invoice"],
-      );
-
-  Future<int> importToken({required String token, dynamic hint}) {
-    var arg0 = _platform.api2wire_String(token);
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_import_token(port_, arg0),
+      callFfi: (port_) => _platform.inner.wire_get_fedimint_balance(port_),
       parseSuccessData: _wire2api_u64,
-      constMeta: kImportTokenConstMeta,
-      argValues: [token],
+      constMeta: kGetFedimintBalanceConstMeta,
+      argValues: [],
       hint: hint,
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kImportTokenConstMeta =>
+  FlutterRustBridgeTaskConstMeta get kGetFedimintBalanceConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
-        debugName: "import_token",
-        argNames: ["token"],
+        debugName: "get_fedimint_balance",
+        argNames: [],
       );
 
-  Future<void> joinFederation({required String federation, dynamic hint}) {
-    var arg0 = _platform.api2wire_String(federation);
+  Future<bool> fedimintPayInvoice({required String invoice, dynamic hint}) {
+    var arg0 = _platform.api2wire_String(invoice);
     return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_join_federation(port_, arg0),
-      parseSuccessData: _wire2api_unit,
-      constMeta: kJoinFederationConstMeta,
-      argValues: [federation],
+      callFfi: (port_) =>
+          _platform.inner.wire_fedimint_pay_invoice(port_, arg0),
+      parseSuccessData: _wire2api_bool,
+      constMeta: kFedimintPayInvoiceConstMeta,
+      argValues: [invoice],
       hint: hint,
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kJoinFederationConstMeta =>
+  FlutterRustBridgeTaskConstMeta get kFedimintPayInvoiceConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
-        debugName: "join_federation",
-        argNames: ["federation"],
+        debugName: "fedimint_pay_invoice",
+        argNames: ["invoice"],
       );
 
   Future<double> getBtcprice({dynamic hint}) {
@@ -212,22 +246,6 @@ class NativeImpl implements Native {
   FlutterRustBridgeTaskConstMeta get kGetBtcpriceConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
         debugName: "get_btcprice",
-        argNames: [],
-      );
-
-  Future<int> getFedimintBalance({dynamic hint}) {
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_get_fedimint_balance(port_),
-      parseSuccessData: _wire2api_u64,
-      constMeta: kGetFedimintBalanceConstMeta,
-      argValues: [],
-      hint: hint,
-    ));
-  }
-
-  FlutterRustBridgeTaskConstMeta get kGetFedimintBalanceConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "get_fedimint_balance",
         argNames: [],
       );
 

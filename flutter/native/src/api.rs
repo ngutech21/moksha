@@ -195,7 +195,7 @@ impl From<PaymentRequest> for FlutterPaymentRequest {
     }
 }
 
-pub fn pay_invoice(invoice: String) -> anyhow::Result<bool> {
+pub fn cashu_pay_invoice(invoice: String) -> anyhow::Result<bool> {
     let wallet = _create_local_wallet().map_err(anyhow::Error::from)?;
     let rt = lock_runtime!();
 
@@ -295,6 +295,27 @@ pub fn get_fedimint_balance() -> anyhow::Result<u64> {
             .await
             .map_err(anyhow::Error::from)?
             .balance()
+            .await
+            .map_err(anyhow::Error::from)
+    })?;
+
+    drop(rt);
+    Ok(result)
+}
+
+pub fn fedimint_pay_invoice(invoice: String) -> anyhow::Result<bool> {
+    let rt = lock_runtime!();
+    let workdir = fedimint_workdir();
+
+    let result = rt.block_on(async {
+        if !FedimintWallet::is_initialized(&workdir) {
+            return Ok(false);
+        }
+
+        FedimintWallet::new(workdir)
+            .await
+            .map_err(anyhow::Error::from)?
+            .pay_ln_invoice(invoice)
             .await
             .map_err(anyhow::Error::from)
     })?;

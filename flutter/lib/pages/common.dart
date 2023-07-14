@@ -1,0 +1,1 @@
+enum MintType { cashu, fedimint }

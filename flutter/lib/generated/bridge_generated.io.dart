@@ -198,42 +198,6 @@ class NativeWire implements FlutterRustBridgeWireBase {
       _wire_get_cashu_mint_payment_requestPtr
           .asFunction<void Function(int, int)>();
 
-  void wire_get_fedimint_payment_request(
-    int port_,
-    int amount,
-  ) {
-    return _wire_get_fedimint_payment_request(
-      port_,
-      amount,
-    );
-  }
-
-  late final _wire_get_fedimint_payment_requestPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint64)>>(
-          'wire_get_fedimint_payment_request');
-  late final _wire_get_fedimint_payment_request =
-      _wire_get_fedimint_payment_requestPtr
-          .asFunction<void Function(int, int)>();
-
-  void wire_fedimint_mint_tokens(
-    int port_,
-    int amount,
-    ffi.Pointer<wire_uint_8_list> operation_id,
-  ) {
-    return _wire_fedimint_mint_tokens(
-      port_,
-      amount,
-      operation_id,
-    );
-  }
-
-  late final _wire_fedimint_mint_tokensPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64, ffi.Uint64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_fedimint_mint_tokens');
-  late final _wire_fedimint_mint_tokens = _wire_fedimint_mint_tokensPtr
-      .asFunction<void Function(int, int, ffi.Pointer<wire_uint_8_list>)>();
-
   void wire_decode_invoice(
     int port_,
     ffi.Pointer<wire_uint_8_list> invoice,
@@ -251,21 +215,21 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _wire_decode_invoice = _wire_decode_invoicePtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
-  void wire_pay_invoice(
+  void wire_cashu_pay_invoice(
     int port_,
     ffi.Pointer<wire_uint_8_list> invoice,
   ) {
-    return _wire_pay_invoice(
+    return _wire_cashu_pay_invoice(
       port_,
       invoice,
     );
   }
 
-  late final _wire_pay_invoicePtr = _lookup<
+  late final _wire_cashu_pay_invoicePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_pay_invoice');
-  late final _wire_pay_invoice = _wire_pay_invoicePtr
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_cashu_pay_invoice');
+  late final _wire_cashu_pay_invoice = _wire_cashu_pay_invoicePtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_import_token(
@@ -302,19 +266,41 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _wire_join_federation = _wire_join_federationPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
-  void wire_get_btcprice(
+  void wire_get_fedimint_payment_request(
     int port_,
+    int amount,
   ) {
-    return _wire_get_btcprice(
+    return _wire_get_fedimint_payment_request(
       port_,
+      amount,
     );
   }
 
-  late final _wire_get_btcpricePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_get_btcprice');
-  late final _wire_get_btcprice =
-      _wire_get_btcpricePtr.asFunction<void Function(int)>();
+  late final _wire_get_fedimint_payment_requestPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint64)>>(
+          'wire_get_fedimint_payment_request');
+  late final _wire_get_fedimint_payment_request =
+      _wire_get_fedimint_payment_requestPtr
+          .asFunction<void Function(int, int)>();
+
+  void wire_fedimint_mint_tokens(
+    int port_,
+    int amount,
+    ffi.Pointer<wire_uint_8_list> operation_id,
+  ) {
+    return _wire_fedimint_mint_tokens(
+      port_,
+      amount,
+      operation_id,
+    );
+  }
+
+  late final _wire_fedimint_mint_tokensPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Uint64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_fedimint_mint_tokens');
+  late final _wire_fedimint_mint_tokens = _wire_fedimint_mint_tokensPtr
+      .asFunction<void Function(int, int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_fedimint_balance(
     int port_,
@@ -329,6 +315,37 @@ class NativeWire implements FlutterRustBridgeWireBase {
           'wire_get_fedimint_balance');
   late final _wire_get_fedimint_balance =
       _wire_get_fedimint_balancePtr.asFunction<void Function(int)>();
+
+  void wire_fedimint_pay_invoice(
+    int port_,
+    ffi.Pointer<wire_uint_8_list> invoice,
+  ) {
+    return _wire_fedimint_pay_invoice(
+      port_,
+      invoice,
+    );
+  }
+
+  late final _wire_fedimint_pay_invoicePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64,
+              ffi.Pointer<wire_uint_8_list>)>>('wire_fedimint_pay_invoice');
+  late final _wire_fedimint_pay_invoice = _wire_fedimint_pay_invoicePtr
+      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+
+  void wire_get_btcprice(
+    int port_,
+  ) {
+    return _wire_get_btcprice(
+      port_,
+    );
+  }
+
+  late final _wire_get_btcpricePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_get_btcprice');
+  late final _wire_get_btcprice =
+      _wire_get_btcpricePtr.asFunction<void Function(int)>();
 
   ffi.Pointer<wire_uint_8_list> new_uint_8_list_0(
     int len,

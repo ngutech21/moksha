@@ -22,23 +22,13 @@ pub fn wire_get_cashu_mint_payment_request(port_: MessagePort, amount: u64) {
 }
 
 #[wasm_bindgen]
-pub fn wire_get_fedimint_payment_request(port_: MessagePort, amount: u64) {
-    wire_get_fedimint_payment_request_impl(port_, amount)
-}
-
-#[wasm_bindgen]
-pub fn wire_fedimint_mint_tokens(port_: MessagePort, amount: u64, operation_id: String) {
-    wire_fedimint_mint_tokens_impl(port_, amount, operation_id)
-}
-
-#[wasm_bindgen]
 pub fn wire_decode_invoice(port_: MessagePort, invoice: String) {
     wire_decode_invoice_impl(port_, invoice)
 }
 
 #[wasm_bindgen]
-pub fn wire_pay_invoice(port_: MessagePort, invoice: String) {
-    wire_pay_invoice_impl(port_, invoice)
+pub fn wire_cashu_pay_invoice(port_: MessagePort, invoice: String) {
+    wire_cashu_pay_invoice_impl(port_, invoice)
 }
 
 #[wasm_bindgen]
@@ -52,13 +42,28 @@ pub fn wire_join_federation(port_: MessagePort, federation: String) {
 }
 
 #[wasm_bindgen]
-pub fn wire_get_btcprice(port_: MessagePort) {
-    wire_get_btcprice_impl(port_)
+pub fn wire_get_fedimint_payment_request(port_: MessagePort, amount: u64) {
+    wire_get_fedimint_payment_request_impl(port_, amount)
+}
+
+#[wasm_bindgen]
+pub fn wire_fedimint_mint_tokens(port_: MessagePort, amount: u64, operation_id: String) {
+    wire_fedimint_mint_tokens_impl(port_, amount, operation_id)
 }
 
 #[wasm_bindgen]
 pub fn wire_get_fedimint_balance(port_: MessagePort) {
     wire_get_fedimint_balance_impl(port_)
+}
+
+#[wasm_bindgen]
+pub fn wire_fedimint_pay_invoice(port_: MessagePort, invoice: String) {
+    wire_fedimint_pay_invoice_impl(port_, invoice)
+}
+
+#[wasm_bindgen]
+pub fn wire_get_btcprice(port_: MessagePort) {
+    wire_get_btcprice_impl(port_)
 }
 
 // Section: allocate functions

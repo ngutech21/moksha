@@ -75,6 +75,58 @@ fn wire_get_cashu_mint_payment_request_impl(
         },
     )
 }
+fn wire_decode_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "decode_invoice",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_invoice = invoice.wire2api();
+            move |task_callback| decode_invoice(api_invoice)
+        },
+    )
+}
+fn wire_cashu_pay_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "cashu_pay_invoice",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_invoice = invoice.wire2api();
+            move |task_callback| cashu_pay_invoice(api_invoice)
+        },
+    )
+}
+fn wire_import_token_impl(port_: MessagePort, token: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "import_token",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_token = token.wire2api();
+            move |task_callback| import_token(api_token)
+        },
+    )
+}
+fn wire_join_federation_impl(port_: MessagePort, federation: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "join_federation",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || {
+            let api_federation = federation.wire2api();
+            move |task_callback| join_federation(api_federation)
+        },
+    )
+}
 fn wire_get_fedimint_payment_request_impl(
     port_: MessagePort,
     amount: impl Wire2Api<u64> + UnwindSafe,
@@ -109,55 +161,26 @@ fn wire_fedimint_mint_tokens_impl(
         },
     )
 }
-fn wire_decode_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> + UnwindSafe) {
+fn wire_get_fedimint_balance_impl(port_: MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap(
         WrapInfo {
-            debug_name: "decode_invoice",
+            debug_name: "get_fedimint_balance",
+            port: Some(port_),
+            mode: FfiCallMode::Normal,
+        },
+        move || move |task_callback| get_fedimint_balance(),
+    )
+}
+fn wire_fedimint_pay_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> + UnwindSafe) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
+        WrapInfo {
+            debug_name: "fedimint_pay_invoice",
             port: Some(port_),
             mode: FfiCallMode::Normal,
         },
         move || {
             let api_invoice = invoice.wire2api();
-            move |task_callback| decode_invoice(api_invoice)
-        },
-    )
-}
-fn wire_pay_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> + UnwindSafe) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "pay_invoice",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_invoice = invoice.wire2api();
-            move |task_callback| pay_invoice(api_invoice)
-        },
-    )
-}
-fn wire_import_token_impl(port_: MessagePort, token: impl Wire2Api<String> + UnwindSafe) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "import_token",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_token = token.wire2api();
-            move |task_callback| import_token(api_token)
-        },
-    )
-}
-fn wire_join_federation_impl(port_: MessagePort, federation: impl Wire2Api<String> + UnwindSafe) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "join_federation",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || {
-            let api_federation = federation.wire2api();
-            move |task_callback| join_federation(api_federation)
+            move |task_callback| fedimint_pay_invoice(api_invoice)
         },
     )
 }
@@ -169,16 +192,6 @@ fn wire_get_btcprice_impl(port_: MessagePort) {
             mode: FfiCallMode::Normal,
         },
         move || move |task_callback| get_btcprice(),
-    )
-}
-fn wire_get_fedimint_balance_impl(port_: MessagePort) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap(
-        WrapInfo {
-            debug_name: "get_fedimint_balance",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
-        },
-        move || move |task_callback| get_fedimint_balance(),
     )
 }
 // Section: wrapper structs

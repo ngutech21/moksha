@@ -3,6 +3,7 @@
 import 'package:moksha_wallet/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:moksha_wallet/pages/util.dart';
+import 'package:moksha_wallet/pages/common.dart';
 
 class PayInvoicePage extends StatefulWidget {
   const PayInvoicePage({super.key});
@@ -14,6 +15,7 @@ class PayInvoicePage extends StatefulWidget {
 class _PayInvoicePageState extends State<PayInvoicePage> {
   String invoice = '';
   FlutterInvoice? decodedInvoice;
+  MintType? selectedMintType = MintType.cashu;
 
   @override
   Widget build(BuildContext context) {
@@ -48,10 +50,37 @@ class _PayInvoicePageState extends State<PayInvoicePage> {
               child: Text(
                   "Amount: ${decodedInvoice?.amountSats} (sats)\nExpires in: ${decodedInvoice?.expiryTime} (seconds)")),
           const Spacer(),
+          Visibility(
+              visible: invoice.isNotEmpty,
+              child: DropdownButton<MintType>(
+                  value: selectedMintType,
+                  items: const [
+                    DropdownMenuItem(
+                        value: MintType.cashu, child: Text("Cashu")),
+                    DropdownMenuItem(
+                        value: MintType.fedimint, child: Text("Fedimint"))
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      selectedMintType = value;
+                    });
+                  })),
           ElevatedButton(
               onPressed: () async {
                 try {
-                  var paid = await api.payInvoice(invoice: invoice);
+                  if (selectedMintType == null) {
+                    return;
+                  }
+
+                  var paid = false;
+                  if (selectedMintType == MintType.cashu) {
+                    paid = await api.cashuPayInvoice(invoice: invoice);
+                  } else if (selectedMintType == MintType.fedimint) {
+                    paid = await api.fedimintPayInvoice(invoice: invoice);
+                  } else {
+                    throw Exception("Unknown mint type");
+                  }
+
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content: Column(children: [

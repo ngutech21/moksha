@@ -22,6 +22,26 @@ pub extern "C" fn wire_get_cashu_mint_payment_request(port_: i64, amount: u64) {
 }
 
 #[no_mangle]
+pub extern "C" fn wire_decode_invoice(port_: i64, invoice: *mut wire_uint_8_list) {
+    wire_decode_invoice_impl(port_, invoice)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_cashu_pay_invoice(port_: i64, invoice: *mut wire_uint_8_list) {
+    wire_cashu_pay_invoice_impl(port_, invoice)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_import_token(port_: i64, token: *mut wire_uint_8_list) {
+    wire_import_token_impl(port_, token)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_join_federation(port_: i64, federation: *mut wire_uint_8_list) {
+    wire_join_federation_impl(port_, federation)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_get_fedimint_payment_request(port_: i64, amount: u64) {
     wire_get_fedimint_payment_request_impl(port_, amount)
 }
@@ -36,33 +56,18 @@ pub extern "C" fn wire_fedimint_mint_tokens(
 }
 
 #[no_mangle]
-pub extern "C" fn wire_decode_invoice(port_: i64, invoice: *mut wire_uint_8_list) {
-    wire_decode_invoice_impl(port_, invoice)
+pub extern "C" fn wire_get_fedimint_balance(port_: i64) {
+    wire_get_fedimint_balance_impl(port_)
 }
 
 #[no_mangle]
-pub extern "C" fn wire_pay_invoice(port_: i64, invoice: *mut wire_uint_8_list) {
-    wire_pay_invoice_impl(port_, invoice)
-}
-
-#[no_mangle]
-pub extern "C" fn wire_import_token(port_: i64, token: *mut wire_uint_8_list) {
-    wire_import_token_impl(port_, token)
-}
-
-#[no_mangle]
-pub extern "C" fn wire_join_federation(port_: i64, federation: *mut wire_uint_8_list) {
-    wire_join_federation_impl(port_, federation)
+pub extern "C" fn wire_fedimint_pay_invoice(port_: i64, invoice: *mut wire_uint_8_list) {
+    wire_fedimint_pay_invoice_impl(port_, invoice)
 }
 
 #[no_mangle]
 pub extern "C" fn wire_get_btcprice(port_: i64) {
     wire_get_btcprice_impl(port_)
-}
-
-#[no_mangle]
-pub extern "C" fn wire_get_fedimint_balance(port_: i64) {
-    wire_get_fedimint_balance_impl(port_)
 }
 
 // Section: allocate functions
