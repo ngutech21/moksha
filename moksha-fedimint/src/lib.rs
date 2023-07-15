@@ -98,7 +98,7 @@ impl FedimintWallet {
         }
     }
 
-    pub async fn receive_tokens(&self, tokens: String) -> anyhow::Result<u64> {
+    pub async fn receive_token(&self, tokens: String) -> anyhow::Result<u64> {
         let notes = parse_ecash(&tokens)?;
         let total_amount = notes.total_amount().msats / 1_000;
 

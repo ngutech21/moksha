@@ -232,23 +232,6 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _wire_cashu_pay_invoice = _wire_cashu_pay_invoicePtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
-  void wire_cashu_import_token(
-    int port_,
-    ffi.Pointer<wire_uint_8_list> token,
-  ) {
-    return _wire_cashu_import_token(
-      port_,
-      token,
-    );
-  }
-
-  late final _wire_cashu_import_tokenPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_cashu_import_token');
-  late final _wire_cashu_import_token = _wire_cashu_import_tokenPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
-
   void wire_join_federation(
     int port_,
     ffi.Pointer<wire_uint_8_list> federation,
@@ -333,38 +316,21 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final _wire_fedimint_pay_invoice = _wire_fedimint_pay_invoicePtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
-  void wire_import_token(
+  void wire_receive_token(
     int port_,
     ffi.Pointer<wire_uint_8_list> token,
   ) {
-    return _wire_import_token(
+    return _wire_receive_token(
       port_,
       token,
     );
   }
 
-  late final _wire_import_tokenPtr = _lookup<
+  late final _wire_receive_tokenPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_import_token');
-  late final _wire_import_token = _wire_import_tokenPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
-
-  void wire_fedimint_receive_tokens(
-    int port_,
-    ffi.Pointer<wire_uint_8_list> tokens,
-  ) {
-    return _wire_fedimint_receive_tokens(
-      port_,
-      tokens,
-    );
-  }
-
-  late final _wire_fedimint_receive_tokensPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_fedimint_receive_tokens');
-  late final _wire_fedimint_receive_tokens = _wire_fedimint_receive_tokensPtr
+              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_receive_token');
+  late final _wire_receive_token = _wire_receive_tokenPtr
       .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_btcprice(

@@ -38,8 +38,6 @@ void wire_decode_invoice(int64_t port_, struct wire_uint_8_list *invoice);
 
 void wire_cashu_pay_invoice(int64_t port_, struct wire_uint_8_list *invoice);
 
-void wire_cashu_import_token(int64_t port_, struct wire_uint_8_list *token);
-
 void wire_join_federation(int64_t port_, struct wire_uint_8_list *federation);
 
 void wire_get_fedimint_payment_request(int64_t port_, uint64_t amount);
@@ -52,9 +50,7 @@ void wire_get_fedimint_balance(int64_t port_);
 
 void wire_fedimint_pay_invoice(int64_t port_, struct wire_uint_8_list *invoice);
 
-void wire_import_token(int64_t port_, struct wire_uint_8_list *token);
-
-void wire_fedimint_receive_tokens(int64_t port_, struct wire_uint_8_list *tokens);
+void wire_receive_token(int64_t port_, struct wire_uint_8_list *token);
 
 void wire_get_btcprice(int64_t port_);
 
@@ -70,14 +66,12 @@ static int64_t dummy_method_to_enforce_bundling(void) {
     dummy_var ^= ((int64_t) (void*) wire_get_cashu_mint_payment_request);
     dummy_var ^= ((int64_t) (void*) wire_decode_invoice);
     dummy_var ^= ((int64_t) (void*) wire_cashu_pay_invoice);
-    dummy_var ^= ((int64_t) (void*) wire_cashu_import_token);
     dummy_var ^= ((int64_t) (void*) wire_join_federation);
     dummy_var ^= ((int64_t) (void*) wire_get_fedimint_payment_request);
     dummy_var ^= ((int64_t) (void*) wire_fedimint_mint_tokens);
     dummy_var ^= ((int64_t) (void*) wire_get_fedimint_balance);
     dummy_var ^= ((int64_t) (void*) wire_fedimint_pay_invoice);
-    dummy_var ^= ((int64_t) (void*) wire_import_token);
-    dummy_var ^= ((int64_t) (void*) wire_fedimint_receive_tokens);
+    dummy_var ^= ((int64_t) (void*) wire_receive_token);
     dummy_var ^= ((int64_t) (void*) wire_get_btcprice);
     dummy_var ^= ((int64_t) (void*) new_uint_8_list_0);
     dummy_var ^= ((int64_t) (void*) free_WireSyncReturn);

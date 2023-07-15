@@ -210,7 +210,7 @@ pub fn cashu_pay_invoice(invoice: String) -> anyhow::Result<bool> {
     Ok(result.paid)
 }
 
-pub fn cashu_import_token(token: String) -> anyhow::Result<u64> {
+fn cashu_receive_token(token: String) -> anyhow::Result<u64> {
     let deserialized_token = token.try_into().map_err(anyhow::Error::from)?;
     let wallet = _create_local_wallet().map_err(anyhow::Error::from)?;
     let rt = lock_runtime!();
@@ -324,15 +324,15 @@ pub fn fedimint_pay_invoice(invoice: String) -> anyhow::Result<bool> {
     Ok(result)
 }
 
-pub fn import_token(token: String) -> anyhow::Result<u64> {
+pub fn receive_token(token: String) -> anyhow::Result<u64> {
     if token.starts_with("cashu") {
-        cashu_import_token(token)
+        cashu_receive_token(token)
     } else {
-        fedimint_receive_tokens(token)
+        fedimint_receive_token(token)
     }
 }
 
-pub fn fedimint_receive_tokens(tokens: String) -> anyhow::Result<u64> {
+fn fedimint_receive_token(token: String) -> anyhow::Result<u64> {
     let rt = lock_runtime!();
     let workdir = fedimint_workdir();
 
@@ -344,7 +344,7 @@ pub fn fedimint_receive_tokens(tokens: String) -> anyhow::Result<u64> {
         FedimintWallet::new(workdir)
             .await
             .map_err(anyhow::Error::from)?
-            .receive_tokens(tokens)
+            .receive_token(token)
             .await
             .map_err(anyhow::Error::from)
     })?;

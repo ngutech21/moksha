@@ -126,23 +126,6 @@ class NativeImpl implements Native {
         argNames: ["invoice"],
       );
 
-  Future<int> cashuImportToken({required String token, dynamic hint}) {
-    var arg0 = _platform.api2wire_String(token);
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_cashu_import_token(port_, arg0),
-      parseSuccessData: _wire2api_u64,
-      constMeta: kCashuImportTokenConstMeta,
-      argValues: [token],
-      hint: hint,
-    ));
-  }
-
-  FlutterRustBridgeTaskConstMeta get kCashuImportTokenConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "cashu_import_token",
-        argNames: ["token"],
-      );
-
   Future<void> joinFederation({required String federation, dynamic hint}) {
     var arg0 = _platform.api2wire_String(federation);
     return _platform.executeNormal(FlutterRustBridgeTask(
@@ -233,39 +216,21 @@ class NativeImpl implements Native {
         argNames: ["invoice"],
       );
 
-  Future<int> importToken({required String token, dynamic hint}) {
+  Future<int> receiveToken({required String token, dynamic hint}) {
     var arg0 = _platform.api2wire_String(token);
     return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_import_token(port_, arg0),
+      callFfi: (port_) => _platform.inner.wire_receive_token(port_, arg0),
       parseSuccessData: _wire2api_u64,
-      constMeta: kImportTokenConstMeta,
+      constMeta: kReceiveTokenConstMeta,
       argValues: [token],
       hint: hint,
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kImportTokenConstMeta =>
+  FlutterRustBridgeTaskConstMeta get kReceiveTokenConstMeta =>
       const FlutterRustBridgeTaskConstMeta(
-        debugName: "import_token",
+        debugName: "receive_token",
         argNames: ["token"],
-      );
-
-  Future<int> fedimintReceiveTokens({required String tokens, dynamic hint}) {
-    var arg0 = _platform.api2wire_String(tokens);
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) =>
-          _platform.inner.wire_fedimint_receive_tokens(port_, arg0),
-      parseSuccessData: _wire2api_u64,
-      constMeta: kFedimintReceiveTokensConstMeta,
-      argValues: [tokens],
-      hint: hint,
-    ));
-  }
-
-  FlutterRustBridgeTaskConstMeta get kFedimintReceiveTokensConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
-        debugName: "fedimint_receive_tokens",
-        argNames: ["tokens"],
       );
 
   Future<double> getBtcprice({dynamic hint}) {

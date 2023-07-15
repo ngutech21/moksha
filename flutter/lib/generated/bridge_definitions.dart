@@ -37,10 +37,6 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kCashuPayInvoiceConstMeta;
 
-  Future<int> cashuImportToken({required String token, dynamic hint});
-
-  FlutterRustBridgeTaskConstMeta get kCashuImportTokenConstMeta;
-
   Future<void> joinFederation({required String federation, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kJoinFederationConstMeta;
@@ -63,13 +59,9 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kFedimintPayInvoiceConstMeta;
 
-  Future<int> importToken({required String token, dynamic hint});
+  Future<int> receiveToken({required String token, dynamic hint});
 
-  FlutterRustBridgeTaskConstMeta get kImportTokenConstMeta;
-
-  Future<int> fedimintReceiveTokens({required String tokens, dynamic hint});
-
-  FlutterRustBridgeTaskConstMeta get kFedimintReceiveTokensConstMeta;
+  FlutterRustBridgeTaskConstMeta get kReceiveTokenConstMeta;
 
   Future<double> getBtcprice({dynamic hint});
 

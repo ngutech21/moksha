@@ -32,11 +32,6 @@ pub fn wire_cashu_pay_invoice(port_: MessagePort, invoice: String) {
 }
 
 #[wasm_bindgen]
-pub fn wire_cashu_import_token(port_: MessagePort, token: String) {
-    wire_cashu_import_token_impl(port_, token)
-}
-
-#[wasm_bindgen]
 pub fn wire_join_federation(port_: MessagePort, federation: String) {
     wire_join_federation_impl(port_, federation)
 }
@@ -62,13 +57,8 @@ pub fn wire_fedimint_pay_invoice(port_: MessagePort, invoice: String) {
 }
 
 #[wasm_bindgen]
-pub fn wire_import_token(port_: MessagePort, token: String) {
-    wire_import_token_impl(port_, token)
-}
-
-#[wasm_bindgen]
-pub fn wire_fedimint_receive_tokens(port_: MessagePort, tokens: String) {
-    wire_fedimint_receive_tokens_impl(port_, tokens)
+pub fn wire_receive_token(port_: MessagePort, token: String) {
+    wire_receive_token_impl(port_, token)
 }
 
 #[wasm_bindgen]
