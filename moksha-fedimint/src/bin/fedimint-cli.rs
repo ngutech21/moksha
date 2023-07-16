@@ -5,7 +5,7 @@ use std::str::FromStr;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let workdir = workdir()?;
-    // FedimintWallet::connect(workdir.clone(), "fed115da59spv337s2ce5ms460520ctyqprjtc28vxdlwrlq95tdmrjmxprewc3keddw9cg0ek9xxp0zrcqq4waen5te0xyerwt3s9cczuvf6xyurzde59am68e394t2t4m60dzkjxacz7m5").await?;
+    FedimintWallet::connect(workdir.clone(), "fed11sasnnkm0d2exauq87za95te0lshg54mzdd8d039c7ezaf0de0rlvncl8w3sljwde03vcylzyhxurjqqewaen5te0xc6zuv3jxuhrzvpk9ccnxve68qcnwdp03vlw9pz6kfe2p3r2easqhrrjkv").await?;
     let wallet = FedimintWallet::new(workdir.clone()).await?;
     if FedimintWallet::is_initialized(&workdir) {
         println!("Wallet is initialized");
