@@ -1,6 +1,7 @@
 import 'package:moksha_wallet/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:moksha_wallet/pages/util.dart';
 
 class OverviewPage extends StatefulWidget {
   const OverviewPage({super.key});
@@ -16,9 +17,15 @@ class _OverviewPageState extends State<OverviewPage> {
   @override
   void initState() {
     super.initState();
-    cashuBalance = api.getCashuBalance();
-    fedimintBalance = api.getFedimintBalance();
-    btcPrice = api.getBtcprice();
+    try {
+      cashuBalance = api.getCashuBalance();
+      fedimintBalance = api.getFedimintBalance();
+      btcPrice = api.getBtcprice();
+    } catch (e) {
+      Future<void>.delayed(Duration.zero, () {
+        showErrorSnackBar(context, e, 'Error fetching data');
+      });
+    }
   }
 
   @override
@@ -31,12 +38,9 @@ class _OverviewPageState extends State<OverviewPage> {
                 future: Future.wait([cashuBalance, fedimintBalance, btcPrice]),
                 builder: (context, snap) {
                   if (snap.error != null) {
-                    // An error has been encountered, so give an appropriate response and
-                    // pass the error details to an unobstructive tooltip.
                     debugPrint(snap.error.toString());
-                    return Tooltip(
-                      message: snap.error.toString(),
-                      child: const Text('Error occured'),
+                    return Text(
+                      "Error occured:${snap.error}",
                     );
                   }
 
