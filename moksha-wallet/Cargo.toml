@@ -24,7 +24,7 @@ rand = "0.8.5"
 thiserror = "1.0.43"
 async-trait = "0.1.71"
 lightning-invoice = "0.23.0"
-dyn-clone = "1.0.11"
+dyn-clone = "1.0.12"
 sqlx = { version = "0.7.0", features = ["sqlite", "runtime-tokio-rustls", "migrate"] }
 url = "2.4.0"
 dirs = "5.0.1"
