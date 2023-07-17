@@ -12,18 +12,7 @@ final dbPathProvider = FutureProvider<String>((ref) async {
 });
 
 void main() {
-  //await myErrorsHandler.initialize();
-  // FlutterError.onError = (details) {
-  //   FlutterError.presentError(details);
-  //   myErrorsHandler.onErrorDetails(details);
-  // };
-  // PlatformDispatcher.instance.onError = (error, stack) {
-  //   myErrorsHandler.onError(error, stack);
-  //   return true;
-  // };
-
   ErrorWidget.builder = (FlutterErrorDetails details) {
-    // In release builds, show a yellow-on-blue message instead:
     return MaterialApp(
       home: Scaffold(
         body: Center(
@@ -96,12 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    //_initCashuWallet();
   }
-
-  // Future<void> _initCashuWallet() async {
-  //   var dbPath = await api.initCashu();
-  // }
 
   List<Widget> createWidget() {
     return <Widget>[
@@ -112,18 +96,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(toolbarHeight: 50, actions: <Widget>[
-      //   IconButton(
-      //       icon: const Icon(Icons.settings),
-      //       tooltip: 'Settings',
-      //       onPressed: () {
-      //         Navigator.of(context).push(
-      //           MaterialPageRoute(
-      //             builder: (context) => const SettingsPage(),
-      //           ),
-      //         );
-      //       })
-      // ]),
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: (int index) {
