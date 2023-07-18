@@ -1,3 +1,4 @@
+use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -53,7 +54,11 @@ async fn main() -> anyhow::Result<()> {
     let cli = Opts::parse();
 
     let db_path = match cli.db_dir {
-        Some(dir) => dir.join("wallet.db").to_str().unwrap().to_string(),
+        Some(dir) => {
+            create_dir_all(dir.clone())?;
+            dir.join("wallet.db").to_str().unwrap().to_string()
+        }
+
         None => Wallet::db_path(),
     };
 
