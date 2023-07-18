@@ -20,7 +20,7 @@ path = "src/lib.rs"
 async-trait = "0.1.71"
 bitcoin_hashes = "0.12.0"
 anyhow = {version="1.0.72", features = ["backtrace"] }
-axum = "0.6.18"
+axum = "0.6.19"
 hyper = "0.14.27"
 serde = { version = "1.0.168", features = ["derive"] }
 serde_derive = "1.0.160"
