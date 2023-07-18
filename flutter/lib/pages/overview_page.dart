@@ -2,9 +2,12 @@ import 'package:moksha_wallet/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:moksha_wallet/pages/util.dart';
+import 'package:go_router/go_router.dart';
 
 class OverviewPage extends StatefulWidget {
-  const OverviewPage({super.key});
+  const OverviewPage({required this.label, Key? key}) : super(key: key);
+
+  final String label;
 
   @override
   State<OverviewPage> createState() => _OverviewPageState();
@@ -80,7 +83,12 @@ class _OverviewPageState extends State<OverviewPage> {
                             swapAnimationDuration:
                                 const Duration(milliseconds: 150), // Optional
                             swapAnimationCurve: Curves.linear, // Optional
-                          ))
+                          )),
+                      ElevatedButton(
+                          onPressed: () {
+                            context.go("/pay");
+                          },
+                          child: const Text("Pay"))
                     ],
                   );
                 })

@@ -1,15 +1,135 @@
-import 'package:moksha_wallet/pages/pay_invoice_page.dart';
-import 'package:moksha_wallet/pages/settings_page.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:moksha_wallet/pages/mint_page.dart';
 import 'package:moksha_wallet/pages/overview_page.dart';
-import 'package:moksha_wallet/pages/receive_page.dart';
 import 'package:moksha_wallet/ffi.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moksha_wallet/pages/pay_invoice_page.dart';
+import 'package:moksha_wallet/pages/receive_page.dart';
+import 'package:moksha_wallet/pages/settings_page.dart';
 
 final dbPathProvider = FutureProvider<String>((ref) async {
   return await api.initCashu();
 });
+
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final _keyHome = GlobalKey<NavigatorState>(debugLabel: 'shellHome');
+final _keyMint = GlobalKey<NavigatorState>(debugLabel: 'shellMint');
+
+final _keyReceive = GlobalKey<NavigatorState>(debugLabel: 'shellReceive');
+final _keyPay = GlobalKey<NavigatorState>(debugLabel: 'shellPay');
+final _keySettings = GlobalKey<NavigatorState>(debugLabel: 'shellSettings');
+
+final goRouter = GoRouter(
+    initialLocation: '/home',
+    navigatorKey: _rootNavigatorKey,
+    debugLogDiagnostics: true,
+    routes: [
+      StatefulShellRoute.indexedStack(
+          builder: (context, state, navigationShell) {
+            return ScaffoldWithNestedNavigation(
+                navigationShell: navigationShell);
+          },
+          branches: [
+            StatefulShellBranch(navigatorKey: _keyHome, routes: [
+              GoRoute(
+                  path: '/home',
+                  pageBuilder: (context, state) => const NoTransitionPage(
+                        child: OverviewPage(label: 'Home'),
+                      )),
+            ]),
+            StatefulShellBranch(navigatorKey: _keyMint, routes: [
+              GoRoute(
+                  path: '/mint',
+                  pageBuilder: (context, state) => const NoTransitionPage(
+                        child: MintPage(),
+                      )),
+            ]),
+            StatefulShellBranch(navigatorKey: _keyReceive, routes: [
+              GoRoute(
+                  path: '/receive',
+                  pageBuilder: (context, state) => const NoTransitionPage(
+                        child: ReceivePage(),
+                      )),
+            ]),
+            StatefulShellBranch(navigatorKey: _keyPay, routes: [
+              GoRoute(
+                  path: '/pay',
+                  pageBuilder: (context, state) => const NoTransitionPage(
+                        child: PayInvoicePage(),
+                      )),
+            ]),
+            StatefulShellBranch(navigatorKey: _keySettings, routes: [
+              GoRoute(
+                  path: '/settings',
+                  pageBuilder: (context, state) => const NoTransitionPage(
+                        child: SettingsPage(),
+                      ))
+            ]),
+          ]),
+    ]);
+
+class ScaffoldWithNestedNavigation extends StatelessWidget {
+  const ScaffoldWithNestedNavigation({
+    Key? key,
+    required this.navigationShell,
+  }) : super(
+            key: key ?? const ValueKey<String>('ScaffoldWithNestedNavigation'));
+  final StatefulNavigationShell navigationShell;
+
+  void _goBranch(int index) {
+    navigationShell.goBranch(
+      index,
+      initialLocation: index == navigationShell.currentIndex,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      return ScaffoldWithNavigationBar(
+        body: navigationShell,
+        selectedIndex: navigationShell.currentIndex,
+        onDestinationSelected: _goBranch,
+      );
+    });
+  }
+}
+
+class ScaffoldWithNavigationBar extends StatelessWidget {
+  const ScaffoldWithNavigationBar({
+    super.key,
+    required this.body,
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+  });
+  final Widget body;
+  final int selectedIndex;
+  final ValueChanged<int> onDestinationSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: body,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: selectedIndex,
+        destinations: const [
+          NavigationDestination(
+              label: 'Home', tooltip: '', icon: Icon(Icons.home)),
+          NavigationDestination(
+              label: 'Mint', tooltip: '', icon: Icon(Icons.currency_bitcoin)),
+          NavigationDestination(
+              label: 'Receive', tooltip: '', icon: Icon(Icons.import_export)),
+          NavigationDestination(
+              label: 'Pay', tooltip: '', icon: Icon(Icons.bolt)),
+          NavigationDestination(
+              label: 'Settings', tooltip: '', icon: Icon(Icons.settings)),
+        ],
+        onDestinationSelected: onDestinationSelected,
+      ),
+    );
+  }
+}
 
 void main() {
   ErrorWidget.builder = (FlutterErrorDetails details) {
@@ -53,7 +173,7 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(dbPathProvider); // this is a hack to trigger the provider
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Moksha e-cash Wallet',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
@@ -67,92 +187,7 @@ class MyApp extends ConsumerWidget {
           //background: Color.fromARGB(80, 103, 102, 102),
         ),
       ),
-      home: const MyHomePage(),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int currentIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  List<Widget> createWidget() {
-    return <Widget>[
-      const Text("Home"),
-    ];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (int index) {
-          setState(() {
-            currentIndex = index;
-          });
-        },
-        destinations: const <Widget>[
-          NavigationDestination(
-            tooltip: '',
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            tooltip: '',
-            icon: Icon(Icons.currency_bitcoin),
-            label: 'Mint',
-          ),
-          NavigationDestination(
-            tooltip: '',
-            icon: Icon(Icons.import_export),
-            label: 'Receive',
-          ),
-          NavigationDestination(
-            tooltip: '',
-            icon: Icon(Icons.bolt),
-            label: 'Pay',
-          ),
-          NavigationDestination(
-            tooltip: '',
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-      ),
-      body: <Widget>[
-        Container(
-          alignment: Alignment.center,
-          child: const OverviewPage(),
-        ),
-        Container(
-          alignment: Alignment.center,
-          child: const MintPage(),
-        ),
-        Container(
-          alignment: Alignment.center,
-          child: const ReceivePage(),
-        ),
-        Container(
-          alignment: Alignment.center,
-          child: const PayInvoicePage(),
-        ),
-        Container(
-          alignment: Alignment.center,
-          child: const SettingsPage(),
-        ),
-      ][currentIndex],
+      routerConfig: goRouter,
     );
   }
 }
