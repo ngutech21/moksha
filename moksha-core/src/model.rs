@@ -2,9 +2,10 @@ use base64::{engine::general_purpose, Engine as _};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use secp256k1::{PublicKey, SecretKey};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::skip_serializing_none;
 use std::collections::HashMap;
+use url::Url;
 
 use crate::{
     crypto::{self, derive_keys, derive_keyset_id, derive_pubkeys},
@@ -57,8 +58,36 @@ pub struct P2SHScript;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[skip_serializing_none]
 pub struct Token {
-    pub mint: Option<String>, // TODO use specific type
+    #[serde(serialize_with = "serialize_url", deserialize_with = "deserialize_url")]
+    pub mint: Option<Url>,
     pub proofs: Proofs,
+}
+
+fn deserialize_url<'de, D>(deserializer: D) -> Result<Option<Url>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let url_str: Option<String> = Option::deserialize(deserializer)?;
+    match url_str {
+        Some(s) => Url::parse(&s).map_err(serde::de::Error::custom).map(Some),
+        None => Ok(None),
+    }
+}
+
+fn serialize_url<S>(url: &Option<Url>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    match url {
+        Some(url) => {
+            let mut url_str = url.as_str().to_owned();
+            if url_str.ends_with('/') {
+                url_str.pop();
+            }
+            serializer.serialize_str(&url_str)
+        }
+        None => serializer.serialize_none(),
+    }
 }
 
 #[skip_serializing_none]
@@ -135,8 +164,8 @@ impl TryFrom<String> for TokenV3 {
     }
 }
 
-impl From<(String, Proofs)> for TokenV3 {
-    fn from(from: (String, Proofs)) -> Self {
+impl From<(Url, Proofs)> for TokenV3 {
+    fn from(from: (Url, Proofs)) -> Self {
         Self {
             tokens: vec![Token {
                 mint: Some(from.0),
@@ -388,7 +417,8 @@ mod tests {
         dhke,
         model::{Proof, Proofs, SplitAmount, Token, TokenV3},
     };
-    use serde_json::json;
+    use serde_json::{json, Value};
+    use url::Url;
 
     #[test]
     fn test_proofs_for_amount_empty() -> anyhow::Result<()> {
@@ -481,15 +511,16 @@ mod tests {
         });
 
         let token = serde_json::from_value::<super::Token>(js)?;
-        assert_eq!(token.mint, Some("https://8333.space:3338".to_string()));
+        assert_eq!(token.mint, Some(Url::parse("https://8333.space:3338")?));
         assert_eq!(token.proofs.len(), 2);
         Ok(())
     }
 
     #[test]
     fn test_tokens_serialize() -> anyhow::Result<()> {
+        use base64::{engine::general_purpose, Engine as _};
         let token = Token {
-            mint: Some("mymint".to_string()),
+            mint: Some(Url::parse("https://8333.space:3338/")?),
             proofs: Proof {
                 amount: 21,
                 secret: "secret".to_string(),
@@ -508,6 +539,13 @@ mod tests {
 
         let serialized: String = tokens.try_into()?;
         assert!(serialized.starts_with("cashuA"));
+
+        // check if mint is serialized without trailing slash
+        let json = general_purpose::URL_SAFE.decode(serialized.strip_prefix("cashuA").unwrap())?;
+        let deser = String::from_utf8(json)?;
+        let json: Value = serde_json::from_str(&deser)?;
+        let mint_value = json["token"][0]["mint"].as_str();
+        assert_eq!(mint_value, Some("https://8333.space:3338"));
         Ok(())
     }
 

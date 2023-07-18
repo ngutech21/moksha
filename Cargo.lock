@@ -2415,6 +2415,7 @@ dependencies = [
  "serde_json",
  "serde_with",
  "thiserror",
+ "url",
 ]
 
 [[package]]

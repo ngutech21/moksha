@@ -205,7 +205,7 @@ impl Wallet {
 
         let all_proofs = self.localstore.get_proofs().await?;
         let selected_proofs = all_proofs.proofs_for_amount(amount)?;
-        let selected_tokens = (self.mint_url.as_ref().to_owned(), selected_proofs.clone()).into();
+        let selected_tokens = (self.mint_url.to_owned(), selected_proofs.clone()).into();
 
         let (remaining_tokens, result) = self.split_tokens(&selected_tokens, amount.into()).await?;
 
@@ -246,8 +246,7 @@ impl Wallet {
         let selected_proofs = all_proofs.proofs_for_amount(ln_amount)?;
 
         let total_proofs = {
-            let selected_tokens =
-                (self.mint_url.as_str().to_owned(), selected_proofs.clone()).into();
+            let selected_tokens = (self.mint_url.to_owned(), selected_proofs.clone()).into();
             let split_result = self
                 .split_tokens(&selected_tokens, ln_amount.into())
                 .await?;
@@ -308,7 +307,7 @@ impl Wallet {
             .await?;
 
         let first_tokens = (
-            self.mint_url.as_ref().to_owned(),
+            self.mint_url.to_owned(),
             self.create_proofs_from_blinded_signatures(
                 split_result.fst,
                 first_secrets,
@@ -318,7 +317,7 @@ impl Wallet {
             .into();
 
         let second_tokens = (
-            self.mint_url.as_ref().to_owned(),
+            self.mint_url.to_owned(),
             self.create_proofs_from_blinded_signatures(
                 split_result.snd,
                 second_secrets,
@@ -416,7 +415,7 @@ impl Wallet {
             .collect::<Vec<Proof>>()
             .into();
 
-        let tokens: TokenV3 = (self.mint_url.as_ref().to_owned(), proofs).into();
+        let tokens: TokenV3 = (self.mint_url.to_owned(), proofs).into();
         self.localstore.add_proofs(&tokens.proofs()).await?;
 
         Ok(tokens)
@@ -511,7 +510,7 @@ mod tests {
         fn default() -> Self {
             Self {
                 tokens: TokenV3::new(Token {
-                    mint: Some("mint_url".to_string()),
+                    mint: Some(Url::parse("http://127.0.0.1:3338").expect("invalid url")),
                     proofs: Proofs::empty(),
                 }),
             }
@@ -644,7 +643,7 @@ mod tests {
 
         let client = MockClient::with_mint_response(mint_response);
         let localstore = Box::<MockLocalStore>::default();
-        let mint_url = "http://localhost:8080/";
+        let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
 
         let mint_keyset = MintKeyset::new("superprivatesecretkey".to_string(), "".to_string());
         let wallet = Wallet::new(
@@ -652,22 +651,25 @@ mod tests {
             mint_keyset.public_keys,
             Keysets::new(vec![mint_keyset.keyset_id]),
             localstore,
-            Url::parse(mint_url).expect("invalid url"),
+            mint_url.clone(),
         );
 
         let result = wallet.mint_tokens(20.into(), "hash".to_string()).await?;
         assert_eq!(20, result.total_amount());
-        assert_eq!(
-            mint_url.to_owned(),
-            result
-                .tokens
-                .get(0)
-                .expect("Tokens is empty")
-                .mint
-                .as_ref()
-                .expect("mint is empty")
-                .clone()
-        );
+        result.tokens.into_iter().for_each(|t| {
+            assert_eq!(mint_url, t.mint.expect("mint is empty"));
+        });
+        // assert_eq!(
+        //     mint_url,
+        //     // result
+        //     //     .tokens
+        //     //     .as_ref()
+        //     //     .get(0)
+        //     //     .expect("Tokens is empty")
+        //     //     .mint
+        //     //     .expect("mint is empty")
+        //     //     .clone()
+        // );
         Ok(())
     }
 
