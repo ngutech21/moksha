@@ -13,7 +13,7 @@ path = "src/lib.rs"
 base64 = "0.20.0"
 anyhow = { version = "1.0.72", features = ["backtrace"] }
 tokio = { version = "1.28.2", features = ["full"] }
-serde_json = "1.0.96"
+serde_json = "1.0.103"
 dirs = "5.0.1"
 futures = "0.3.28"
 lightning-invoice = { version = "0.21.0", features = ["serde"] }
