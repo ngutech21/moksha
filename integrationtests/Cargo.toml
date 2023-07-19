@@ -16,28 +16,23 @@ path = "src/lnbitsmock.rs"
 [dependencies]
 rand = "0.8.5"
 axum = "0.6.19"
-anyhow = {version="1.0.72", features = ["backtrace"] }
+anyhow = { version = "1.0.72", features = ["backtrace"] }
 serde = { version = "1.0.171", features = ["derive"] }
 serde_derive = "1.0.160"
 serde_json = "1.0.103"
 lightning-invoice = "0.23.0"
 lightning = "0.0.115"
 tokio = { version = "1.29.1", features = ["full"] }
-tower-http = { version = "0.4.1", features = ["trace", "cors"] }
 hyper = { version = "0.14", features = ["full"] }
 bitcoin_hashes = { version = "0.11.0", default-features = false }
-secp256k1 = { version = "0.24.0", default-features = false, features = ["recovery", "alloc","rand"] }
+secp256k1 = { version = "0.24.0", default-features = false, features = ["recovery", "alloc", "rand"] }
 tracing = "0.1.37"
-tracing-subscriber = "0.3.17"
 
 [dev-dependencies]
-anyhow = {version="1.0.72", features = ["backtrace"] }
+anyhow = { version = "1.0.72", features = ["backtrace"] }
 tokio = { version = "1.29.1", features = ["full"] }
-reqwest = {version= "0.11.18", default-features = false}
-moksha-mint = { path = "../moksha-mint"}
-moksha-wallet = { path = "../moksha-wallet"}
-moksha-core = { path = "../moksha-core"}
+reqwest = { version = "0.11.18", default-features = false }
+moksha-mint = { path = "../moksha-mint" }
+moksha-wallet = { path = "../moksha-wallet" }
+moksha-core = { path = "../moksha-core" }
 tempfile = "3.6.0"
-
-
-

@@ -1932,9 +1932,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "tokio",
- "tower-http",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -2424,7 +2422,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
- "dirs",
  "fedimint-client",
  "fedimint-core",
  "fedimint-ln-client",
@@ -2433,7 +2430,6 @@ dependencies = [
  "fedimint-wallet-client",
  "futures",
  "lightning-invoice 0.21.0",
- "moksha-core",
  "serde_json",
  "tokio",
 ]
