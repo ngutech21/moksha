@@ -659,17 +659,6 @@ mod tests {
         result.tokens.into_iter().for_each(|t| {
             assert_eq!(mint_url, t.mint.expect("mint is empty"));
         });
-        // assert_eq!(
-        //     mint_url,
-        //     // result
-        //     //     .tokens
-        //     //     .as_ref()
-        //     //     .get(0)
-        //     //     .expect("Tokens is empty")
-        //     //     .mint
-        //     //     .expect("mint is empty")
-        //     //     .clone()
-        // );
         Ok(())
     }
 

@@ -52,16 +52,18 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 
 ## Crates
 
-- [core](./moksha-core) The core of the cashu library. Contains all the logic for creating and verifying tokens.
-- [mint](./moksha-mint) Cashu mint server. Handles minting, melting and token requests.
-- [wallet](./moksha-wallet) Cashu cli-wallet and library
-- [flutter_bridge](./flutter/native) Thin wrapper using [flutter-rust-bridge](https://github.com/fzyzcjy/flutter_rust_bridge) around the wallet library for use in flutter.
+- [moksha-core](./moksha-core) The core of the cashu library. Contains all the logic for creating and verifying tokens.
+- [moksha-mint](./moksha-mint) Cashu mint server. Handles minting, melting and token requests.
+- [moksha-wallet](./moksha-wallet) Cashu cli-wallet and library
+- [moksha-fedimint](./moksha-fedimint) Fedimint wallet library
+- [integrationtests](./integrationtests) Spins up a mint and runs integration tests against it.
+- [flutter](./flutter/native) Thin wrapper using [flutter-rust-bridge](https://github.com/fzyzcjy/flutter_rust_bridge) around the wallet library for use in flutter.
 
 ## Usage
 
 ### Setup rust
 
-```
+```bash
 git clone https://github.com/ngutech21/moksha.git
 cargo install just typos-cli sqlx-cli grcov
 rustup component add llvm-tools-preview
@@ -80,7 +82,7 @@ vim .env
 
 To run the mint you need to setup a lightning regtest environment like [Polar](https://lightningpolar.com) and a Lnbits instance. In Lnbits create a new wallet and copy the admin key into the .env file and set the url to your Lnbits instance. The mint uses RocksDB for storing used proofs and pending invoices. You can set the path to the database in the .env file.
 
-```
+```bash
 just run-mint
 ```
 
@@ -90,13 +92,13 @@ just run-mint
 
 Shows the current version, database-dir and mint-url.
 
-```
+```bash
 just run-cli info
 ```
 
 #### Check Balance
 
-```
+```bash
 just run-cli balance
 ```
 
@@ -104,7 +106,7 @@ just run-cli balance
 
 This command will return a Lightning invoice that you need to pay to mint new ecash tokens.
 
-```
+```bash
 just run-cli mint 42
 ```
 
@@ -112,7 +114,7 @@ just run-cli mint 42
 
 To send tokens to another user, enter. The tokens will get printed to STOUT. You can then send them to the recipient via any messaging app.
 
-```
+```bash
 just run-cli send 21
 ```
 
@@ -120,7 +122,7 @@ just run-cli send 21
 
 To receive tokens you need to enter the token as first argument to the receive command. The tokens will get verified and the value will be added to your balance.
 
-```
+```bash
 just run-cli receive cashuAeyJ0...
 ```
 
@@ -134,14 +136,14 @@ If you want to use the flutter app you need to setup flutter and the rust bridge
 
 ### update flutter dependencies
 
-```
+```bash
 cd flutter
 flutter pub get
 ```
 
 ### Run flutter desktop app
 
-```
+```bash
 just run-flutter
 ```
 
@@ -149,8 +151,8 @@ just run-flutter
 
 To run coverage, check for typos, generate the flutter rust bridge etc. use the just commands:
 
-```
-AAvailable recipes:
+```bash
+Available recipes:
     build-flutter      # build flutter desktop-app
     clean
     coverage           # run coverage
