@@ -309,7 +309,7 @@ impl Wallet {
         let first_tokens = (
             self.mint_url.to_owned(),
             self.create_proofs_from_blinded_signatures(
-                split_result.fst,
+                split_result.fst.expect("fst is empty"),
                 first_secrets,
                 first_outputs,
             )?,
@@ -319,7 +319,7 @@ impl Wallet {
         let second_tokens = (
             self.mint_url.to_owned(),
             self.create_proofs_from_blinded_signatures(
-                split_result.snd,
+                split_result.snd.expect("snd is empty"),
                 second_secrets,
                 second_outputs,
             )?,
@@ -572,6 +572,7 @@ mod tests {
         fn with_melt_response(post_melt_response: PostMeltResponse) -> Self {
             Self {
                 post_melt_response,
+                split_response: PostSplitResponse::with_fst_and_snd(vec![], vec![]),
                 ..Default::default()
             }
         }

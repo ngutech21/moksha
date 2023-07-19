@@ -95,7 +95,7 @@ impl Client for HttpClient {
         outputs: Vec<BlindedMessage>,
     ) -> Result<PostSplitResponse, MokshaWalletError> {
         let body = serde_json::to_string(&PostSplitRequest {
-            amount,
+            amount: Some(amount),
             proofs,
             outputs,
         })?;
