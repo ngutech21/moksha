@@ -10,7 +10,7 @@ crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
 anyhow = "1.0.72"
-flutter_rust_bridge = "1.78.0"
+flutter_rust_bridge = "1.79.0"
 tokio = { version = "1.29.1", features = ["rt-multi-thread"] }
 moksha-wallet = { path = "../../moksha-wallet" }
 moksha-core = { path = "../../moksha-core" }
