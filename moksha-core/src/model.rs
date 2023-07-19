@@ -347,13 +347,35 @@ pub struct PostMeltResponse {
 pub struct PostSplitRequest {
     pub proofs: Proofs,
     pub outputs: Vec<BlindedMessage>,
-    pub amount: u64,
+    pub amount: Option<u64>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct PostSplitResponse {
-    pub fst: Vec<BlindedSignature>,
-    pub snd: Vec<BlindedSignature>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fst: Option<Vec<BlindedSignature>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub snd: Option<Vec<BlindedSignature>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub promises: Option<Vec<BlindedSignature>>,
+}
+
+impl PostSplitResponse {
+    pub fn with_promises(promises: Vec<BlindedSignature>) -> Self {
+        Self {
+            promises: Some(promises),
+            ..Default::default()
+        }
+    }
+
+    pub fn with_fst_and_snd(fst: Vec<BlindedSignature>, snd: Vec<BlindedSignature>) -> Self {
+        Self {
+            fst: Some(fst),
+            snd: Some(snd),
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -415,10 +437,18 @@ fn generate_random_string() -> String {
 mod tests {
     use crate::{
         dhke,
-        model::{Proof, Proofs, SplitAmount, Token, TokenV3},
+        model::{PostSplitResponse, Proof, Proofs, SplitAmount, Token, TokenV3},
     };
     use serde_json::{json, Value};
     use url::Url;
+
+    #[test]
+    fn test_serialize_empty_split_response() -> anyhow::Result<()> {
+        let response = PostSplitResponse::default();
+        let serialized = serde_json::to_string(&response)?;
+        assert_eq!(serialized, "{}");
+        Ok(())
+    }
 
     #[test]
     fn test_proofs_for_amount_empty() -> anyhow::Result<()> {
