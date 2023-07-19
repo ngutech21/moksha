@@ -5,7 +5,7 @@ use moksha_core::{
     dhke::Dhke,
     model::{
         split_amount, Amount, BlindedMessage, BlindedSignature, Keysets, PaymentRequest,
-        PostMeltResponse, Proof, Proofs, TokenV3, TotalAmount,
+        PostMeltResponse, PostSplitResponse, Proof, Proofs, TokenV3, TotalAmount,
     },
 };
 use reqwest::Url;
@@ -306,27 +306,58 @@ impl Wallet {
             )
             .await?;
 
-        let first_tokens = (
-            self.mint_url.to_owned(),
-            self.create_proofs_from_blinded_signatures(
-                split_result.fst.expect("fst is empty"),
-                first_secrets,
-                first_outputs,
-            )?,
-        )
-            .into();
+        match split_result {
+            PostSplitResponse {
+                promises: None,
+                fst: Some(fst),
+                snd: Some(snd),
+            } => {
+                let first_tokens = (
+                    self.mint_url.to_owned(),
+                    self.create_proofs_from_blinded_signatures(fst, first_secrets, first_outputs)?,
+                )
+                    .into();
 
-        let second_tokens = (
-            self.mint_url.to_owned(),
-            self.create_proofs_from_blinded_signatures(
-                split_result.snd.expect("snd is empty"),
-                second_secrets,
-                second_outputs,
-            )?,
-        )
-            .into();
+                let second_tokens = (
+                    self.mint_url.to_owned(),
+                    self.create_proofs_from_blinded_signatures(
+                        snd,
+                        second_secrets,
+                        second_outputs,
+                    )?,
+                )
+                    .into();
 
-        Ok((first_tokens, second_tokens))
+                Ok((first_tokens, second_tokens))
+            }
+            PostSplitResponse {
+                fst: None,
+                snd: None,
+                promises: Some(promises),
+            } => {
+                let len_first = first_secrets.len();
+                let secrets = vec![first_secrets, second_secrets].concat();
+                let outputs = vec![first_outputs, second_outputs].concat();
+
+                let proofs = self
+                    .create_proofs_from_blinded_signatures(promises, secrets, outputs)?
+                    .proofs();
+
+                let first_tokens = (
+                    self.mint_url.to_owned(),
+                    proofs[0..len_first].to_vec().into(),
+                )
+                    .into();
+                let second_tokens = (
+                    self.mint_url.to_owned(),
+                    proofs[len_first..proofs.len()].to_vec().into(),
+                )
+                    .into();
+
+                Ok((first_tokens, second_tokens))
+            }
+            _ => Err(MokshaWalletError::InvalidProofs),
+        }
     }
 
     async fn melt_token(
