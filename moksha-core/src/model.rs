@@ -55,8 +55,8 @@ impl Proof {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct P2SHScript;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Token {
     #[serde(serialize_with = "serialize_url", deserialize_with = "deserialize_url")]
     pub mint: Option<Url>,
@@ -352,8 +352,8 @@ pub struct PostSplitRequest {
     pub amount: Option<u64>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 #[skip_serializing_none]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct PostSplitResponse {
     pub fst: Option<Vec<BlindedSignature>>,
     pub snd: Option<Vec<BlindedSignature>>,

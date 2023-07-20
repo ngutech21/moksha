@@ -13,12 +13,12 @@ pub struct MintInfoSettings {
     pub motd: Option<String>,
 }
 
-#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq)]
 #[skip_serializing_none]
+#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq)]
 pub struct MintInfoResponse {
     pub name: Option<String>,
     pub pubkey: PublicKey,
-    pub version: String,
+    pub version: Option<String>,
     pub description: Option<String>,
     pub description_long: Option<String>,
     pub contact: Option<Vec<Vec<String>>>,
@@ -58,7 +58,7 @@ mod tests {
             pubkey: public_key_from_hex(
                 "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2",
             ),
-            version: "Nutshell/0.11.0".to_string(),
+            version: Some("Nutshell/0.11.0".to_string()),
             description: Some("The short mint description".to_string()),
             description_long: Some("A description that can be a long piece of text.".to_string()),
             contact: Some(vec![

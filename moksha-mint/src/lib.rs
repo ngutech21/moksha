@@ -19,7 +19,7 @@ use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
-use tracing::{event, Level};
+use tracing::{event, info, Level};
 
 use crate::lightning::LnbitsLightning;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
@@ -107,10 +107,9 @@ pub async fn run_server(mint: Mint, port: u16) -> anyhow::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .init();
-    event!(Level::INFO, "startup");
-
     let addr = format!("[::]:{port}").parse()?;
-    event!(Level::INFO, "listening on {}", addr);
+    info!("listening on {}", addr);
+    info!("mint_info {:?}", mint.mint_info);
 
     axum::Server::bind(&addr)
         .serve(
@@ -189,7 +188,10 @@ async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, Mo
     let mint_info = MintInfoResponse {
         name: mint.mint_info.name,
         pubkey: mint.keyset.mint_pubkey,
-        version: "Moksha-Mint/0.1.0".to_string(), // FIXME return current version
+        version: match mint.mint_info.version {
+            true => Some(env!("CARGO_PKG_VERSION").to_owned()),
+            _ => None,
+        },
         description: mint.mint_info.description,
         description_long: mint.mint_info.description_long,
         contact: mint.mint_info.contact,

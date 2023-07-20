@@ -9,8 +9,6 @@ pub async fn main() -> anyhow::Result<()> {
         .from_env::<MintInfoSettings>()
         .expect("Please provide mint info");
 
-    println!("Mint info settings: {:?}", mint_info_settings);
-
     let mint = MintBuilder::new()
         .with_mint_info(mint_info_settings)
         .with_private_key(get_env("MINT_PRIVATE_KEY"))
