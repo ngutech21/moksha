@@ -6,6 +6,8 @@ use rand::RngCore;
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use std::collections::HashMap;
 
+use crate::error::MokshaCoreError;
+
 const MAX_ORDER: u64 = 64;
 
 pub fn generate_hash() -> String {
@@ -42,11 +44,18 @@ pub fn derive_keyset_id(keys: &HashMap<u64, PublicKey>) -> String {
     general_purpose::STANDARD.encode(hashed_pubkeys)[..12].to_string()
 }
 
+pub fn derive_pubkey(seed: &str) -> Result<PublicKey, MokshaCoreError> {
+    let hash = sha256::Hash::hash(seed.as_bytes());
+    let key = SecretKey::from_slice(hash.as_byte_array())?;
+    let secp = Secp256k1::new();
+    Ok(key.public_key(&secp))
+}
+
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
     use super::generate_hash;
+    use crate::crypto::derive_pubkey;
+    use std::collections::HashMap;
 
     fn public_key_from_hex(hex: &str) -> secp256k1::PublicKey {
         use hex::FromHex;
@@ -58,6 +67,16 @@ mod tests {
     fn test_generate_hash() {
         let hash = generate_hash();
         assert_eq!(hash.len(), 64);
+    }
+
+    #[test]
+    fn test_derive_pubkey() -> anyhow::Result<()> {
+        let result = derive_pubkey("supersecretprivatekey")?;
+        assert_eq!(
+            "03a2118b421e6b47f0656b97bb7eeea43c41096adbc0d0e511ff70de7d94dbd990",
+            result.to_string()
+        );
+        Ok(())
     }
 
     #[test]

@@ -10,7 +10,8 @@ use moksha_core::{
 };
 
 use crate::{
-    database::Database, error::MokshaMintError, lightning::Lightning, model::Invoice, MintBuilder,
+    database::Database, error::MokshaMintError, info::MintInfoSettings, lightning::Lightning,
+    model::Invoice, MintBuilder,
 };
 
 #[derive(Clone)]
@@ -20,6 +21,7 @@ pub struct Mint {
     pub db: Arc<dyn Database + Send + Sync>,
     pub dhke: Dhke,
     pub lightning_fee_config: LightningFeeConfig,
+    pub mint_info: MintInfoSettings,
 }
 
 #[derive(Clone, Debug)]
@@ -54,6 +56,7 @@ impl Mint {
         lightning: Arc<dyn Lightning + Send + Sync>,
         db: Arc<dyn Database + Send + Sync>,
         lightning_fee_config: LightningFeeConfig,
+        mint_info: MintInfoSettings,
     ) -> Self {
         Self {
             lightning,
@@ -61,6 +64,7 @@ impl Mint {
             keyset: MintKeyset::new(secret, derivation_path),
             db,
             dhke: Dhke::new(),
+            mint_info,
         }
     }
 
@@ -234,7 +238,6 @@ impl Mint {
 mod tests {
     use crate::lightning::MockLightning;
     use crate::lnbits::PayInvoiceResult;
-    use crate::mint::LightningFeeConfig;
     use crate::model::Invoice;
     use crate::{database::MockDatabase, error::MokshaMintError, Mint};
     use moksha_core::dhke;
@@ -408,7 +411,8 @@ mod tests {
             "0/0/0/0".to_string(),
             Arc::new(lightning),
             Arc::new(create_mock_db_get_used_proofs()),
-            LightningFeeConfig::default(),
+            Default::default(),
+            Default::default(),
         );
 
         let tokens = create_token_from_fixture("token_60.cashu".to_string())?;
@@ -463,7 +467,8 @@ mod tests {
             "0/0/0/0".to_string(),
             lightning,
             db,
-            LightningFeeConfig::default(),
+            Default::default(),
+            Default::default(),
         )
     }
 

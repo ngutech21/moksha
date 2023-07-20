@@ -7,6 +7,7 @@ use axum::Router;
 use axum::{routing::get, Json};
 use error::MokshaMintError;
 use hyper::Method;
+use info::{MintInfoResponse, MintInfoSettings, Parameter};
 use mint::{LightningFeeConfig, Mint};
 use model::{GetMintQuery, PostMintQuery};
 use moksha_core::model::{
@@ -18,7 +19,7 @@ use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
-use tracing::{event, Level};
+use tracing::{event, info, Level};
 
 use crate::lightning::LnbitsLightning;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
@@ -26,6 +27,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 
 mod database;
 mod error;
+pub mod info;
 mod lightning;
 mod lnbits;
 pub mod mint;
@@ -39,11 +41,17 @@ pub struct MintBuilder {
     db_path: Option<String>,
     fee_percent: Option<f32>,
     fee_reserve_min: Option<u64>,
+    mint_info_settings: Option<MintInfoSettings>,
 }
 
 impl MintBuilder {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn with_mint_info(mut self, mint_info: MintInfoSettings) -> MintBuilder {
+        self.mint_info_settings = Some(mint_info);
+        self
     }
 
     pub fn with_private_key(mut self, private_key: String) -> MintBuilder {
@@ -90,6 +98,7 @@ impl MintBuilder {
             ln,
             db,
             fee_config,
+            self.mint_info_settings.unwrap_or_default(),
         )
     }
 }
@@ -98,10 +107,9 @@ pub async fn run_server(mint: Mint, port: u16) -> anyhow::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .init();
-    event!(Level::INFO, "startup");
-
     let addr = format!("[::]:{port}").parse()?;
-    event!(Level::INFO, "listening on {}", addr);
+    info!("listening on {}", addr);
+    info!("mint_info {:?}", mint.mint_info);
 
     axum::Server::bind(&addr)
         .serve(
@@ -126,6 +134,7 @@ fn app(mint: Mint) -> Router {
         .route("/checkfees", post(post_check_fees))
         .route("/melt", post(post_melt))
         .route("/split", post(post_split))
+        .route("/info", get(get_info))
         .with_state(mint)
         .layer(TraceLayer::new_for_http())
 }
@@ -173,6 +182,35 @@ async fn post_check_fees(
                 .ok_or_else(|| error::MokshaMintError::InvalidAmount)?,
         ),
     }))
+}
+
+async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, MokshaMintError> {
+    let mint_info = MintInfoResponse {
+        name: mint.mint_info.name,
+        pubkey: mint.keyset.mint_pubkey,
+        version: match mint.mint_info.version {
+            true => Some(env!("CARGO_PKG_VERSION").to_owned()),
+            _ => None,
+        },
+        description: mint.mint_info.description,
+        description_long: mint.mint_info.description_long,
+        contact: mint.mint_info.contact,
+        nuts: vec![
+            "NUT-00".to_string(),
+            "NUT-01".to_string(),
+            "NUT-02".to_string(),
+            "NUT-03".to_string(),
+            "NUT-04".to_string(),
+            "NUT-05".to_string(),
+            "NUT-06".to_string(),
+            "NUT-09".to_string(),
+        ],
+        motd: mint.mint_info.motd,
+        parameter: Parameter {
+            peg_out_only: false,
+        },
+    };
+    Ok(Json(mint_info))
 }
 
 async fn get_mint(
@@ -256,12 +294,14 @@ mod tests {
     fn create_mock_mint() -> Mint {
         let db = Arc::new(MockDatabase::new());
         let lightning = Arc::new(MockLightning::new());
+
         Mint::new(
             "mytestsecret".to_string(),
             "".to_string(),
             lightning,
             db,
             LightningFeeConfig::default(),
+            Default::default(),
         )
     }
 }

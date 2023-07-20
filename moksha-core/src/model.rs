@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use url::Url;
 
 use crate::{
-    crypto::{self, derive_keys, derive_keyset_id, derive_pubkeys},
+    crypto::{self, derive_keys, derive_keyset_id, derive_pubkey, derive_pubkeys},
     error::MokshaCoreError,
 };
 
@@ -55,8 +55,8 @@ impl Proof {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct P2SHScript;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Token {
     #[serde(serialize_with = "serialize_url", deserialize_with = "deserialize_url")]
     pub mint: Option<Url>,
@@ -266,6 +266,7 @@ pub struct MintKeyset {
     pub private_keys: HashMap<u64, SecretKey>,
     pub public_keys: HashMap<u64, PublicKey>,
     pub keyset_id: String,
+    pub mint_pubkey: PublicKey,
 }
 
 impl MintKeyset {
@@ -276,6 +277,7 @@ impl MintKeyset {
             private_keys: priv_keys,
             keyset_id: derive_keyset_id(&pub_keys),
             public_keys: pub_keys,
+            mint_pubkey: derive_pubkey(&seed).expect("invalid seed"),
         }
     }
 }
@@ -350,14 +352,11 @@ pub struct PostSplitRequest {
     pub amount: Option<u64>,
 }
 
+#[skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct PostSplitResponse {
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub fst: Option<Vec<BlindedSignature>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub snd: Option<Vec<BlindedSignature>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub promises: Option<Vec<BlindedSignature>>,
 }
 
