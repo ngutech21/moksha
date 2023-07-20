@@ -1,10 +1,18 @@
-use mokshamint::MintBuilder;
+use mokshamint::{info::MintInfoSettings, MintBuilder};
 use std::env;
 
 #[tokio::main]
 pub async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
+
+    let mint_info_settings = envy::prefixed("MINT_INFO_")
+        .from_env::<MintInfoSettings>()
+        .expect("Please provide mint info");
+
+    println!("Mint info settings: {:?}", mint_info_settings);
+
     let mint = MintBuilder::new()
+        .with_mint_info(mint_info_settings)
         .with_private_key(get_env("MINT_PRIVATE_KEY"))
         .with_db(get_env("MINT_DB_PATH"))
         .with_lnbits(get_env("LNBITS_URL"), get_env("LNBITS_ADMIN_KEY"))

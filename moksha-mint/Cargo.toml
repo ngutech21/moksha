@@ -5,31 +5,29 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-
 [[bin]]
 name = "moksha-mint"
 path = "src/bin/moksha-mint.rs"
-
 
 [lib]
 name = "mokshamint"
 path = "src/lib.rs"
 
-
 [dependencies]
 async-trait = "0.1.71"
 bitcoin_hashes = "0.12.0"
-anyhow = {version="1.0.72", features = ["backtrace"] }
+anyhow = { version = "1.0.72", features = ["backtrace"] }
 axum = "0.6.19"
 hyper = "0.14.27"
 serde = { version = "1.0.171", features = ["derive"] }
 serde_derive = "1.0.160"
 serde_json = "1.0.103"
+serde_with = "3.1.0"
 tokio = { version = "1.29.1", features = ["full"] }
 tower-http = { version = "0.4.2", features = ["trace", "cors", "fs"] }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
-secp256k1 = {version="0.27.0", features = [ "rand", "serde" ]}
+secp256k1 = { version = "0.27.0", features = ["rand", "serde"] }
 thiserror = "1.0.43"
 moksha-core = { path = "../moksha-core" }
 rocksdb = "0.21.0"
@@ -37,8 +35,10 @@ lightning-invoice = "0.23.0"
 reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls-webpki-roots", "socks"] }
 url = "2.4.0"
 dotenvy = "0.15.7"
+envy = "0.4.2"
 
 [dev-dependencies]
 tempfile = "3.6.0"
 tower = "0.4.13"
 mockall = "0.11.4"
+hex = "0.4.3"
