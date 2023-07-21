@@ -8,6 +8,7 @@ use axum::{routing::get, Json};
 use error::MokshaMintError;
 use hyper::Method;
 use info::{MintInfoResponse, MintInfoSettings, Parameter};
+use lightning::LnbitsLightning;
 use mint::{LightningFeeConfig, Mint};
 use model::{GetMintQuery, PostMintQuery};
 use moksha_core::model::{
@@ -21,14 +22,13 @@ use tower_http::{
 };
 use tracing::{event, info, Level};
 
-use crate::lightning::LnbitsLightning;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 mod database;
 mod error;
 pub mod info;
-mod lightning;
+pub mod lightning;
 mod lnbits;
 pub mod mint;
 mod model;
@@ -76,11 +76,29 @@ impl MintBuilder {
         self
     }
 
-    pub fn build(self) -> Mint {
+    pub async fn build(self) -> Mint {
         let ln = Arc::new(LnbitsLightning::new(
             self.lnbits_admin_key.expect("LNBITS_ADMIN_KEY not set"),
             self.lnbits_url.expect("LNBITS_URL not set"),
         ));
+        // FIXME add LND support
+
+        // let lnd_settings = envy::prefixed("LND_")
+        //     .from_env::<LndLightningSettings>()
+        //     .expect("Please provide lnbits info");
+
+        // let ln = Arc::new(
+        //     LndLightning::new(
+        //         lnd_settings.grpc_host.expect("LND_GRPC_HOST not set"),
+        //         &lnd_settings
+        //             .tls_cert_path
+        //             .expect("LND_TLS_CERT_PATH not set"),
+        //         &lnd_settings
+        //             .macaroon_path
+        //             .expect("LND_MACAROON_PATH not set"),
+        //     )
+        //     .await,
+        // );
 
         let db = Arc::new(database::RocksDB::new(
             self.db_path.expect("MINT_DB_PATH not set"),

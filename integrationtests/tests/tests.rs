@@ -38,7 +38,7 @@ pub fn test_integration() -> anyhow::Result<()> {
                 .with_fee(0.0, 0)
                 .build();
 
-            let result = mokshamint::run_server(mint, 8686).await;
+            let result = mokshamint::run_server(mint.await, 8686).await;
             drop(tmp);
             assert!(result.is_ok());
         });
