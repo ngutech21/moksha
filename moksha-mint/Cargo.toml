@@ -14,7 +14,7 @@ name = "mokshamint"
 path = "src/lib.rs"
 
 [dependencies]
-async-trait = "0.1.71"
+async-trait = "0.1.72"
 bitcoin_hashes = "0.12.0"
 anyhow = { version = "1.0.72", features = ["backtrace"] }
 axum = "0.6.19"
