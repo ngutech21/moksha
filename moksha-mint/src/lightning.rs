@@ -228,7 +228,7 @@ impl Lightning for LndLightning {
             .into_inner();
 
         Ok(PayInvoiceResult {
-            payment_hash: String::from_utf8(payment.payment_hash)?,
+            payment_hash: hex::encode(payment.payment_hash),
         })
     }
 }
