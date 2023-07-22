@@ -26,6 +26,13 @@ Please read the [Cashu](https://github.com/callebtc/cashu) documentation for mor
 
 ## Progress
 
+Mint Features:
+
+- Supported backends
+  - [x] LNbits
+  - [x] Lnd
+  - [] core-lightning
+
 Wallet Features:
 
 - [x] connect to mint (load keys)
@@ -80,7 +87,7 @@ vim .env
 
 ### Run mint (cashu-server)
 
-To run the mint you need to setup a lightning regtest environment like [Polar](https://lightningpolar.com) and a Lnbits instance. In Lnbits create a new wallet and copy the admin key into the .env file and set the url to your Lnbits instance. The mint uses RocksDB for storing used proofs and pending invoices. You can set the path to the database in the .env file.
+To run the mint you need to setup a lightning regtest environment like [Polar](https://lightningpolar.com) and a Lnbits or Lnd instance. In Lnbits create a new wallet and copy the admin key into the .env file and set the url to your Lnbits instance. The mint uses RocksDB for storing used proofs and pending invoices. You can set the path to the database in the .env file.
 
 ```bash
 just run-mint
