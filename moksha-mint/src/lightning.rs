@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use serde_derive::{Deserialize, Serialize};
+use std::fmt::{self, Formatter};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 use tonic_lnd::Client;
 
@@ -14,6 +15,21 @@ use lightning_invoice::Invoice as LNInvoice;
 use mockall::automock;
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
+#[derive(Debug, Clone)]
+pub enum LightningType {
+    Lnbits(LnbitsLightningSettings),
+    Lnd(LndLightningSettings),
+}
+
+impl fmt::Display for LightningType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            LightningType::Lnbits(settings) => write!(f, "Lnbits: {}", settings),
+            LightningType::Lnd(settings) => write!(f, "Lnd: {}", settings),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct LnbitsLightning {
     pub client: LNBitsClient,
@@ -22,7 +38,27 @@ pub struct LnbitsLightning {
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct LnbitsLightningSettings {
     pub admin_key: Option<String>,
-    pub url: Option<String>,
+    pub url: Option<String>, // FIXME use Url type instead
+}
+
+impl fmt::Display for LnbitsLightningSettings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "admin_key: {}, url: {}",
+            self.admin_key.as_ref().unwrap(),
+            self.url.as_ref().unwrap()
+        )
+    }
+}
+
+impl LnbitsLightningSettings {
+    pub fn new(admin_key: &str, url: &str) -> Self {
+        Self {
+            admin_key: Some(admin_key.to_owned()),
+            url: Some(url.to_owned()),
+        }
+    }
 }
 
 #[cfg_attr(test, automock)]
@@ -90,6 +126,25 @@ pub struct LndLightningSettings {
     pub grpc_host: Option<String>,
     pub tls_cert_path: Option<PathBuf>,
     pub macaroon_path: Option<PathBuf>,
+}
+impl fmt::Display for LndLightningSettings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "grpc_host: {}, tls_cert_path: {}, macaroon_path: {}",
+            self.grpc_host.as_ref().unwrap(),
+            self.tls_cert_path
+                .as_ref()
+                .unwrap()
+                .to_str()
+                .unwrap_or_default(),
+            self.macaroon_path
+                .as_ref()
+                .unwrap()
+                .to_str()
+                .unwrap_or_default()
+        )
+    }
 }
 
 pub struct LndLightning(Arc<Mutex<Client>>);

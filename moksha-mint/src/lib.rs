@@ -8,7 +8,7 @@ use axum::{routing::get, Json};
 use error::MokshaMintError;
 use hyper::Method;
 use info::{MintInfoResponse, MintInfoSettings, Parameter};
-use lightning::LnbitsLightning;
+use lightning::{Lightning, LightningType, LnbitsLightning};
 use mint::{LightningFeeConfig, Mint};
 use model::{GetMintQuery, PostMintQuery};
 use moksha_core::model::{
@@ -36,8 +36,7 @@ mod model;
 #[derive(Debug, Default)]
 pub struct MintBuilder {
     private_key: Option<String>,
-    lnbits_admin_key: Option<String>,
-    lnbits_url: Option<String>,
+    lightning_type: Option<LightningType>,
     db_path: Option<String>,
     fee_percent: Option<f32>,
     fee_reserve_min: Option<u64>,
@@ -64,9 +63,8 @@ impl MintBuilder {
         self
     }
 
-    pub fn with_lnbits(mut self, url: String, admin_key: String) -> MintBuilder {
-        self.lnbits_admin_key = Some(admin_key);
-        self.lnbits_url = Some(url);
+    pub fn with_lightning(mut self, lightning: LightningType) -> MintBuilder {
+        self.lightning_type = Some(lightning);
         self
     }
 
@@ -77,28 +75,26 @@ impl MintBuilder {
     }
 
     pub async fn build(self) -> Mint {
-        let ln = Arc::new(LnbitsLightning::new(
-            self.lnbits_admin_key.expect("LNBITS_ADMIN_KEY not set"),
-            self.lnbits_url.expect("LNBITS_URL not set"),
-        ));
-        // FIXME add LND support
+        let ln: Arc<dyn Lightning + Send + Sync> = match self.lightning_type.clone() {
+            Some(LightningType::Lnbits(lnbits_settings)) => Arc::new(LnbitsLightning::new(
+                lnbits_settings.admin_key.expect("LNBITS_ADMIN_KEY not set"),
+                lnbits_settings.url.expect("LNBITS_URL not set"),
+            )),
 
-        // let lnd_settings = envy::prefixed("LND_")
-        //     .from_env::<LndLightningSettings>()
-        //     .expect("Please provide lnbits info");
-
-        // let ln = Arc::new(
-        //     LndLightning::new(
-        //         lnd_settings.grpc_host.expect("LND_GRPC_HOST not set"),
-        //         &lnd_settings
-        //             .tls_cert_path
-        //             .expect("LND_TLS_CERT_PATH not set"),
-        //         &lnd_settings
-        //             .macaroon_path
-        //             .expect("LND_MACAROON_PATH not set"),
-        //     )
-        //     .await,
-        // );
+            Some(LightningType::Lnd(lnd_settings)) => Arc::new(
+                lightning::LndLightning::new(
+                    lnd_settings.grpc_host.expect("LND_GRPC_HOST not set"),
+                    &lnd_settings
+                        .tls_cert_path
+                        .expect("LND_TLS_CERT_PATH not set"),
+                    &lnd_settings
+                        .macaroon_path
+                        .expect("LND_MACAROON_PATH not set"),
+                )
+                .await,
+            ),
+            None => panic!("Lightning backend not set"),
+        };
 
         let db = Arc::new(database::RocksDB::new(
             self.db_path.expect("MINT_DB_PATH not set"),
@@ -114,6 +110,7 @@ impl MintBuilder {
             self.private_key.expect("MINT_PRIVATE_KEY not set"),
             "".to_string(),
             ln,
+            self.lightning_type.expect("Lightning backend not set"),
             db,
             fee_config,
             self.mint_info_settings.unwrap_or_default(),
@@ -126,8 +123,9 @@ pub async fn run_server(mint: Mint, port: u16) -> anyhow::Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
     let addr = format!("[::]:{port}").parse()?;
-    info!("listening on {}", addr);
-    info!("mint_info {:?}", mint.mint_info);
+    info!("listening on: {}", addr);
+    info!("mint_info: {:?}", mint.mint_info);
+    info!("lightning_backend: {}", mint.lightning_type);
 
     axum::Server::bind(&addr)
         .serve(
@@ -277,7 +275,7 @@ mod tests {
     use crate::{
         app,
         database::MockDatabase,
-        lightning::MockLightning,
+        lightning::{LightningType, MockLightning},
         mint::{LightningFeeConfig, Mint},
     };
 
@@ -317,6 +315,7 @@ mod tests {
             "mytestsecret".to_string(),
             "".to_string(),
             lightning,
+            LightningType::Lnbits(Default::default()),
             db,
             LightningFeeConfig::default(),
             Default::default(),
