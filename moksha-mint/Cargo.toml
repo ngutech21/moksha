@@ -14,6 +14,7 @@ name = "mokshamint"
 path = "src/lib.rs"
 
 [dependencies]
+hex = "0.4.3"
 async-trait = "0.1.72"
 bitcoin_hashes = "0.12.0"
 anyhow = { version = "1.0.72", features = ["backtrace"] }
@@ -36,6 +37,7 @@ reqwest = { version = "0.11", default-features = false, features = ["json", "rus
 url = "2.4.0"
 dotenvy = "0.15.7"
 envy = "0.4.2"
+tonic_lnd = "0.5.1"
 
 [dev-dependencies]
 tempfile = "3.6.0"

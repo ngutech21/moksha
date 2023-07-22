@@ -4,6 +4,7 @@ use moksha_wallet::{
     client::{Client, HttpClient},
     localstore::SqliteLocalStore,
 };
+use mokshamint::lightning::{LightningType, LnbitsLightningSettings};
 use mokshamint::mint::Mint;
 use reqwest::Url;
 use std::thread;
@@ -31,14 +32,14 @@ pub fn test_integration() -> anyhow::Result<()> {
             let mint = Mint::builder()
                 .with_private_key("my_private_key".to_string())
                 .with_db(tmp_dir.to_string())
-                .with_lnbits(
-                    "http://127.0.0.1:6100".to_string(),
-                    "my_admin_key".to_string(),
-                )
+                .with_lightning(LightningType::Lnbits(LnbitsLightningSettings::new(
+                    "my_admin_key",
+                    "http://127.0.0.1:6100",
+                )))
                 .with_fee(0.0, 0)
                 .build();
 
-            let result = mokshamint::run_server(mint, 8686).await;
+            let result = mokshamint::run_server(mint.await, 8686).await;
             drop(tmp);
             assert!(result.is_ok());
         });

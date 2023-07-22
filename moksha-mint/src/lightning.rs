@@ -1,4 +1,8 @@
 use async_trait::async_trait;
+use serde_derive::{Deserialize, Serialize};
+use std::fmt::{self, Formatter};
+use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
+use tonic_lnd::Client;
 
 use crate::{
     error::MokshaMintError,
@@ -9,11 +13,52 @@ use lightning_invoice::Invoice as LNInvoice;
 
 #[cfg(test)]
 use mockall::automock;
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr, sync::Arc};
+
+#[derive(Debug, Clone)]
+pub enum LightningType {
+    Lnbits(LnbitsLightningSettings),
+    Lnd(LndLightningSettings),
+}
+
+impl fmt::Display for LightningType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            LightningType::Lnbits(settings) => write!(f, "Lnbits: {}", settings),
+            LightningType::Lnd(settings) => write!(f, "Lnd: {}", settings),
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct LnbitsLightning {
     pub client: LNBitsClient,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+pub struct LnbitsLightningSettings {
+    pub admin_key: Option<String>,
+    pub url: Option<String>, // FIXME use Url type instead
+}
+
+impl fmt::Display for LnbitsLightningSettings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "admin_key: {}, url: {}",
+            self.admin_key.as_ref().unwrap(),
+            self.url.as_ref().unwrap()
+        )
+    }
+}
+
+impl LnbitsLightningSettings {
+    pub fn new(admin_key: &str, url: &str) -> Self {
+        Self {
+            admin_key: Some(admin_key.to_owned()),
+            url: Some(url.to_owned()),
+        }
+    }
 }
 
 #[cfg_attr(test, automock)]
@@ -76,10 +121,122 @@ impl Lightning for LnbitsLightning {
     }
 }
 
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+pub struct LndLightningSettings {
+    pub grpc_host: Option<String>,
+    pub tls_cert_path: Option<PathBuf>,
+    pub macaroon_path: Option<PathBuf>,
+}
+impl fmt::Display for LndLightningSettings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "grpc_host: {}, tls_cert_path: {}, macaroon_path: {}",
+            self.grpc_host.as_ref().unwrap(),
+            self.tls_cert_path
+                .as_ref()
+                .unwrap()
+                .to_str()
+                .unwrap_or_default(),
+            self.macaroon_path
+                .as_ref()
+                .unwrap()
+                .to_str()
+                .unwrap_or_default()
+        )
+    }
+}
+
+pub struct LndLightning(Arc<Mutex<Client>>);
+
+impl LndLightning {
+    pub async fn new(address: String, cert_file: &PathBuf, macaroon_file: &PathBuf) -> Self {
+        let client = tonic_lnd::connect(address.clone(), cert_file, &macaroon_file)
+            .await
+            .expect("failed to connect"); // FIXME return result
+
+        Self(Arc::new(Mutex::new(client)))
+    }
+
+    pub async fn client_lock(
+        &self,
+    ) -> anyhow::Result<MappedMutexGuard<'_, tonic_lnd::LightningClient>> {
+        let guard = self.0.lock().await;
+        Ok(MutexGuard::map(guard, |client| client.lightning()))
+    }
+}
+
+#[async_trait]
+impl Lightning for LndLightning {
+    async fn is_invoice_paid(&self, payment_request: String) -> Result<bool, MokshaMintError> {
+        let invoice = self.decode_invoice(payment_request).await?;
+        let payment_hash = invoice.payment_hash();
+        let invoice_request = tonic_lnd::lnrpc::PaymentHash {
+            r_hash: payment_hash.to_vec(),
+            ..Default::default()
+        };
+
+        let invoice = self
+            .client_lock()
+            .await
+            .expect("failed to lock client")
+            .lookup_invoice(tonic_lnd::tonic::Request::new(invoice_request))
+            .await
+            .expect("failed to lookup invoice")
+            .into_inner();
+
+        Ok(invoice.state == tonic_lnd::lnrpc::invoice::InvoiceState::Settled as i32)
+    }
+
+    async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, MokshaMintError> {
+        let invoice_request = tonic_lnd::lnrpc::Invoice {
+            memo: "Test invoice".to_string(), // FIXME
+            value: amount as i64,
+            ..Default::default()
+        };
+
+        let invoice = self
+            .client_lock()
+            .await
+            .expect("failed to lock client")
+            .add_invoice(tonic_lnd::tonic::Request::new(invoice_request))
+            .await
+            .expect("failed to create invoice")
+            .into_inner();
+
+        Ok(CreateInvoiceResult {
+            payment_hash: invoice.r_hash,
+            payment_request: invoice.payment_request,
+        })
+    }
+
+    async fn pay_invoice(
+        &self,
+        payment_request: String,
+    ) -> Result<PayInvoiceResult, MokshaMintError> {
+        let pay_req = tonic_lnd::lnrpc::SendRequest {
+            payment_request,
+            ..Default::default()
+        };
+        let payment = self
+            .client_lock()
+            .await
+            .expect("failed to lock client")
+            .send_payment_sync(tonic_lnd::tonic::Request::new(pay_req))
+            .await
+            .expect("failed to pay invoice")
+            .into_inner();
+
+        Ok(PayInvoiceResult {
+            payment_hash: hex::encode(payment.payment_hash),
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::lightning::Lightning;
-    use crate::LnbitsLightning;
+    use crate::lightning::LnbitsLightning;
 
     #[tokio::test]
     async fn test_decode_invoice() -> anyhow::Result<()> {

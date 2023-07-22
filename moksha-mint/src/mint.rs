@@ -10,13 +10,18 @@ use moksha_core::{
 };
 
 use crate::{
-    database::Database, error::MokshaMintError, info::MintInfoSettings, lightning::Lightning,
-    model::Invoice, MintBuilder,
+    database::Database,
+    error::MokshaMintError,
+    info::MintInfoSettings,
+    lightning::{Lightning, LightningType},
+    model::Invoice,
+    MintBuilder,
 };
 
 #[derive(Clone)]
 pub struct Mint {
     pub lightning: Arc<dyn Lightning + Send + Sync>,
+    pub lightning_type: LightningType,
     pub keyset: MintKeyset,
     pub db: Arc<dyn Database + Send + Sync>,
     pub dhke: Dhke,
@@ -54,12 +59,14 @@ impl Mint {
         secret: String,
         derivation_path: String,
         lightning: Arc<dyn Lightning + Send + Sync>,
+        lightning_type: LightningType,
         db: Arc<dyn Database + Send + Sync>,
         lightning_fee_config: LightningFeeConfig,
         mint_info: MintInfoSettings,
     ) -> Self {
         Self {
             lightning,
+            lightning_type,
             lightning_fee_config,
             keyset: MintKeyset::new(secret, derivation_path),
             db,
@@ -236,7 +243,7 @@ impl Mint {
 
 #[cfg(test)]
 mod tests {
-    use crate::lightning::MockLightning;
+    use crate::lightning::{LightningType, MockLightning};
     use crate::lnbits::PayInvoiceResult;
     use crate::model::Invoice;
     use crate::{database::MockDatabase, error::MokshaMintError, Mint};
@@ -410,6 +417,7 @@ mod tests {
             "TEST_PRIVATE_KEY".to_string(),
             "0/0/0/0".to_string(),
             Arc::new(lightning),
+            LightningType::Lnbits(Default::default()),
             Arc::new(create_mock_db_get_used_proofs()),
             Default::default(),
             Default::default(),
@@ -466,6 +474,7 @@ mod tests {
             "TEST_PRIVATE_KEY".to_string(),
             "0/0/0/0".to_string(),
             lightning,
+            LightningType::Lnbits(Default::default()),
             db,
             Default::default(),
             Default::default(),

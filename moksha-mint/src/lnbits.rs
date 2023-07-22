@@ -1,6 +1,5 @@
 use hyper::{header::CONTENT_TYPE, http::HeaderValue};
 use serde::{Deserialize, Serialize};
-use tracing::info;
 use url::Url;
 
 #[derive(Debug, thiserror::Error)]
@@ -98,7 +97,7 @@ impl LNBitsClient {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateInvoiceResult {
-    pub payment_hash: String,
+    pub payment_hash: Vec<u8>,
     pub payment_request: String,
 }
 
@@ -132,14 +131,25 @@ impl LNBitsClient {
             "internal": params.internal,
             "expiry": params.expiry,
         });
-        info!(">>>>> params: {}", serde_json::to_string(&params)?);
 
         let body = self
             .make_post("api/v1/payments", &serde_json::to_string(&params)?)
             .await?;
-        info!(">>>>> create_invoice body: {}", &body);
 
-        Ok(serde_json::from_str(&body)?)
+        let response: serde_json::Value = serde_json::from_str(&body)?;
+        let payment_request = response["payment_request"]
+            .as_str()
+            .expect("payment_request is empty")
+            .to_owned();
+        let payment_hash = response["payment_hash"]
+            .as_str()
+            .expect("payment_hash is empty")
+            .to_owned();
+
+        Ok(CreateInvoiceResult {
+            payment_hash: payment_hash.as_bytes().to_vec(),
+            payment_request,
+        })
     }
 
     pub async fn pay_invoice(&self, bolt11: &str) -> Result<PayInvoiceResult, LNBitsError> {
