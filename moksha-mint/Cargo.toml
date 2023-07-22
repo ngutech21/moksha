@@ -29,7 +29,7 @@ tower-http = { version = "0.4.2", features = ["trace", "cors", "fs"] }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
 secp256k1 = { version = "0.27.0", features = ["rand", "serde"] }
-thiserror = "1.0.43"
+thiserror = "1.0.44"
 moksha-core = { path = "../moksha-core" }
 rocksdb = "0.21.0"
 lightning-invoice = "0.23.0"
