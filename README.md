@@ -161,7 +161,7 @@ To run coverage, check for typos, generate the flutter rust bridge etc. use the 
 ```bash
 Available recipes:
     build-flutter      # build flutter desktop-app
-    clean
+    clean              # clean cargo and flutter
     coverage           # run coverage
     default            # list all tasks
     final-check        # format code, check typos and run tests

@@ -4,6 +4,7 @@ platform := if os_family() == "unix" { "macos"} else {os_family()}
 default:
   @just --list
 
+# clean cargo and flutter
 clean:
   cargo clean
   cd flutter && flutter clean
@@ -14,7 +15,7 @@ run-mint:
 
 # run the cli-wallet with given args
 run-cli *ARGS:
-  cargo run --bin moksha-cli -- -m http://170.75.162.108:3338 -d ./data/wallet  {{ARGS}} 
+  cargo run --bin moksha-cli -- -m http://localhost:3338 -d ./data/wallet  {{ARGS}} 
 
 
 # check code for typos
