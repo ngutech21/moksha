@@ -3,6 +3,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 use tonic_lnd::Client;
+use url::Url;
 
 use crate::{
     error::MokshaMintError,
@@ -123,7 +124,7 @@ impl Lightning for LnbitsLightning {
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct LndLightningSettings {
-    pub grpc_host: Option<String>,
+    pub grpc_host: Option<Url>,
     pub tls_cert_path: Option<PathBuf>,
     pub macaroon_path: Option<PathBuf>,
 }
@@ -150,12 +151,16 @@ impl fmt::Display for LndLightningSettings {
 pub struct LndLightning(Arc<Mutex<Client>>);
 
 impl LndLightning {
-    pub async fn new(address: String, cert_file: &PathBuf, macaroon_file: &PathBuf) -> Self {
-        let client = tonic_lnd::connect(address.clone(), cert_file, &macaroon_file)
-            .await
-            .expect("failed to connect"); // FIXME return result
+    pub async fn new(
+        address: Url,
+        cert_file: &PathBuf,
+        macaroon_file: &PathBuf,
+    ) -> Result<Self, MokshaMintError> {
+        let client = tonic_lnd::connect(address.to_string(), cert_file, &macaroon_file).await;
 
-        Self(Arc::new(Mutex::new(client)))
+        Ok(Self(Arc::new(Mutex::new(
+            client.map_err(MokshaMintError::ConnectError)?,
+        ))))
     }
 
     pub async fn client_lock(
@@ -190,7 +195,6 @@ impl Lightning for LndLightning {
 
     async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, MokshaMintError> {
         let invoice_request = tonic_lnd::lnrpc::Invoice {
-            memo: "Test invoice".to_string(), // FIXME
             value: amount as i64,
             ..Default::default()
         };

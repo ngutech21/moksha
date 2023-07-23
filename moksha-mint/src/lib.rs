@@ -74,7 +74,7 @@ impl MintBuilder {
         self
     }
 
-    pub async fn build(self) -> Mint {
+    pub async fn build(self) -> Result<Mint, MokshaMintError> {
         let ln: Arc<dyn Lightning + Send + Sync> = match self.lightning_type.clone() {
             Some(LightningType::Lnbits(lnbits_settings)) => Arc::new(LnbitsLightning::new(
                 lnbits_settings.admin_key.expect("LNBITS_ADMIN_KEY not set"),
@@ -91,7 +91,7 @@ impl MintBuilder {
                         .macaroon_path
                         .expect("LND_MACAROON_PATH not set"),
                 )
-                .await,
+                .await?,
             ),
             None => panic!("Lightning backend not set"),
         };
@@ -106,7 +106,7 @@ impl MintBuilder {
                 .expect("LIGHTNING_RESERVE_FEE_MIN not set"),
         );
 
-        Mint::new(
+        Ok(Mint::new(
             self.private_key.expect("MINT_PRIVATE_KEY not set"),
             "".to_string(),
             ln,
@@ -114,7 +114,7 @@ impl MintBuilder {
             db,
             fee_config,
             self.mint_info_settings.unwrap_or_default(),
-        )
+        ))
     }
 }
 

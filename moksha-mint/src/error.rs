@@ -8,12 +8,16 @@ use hyper::StatusCode;
 use lightning_invoice::ParseOrSemanticError;
 use serde_json::json;
 use thiserror::Error;
+use tonic_lnd::ConnectError;
 use tracing::{event, Level};
 
 use crate::lnbits::LNBitsError;
 
 #[derive(Error, Debug)]
 pub enum MokshaMintError {
+    #[error("LndConnectError - {0}")]
+    ConnectError(ConnectError),
+
     #[error("Failed to decode payment request {0} - Error {1}")]
     DecodeInvoice(String, ParseOrSemanticError),
 

@@ -44,7 +44,7 @@ pub async fn main() -> anyhow::Result<()> {
         .build()
         .await;
 
-    mokshamint::run_server(mint, 3338).await
+    mokshamint::run_server(mint?, 3338).await
 }
 
 fn get_env(key: &str) -> String {
