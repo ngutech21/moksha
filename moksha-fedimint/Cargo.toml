@@ -10,6 +10,7 @@ name = "moksha_fedimint"
 path = "src/lib.rs"
 
 [dependencies]
+dotenvy = "0.15.7"
 base64 = "0.20.0"
 anyhow = { version = "1.0.72", features = ["backtrace"] }
 tokio = { version = "1.28.2", features = ["full"] }

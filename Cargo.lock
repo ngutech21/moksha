@@ -2458,6 +2458,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
+ "dotenvy",
  "fedimint-client",
  "fedimint-core",
  "fedimint-ln-client",
