@@ -15,7 +15,7 @@ run-mint:
 
 # run the cli-wallet with given args
 run-cli *ARGS:
-  cargo run --bin moksha-cli -- -m http://170.75.162.108:3338 -d ./data/wallet  {{ARGS}} 
+  cargo run --bin moksha-cli -- -m http://127.0.0.1:3338 -d ./data/wallet  {{ARGS}} 
 
 
 # check code for typos
@@ -74,3 +74,7 @@ build-flutter:
     cd flutter && \
     flutter clean && \
     flutter build {{ platform }}
+
+build-docker:
+    docker build -t moksha:latest .
+    
