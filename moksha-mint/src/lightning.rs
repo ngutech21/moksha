@@ -136,7 +136,7 @@ impl fmt::Display for LndLightningSettings {
             self.grpc_host.as_ref().unwrap(),
             self.tls_cert_path
                 .as_ref()
-                .unwrap()
+                .unwrap() // FIXME unwrap
                 .to_str()
                 .unwrap_or_default(),
             self.macaroon_path
@@ -225,7 +225,7 @@ impl Lightning for LndLightning {
         let payment = self
             .client_lock()
             .await
-            .expect("failed to lock client")
+            .expect("failed to lock client") //FIXME map error
             .send_payment_sync(tonic_lnd::tonic::Request::new(pay_req))
             .await
             .expect("failed to pay invoice")
