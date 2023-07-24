@@ -19,7 +19,7 @@ secp256k1 = {version="0.27.0", features = [ "serde" ]}
 tokio = { version = "1.29.1", features = ["full"] }
 moksha-core = { path = "../moksha-core" }
 serde_json = "1.0.103"
-serde = "1.0.174"
+serde = "1.0.175"
 rand = "0.8.5"
 thiserror = "1.0.44"
 async-trait = "0.1.72"
