@@ -3,11 +3,23 @@ use mokshamint::{
     lightning::{LightningType, LnbitsLightningSettings, LndLightningSettings},
     MintBuilder,
 };
-use std::env;
+use std::{env, fmt};
 
 #[tokio::main]
 pub async fn main() -> anyhow::Result<()> {
-    dotenvy::dotenv().ok();
+    let app_env = match env::var("MINT_APP_ENV") {
+        Ok(v) if v == "prod" => AppEnv::Prod,
+        _ => AppEnv::Dev,
+    };
+
+    println!("Running in {app_env} mode");
+
+    if app_env == AppEnv::Dev {
+        match dotenvy::dotenv() {
+            Ok(path) => println!(".env read successfully from {}", path.display()),
+            Err(e) => panic!("Could not load .env file: {e}"),
+        };
+    }
 
     let ln_backend = get_env("MINT_LIGHTNING_BACKEND");
     let ln_type = match ln_backend.as_str() {
@@ -45,6 +57,21 @@ pub async fn main() -> anyhow::Result<()> {
         .await;
 
     mokshamint::run_server(mint?, 3338).await
+}
+
+#[derive(Debug, PartialEq)]
+pub enum AppEnv {
+    Dev,
+    Prod,
+}
+
+impl fmt::Display for AppEnv {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AppEnv::Dev => write!(f, "dev"),
+            AppEnv::Prod => write!(f, "prod"),
+        }
+    }
 }
 
 fn get_env(key: &str) -> String {
