@@ -1,5 +1,5 @@
 [workspace]
-resolver= "2"
+resolver = "2"
 
 members = [
     "moksha-core",
@@ -7,15 +7,15 @@ members = [
     "moksha-mint",
     "moksha-fedimint",
     "flutter/native",
-    "integrationtests"
+    "integrationtests",
 ]
 
 [profile.dev]
-split-debuginfo = "unpacked"
+split-debuginfo = "packed"
 
 [profile.release]
-strip = true  # Automatically strip symbols from the binary.
-lto = true # Enable link-time optimization.
+strip = true # Automatically strip symbols from the binary.
+lto = true   # Enable link-time optimization.
 
 [workspace.metadata]
 authors = ["The moksha Developers"]
@@ -26,12 +26,9 @@ repository = "https://github.com/ngutech21/moksha"
 license-file = "LICENSE"
 keywords = ["bitcoin", "e-cash"]
 
-
-
 [patch.crates-io]
 secp256k1-zkp = { git = "https://github.com/dpc/rust-secp256k1-zkp/", branch = "sanket-pr" }
 ring = { git = "https://github.com/Maan2003/ring", rev = "52a1294a8fc066cc0656911ec22b8358fb763ef1" }
-
 
 [profile.dev.package]
 secp256k1 = { opt-level = 3 }

@@ -2507,6 +2507,7 @@ dependencies = [
  "lightning-invoice 0.21.0",
  "serde_json",
  "tokio",
+ "wasm-bindgen-futures",
 ]
 
 [[package]]
