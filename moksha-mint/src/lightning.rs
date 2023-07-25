@@ -1,9 +1,11 @@
 use async_trait::async_trait;
-use serde_derive::{Deserialize, Serialize};
+// use serde_derive::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 use tonic_lnd::Client;
 use url::Url;
+
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
     error::MokshaMintError,
@@ -122,8 +124,30 @@ impl Lightning for LnbitsLightning {
     }
 }
 
+fn deserialize_url<'de, D>(deserializer: D) -> Result<Option<Url>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let url_str: Option<String> = Option::deserialize(deserializer)?;
+    match url_str {
+        Some(s) => Url::parse(&s).map_err(serde::de::Error::custom).map(Some),
+        None => Ok(None),
+    }
+}
+
+fn serialize_url<S>(url: &Option<Url>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    match url {
+        Some(url) => serializer.serialize_str(url.as_str()),
+        None => serializer.serialize_none(),
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct LndLightningSettings {
+    #[serde(serialize_with = "serialize_url", deserialize_with = "deserialize_url")]
     pub grpc_host: Option<Url>,
     pub tls_cert_path: Option<PathBuf>,
     pub macaroon_path: Option<PathBuf>,
