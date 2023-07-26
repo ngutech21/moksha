@@ -1,12 +1,6 @@
-use std::fs::create_dir_all;
-use std::path::PathBuf;
-use std::time::Duration;
-
 use clap::{Parser, Subcommand};
-use moksha_wallet::localstore::LocalStore;
-use moksha_wallet::{localstore::SqliteLocalStore, wallet::Wallet};
-use reqwest::Url;
-use tokio::time::{sleep_until, Instant};
+use std::path::PathBuf;
+use url::Url;
 
 #[derive(Parser)]
 #[command(version)]
@@ -49,25 +43,29 @@ enum Command {
     Info,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    use moksha_wallet::localstore::LocalStore;
+    use moksha_wallet::sqlx_localstore::SqliteLocalStore;
+
     let cli = Opts::parse();
 
     let db_path = match cli.db_dir {
         Some(dir) => {
-            create_dir_all(dir.clone())?;
+            std::fs::create_dir_all(dir.clone())?;
             dir.join("wallet.db").to_str().unwrap().to_string()
         }
 
-        None => Wallet::db_path(),
+        None => moksha_wallet::wallet::Wallet::db_path(),
     };
 
     let localstore = Box::new(SqliteLocalStore::with_path(db_path.clone()).await?);
     localstore.migrate().await;
 
-    let client = Box::new(moksha_wallet::client::HttpClient::new());
+    let client = Box::new(moksha_wallet::reqwest_client::HttpClient::new());
 
-    let wallet = Wallet::builder()
+    let wallet = moksha_wallet::wallet::Wallet::builder()
         .with_client(client)
         .with_localstore(localstore)
         .with_mint_url(cli.mint_url.clone())
@@ -124,7 +122,10 @@ async fn main() -> anyhow::Result<()> {
             println!("Pay invoice to mint tokens:\n\n{invoice}");
 
             loop {
-                sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
+                tokio::time::sleep_until(
+                    tokio::time::Instant::now() + std::time::Duration::from_millis(1_000),
+                )
+                .await;
                 let mint_result = wallet.mint_tokens(amount.into(), hash.clone()).await;
 
                 match mint_result {
@@ -148,3 +149,6 @@ async fn main() -> anyhow::Result<()> {
     }
     Ok(())
 }
+
+#[cfg(target_arch = "wasm32")]
+fn main() {}

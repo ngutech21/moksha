@@ -1,8 +1,6 @@
 use std::string::FromUtf8Error;
 
 use lightning_invoice::ParseOrSemanticError;
-use reqwest::header::InvalidHeaderValue;
-use sqlx::sqlite::SqliteError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -10,12 +8,13 @@ pub enum MokshaWalletError {
     #[error("SerdeJsonError - {0}")]
     Json(#[from] serde_json::Error),
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[error("ReqwestError - {0}")]
     Reqwest(#[from] reqwest::Error),
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[error("InvalidHeaderValueError - {0}")]
-    InvalidHeaderValue(#[from] InvalidHeaderValue),
-
+    InvalidHeaderValue(#[from] reqwest::header::InvalidHeaderValue),
     #[error("{0}")]
     MintError(String),
 
@@ -28,12 +27,13 @@ pub enum MokshaWalletError {
     #[error("MokshaCoreError - {0}")]
     MokshaCore(#[from] moksha_core::error::MokshaCoreError),
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[error("DB Error {0}")]
     Db(#[from] sqlx::Error),
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[error("Sqlite Error {0}")]
-    Sqlite(#[from] SqliteError),
-
+    Sqlite(#[from] sqlx::sqlite::SqliteError),
     #[error("Utf8 Error {0}")]
     Utf8(#[from] FromUtf8Error),
 

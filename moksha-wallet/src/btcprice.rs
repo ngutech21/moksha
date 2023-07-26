@@ -1,14 +1,16 @@
 use crate::error::MokshaWalletError;
 
 pub async fn get_btcprice() -> Result<f64, MokshaWalletError> {
-    let request_client = reqwest::Client::new();
-    let url =
-        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&precision=18";
-    let response = request_client.get(url).send().await?;
-    let response = response.text().await?;
-    let response: serde_json::Value = serde_json::from_str(&response)?;
-    let btcprice = response["bitcoin"]["usd"].as_f64().expect("No btcprice");
-    Ok(btcprice)
+    // FIXME implemnet for wasm
+    // let request_client = reqwest::Client::new();
+    // let url =
+    //     "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&precision=18";
+    // let response = request_client.get(url).send().await?;
+    // let response = response.text().await?;
+    // let response: serde_json::Value = serde_json::from_str(&response)?;
+    // let btcprice = response["bitcoin"]["usd"].as_f64().expect("No btcprice");
+    // Ok(btcprice)
+    Ok(21.0f64)
 }
 
 #[cfg(test)]

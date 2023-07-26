@@ -7,7 +7,7 @@ use moksha_core::model::{
 };
 use moksha_wallet::localstore::LocalStore;
 use moksha_wallet::{
-    client::Client, error::MokshaWalletError, localstore::SqliteLocalStore, wallet::Wallet,
+    client::Client, error::MokshaWalletError, sqlx_localstore::SqliteLocalStore, wallet::Wallet,
 };
 use reqwest::Url;
 use secp256k1::PublicKey;

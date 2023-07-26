@@ -8,8 +8,9 @@ use moksha_core::{
         PostMeltResponse, PostSplitResponse, Proof, Proofs, TokenV3, TotalAmount,
     },
 };
-use reqwest::Url;
+//use reqwest::Url;
 use secp256k1::{PublicKey, SecretKey};
+use url::Url;
 
 use crate::{
     client::Client,
@@ -522,9 +523,9 @@ mod tests {
         BlindedMessage, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest, PostMeltResponse,
         PostMintResponse, PostSplitResponse, Proofs, Token, TokenV3,
     };
-    use reqwest::Url;
     use secp256k1::PublicKey;
     use std::collections::HashMap;
+    use url::Url;
 
     #[derive(Clone)]
     struct MockLocalStore {
