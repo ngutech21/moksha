@@ -75,6 +75,13 @@ build-flutter:
     flutter clean && \
     flutter build {{ platform }}
 
+# build the mint docker-image
 build-docker:
     docker build -t moksha:latest .
+
+
+# compile all rust crates, that are relevant for the client, to wasm
+build-wasm:
+   cargo build -p moksha-core -p moksha-wallet -p moksha-fedimint --target wasm32-unknown-unknown
+   
     
