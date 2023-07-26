@@ -203,18 +203,21 @@ impl FedimintWallet {
         workdir: &Path,
     ) -> anyhow::Result<fedimint_client::Client> {
         let mut tg = TaskGroup::new();
-        let db = Self::load_db(workdir).await?;
+
+        // FIXME use memory db
+        // let db = Self::load_db(workdir).await?;
 
         let mut client_builder = ClientBuilder::default();
         client_builder.with_module_gens(module_gens.clone());
         client_builder.with_primary_module(1);
         client_builder.with_config(cfg.clone());
-        client_builder.with_database(db);
+        //client_builder.with_database(db);
         client_builder
             .build::<PlainRootSecretStrategy>(&mut tg)
             .await
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     async fn load_db(workdir: &Path) -> anyhow::Result<fedimint_sqlite::SqliteDb> {
         let db_path = workdir.join("client.db");
         fedimint_sqlite::SqliteDb::open(db_path.to_str().unwrap())

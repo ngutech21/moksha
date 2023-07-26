@@ -1,9 +1,8 @@
+use moksha_wallet::client::Client;
 use moksha_wallet::localstore::LocalStore;
+use moksha_wallet::reqwest_client::HttpClient;
+use moksha_wallet::sqlx_localstore::SqliteLocalStore;
 use moksha_wallet::wallet::Wallet;
-use moksha_wallet::{
-    client::{Client, HttpClient},
-    localstore::SqliteLocalStore,
-};
 use mokshamint::lightning::{LightningType, LnbitsLightningSettings};
 use mokshamint::mint::Mint;
 use reqwest::Url;

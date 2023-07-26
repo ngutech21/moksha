@@ -3,6 +3,7 @@ use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+#[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
@@ -23,6 +24,11 @@ async fn main() -> anyhow::Result<()> {
     wallet.mint(operation_id).await?;
     Ok(())
 }
+
+
+#[cfg(target_arch = "wasm32")]
+fn main() {}
+
 
 fn workdir() -> anyhow::Result<std::path::PathBuf> {
     let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
