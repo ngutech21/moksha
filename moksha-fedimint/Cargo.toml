@@ -27,4 +27,4 @@ fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", rev = "
 tokio = { version = "1.29.1", features = ["rt"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
-wasm-bindgen-futures = "0.4.33"
+wasm-bindgen-futures = "0.4.37"
