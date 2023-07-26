@@ -16,4 +16,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: cargo cargo build -p moksha-core -p moksha-wallet -p moksha-fedimint --target wasm32-unknown-unknown
+        run: cargo build -p native -p moksha-core -p moksha-wallet -p moksha-fedimint --target wasm32-unknown-unknown
