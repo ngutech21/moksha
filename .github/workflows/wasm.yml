@@ -17,7 +17,7 @@ jobs:
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: stable
           override: true
       - name: Add wasm32-unknown-unknown target
         run: rustup target add wasm32-unknown-unknown
