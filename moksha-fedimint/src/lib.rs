@@ -204,14 +204,18 @@ impl FedimintWallet {
     ) -> anyhow::Result<fedimint_client::Client> {
         let mut tg = TaskGroup::new();
 
-        // FIXME use memory db
-        // let db = Self::load_db(workdir).await?;
+        #[cfg(not(target_arch = "wasm32"))]
+        let db = Self::load_db(workdir).await?;
+
+        #[cfg(target_arch = "wasm32")]
+        let db = fedimint_core::db::mem_impl::MemDatabase::default();
+        // FIXME use different db for fedimint in wasm
 
         let mut client_builder = ClientBuilder::default();
         client_builder.with_module_gens(module_gens.clone());
         client_builder.with_primary_module(1);
         client_builder.with_config(cfg.clone());
-        //client_builder.with_database(db);
+        client_builder.with_database(db);
         client_builder
             .build::<PlainRootSecretStrategy>(&mut tg)
             .await
