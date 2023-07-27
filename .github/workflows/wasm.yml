@@ -22,4 +22,4 @@ jobs:
       - name: Add wasm32-unknown-unknown target
         run: rustup target add wasm32-unknown-unknown
       - name: Build
-        run: cargo build -p native -p moksha-core -p moksha-wallet -p moksha-fedimint --target wasm32-unknown-unknown
+        run: cargo build  -p moksha-core -p moksha-wallet -p moksha-fedimint --target wasm32-unknown-unknown
