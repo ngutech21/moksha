@@ -16,12 +16,10 @@ pub struct SqliteLocalStore {
 #[async_trait]
 impl LocalStore for SqliteLocalStore {
     async fn migrate(&self) {
-        // FIXME call migrate macro
-
-        // sqlx::migrate!("../moksha-wallet/migrations")
-        //     .run(&self.pool)
-        //     .await
-        //     .expect("Could not run migrations");
+        sqlx::migrate!("../moksha-wallet/migrations")
+            .run(&self.pool)
+            .await
+            .expect("Could not run migrations");
     }
 
     async fn delete_proofs(&self, proofs: &Proofs) -> Result<(), MokshaWalletError> {
