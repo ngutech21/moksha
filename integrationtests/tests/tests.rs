@@ -2,7 +2,7 @@ use moksha_wallet::client::Client;
 use moksha_wallet::localstore::LocalStore;
 use moksha_wallet::reqwest_client::HttpClient;
 use moksha_wallet::sqlx_localstore::SqliteLocalStore;
-use moksha_wallet::wallet::Wallet;
+use moksha_wallet::wallet::WalletBuilder;
 use mokshamint::lightning::{LightningType, LnbitsLightningSettings};
 use mokshamint::mint::Mint;
 use reqwest::Url;
@@ -68,15 +68,13 @@ pub fn test_integration() -> anyhow::Result<()> {
             .to_str()
             .expect("Could not create tmp dir for wallet");
 
-        let localstore = Box::new(
-            SqliteLocalStore::with_path(format!("{tmp_dir}/test_wallet.db"))
-                .await
-                .expect("Could not create localstore"),
-        );
+        let localstore = SqliteLocalStore::with_path(format!("{tmp_dir}/test_wallet.db"))
+            .await
+            .expect("Could not create localstore");
         localstore.migrate().await;
 
-        let wallet = Wallet::builder()
-            .with_client(Box::new(client))
+        let wallet = WalletBuilder::default()
+            .with_client(client)
             .with_localstore(localstore)
             .with_mint_url(mint_url)
             .build()

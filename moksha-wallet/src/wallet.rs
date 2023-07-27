@@ -1,6 +1,5 @@
-use std::{collections::HashMap, fs::create_dir, path::PathBuf};
+use std::collections::HashMap;
 
-use dirs::home_dir;
 use moksha_core::{
     dhke::Dhke,
     model::{
@@ -8,7 +7,7 @@ use moksha_core::{
         PostMeltResponse, PostSplitResponse, Proof, Proofs, TokenV3, TotalAmount,
     },
 };
-//use reqwest::Url;
+
 use secp256k1::{PublicKey, SecretKey};
 use url::Url;
 
@@ -20,44 +19,37 @@ use crate::{
 use lightning_invoice::Invoice as LNInvoice;
 use std::str::FromStr;
 
-pub const ENV_DB_PATH: &str = "WALLET_DB_PATH";
-
-pub struct Wallet {
-    client: Box<dyn Client>,
+#[derive(Clone)]
+pub struct Wallet<C: Client, L: LocalStore> {
+    client: C,
     mint_keys: HashMap<u64, PublicKey>, // FIXME use specific type
     keysets: Keysets,
     dhke: Dhke,
-    localstore: Box<dyn LocalStore>,
+    localstore: L,
     mint_url: Url,
 }
 
-impl Clone for Wallet {
-    fn clone(&self) -> Self {
-        Self {
-            mint_keys: self.mint_keys.clone(),
-            keysets: self.keysets.clone(),
-            dhke: self.dhke.clone(),
-            mint_url: self.mint_url.clone(),
-            client: dyn_clone::clone_box(&*self.client),
-            localstore: dyn_clone::clone_box(&*self.localstore),
-        }
-    }
-}
-
-#[derive(Default)]
-pub struct WalletBuilder {
-    client: Option<Box<dyn Client>>,
-    localstore: Option<Box<dyn LocalStore>>,
+pub struct WalletBuilder<C: Client, L: LocalStore> {
+    client: Option<C>,
+    localstore: Option<L>,
     mint_url: Option<Url>,
 }
 
-impl WalletBuilder {
-    pub fn with_client(mut self, client: Box<dyn Client>) -> Self {
+impl<C: Client, L: LocalStore> WalletBuilder<C, L> {
+    pub fn new() -> Self {
+        Self {
+            client: None,
+            localstore: None,
+            mint_url: None,
+        }
+    }
+
+    pub fn with_client(mut self, client: C) -> Self {
         self.client = Some(client);
         self
     }
 
-    pub fn with_localstore(mut self, localstore: Box<dyn LocalStore>) -> Self {
+    pub fn with_localstore(mut self, localstore: L) -> Self {
         self.localstore = Some(localstore);
         self
     }
@@ -67,7 +59,7 @@ impl WalletBuilder {
         self
     }
 
-    pub async fn build(self) -> Result<Wallet, MokshaWalletError> {
+    pub async fn build(self) -> Result<Wallet<C, L>, MokshaWalletError> {
         let client = self.client.expect("client is required");
         let localstore = self.localstore.expect("localstore is required");
         let mint_url = self.mint_url.expect("mint_url is required");
@@ -93,7 +85,7 @@ impl WalletBuilder {
         let keys = client.get_mint_keys(&mint_url).await?;
 
         Ok(Wallet::new(
-            client,
+            client as C,
             keys,
             mint_keysets,
             localstore,
@@ -102,12 +94,18 @@ impl WalletBuilder {
     }
 }
 
-impl Wallet {
+impl<C: Client, L: LocalStore> Default for WalletBuilder<C, L> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<C: Client, L: LocalStore> Wallet<C, L> {
     fn new(
-        client: Box<dyn Client>,
+        client: C,
         mint_keys: HashMap<u64, PublicKey>,
         keysets: Keysets,
-        localstore: Box<dyn LocalStore>,
+        localstore: L,
         mint_url: Url,
     ) -> Self {
         Self {
@@ -118,71 +116,6 @@ impl Wallet {
             localstore,
             mint_url,
         }
-    }
-
-    pub fn builder() -> WalletBuilder {
-        WalletBuilder::default()
-    }
-
-    /// Returns the path to the wallet database file.
-    ///
-    /// The path is determined by the value of the `WALLET_DB_PATH` environment variable. If the
-    /// variable is not set, the function creates a `.moksha` directory in the user's home directory
-    /// and returns a path to a `wallet.db` file in that directory.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let db_path = moksha_wallet::wallet::Wallet::db_path();
-    /// println!("Database path: {}", db_path);
-    /// ```
-    pub fn db_path() -> String {
-        match std::env::var(ENV_DB_PATH) {
-            Ok(val) => val,
-            Err(_) => {
-                let home = home_dir()
-                    .expect("home dir not found")
-                    .to_str()
-                    .expect("home dir is invalid")
-                    .to_owned();
-                // in a sandboxed environment on mac the path looks like
-                // /Users/$USER_NAME/Library/Containers/..... so we have are just ising the first 2 parts
-                let home = home
-                    .split('/')
-                    .take(3)
-                    .collect::<Vec<&str>>()
-                    .join(std::path::MAIN_SEPARATOR_STR);
-                let moksha_dir = format!("{}{}.moksha", home, std::path::MAIN_SEPARATOR);
-
-                if !std::path::Path::new(&moksha_dir).exists() {
-                    create_dir(std::path::Path::new(&moksha_dir))
-                        .expect("failed to create .moksha dir");
-                }
-
-                format!("{moksha_dir}/wallet.db")
-            }
-        }
-    }
-
-    pub fn config_dir() -> PathBuf {
-        let home = home_dir()
-            .expect("home dir not found")
-            .to_str()
-            .expect("home dir is invalid")
-            .to_owned();
-        // in a sandboxed environment on mac the path looks like
-        // /Users/$USER_NAME/Library/Containers/..... so we have are just ising the first 2 parts
-        let home = home
-            .split('/')
-            .take(3)
-            .collect::<Vec<&str>>()
-            .join(std::path::MAIN_SEPARATOR_STR);
-        let moksha_dir = format!("{}{}.moksha", home, std::path::MAIN_SEPARATOR);
-
-        if !std::path::Path::new(&moksha_dir).exists() {
-            create_dir(std::path::Path::new(&moksha_dir)).expect("failed to create .moksha dir");
-        }
-        PathBuf::from(moksha_dir)
     }
 
     pub async fn get_mint_payment_request(
@@ -675,12 +608,13 @@ mod tests {
         let mint_response = serde_json::from_str::<PostMintResponse>(&raw_response)?;
 
         let client = MockClient::with_mint_response(mint_response);
-        let localstore = Box::<MockLocalStore>::default();
+        let localstore = MockLocalStore::default();
         let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
 
         let mint_keyset = MintKeyset::new("superprivatesecretkey".to_string(), "".to_string());
+        // FIXME use WalletBuilder
         let wallet = Wallet::new(
-            Box::new(client),
+            client,
             mint_keyset.public_keys,
             Keysets::new(vec![mint_keyset.keyset_id]),
             localstore,
@@ -701,11 +635,12 @@ mod tests {
         let split_response = serde_json::from_str::<PostSplitResponse>(&raw_response)?;
 
         let client = MockClient::with_split_response(split_response);
-        let localstore = Box::<MockLocalStore>::default();
+        let localstore = MockLocalStore::default();
 
         let mint_keyset = MintKeyset::new("mysecret".to_string(), "".to_string());
+        // FIXME use WalletBuilder
         let wallet = Wallet::new(
-            Box::new(client),
+            client,
             mint_keyset.public_keys,
             Keysets::new(vec![mint_keyset.keyset_id]),
             localstore,
@@ -725,10 +660,10 @@ mod tests {
         let local_store = MockLocalStore::with_tokens(fixture.try_into()?);
 
         let wallet = Wallet::new(
-            Box::<MockClient>::default(),
+            MockClient::default(),
             HashMap::new(),
             Keysets::new(vec!["foo".to_string()]),
-            Box::new(local_store),
+            local_store,
             Url::parse("http://localhost:8080").expect("invalid url"),
         );
 
@@ -748,11 +683,12 @@ mod tests {
         )?);
 
         let mint_keyset = MintKeyset::new("mysecret".to_string(), "".to_string());
+        // FIXME use WalletBuilder
         let wallet = Wallet::new(
-            Box::new(mock_client),
+            mock_client,
             mint_keyset.public_keys,
             Keysets::new(vec![mint_keyset.keyset_id]),
-            Box::new(local_store),
+            local_store,
             Url::parse("http://localhost:8080").expect("invalid url"),
         );
 

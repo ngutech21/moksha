@@ -3,8 +3,6 @@ use moksha_core::model::Proofs;
 
 use crate::error::MokshaWalletError;
 
-use dyn_clone::DynClone;
-
 #[derive(Debug, Clone)]
 pub struct WalletKeyset {
     pub id: String,
@@ -12,7 +10,7 @@ pub struct WalletKeyset {
 }
 
 #[async_trait]
-pub trait LocalStore: DynClone {
+pub trait LocalStore {
     async fn delete_proofs(&self, proofs: &Proofs) -> Result<(), MokshaWalletError>;
     async fn add_proofs(&self, proofs: &Proofs) -> Result<(), MokshaWalletError>;
     async fn get_proofs(&self) -> Result<Proofs, MokshaWalletError>;

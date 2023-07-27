@@ -57,15 +57,15 @@ async fn main() -> anyhow::Result<()> {
             dir.join("wallet.db").to_str().unwrap().to_string()
         }
 
-        None => moksha_wallet::wallet::Wallet::db_path(),
+        None => moksha_wallet::config_path::db_path(),
     };
 
-    let localstore = Box::new(SqliteLocalStore::with_path(db_path.clone()).await?);
+    let localstore = SqliteLocalStore::with_path(db_path.clone()).await?;
     localstore.migrate().await;
 
-    let client = Box::new(moksha_wallet::reqwest_client::HttpClient::new());
+    let client = moksha_wallet::reqwest_client::HttpClient::new();
 
-    let wallet = moksha_wallet::wallet::Wallet::builder()
+    let wallet = moksha_wallet::wallet::WalletBuilder::default()
         .with_client(client)
         .with_localstore(localstore)
         .with_mint_url(cli.mint_url.clone())

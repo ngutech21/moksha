@@ -9,10 +9,9 @@ use secp256k1::PublicKey;
 use url::Url;
 
 use crate::error::MokshaWalletError;
-use dyn_clone::DynClone;
 
 #[async_trait]
-pub trait Client: DynClone {
+pub trait Client {
     async fn post_split_tokens(
         &self,
         mint_url: &Url,

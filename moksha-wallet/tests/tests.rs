@@ -6,9 +6,8 @@ use moksha_core::model::{
     PostMintResponse, PostSplitResponse, Proofs, TokenV3,
 };
 use moksha_wallet::localstore::LocalStore;
-use moksha_wallet::{
-    client::Client, error::MokshaWalletError, sqlx_localstore::SqliteLocalStore, wallet::Wallet,
-};
+use moksha_wallet::wallet::WalletBuilder;
+use moksha_wallet::{client::Client, error::MokshaWalletError, sqlx_localstore::SqliteLocalStore};
 use reqwest::Url;
 use secp256k1::PublicKey;
 
@@ -109,11 +108,9 @@ async fn test_pay_invoice_can_not_melt() -> anyhow::Result<()> {
         .to_str()
         .expect("Could not create tmp dir for wallet");
 
-    let localstore = Box::new(
-        SqliteLocalStore::with_path(format!("{tmp_dir}/test_wallet.db"))
-            .await
-            .expect("Could not create localstore"),
-    );
+    let localstore = SqliteLocalStore::with_path(format!("{tmp_dir}/test_wallet.db"))
+        .await
+        .expect("Could not create localstore");
     localstore.migrate().await;
 
     localstore.add_proofs(&tokens.proofs()).await?;
@@ -131,8 +128,8 @@ async fn test_pay_invoice_can_not_melt() -> anyhow::Result<()> {
         keysets,
     );
 
-    let wallet = Wallet::builder()
-        .with_client(Box::new(mock_client))
+    let wallet = WalletBuilder::default()
+        .with_client(mock_client)
         .with_localstore(localstore.clone())
         .with_mint_url(Url::parse("http://localhost:8080").expect("invalid url"))
         .build()

@@ -9,10 +9,11 @@ use lazy_static::lazy_static;
 use lightning_invoice::Invoice;
 use moksha_core::model::PaymentRequest;
 use moksha_fedimint::FedimintWallet;
+use moksha_wallet::config_path;
 use moksha_wallet::localstore::LocalStore;
 use moksha_wallet::reqwest_client::HttpClient;
 use moksha_wallet::sqlx_localstore::SqliteLocalStore;
-use moksha_wallet::wallet::Wallet;
+use moksha_wallet::wallet::{Wallet, WalletBuilder};
 use reqwest::Url;
 use std::str::FromStr;
 use std::sync::Mutex as StdMutex;
@@ -44,7 +45,7 @@ macro_rules! lock_runtime {
 pub fn init_cashu() -> anyhow::Result<String> {
     let rt = lock_runtime!();
 
-    let db_path = Wallet::db_path();
+    let db_path = config_path::db_path();
 
     let new_localstore = rt.block_on(async {
         SqliteLocalStore::with_path(db_path.clone())
@@ -83,7 +84,7 @@ pub fn get_cashu_balance() -> anyhow::Result<u64> {
     result
 }
 
-fn _create_local_wallet() -> anyhow::Result<Wallet> {
+fn _create_local_wallet() -> anyhow::Result<Wallet<HttpClient, SqliteLocalStore>> {
     let mint_url = Url::parse("http://127.0.0.1:3338").expect("invalid url"); // FIXME redundant
     let rt = lock_runtime!();
 
@@ -94,9 +95,9 @@ fn _create_local_wallet() -> anyhow::Result<Wallet> {
         let localstore = LOCALSTORE.lock().await;
         let localstore = localstore.as_ref().expect("DB not set");
 
-        Ok(Wallet::builder()
-            .with_client(Box::new(client.to_owned()))
-            .with_localstore(Box::new(localstore.to_owned()))
+        Ok(WalletBuilder::default()
+            .with_client(client.to_owned())
+            .with_localstore(localstore.to_owned())
             .with_mint_url(mint_url)
             .build()
             .await?)
@@ -227,7 +228,7 @@ fn cashu_receive_token(token: String) -> anyhow::Result<u64> {
 }
 
 fn fedimint_workdir() -> std::path::PathBuf {
-    Wallet::config_dir().join("fedimint")
+    config_path::config_dir().join("fedimint")
 }
 
 pub fn join_federation(federation: String) -> anyhow::Result<()> {
@@ -368,6 +369,8 @@ pub fn get_btcprice() -> anyhow::Result<f64> {
 
 #[cfg(test)]
 mod tests {
+    use moksha_wallet::config_path;
+
     use super::{get_cashu_balance, init_cashu};
 
     #[test]
@@ -375,10 +378,7 @@ mod tests {
         let tmp = tempfile::tempdir().expect("Could not create tmp dir");
         let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
 
-        std::env::set_var(
-            moksha_wallet::wallet::ENV_DB_PATH,
-            format!("{}/wallet.db", tmp_dir),
-        );
+        std::env::set_var(config_path::ENV_DB_PATH, format!("{}/wallet.db", tmp_dir));
         let _ = init_cashu()?;
         let balance = get_cashu_balance().expect("Could not get balance");
         assert_eq!(0, balance);

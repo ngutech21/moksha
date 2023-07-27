@@ -38,6 +38,7 @@ final-check:
   cargo fmt --all
   just typos
   cargo test
+  just build-wasm
 
 #run coverage
 coverage:
