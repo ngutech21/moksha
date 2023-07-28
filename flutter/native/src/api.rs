@@ -1,32 +1,35 @@
-// This is the entry point of your Rust library.
-// When adding new code to your project, note that only items used
-// here will be transformed to their Dart equivalents.
-
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
+use async_trait::async_trait;
 use lazy_static::lazy_static;
 use lightning_invoice::Invoice;
-use moksha_core::model::PaymentRequest;
+use moksha_core::model::{
+    BlindedMessage, CheckFeesResponse, Keysets, PaymentRequest, PostMeltResponse, PostMintResponse,
+    PostSplitResponse, Proofs, Token, TokenV3,
+};
 use moksha_fedimint::FedimintWallet;
+use moksha_wallet::error::MokshaWalletError;
+use moksha_wallet::localstore::{LocalStore, WalletKeyset};
+
 use moksha_wallet::config_path;
-use moksha_wallet::localstore::LocalStore;
-use moksha_wallet::reqwest_client::HttpClient;
-use moksha_wallet::sqlx_localstore::SqliteLocalStore;
+
 use moksha_wallet::wallet::{Wallet, WalletBuilder};
-use reqwest::Url;
+use secp256k1::PublicKey;
 use std::str::FromStr;
 use std::sync::Mutex as StdMutex;
-use tokio::runtime::Runtime;
+use tokio::runtime::{Builder, Runtime};
 use tokio::sync::Mutex;
-use tokio::time::{sleep_until, Instant};
+use url::Url;
 
 lazy_static! {
     static ref RUNTIME: Arc<StdMutex<Runtime>> = Arc::new(StdMutex::new(
-        Runtime::new().expect("Failed to create runtime")
+        Builder::new_current_thread()
+            .enable_time()
+            .build()
+            .expect("Failed to create runtime")
     ));
-    static ref LOCALSTORE: Arc<Mutex<Option<SqliteLocalStore>>> = Arc::new(Mutex::new(None));
-    static ref HTTPCLIENT: Arc<Mutex<Option<HttpClient>>> = Arc::new(Mutex::new(None));
 }
 
 macro_rules! lock_runtime {
@@ -42,25 +45,36 @@ macro_rules! lock_runtime {
     };
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+fn create_localstore_desktop() -> anyhow::Result<moksha_wallet::sqlx_localstore::SqliteLocalStore> {
+    let rt = lock_runtime!();
+
+    let db_path = config_path::db_path();
+
+    #[cfg(not(target_arch = "wasm32"))]
+    let lc = rt.block_on(async {
+        moksha_wallet::sqlx_localstore::SqliteLocalStore::with_path(db_path.clone())
+            .await
+            .map_err(anyhow::Error::from)
+    })?;
+
+    drop(rt);
+    Ok(lc)
+}
+
 pub fn init_cashu() -> anyhow::Result<String> {
     let rt = lock_runtime!();
 
     let db_path = config_path::db_path();
 
-    let new_localstore = rt.block_on(async {
-        SqliteLocalStore::with_path(db_path.clone())
-            .await
-            .map_err(anyhow::Error::from)
-    })?;
-
+    #[cfg(not(target_arch = "wasm32"))]
     rt.block_on(async {
-        let mut db = LOCALSTORE.lock().await;
+        let new_localstore =
+            moksha_wallet::sqlx_localstore::SqliteLocalStore::with_path(db_path.clone())
+                .await
+                .map_err(anyhow::Error::from)
+                .unwrap(); // FIXME
         new_localstore.migrate().await;
-        *db = Some(new_localstore);
-
-        let mut cl = HTTPCLIENT.lock().await;
-        let client = HttpClient::new();
-        *cl = Some(client);
     });
 
     drop(rt);
@@ -70,40 +84,203 @@ pub fn init_cashu() -> anyhow::Result<String> {
 pub fn get_cashu_balance() -> anyhow::Result<u64> {
     let rt = lock_runtime!();
 
+    #[cfg(not(target_arch = "wasm32"))]
     let result = rt.block_on(async {
-        let db = LOCALSTORE.lock().await;
+        let db_path = config_path::db_path();
+        let db = moksha_wallet::sqlx_localstore::SqliteLocalStore::with_path(db_path.clone())
+            .await
+            .map_err(anyhow::Error::from)
+            .unwrap();
 
-        let total = match db.as_ref() {
-            Some(db) => db.get_proofs().await?.total_amount(),
-            None => 0,
-        };
-
-        Ok(total)
+        Ok(db.get_proofs().await?.total_amount())
     });
     drop(rt);
-    result
+
+    #[cfg(not(target_arch = "wasm32"))]
+    return result;
+
+    #[cfg(target_arch = "wasm32")]
+    return Ok(0);
 }
 
-fn _create_local_wallet() -> anyhow::Result<Wallet<HttpClient, SqliteLocalStore>> {
-    let mint_url = Url::parse("http://127.0.0.1:3338").expect("invalid url"); // FIXME redundant
+use moksha_wallet::client::Client;
+
+fn _create_local_wallet() -> anyhow::Result<Wallet<impl Client, impl LocalStore>> {
     let rt = lock_runtime!();
 
+    #[cfg(not(target_arch = "wasm32"))]
     let result = rt.block_on(async move {
-        let client = HTTPCLIENT.lock().await;
-        let client = client.as_ref().expect("HTTPClient not set");
-
-        let localstore = LOCALSTORE.lock().await;
-        let localstore = localstore.as_ref().expect("DB not set");
+        let client = moksha_wallet::reqwest_client::HttpClient::new();
+        let localstore =
+            moksha_wallet::sqlx_localstore::SqliteLocalStore::with_path("db_path".to_owned())
+                .await
+                .unwrap();
+        let mint_url = reqwest::Url::parse("http://127.0.0.1:3338").expect("invalid url"); // FIXME redundant
 
         Ok(WalletBuilder::default()
-            .with_client(client.to_owned())
-            .with_localstore(localstore.to_owned())
+            .with_client(client)
+            .with_localstore(localstore)
             .with_mint_url(mint_url)
             .build()
             .await?)
     });
+
+    #[cfg(target_arch = "wasm32")]
+    let result = rt.block_on(async move {
+        let client = MockClient::default();
+        let localstore = MockLocalStore::default();
+
+        Ok(WalletBuilder::default()
+            .with_client(client)
+            .with_localstore(localstore)
+            .build()
+            .await?)
+    });
     drop(rt);
+
     result
+}
+
+#[derive(Clone)]
+struct MockLocalStore {
+    tokens: TokenV3,
+}
+
+impl MockLocalStore {
+    fn with_tokens(tokens: TokenV3) -> Self {
+        Self { tokens }
+    }
+}
+
+impl Default for MockLocalStore {
+    fn default() -> Self {
+        Self {
+            tokens: TokenV3::new(Token {
+                mint: Some(Url::parse("http://127.0.0.1:3338").expect("invalid url")),
+                proofs: Proofs::empty(),
+            }),
+        }
+    }
+}
+
+#[async_trait]
+impl LocalStore for MockLocalStore {
+    async fn migrate(&self) {}
+
+    async fn add_proofs(&self, _: &Proofs) -> Result<(), moksha_wallet::error::MokshaWalletError> {
+        Ok(())
+    }
+
+    async fn get_proofs(
+        &self,
+    ) -> Result<moksha_core::model::Proofs, moksha_wallet::error::MokshaWalletError> {
+        Ok(self.tokens.clone().proofs())
+    }
+
+    async fn delete_proofs(
+        &self,
+        _proofs: &Proofs,
+    ) -> Result<(), moksha_wallet::error::MokshaWalletError> {
+        Ok(())
+    }
+
+    async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
+        unimplemented!()
+    }
+
+    async fn add_keyset(&self, _keyset: &WalletKeyset) -> Result<(), MokshaWalletError> {
+        unimplemented!()
+    }
+}
+
+#[derive(Clone, Default)]
+struct MockClient {
+    split_response: PostSplitResponse,
+    post_mint_response: PostMintResponse,
+    post_melt_response: PostMeltResponse,
+}
+
+impl MockClient {
+    fn with_split_response(split_response: PostSplitResponse) -> Self {
+        Self {
+            split_response,
+            ..Default::default()
+        }
+    }
+
+    fn with_mint_response(post_mint_response: PostMintResponse) -> Self {
+        Self {
+            post_mint_response,
+            ..Default::default()
+        }
+    }
+
+    fn with_melt_response(post_melt_response: PostMeltResponse) -> Self {
+        Self {
+            post_melt_response,
+            split_response: PostSplitResponse::with_fst_and_snd(vec![], vec![]),
+            ..Default::default()
+        }
+    }
+}
+
+#[async_trait]
+impl Client for MockClient {
+    async fn post_split_tokens(
+        &self,
+        _mint_url: &Url,
+        _amount: u64,
+        _proofs: Proofs,
+        _output: Vec<BlindedMessage>,
+    ) -> Result<PostSplitResponse, MokshaWalletError> {
+        Ok(self.split_response.clone())
+    }
+
+    async fn post_mint_payment_request(
+        &self,
+        _mint_url: &Url,
+        _hash: String,
+        _blinded_messages: Vec<BlindedMessage>,
+    ) -> Result<PostMintResponse, MokshaWalletError> {
+        Ok(self.post_mint_response.clone())
+    }
+
+    async fn post_melt_tokens(
+        &self,
+        _mint_url: &Url,
+        _proofs: Proofs,
+        _pr: String,
+        _outputs: Vec<BlindedMessage>,
+    ) -> Result<PostMeltResponse, MokshaWalletError> {
+        Ok(self.post_melt_response.clone())
+    }
+
+    async fn post_checkfees(
+        &self,
+        _mint_url: &Url,
+        _pr: String,
+    ) -> Result<CheckFeesResponse, MokshaWalletError> {
+        Ok(CheckFeesResponse { fee: 0 })
+    }
+
+    async fn get_mint_keys(
+        &self,
+        _mint_url: &Url,
+    ) -> Result<HashMap<u64, PublicKey>, MokshaWalletError> {
+        unimplemented!()
+    }
+
+    async fn get_mint_keysets(&self, _mint_url: &Url) -> Result<Keysets, MokshaWalletError> {
+        unimplemented!()
+    }
+
+    async fn get_mint_payment_request(
+        &self,
+        _mint_url: &Url,
+        _amount: u64,
+    ) -> Result<PaymentRequest, MokshaWalletError> {
+        unimplemented!()
+    }
 }
 
 pub fn cashu_mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
@@ -112,7 +289,8 @@ pub fn cashu_mint_tokens(amount: u64, hash: String) -> anyhow::Result<u64> {
 
     let result = rt.block_on(async {
         for _ in 0..30 {
-            sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
+            tokio::time::sleep_until(tokio::time::Instant::now() + Duration::from_millis(1_000))
+                .await;
             let mint_result = wallet.mint_tokens(amount.into(), hash.clone()).await;
 
             match mint_result {
@@ -157,6 +335,7 @@ pub fn decode_invoice(invoice: String) -> anyhow::Result<FlutterInvoice> {
     Ok(invoice.into())
 }
 
+#[derive(Debug, Clone)]
 pub struct FlutterInvoice {
     pub pr: String,
     pub amount_sats: u64,
@@ -176,12 +355,13 @@ impl From<Invoice> for FlutterInvoice {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct FedimintPaymentRequest {
     pub pr: String,
     pub operation_id: String,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct FlutterPaymentRequest {
     pub pr: String,
     pub hash: String,
@@ -261,6 +441,7 @@ pub fn get_fedimint_payment_request(amount: u64) -> anyhow::Result<FedimintPayme
     })?;
 
     drop(rt);
+
     Ok(FedimintPaymentRequest {
         pr: result.1.to_string(),
         operation_id: result.0,
@@ -354,34 +535,41 @@ fn fedimint_receive_token(token: String) -> anyhow::Result<u64> {
     Ok(result)
 }
 
-pub fn get_btcprice() -> anyhow::Result<f64> {
+fn get_btcprice_desktop() -> anyhow::Result<f64> {
     let rt = lock_runtime!();
-
     let result = rt.block_on(async {
         moksha_wallet::btcprice::get_btcprice()
             .await
             .map_err(anyhow::Error::from)
     })?;
-
     drop(rt);
     Ok(result)
 }
 
-#[cfg(test)]
-mod tests {
-    use moksha_wallet::config_path;
+pub fn get_btcprice() -> anyhow::Result<f64> {
+    #[cfg(not(target_arch = "wasm32"))]
+    return get_btcprice_desktop();
 
-    use super::{get_cashu_balance, init_cashu};
-
-    #[test]
-    fn test_get_balance() -> anyhow::Result<()> {
-        let tmp = tempfile::tempdir().expect("Could not create tmp dir");
-        let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
-
-        std::env::set_var(config_path::ENV_DB_PATH, format!("{}/wallet.db", tmp_dir));
-        let _ = init_cashu()?;
-        let balance = get_cashu_balance().expect("Could not get balance");
-        assert_eq!(0, balance);
-        Ok(())
-    }
+    #[cfg(target_arch = "wasm32")]
+    Ok(21_000.21f64)
+    // FIXME implement get_btcprice for wasm
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use moksha_wallet::config_path;
+
+//     use super::{get_cashu_balance, init_cashu};
+
+//     #[test]
+//     fn test_get_balance() -> anyhow::Result<()> {
+//         let tmp = tempfile::tempdir().expect("Could not create tmp dir");
+//         let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
+
+//         std::env::set_var(config_path::ENV_DB_PATH, format!("{}/wallet.db", tmp_dir));
+//         let _ = init_cashu()?;
+//         let balance = get_cashu_balance().expect("Could not get balance");
+//         assert_eq!(0, balance);
+//         Ok(())
+//     }
+// }

@@ -10,17 +10,22 @@ resolver = "2"
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-anyhow = "1.0.72"
-flutter_rust_bridge = "1.78.0"
 moksha-wallet = { path = "../../moksha-wallet" }
 moksha-core = { path = "../../moksha-core" }
 moksha-fedimint = { path = "../../moksha-fedimint" }
-lazy_static = "1.4.0"
-reqwest = { version = "0.11.18", features = ["serde_json", "json", "rustls-tls"], default-features = false }
-lightning-invoice = "0.23.0"
 
-#[target.'cfg(not(target_family="wasm"))'.dependencies]
-tokio = { version = "1.29.0", features = ["rt", "sync"] }
+anyhow = "1.0.72"
+thiserror = "1.0.44"
+flutter_rust_bridge = "1.79.0"
+lazy_static = "1.4.0"
+tokio = { version = "1.29.1", features = ["rt", "sync", "time"] }
+lightning-invoice = "0.23.0"
+async-trait = "0.1.72"
+url = "2.4.0"
+secp256k1 = { version = "0.27.0", features = ["rand", "serde"] }
+
+[target.'cfg(not(target_family="wasm"))'.dependencies]
+reqwest = { version = "0.11.18", features = ["serde_json", "json", "rustls-tls"], default-features = false }
 
 [dev-dependencies]
 tempfile = "3.6.0"

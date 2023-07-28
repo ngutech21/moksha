@@ -62,6 +62,9 @@ gen-flutter-bridge:
         --c-output ios/Runner/bridge_generated.h \
         --extra-c-output-path macos/Runner/ \
         --dart-decl-output lib/generated/bridge_definitions.dart \
+        --dart-format-line-length 120 \
+        --dart-enums-style \
+        --no-use-bridge-in-method \
         --wasm
 
 # run flutter desktop-app 

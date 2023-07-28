@@ -1,9 +1,10 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:moksha_wallet/ffi.dart';
 import 'package:flutter/material.dart';
+import 'package:moksha_wallet/generated/bridge_definitions.dart';
 import 'package:moksha_wallet/pages/util.dart';
 import 'package:moksha_wallet/pages/common.dart';
+import '../ffi.io.dart' if (dart.library.html) '../ffi.web.dart';
 
 class PayInvoicePage extends StatefulWidget {
   const PayInvoicePage({super.key});

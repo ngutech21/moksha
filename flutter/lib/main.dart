@@ -2,11 +2,13 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:moksha_wallet/pages/mint_page.dart';
 import 'package:moksha_wallet/pages/overview_page.dart';
-import 'package:moksha_wallet/ffi.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moksha_wallet/pages/pay_invoice_page.dart';
 import 'package:moksha_wallet/pages/receive_page.dart';
 import 'package:moksha_wallet/pages/settings_page.dart';
+
+import 'ffi.io.dart' if (dart.library.html) 'ffi.web.dart';
+export 'ffi.io.dart' if (dart.library.html) 'ffi.web.dart' show api;
 
 final dbPathProvider = FutureProvider<String>((ref) async {
   return await api.initCashu();

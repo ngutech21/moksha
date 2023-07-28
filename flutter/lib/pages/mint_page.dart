@@ -1,11 +1,12 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:moksha_wallet/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:moksha_wallet/pages/util.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+
+import '../ffi.io.dart' if (dart.library.html) '../ffi.web.dart';
 
 enum MintType { cashu, fedimint }
 
