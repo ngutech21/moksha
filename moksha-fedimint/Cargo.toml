@@ -13,7 +13,7 @@ path = "src/lib.rs"
 dotenvy = "0.15.7"
 base64 = "0.20.0"
 anyhow = { version = "1.0.72", features = ["backtrace"] }
-serde_json = "1.0.103"
+serde_json = "1.0.104"
 lightning-invoice = { version = "0.21.0", features = ["serde"] }
 fedimint-client = { git = "https://github.com/fedimint/fedimint", rev = "7070b3b4d3a4ae82a17f38b4e38e932ccbfd9af9" }
 fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "7070b3b4d3a4ae82a17f38b4e38e932ccbfd9af9" }
