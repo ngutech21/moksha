@@ -86,6 +86,6 @@ build-docker:
 
 # compile all rust crates, that are relevant for the client, to wasm
 build-wasm:
-   cargo build -p moksha-core -p moksha-wallet -p moksha-fedimint --target wasm32-unknown-unknown
+   cargo build -p native  -p  moksha-core -p moksha-wallet -p moksha-fedimint --target wasm32-unknown-unknown
    
     

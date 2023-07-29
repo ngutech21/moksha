@@ -432,6 +432,12 @@ fn generate_random_string() -> String {
         .collect()
 }
 
+#[derive(serde::Deserialize, Debug)]
+pub struct CashuErrorResponse {
+    pub code: u64,
+    pub error: String,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{

@@ -10,7 +10,7 @@ use url::Url;
 
 use crate::error::MokshaWalletError;
 
-#[async_trait]
+#[async_trait(?Send)]
 pub trait Client {
     async fn post_split_tokens(
         &self,

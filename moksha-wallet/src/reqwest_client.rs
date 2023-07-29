@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use moksha_core::model::{
-    BlindedMessage, CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
-    PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
-    Proofs,
+    BlindedMessage, CashuErrorResponse, CheckFeesRequest, CheckFeesResponse, Keysets,
+    PaymentRequest, PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse,
+    PostSplitRequest, PostSplitResponse, Proofs,
 };
 use reqwest::{
     header::{HeaderValue, CONTENT_TYPE},
@@ -33,7 +33,7 @@ impl Default for HttpClient {
     }
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl Client for HttpClient {
     async fn post_split_tokens(
         &self,
@@ -151,12 +151,6 @@ impl Client for HttpClient {
             .await?;
         extract_response_data::<PostMintResponse>(resp).await
     }
-}
-
-#[derive(serde::Deserialize, Debug)]
-pub struct CashuErrorResponse {
-    pub code: u64,
-    pub error: String,
 }
 
 async fn extract_response_data<T: serde::de::DeserializeOwned>(

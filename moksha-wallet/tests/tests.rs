@@ -37,7 +37,7 @@ impl MockClient {
     }
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl Client for MockClient {
     async fn post_split_tokens(
         &self,

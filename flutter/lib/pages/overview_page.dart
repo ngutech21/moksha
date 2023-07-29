@@ -15,14 +15,14 @@ class OverviewPage extends StatefulWidget {
 
 class _OverviewPageState extends State<OverviewPage> {
   late Future<int> cashuBalance;
-  // late Future<int> fedimintBalance;
+  late Future<int> fedimintBalance;
   late Future<double> btcPrice;
   @override
   void initState() {
     super.initState();
     try {
       cashuBalance = api.getCashuBalance();
-      // fedimintBalance = api.getFedimintBalance();
+      fedimintBalance = api.getFedimintBalance();
       btcPrice = api.getBtcprice();
     } catch (e) {
       Future<void>.delayed(Duration.zero, () {
@@ -38,8 +38,7 @@ class _OverviewPageState extends State<OverviewPage> {
         child: Center(
           child: Column(children: [
             FutureBuilder(
-                //future: Future.wait([cashuBalance, fedimintBalance, btcPrice]),
-                future: Future.wait([cashuBalance, btcPrice]),
+                future: Future.wait([cashuBalance, fedimintBalance, btcPrice]),
                 builder: (context, snap) {
                   if (snap.error != null) {
                     debugPrint(snap.error.toString());
@@ -51,17 +50,11 @@ class _OverviewPageState extends State<OverviewPage> {
                   final data = snap.data;
                   if (data == null) return const CircularProgressIndicator();
 
-                  //var cashuBalance = data[0];
-                  //var fedimintBalance = data[1];
-                  //var btcPriceUsd = data[2];
-
                   var cashuBalance = data[0];
-                  var fedimintBalance = 200;
-                  var btcPriceUsd = data[1];
+                  var fedimintBalance = data[1];
+                  var btcPriceUsd = data[2];
                   var pricePerSat = btcPriceUsd / 100000000;
-
-                  //var totalBalance = cashuBalance + fedimintBalance;
-                  var totalBalance = 100;
+                  var totalBalance = cashuBalance + fedimintBalance;
 
                   final regExSeparator = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
                   matchFunc(Match match) => '${match[1]},';
