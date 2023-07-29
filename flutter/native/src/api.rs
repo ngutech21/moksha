@@ -20,13 +20,11 @@ use secp256k1::PublicKey;
 use std::str::FromStr;
 use std::sync::Mutex as StdMutex;
 use tokio::runtime::{Builder, Runtime};
-use tokio::sync::Mutex;
 use url::Url;
 
 lazy_static! {
     static ref RUNTIME: Arc<StdMutex<Runtime>> = Arc::new(StdMutex::new(
         Builder::new_current_thread()
-            .enable_time()
             .build()
             .expect("Failed to create runtime")
     ));
@@ -45,39 +43,26 @@ macro_rules! lock_runtime {
     };
 }
 
-#[cfg(not(target_arch = "wasm32"))]
-fn create_localstore_desktop() -> anyhow::Result<moksha_wallet::sqlx_localstore::SqliteLocalStore> {
-    let rt = lock_runtime!();
-
-    let db_path = config_path::db_path();
-
-    #[cfg(not(target_arch = "wasm32"))]
-    let lc = rt.block_on(async {
-        moksha_wallet::sqlx_localstore::SqliteLocalStore::with_path(db_path.clone())
-            .await
-            .map_err(anyhow::Error::from)
-    })?;
-
-    drop(rt);
-    Ok(lc)
-}
-
 pub fn init_cashu() -> anyhow::Result<String> {
     let rt = lock_runtime!();
 
-    let db_path = config_path::db_path();
-
     #[cfg(not(target_arch = "wasm32"))]
-    rt.block_on(async {
+    let db_path = rt.block_on(async {
+        let db_path = config_path::db_path();
         let new_localstore =
             moksha_wallet::sqlx_localstore::SqliteLocalStore::with_path(db_path.clone())
                 .await
                 .map_err(anyhow::Error::from)
                 .unwrap(); // FIXME
         new_localstore.migrate().await;
+        db_path
     });
 
     drop(rt);
+
+    #[cfg(target_arch = "wasm32")]
+    let db_path = "".to_owned();
+
     Ok(db_path)
 }
 
