@@ -6,7 +6,7 @@ import 'dart:html';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'generated/bridge_generated.web.dart';
 
-const root = 'pkg/flutter_rust_bridge_example';
+const root = 'pkg/native';
 
 Future<WasmModule> _initModule() {
   if (crossOriginIsolated != true) {
