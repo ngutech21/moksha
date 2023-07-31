@@ -75,7 +75,7 @@ class _PayInvoicePageState extends State<PayInvoicePage> {
 
                   var paid = false;
                   if (selectedMintType == MintType.cashu) {
-                    paid = await api.cashuPayInvoice(invoice: invoice);
+                    paid = await api.cashuPayInvoice(invoice: invoice).first;
                   } else if (selectedMintType == MintType.fedimint) {
                     paid = await api.fedimintPayInvoice(invoice: invoice);
                   } else {

@@ -15,16 +15,16 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kInitCashuConstMeta;
 
-  Future<int> getCashuBalance({dynamic hint});
+  Stream<int> getCashuBalance({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetCashuBalanceConstMeta;
 
-  Future<int> cashuMintTokens(
+  Stream<int> cashuMintTokens(
       {required int amount, required String hash, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kCashuMintTokensConstMeta;
 
-  Future<FlutterPaymentRequest> getCashuMintPaymentRequest(
+  Stream<FlutterPaymentRequest> getCashuMintPaymentRequest(
       {required int amount, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetCashuMintPaymentRequestConstMeta;
@@ -33,7 +33,7 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kDecodeInvoiceConstMeta;
 
-  Future<bool> cashuPayInvoice({required String invoice, dynamic hint});
+  Stream<bool> cashuPayInvoice({required String invoice, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kCashuPayInvoiceConstMeta;
 
@@ -51,7 +51,7 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kFedimintMintTokensConstMeta;
 
-  Future<int> getFedimintBalance({dynamic hint});
+  Stream<int> getFedimintBalance({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetFedimintBalanceConstMeta;
 
@@ -59,7 +59,7 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kFedimintPayInvoiceConstMeta;
 
-  Future<int> receiveToken({required String token, dynamic hint});
+  Stream<int> receiveToken({required String token, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kReceiveTokenConstMeta;
 

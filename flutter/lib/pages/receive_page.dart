@@ -38,7 +38,8 @@ class _ReceivePageState extends State<ReceivePage> {
           ElevatedButton(
               onPressed: () async {
                 try {
-                  var amountImported = await api.receiveToken(token: token);
+                  var amountImported =
+                      await api.receiveToken(token: token).first;
 
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(

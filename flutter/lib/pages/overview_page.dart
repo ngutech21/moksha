@@ -1,3 +1,4 @@
+import 'package:async/async.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:moksha_wallet/pages/util.dart';
@@ -14,21 +15,28 @@ class OverviewPage extends StatefulWidget {
 }
 
 class _OverviewPageState extends State<OverviewPage> {
-  late Future<int> cashuBalance;
-  late Future<int> fedimintBalance;
-  late Future<double> btcPrice;
+  late Stream<int> cashuBalance;
+  late Stream<int> fedimintBalance;
+  // late Future<double> btcPrice;
   @override
   void initState() {
     super.initState();
     try {
       cashuBalance = api.getCashuBalance();
       fedimintBalance = api.getFedimintBalance();
-      btcPrice = api.getBtcprice();
+      // btcPrice = api.getBtcprice();
     } catch (e) {
       Future<void>.delayed(Duration.zero, () {
         showErrorSnackBar(context, e, 'Error fetching data');
       });
     }
+  }
+
+  Stream<List<dynamic>> getCombinedStream() {
+    final cashuBalanceStream = api.getCashuBalance();
+    final fedimintBalanceStream = api.getFedimintBalance();
+
+    return StreamZip([cashuBalanceStream, fedimintBalanceStream]);
   }
 
   @override
@@ -37,8 +45,8 @@ class _OverviewPageState extends State<OverviewPage> {
         margin: const EdgeInsets.all(24),
         child: Center(
           child: Column(children: [
-            FutureBuilder(
-                future: Future.wait([cashuBalance, fedimintBalance, btcPrice]),
+            StreamBuilder(
+                stream: getCombinedStream(),
                 builder: (context, snap) {
                   if (snap.error != null) {
                     debugPrint(snap.error.toString());
@@ -52,7 +60,8 @@ class _OverviewPageState extends State<OverviewPage> {
 
                   var cashuBalance = data[0];
                   var fedimintBalance = data[1];
-                  var btcPriceUsd = data[2];
+                  //var btcPriceUsd = data[2]; // FIXME
+                  var btcPriceUsd = 30000.0;
                   var pricePerSat = btcPriceUsd / 100000000;
                   var totalBalance = cashuBalance + fedimintBalance;
 

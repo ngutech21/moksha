@@ -133,6 +133,7 @@ pub async fn run_server(mint: Mint, port: u16) -> anyhow::Result<()> {
                 .layer(
                     CorsLayer::new()
                         .allow_origin(Any)
+                        .allow_headers(Any)
                         .allow_methods([Method::GET, Method::POST]),
                 )
                 .into_make_service(),

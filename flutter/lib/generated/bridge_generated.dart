@@ -36,8 +36,8 @@ class NativeImpl implements Native {
         argNames: [],
       );
 
-  Future<int> getCashuBalance({dynamic hint}) {
-    return _platform.executeNormal(FlutterRustBridgeTask(
+  Stream<int> getCashuBalance({dynamic hint}) {
+    return _platform.executeStream(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_get_cashu_balance(port_),
       parseSuccessData: _wire2api_u64,
       constMeta: kGetCashuBalanceConstMeta,
@@ -52,11 +52,11 @@ class NativeImpl implements Native {
         argNames: [],
       );
 
-  Future<int> cashuMintTokens(
+  Stream<int> cashuMintTokens(
       {required int amount, required String hash, dynamic hint}) {
     var arg0 = _platform.api2wire_u64(amount);
     var arg1 = _platform.api2wire_String(hash);
-    return _platform.executeNormal(FlutterRustBridgeTask(
+    return _platform.executeStream(FlutterRustBridgeTask(
       callFfi: (port_) =>
           _platform.inner.wire_cashu_mint_tokens(port_, arg0, arg1),
       parseSuccessData: _wire2api_u64,
@@ -72,10 +72,10 @@ class NativeImpl implements Native {
         argNames: ["amount", "hash"],
       );
 
-  Future<FlutterPaymentRequest> getCashuMintPaymentRequest(
+  Stream<FlutterPaymentRequest> getCashuMintPaymentRequest(
       {required int amount, dynamic hint}) {
     var arg0 = _platform.api2wire_u64(amount);
-    return _platform.executeNormal(FlutterRustBridgeTask(
+    return _platform.executeStream(FlutterRustBridgeTask(
       callFfi: (port_) =>
           _platform.inner.wire_get_cashu_mint_payment_request(port_, arg0),
       parseSuccessData: _wire2api_flutter_payment_request,
@@ -109,9 +109,9 @@ class NativeImpl implements Native {
         argNames: ["invoice"],
       );
 
-  Future<bool> cashuPayInvoice({required String invoice, dynamic hint}) {
+  Stream<bool> cashuPayInvoice({required String invoice, dynamic hint}) {
     var arg0 = _platform.api2wire_String(invoice);
-    return _platform.executeNormal(FlutterRustBridgeTask(
+    return _platform.executeStream(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_cashu_pay_invoice(port_, arg0),
       parseSuccessData: _wire2api_bool,
       constMeta: kCashuPayInvoiceConstMeta,
@@ -182,8 +182,8 @@ class NativeImpl implements Native {
         argNames: ["amount", "operationId"],
       );
 
-  Future<int> getFedimintBalance({dynamic hint}) {
-    return _platform.executeNormal(FlutterRustBridgeTask(
+  Stream<int> getFedimintBalance({dynamic hint}) {
+    return _platform.executeStream(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_get_fedimint_balance(port_),
       parseSuccessData: _wire2api_u64,
       constMeta: kGetFedimintBalanceConstMeta,
@@ -216,9 +216,9 @@ class NativeImpl implements Native {
         argNames: ["invoice"],
       );
 
-  Future<int> receiveToken({required String token, dynamic hint}) {
+  Stream<int> receiveToken({required String token, dynamic hint}) {
     var arg0 = _platform.api2wire_String(token);
-    return _platform.executeNormal(FlutterRustBridgeTask(
+    return _platform.executeStream(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_receive_token(port_, arg0),
       parseSuccessData: _wire2api_u64,
       constMeta: kReceiveTokenConstMeta,

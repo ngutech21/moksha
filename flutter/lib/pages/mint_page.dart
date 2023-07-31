@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:moksha_wallet/generated/bridge_definitions.dart';
 import 'package:moksha_wallet/pages/util.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -192,32 +193,34 @@ class _MintWidgetState extends State<MintWidget> {
 
                           if (selectedMintType == MintType.cashu) {
                             try {
-                              var cashuPaymentRequest =
-                                  await api.getCashuMintPaymentRequest(
-                                      amount:
-                                          cleanAmount); // use decimalTextfield
+                              FlutterPaymentRequest cashuPaymentRequest =
+                                  await api
+                                      .getCashuMintPaymentRequest(
+                                          amount: cleanAmount)
+                                      .first;
+
                               setState(() {
                                 paymentRequest = cashuPaymentRequest.pr;
                                 _isInvoiceCreated = true;
                               });
 
-                              var mintedTokens = await api.cashuMintTokens(
-                                  amount: cleanAmount,
-                                  hash: cashuPaymentRequest.hash);
-                              setState(() {
-                                paymentRequest = null;
-                                _isInvoiceCreated = false;
-                                amount = ''; // FIMXE clear textfield
-                              });
+                              // var mintedTokens = await api.cashuMintTokens(
+                              //     amount: cleanAmount,
+                              //     hash: cashuPaymentRequest.hash);
+                              // setState(() {
+                              //   paymentRequest = null;
+                              //   _isInvoiceCreated = false;
+                              //   amount = ''; // FIMXE clear textfield
+                              // });
 
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                content: Column(children: [
-                                  Text('Minted $mintedTokens sats')
-                                ]),
-                                showCloseIcon: true,
-                              ));
+                              // if (!context.mounted) return;
+                              // ScaffoldMessenger.of(context)
+                              //     .showSnackBar(SnackBar(
+                              //   content: Column(children: [
+                              //     Text('Minted $mintedTokens sats')
+                              //   ]),
+                              //   showCloseIcon: true,
+                              // ));
                             } catch (e) {
                               if (!context.mounted) return;
                               showErrorSnackBar(

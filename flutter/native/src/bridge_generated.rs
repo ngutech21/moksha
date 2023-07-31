@@ -33,13 +33,13 @@ fn wire_init_cashu_impl(port_: MessagePort) {
     )
 }
 fn wire_get_cashu_balance_impl(port_: MessagePort) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, u64>(
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, ()>(
         WrapInfo {
             debug_name: "get_cashu_balance",
             port: Some(port_),
-            mode: FfiCallMode::Normal,
+            mode: FfiCallMode::Stream,
         },
-        move || move |task_callback| get_cashu_balance(),
+        move || move |task_callback| get_cashu_balance(task_callback.stream_sink::<_, u64>()),
     )
 }
 fn wire_cashu_mint_tokens_impl(
@@ -47,16 +47,18 @@ fn wire_cashu_mint_tokens_impl(
     amount: impl Wire2Api<u64> + UnwindSafe,
     hash: impl Wire2Api<String> + UnwindSafe,
 ) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, u64>(
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, ()>(
         WrapInfo {
             debug_name: "cashu_mint_tokens",
             port: Some(port_),
-            mode: FfiCallMode::Normal,
+            mode: FfiCallMode::Stream,
         },
         move || {
             let api_amount = amount.wire2api();
             let api_hash = hash.wire2api();
-            move |task_callback| cashu_mint_tokens(api_amount, api_hash)
+            move |task_callback| {
+                cashu_mint_tokens(task_callback.stream_sink::<_, u64>(), api_amount, api_hash)
+            }
         },
     )
 }
@@ -64,15 +66,20 @@ fn wire_get_cashu_mint_payment_request_impl(
     port_: MessagePort,
     amount: impl Wire2Api<u64> + UnwindSafe,
 ) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, FlutterPaymentRequest>(
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, ()>(
         WrapInfo {
             debug_name: "get_cashu_mint_payment_request",
             port: Some(port_),
-            mode: FfiCallMode::Normal,
+            mode: FfiCallMode::Stream,
         },
         move || {
             let api_amount = amount.wire2api();
-            move |task_callback| get_cashu_mint_payment_request(api_amount)
+            move |task_callback| {
+                get_cashu_mint_payment_request(
+                    task_callback.stream_sink::<_, FlutterPaymentRequest>(),
+                    api_amount,
+                )
+            }
         },
     )
 }
@@ -90,15 +97,17 @@ fn wire_decode_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> +
     )
 }
 fn wire_cashu_pay_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> + UnwindSafe) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, bool>(
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, ()>(
         WrapInfo {
             debug_name: "cashu_pay_invoice",
             port: Some(port_),
-            mode: FfiCallMode::Normal,
+            mode: FfiCallMode::Stream,
         },
         move || {
             let api_invoice = invoice.wire2api();
-            move |task_callback| cashu_pay_invoice(api_invoice)
+            move |task_callback| {
+                cashu_pay_invoice(task_callback.stream_sink::<_, bool>(), api_invoice)
+            }
         },
     )
 }
@@ -150,13 +159,13 @@ fn wire_fedimint_mint_tokens_impl(
     )
 }
 fn wire_get_fedimint_balance_impl(port_: MessagePort) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, u64>(
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, ()>(
         WrapInfo {
             debug_name: "get_fedimint_balance",
             port: Some(port_),
-            mode: FfiCallMode::Normal,
+            mode: FfiCallMode::Stream,
         },
-        move || move |task_callback| get_fedimint_balance(),
+        move || move |task_callback| get_fedimint_balance(task_callback.stream_sink::<_, u64>()),
     )
 }
 fn wire_fedimint_pay_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> + UnwindSafe) {
@@ -173,15 +182,15 @@ fn wire_fedimint_pay_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<Str
     )
 }
 fn wire_receive_token_impl(port_: MessagePort, token: impl Wire2Api<String> + UnwindSafe) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, u64>(
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, ()>(
         WrapInfo {
             debug_name: "receive_token",
             port: Some(port_),
-            mode: FfiCallMode::Normal,
+            mode: FfiCallMode::Stream,
         },
         move || {
             let api_token = token.wire2api();
-            move |task_callback| receive_token(api_token)
+            move |task_callback| receive_token(task_callback.stream_sink::<_, u64>(), api_token)
         },
     )
 }

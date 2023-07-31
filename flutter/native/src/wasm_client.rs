@@ -30,15 +30,15 @@ impl Client for WasmClient {
         proofs: Proofs,
         outputs: Vec<BlindedMessage>,
     ) -> Result<PostSplitResponse, MokshaWalletError> {
-        let body = serde_json::to_string(&PostSplitRequest {
+        let body = &PostSplitRequest {
             amount: Some(amount),
             proofs,
             outputs,
-        })?;
+        };
 
         let resp = Request::post(mint_url.join("split").unwrap().as_str())
             .header("content-type", "application/json")
-            .json(&body)
+            .json(body)
             .unwrap()
             .send()
             .await
@@ -53,15 +53,15 @@ impl Client for WasmClient {
         pr: String,
         outputs: Vec<BlindedMessage>,
     ) -> Result<PostMeltResponse, MokshaWalletError> {
-        let body = serde_json::to_string(&PostMeltRequest {
+        let body = &PostMeltRequest {
             pr,
             proofs,
             outputs,
-        })?;
+        };
 
         let resp = Request::post(mint_url.join("melt").unwrap().as_str())
             .header("content-type", "application/json")
-            .json(&body)
+            .json(body)
             .unwrap()
             .send()
             .await
@@ -74,22 +74,13 @@ impl Client for WasmClient {
         mint_url: &Url,
         pr: String,
     ) -> Result<CheckFeesResponse, MokshaWalletError> {
-        let body = serde_json::to_string(&CheckFeesRequest { pr })?;
-
-        // let resp = self
-        //     .request_client
-        //     .post(mint_url.join("checkfees")?)
-        //     .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
-        //     .body(body)
-        //     .send()
-        //     .await?;
         let resp = Request::post(mint_url.join("checkfees").unwrap().as_str())
             .header("content-type", "application/json")
-            .json(&body)
+            .json(&CheckFeesRequest { pr })
             .unwrap()
             .send()
             .await
-            .unwrap();
+            .unwrap(); // FIXME error handling
 
         extract_response_data::<CheckFeesResponse>(resp).await
     }
@@ -102,22 +93,10 @@ impl Client for WasmClient {
             .send()
             .await
             .unwrap();
-
-        // let resp = self
-        //     .request_client
-        //     .get(mint_url.join("keys")?)
-        //     .send()
-        //     .await?;
         extract_response_data::<HashMap<u64, PublicKey>>(resp).await
     }
 
     async fn get_mint_keysets(&self, mint_url: &Url) -> Result<Keysets, MokshaWalletError> {
-        // let resp = self
-        //     .request_client
-        //     .get(mint_url.join("keysets")?)
-        //     .send()
-        //     .await?;
-        // extract_response_data::<Keysets>(resp).await
         let resp = Request::get(mint_url.join("keysets").unwrap().as_str())
             .send()
             .await
@@ -139,8 +118,6 @@ impl Client for WasmClient {
         .send()
         .await
         .unwrap();
-        // let url = mint_url.join(&format!("mint?amount={}", amount))?;
-        // let resp = self.request_client.get(url).send().await?;
         extract_response_data::<PaymentRequest>(resp).await
     }
 
@@ -150,10 +127,9 @@ impl Client for WasmClient {
         hash: String,
         blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMintResponse, MokshaWalletError> {
-        let body = serde_json::to_string(&PostMintRequest {
+        let body = &PostMintRequest {
             outputs: blinded_messages,
-        })
-        .unwrap();
+        };
 
         let resp = Request::post(
             mint_url
@@ -162,19 +138,11 @@ impl Client for WasmClient {
                 .as_str(),
         )
         .header("content-type", "application/json")
-        .json(&body)
+        .json(body)
         .unwrap()
         .send()
         .await
         .unwrap();
-
-        // let resp = self
-        //     .request_client
-        //     .post(url)
-        //     .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
-        //     .body(body)
-        //     .send()
-        //     .await?;
         extract_response_data::<PostMintResponse>(resp).await
     }
 }
@@ -222,123 +190,3 @@ async fn extract_response_data<T: serde::de::DeserializeOwned>(
 pub async fn doit() {
     let resp = Request::get("/path").send().await.unwrap();
 }
-
-// #[async_trait]
-// impl Client for HttpClient {
-//     async fn post_split_tokens(
-//         &self,
-//         mint_url: &Url,
-//         amount: u64,
-//         proofs: Proofs,
-//         outputs: Vec<BlindedMessage>,
-//     ) -> Result<PostSplitResponse, MokshaWalletError> {
-//         let body = serde_json::to_string(&PostSplitRequest {
-//             amount: Some(amount),
-//             proofs,
-//             outputs,
-//         })?;
-
-//         let resp = self
-//             .request_client
-//             .post(mint_url.join("split")?)
-//             .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
-//             .body(body)
-//             .send()
-//             .await?;
-
-//         extract_response_data::<PostSplitResponse>(resp).await
-//     }
-
-//     async fn post_melt_tokens(
-//         &self,
-//         mint_url: &Url,
-//         proofs: Proofs,
-//         pr: String,
-//         outputs: Vec<BlindedMessage>,
-//     ) -> Result<PostMeltResponse, MokshaWalletError> {
-//         let body = serde_json::to_string(&PostMeltRequest {
-//             pr,
-//             proofs,
-//             outputs,
-//         })?;
-
-//         let resp = self
-//             .request_client
-//             .post(mint_url.join("melt")?)
-//             .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
-//             .body(body)
-//             .send()
-//             .await?;
-//         extract_response_data::<PostMeltResponse>(resp).await
-//     }
-
-//     async fn post_checkfees(
-//         &self,
-//         mint_url: &Url,
-//         pr: String,
-//     ) -> Result<CheckFeesResponse, MokshaWalletError> {
-//         let body = serde_json::to_string(&CheckFeesRequest { pr })?;
-
-//         let resp = self
-//             .request_client
-//             .post(mint_url.join("checkfees")?)
-//             .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
-//             .body(body)
-//             .send()
-//             .await?;
-
-//         extract_response_data::<CheckFeesResponse>(resp).await
-//     }
-
-//     async fn get_mint_keys(
-//         &self,
-//         mint_url: &Url,
-//     ) -> Result<HashMap<u64, PublicKey>, MokshaWalletError> {
-//         let resp = self
-//             .request_client
-//             .get(mint_url.join("keys")?)
-//             .send()
-//             .await?;
-//         extract_response_data::<HashMap<u64, PublicKey>>(resp).await
-//     }
-
-//     async fn get_mint_keysets(&self, mint_url: &Url) -> Result<Keysets, MokshaWalletError> {
-//         let resp = self
-//             .request_client
-//             .get(mint_url.join("keysets")?)
-//             .send()
-//             .await?;
-//         extract_response_data::<Keysets>(resp).await
-//     }
-
-//     async fn get_mint_payment_request(
-//         &self,
-//         mint_url: &Url,
-//         amount: u64,
-//     ) -> Result<PaymentRequest, MokshaWalletError> {
-//         let url = mint_url.join(&format!("mint?amount={}", amount))?;
-//         let resp = self.request_client.get(url).send().await?;
-//         extract_response_data::<PaymentRequest>(resp).await
-//     }
-
-//     async fn post_mint_payment_request(
-//         &self,
-//         mint_url: &Url,
-//         hash: String,
-//         blinded_messages: Vec<BlindedMessage>,
-//     ) -> Result<PostMintResponse, MokshaWalletError> {
-//         let url = mint_url.join(&format!("mint?hash={}", hash))?;
-//         let body = serde_json::to_string(&PostMintRequest {
-//             outputs: blinded_messages,
-//         })?;
-
-//         let resp = self
-//             .request_client
-//             .post(url)
-//             .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
-//             .body(body)
-//             .send()
-//             .await?;
-//         extract_response_data::<PostMintResponse>(resp).await
-//     }
-// }
