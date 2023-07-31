@@ -134,16 +134,24 @@ async fn _create_async_local_wallet() -> anyhow::Result<Wallet<impl Client, impl
     }
 }
 
+async fn sleep_until(duration_ms: u64) {
+    #[cfg(not(target_arch = "wasm32"))]
+    tokio::time::sleep_until(
+        tokio::time::Instant::now() + tokio::time::Duration::from_millis(duration_ms),
+    )
+    .await;
+
+    #[cfg(target_arch = "wasm32")]
+    gloo_timers::future::sleep(core::time::Duration::from_millis(duration_ms)).await;
+}
+
 // FIXME return mint-status
 pub fn cashu_mint_tokens(sink: StreamSink<u64>, amount: u64, hash: String) -> anyhow::Result<()> {
     block_on(async move {
         let wallet = _create_async_local_wallet().await.unwrap();
         for _ in 0..30 {
-            // FIXME won't work in wasm
-            tokio::time::sleep_until(
-                tokio::time::Instant::now() + tokio::time::Duration::from_millis(1_000),
-            )
-            .await;
+            sleep_until(1_000).await;
+
             let mint_result = wallet.mint_tokens(amount.into(), hash.clone()).await;
 
             match mint_result {

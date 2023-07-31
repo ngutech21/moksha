@@ -204,23 +204,25 @@ class _MintWidgetState extends State<MintWidget> {
                                 _isInvoiceCreated = true;
                               });
 
-                              // var mintedTokens = await api.cashuMintTokens(
-                              //     amount: cleanAmount,
-                              //     hash: cashuPaymentRequest.hash);
-                              // setState(() {
-                              //   paymentRequest = null;
-                              //   _isInvoiceCreated = false;
-                              //   amount = ''; // FIMXE clear textfield
-                              // });
+                              var mintedTokens = await api
+                                  .cashuMintTokens(
+                                      amount: cleanAmount,
+                                      hash: cashuPaymentRequest.hash)
+                                  .first;
+                              setState(() {
+                                paymentRequest = null;
+                                _isInvoiceCreated = false;
+                                amount = ''; // FIMXE clear textfield
+                              });
 
-                              // if (!context.mounted) return;
-                              // ScaffoldMessenger.of(context)
-                              //     .showSnackBar(SnackBar(
-                              //   content: Column(children: [
-                              //     Text('Minted $mintedTokens sats')
-                              //   ]),
-                              //   showCloseIcon: true,
-                              // ));
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
+                                content: Column(children: [
+                                  Text('Minted $mintedTokens sats')
+                                ]),
+                                showCloseIcon: true,
+                              ));
                             } catch (e) {
                               if (!context.mounted) return;
                               showErrorSnackBar(
