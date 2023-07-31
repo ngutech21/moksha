@@ -202,7 +202,7 @@ pub fn cashu_mint_tokens(sink: StreamSink<u64>, amount: u64, hash: String) -> an
                     continue;
                 }
                 Err(e) => {
-                    //return Err(e);
+                    //return Err(e); // FIXME return error
                     break;
                 }
             }
@@ -219,7 +219,7 @@ pub fn cashu_mint_tokens(sink: StreamSink<u64>, amount: u64, hash: String) -> an
 fn block_on<F: Future<Output = ()> + 'static>(future: F) {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let rt = RUNTIME.lock().unwrap();
+        let rt = RUNTIME.lock().unwrap(); // FIXME handle error
         rt.block_on(future);
         drop(rt);
     }
@@ -425,9 +425,9 @@ pub fn fedimint_pay_invoice(invoice: String) -> anyhow::Result<bool> {
 
 pub fn receive_token(sink: StreamSink<u64>, token: String) -> anyhow::Result<()> {
     if token.starts_with("cashu") {
-        cashu_receive_token(sink, token);
+        cashu_receive_token(sink, token)?;
     } else {
-        fedimint_receive_token(token);
+        fedimint_receive_token(token)?;
     }
     Ok(())
 }
@@ -473,23 +473,24 @@ pub fn get_btcprice() -> anyhow::Result<f64> {
     // FIXME implement get_btcprice for wasm
 }
 
-// FIXME
-// #[cfg(test)]
-// #[cfg(not(target_arch = "wasm32"))]
-// mod tests {
-//     use moksha_wallet::config_path;
+#[cfg(test)]
+#[cfg(not(target_arch = "wasm32"))]
+mod tests {
+    use flutter_rust_bridge::{rust2dart::Rust2Dart, StreamSink};
+    use moksha_wallet::config_path;
 
-//     use super::{get_cashu_balance, init_cashu};
+    use super::{get_cashu_balance, init_cashu};
 
-//     #[test]
-//     fn test_get_balance() -> anyhow::Result<()> {
-//         let tmp = tempfile::tempdir().expect("Could not create tmp dir");
-//         let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
+    #[test]
+    fn test_get_balance() -> anyhow::Result<()> {
+        let tmp = tempfile::tempdir().expect("Could not create tmp dir");
+        let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
 
-//         std::env::set_var(config_path::ENV_DB_PATH, format!("{}/wallet.db", tmp_dir));
-//         let _ = init_cashu()?;
-//         let balance = get_cashu_balance().expect("Could not get balance");
-//         assert_eq!(0, balance);
-//         Ok(())
-//     }
-// }
+        std::env::set_var(config_path::ENV_DB_PATH, format!("{}/wallet.db", tmp_dir));
+        let _ = init_cashu()?;
+        let sink = StreamSink::new(Rust2Dart::new(0));
+        let result = get_cashu_balance(sink);
+        assert!(result.is_ok());
+        Ok(())
+    }
+}
