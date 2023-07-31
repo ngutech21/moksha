@@ -96,15 +96,18 @@ pub fn init_cashu() -> anyhow::Result<String> {
 }
 
 pub fn get_cashu_balance(sink: StreamSink<u64>) -> anyhow::Result<()> {
+    tracing::info!("get cashu balance");
     block_on(async move {
-        let wallet = _create_async_local_wallet().await.unwrap();
-        sink.add(wallet.get_balance().await.unwrap());
-        //sink.close();
+        let wallet = create_local_wallet().await.unwrap();
+        let balance = wallet.get_balance().await.unwrap();
+        tracing::info!("get cashu balance {}", balance);
+        sink.add(balance);
+        sink.close();
     });
     Ok(())
 }
 
-async fn _create_async_local_wallet() -> anyhow::Result<Wallet<impl Client, impl LocalStore>> {
+async fn create_local_wallet() -> anyhow::Result<Wallet<impl Client, impl LocalStore>> {
     #[cfg(not(target_arch = "wasm32"))]
     {
         let db_path = config_path::db_path();
@@ -127,7 +130,7 @@ async fn _create_async_local_wallet() -> anyhow::Result<Wallet<impl Client, impl
         let mint_url = url::Url::parse("http://127.0.0.1:3338").expect("invalid url"); // FIXME redundant
         Ok(WalletBuilder::default()
             .with_client(client)
-            .with_localstore(MemoryLocalStore::default())
+            .with_localstore(MEMORY_LOCAL_STORE.clone())
             .with_mint_url(mint_url)
             .build()
             .await?)
@@ -148,7 +151,7 @@ async fn sleep_until(duration_ms: u64) {
 // FIXME return mint-status
 pub fn cashu_mint_tokens(sink: StreamSink<u64>, amount: u64, hash: String) -> anyhow::Result<()> {
     block_on(async move {
-        let wallet = _create_async_local_wallet().await.unwrap();
+        let wallet = create_local_wallet().await.unwrap();
         for _ in 0..30 {
             sleep_until(1_000).await;
 
@@ -197,7 +200,7 @@ pub fn get_cashu_mint_payment_request(
     info!("get_cashu_mint_payment_request");
 
     block_on(async move {
-        let wallet = _create_async_local_wallet().await.unwrap();
+        let wallet = create_local_wallet().await.unwrap();
         sink.add(
             wallet
                 .get_mint_payment_request(amount)
@@ -259,7 +262,7 @@ impl From<PaymentRequest> for FlutterPaymentRequest {
 
 pub fn cashu_pay_invoice(sink: StreamSink<bool>, invoice: String) -> anyhow::Result<()> {
     block_on(async move {
-        let wallet = _create_async_local_wallet().await.unwrap();
+        let wallet = create_local_wallet().await.unwrap();
         sink.add(wallet.pay_invoice(invoice).await.unwrap().paid);
         sink.close();
     });
@@ -272,7 +275,7 @@ fn cashu_receive_token(sink: StreamSink<u64>, token: String) -> anyhow::Result<(
 
     info!("deserialized_token: {:?}", deserialized_token);
     block_on(async move {
-        let wallet = _create_async_local_wallet().await.unwrap();
+        let wallet = create_local_wallet().await.unwrap();
         let _ = wallet.receive_tokens(&deserialized_token).await;
         sink.add(deserialized_token.total_amount());
         sink.close();
@@ -346,19 +349,22 @@ pub fn fedimint_mint_tokens(amount: u64, operation_id: String) -> anyhow::Result
 
 pub fn get_fedimint_balance(sink: StreamSink<u64>) -> anyhow::Result<()> {
     block_on(async move {
-        let workdir = fedimint_workdir();
-        if !FedimintWallet::is_initialized(&workdir) {
-            return;
-        }
+        // let workdir = fedimint_workdir();
+        // if !FedimintWallet::is_initialized(&workdir) {
+        //     return;
+        // }
 
-        sink.add(
-            FedimintWallet::new(workdir)
-                .await
-                .unwrap()
-                .balance()
-                .await
-                .unwrap(), // FIXME handle errors
-        );
+        // sink.add(
+        //     FedimintWallet::new(workdir)
+        //         .await
+        //         .unwrap()
+        //         .balance()
+        //         .await
+        //         .unwrap(), // FIXME handle errors
+        // );
+        // FIXME
+        sink.add(0);
+        sink.close();
     });
 
     Ok(())

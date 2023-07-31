@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use moksha_core::model::{Proof, Proofs};
 use moksha_wallet::error::MokshaWalletError;
@@ -5,9 +7,9 @@ use moksha_wallet::localstore::{LocalStore, WalletKeyset};
 
 use tokio::sync::Mutex;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct MemoryLocalStore {
-    proofs: Mutex<Vec<Proof>>,
+    proofs: Arc<Mutex<Vec<Proof>>>,
 }
 
 #[async_trait]

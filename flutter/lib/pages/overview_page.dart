@@ -40,6 +40,22 @@ class _OverviewPageState extends State<OverviewPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    print("did change deps");
+    setState(() {
+      try {
+        cashuBalance = api.getCashuBalance();
+        fedimintBalance = api.getFedimintBalance();
+      } catch (e) {
+        Future<void>.delayed(Duration.zero, () {
+          showErrorSnackBar(context, e, 'Error fetching data');
+        });
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
         margin: const EdgeInsets.all(24),
