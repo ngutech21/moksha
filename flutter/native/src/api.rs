@@ -2,13 +2,11 @@ use lazy_static::lazy_static;
 
 use std::future::Future;
 
-use async_trait::async_trait;
 use flutter_rust_bridge::StreamSink;
 use lightning_invoice::Invoice;
-use moksha_core::model::{PaymentRequest, Proof, Proofs};
+use moksha_core::model::PaymentRequest;
 use moksha_fedimint::FedimintWallet;
-use moksha_wallet::error::MokshaWalletError;
-use moksha_wallet::localstore::{LocalStore, WalletKeyset};
+use moksha_wallet::localstore::LocalStore;
 
 use moksha_wallet::config_path;
 
@@ -17,8 +15,9 @@ use moksha_wallet::wallet::{Wallet, WalletBuilder};
 use std::str::FromStr;
 use std::sync::Mutex as StdMutex;
 use tokio::runtime::{Builder, Runtime};
-use tokio::sync::Mutex;
 use tracing::info;
+
+use crate::memory_localstore::MemoryLocalStore;
 
 #[cfg(not(target_arch = "wasm32"))]
 static RUNTIME: once_cell::sync::Lazy<StdMutex<Runtime>> = once_cell::sync::Lazy::new(|| {
@@ -132,51 +131,6 @@ async fn _create_async_local_wallet() -> anyhow::Result<Wallet<impl Client, impl
             .with_mint_url(mint_url)
             .build()
             .await?)
-    }
-}
-
-#[derive(Default)]
-struct MemoryLocalStore {
-    proofs: Mutex<Vec<Proof>>,
-}
-
-#[async_trait]
-impl LocalStore for MemoryLocalStore {
-    async fn migrate(&self) {}
-
-    async fn add_proofs(
-        &self,
-        proofs: &Proofs,
-    ) -> Result<(), moksha_wallet::error::MokshaWalletError> {
-        for proof in proofs.proofs() {
-            self.proofs.lock().await.push(proof.clone());
-        }
-        Ok(())
-    }
-
-    async fn get_proofs(
-        &self,
-    ) -> Result<moksha_core::model::Proofs, moksha_wallet::error::MokshaWalletError> {
-        Ok(Proofs::new(self.proofs.lock().await.clone()))
-    }
-
-    async fn delete_proofs(
-        &self,
-        _proofs: &Proofs,
-    ) -> Result<(), moksha_wallet::error::MokshaWalletError> {
-        // TODO implement
-        Ok(())
-    }
-
-    async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
-        Ok(vec![WalletKeyset {
-            id: "id".to_string(),
-            mint_url: "mint_url".to_string(),
-        }])
-    }
-
-    async fn add_keyset(&self, _keyset: &WalletKeyset) -> Result<(), MokshaWalletError> {
-        Ok(())
     }
 }
 

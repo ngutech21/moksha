@@ -186,7 +186,3 @@ async fn extract_response_data<T: serde::de::DeserializeOwned>(
         }
     }
 }
-
-pub async fn doit() {
-    let resp = Request::get("/path").send().await.unwrap();
-}
