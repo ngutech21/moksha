@@ -1,11 +1,14 @@
 use std::collections::HashMap;
+use std::convert::Infallible;
 use std::sync::Arc;
 
 use axum::extract::{Query, State};
-use axum::routing::post;
+use axum::routing::{get_service, post};
 use axum::Router;
 use axum::{routing::get, Json};
 use error::MokshaMintError;
+
+use hyper::http::{HeaderName, HeaderValue};
 use hyper::Method;
 use info::{MintInfoResponse, MintInfoSettings, Parameter};
 use lightning::{Lightning, LightningType, LnbitsLightning};
@@ -16,6 +19,9 @@ use moksha_core::model::{
     PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
 };
 use secp256k1::PublicKey;
+
+use tower_http::services::ServeDir;
+use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
@@ -154,6 +160,19 @@ fn app(mint: Mint) -> Router {
         .route("/info", get(get_info))
         .with_state(mint)
         .layer(TraceLayer::new_for_http())
+        // TODO add configuration option for this
+        .nest_service(
+            "/",
+            get_service(ServeDir::new("./flutter/build/web"))
+                .layer::<_, _, Infallible>(SetResponseHeaderLayer::if_not_present(
+                    HeaderName::from_static("cross-origin-embedder-policy"),
+                    HeaderValue::from_static("require-corp"),
+                ))
+                .layer(SetResponseHeaderLayer::if_not_present(
+                    HeaderName::from_static("cross-origin-opener-policy"),
+                    HeaderValue::from_static("same-origin"),
+                )),
+        )
 }
 
 async fn post_split(

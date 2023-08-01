@@ -29,15 +29,6 @@ static RUNTIME: once_cell::sync::Lazy<StdMutex<Runtime>> = once_cell::sync::Lazy
     )
 });
 
-#[cfg(target_arch = "wasm32")]
-static RUNTIME: once_cell::sync::Lazy<StdMutex<Runtime>> = once_cell::sync::Lazy::new(|| {
-    StdMutex::new(
-        Builder::new_current_thread()
-            .build()
-            .expect("Failed to create runtime"),
-    )
-});
-
 lazy_static! {
     static ref MEMORY_LOCAL_STORE: MemoryLocalStore = MemoryLocalStore::default();
 }
@@ -57,42 +48,43 @@ macro_rules! lock_runtime {
 }
 
 pub fn init_cashu() -> anyhow::Result<String> {
-    let rt = RUNTIME.lock().unwrap();
-
     #[cfg(not(target_arch = "wasm32"))]
-    let db_path = rt.block_on(async {
-        use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
-        use tracing_subscriber::util::SubscriberInitExt;
-        tracing_subscriber::registry()
-            .with(tracing_subscriber::fmt::layer())
-            .init();
+    {
+        let rt = lock_runtime!();
+        let db_path = rt.block_on(async {
+            use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
+            use tracing_subscriber::util::SubscriberInitExt;
+            tracing_subscriber::registry()
+                .with(tracing_subscriber::fmt::layer())
+                .init();
 
-        let db_path = config_path::db_path();
-        let new_localstore =
-            moksha_wallet::sqlx_localstore::SqliteLocalStore::with_path(db_path.clone())
-                .await
-                .map_err(anyhow::Error::from)
-                .unwrap();
-        new_localstore.migrate().await;
-        db_path
-    });
-    drop(rt);
-
-    #[cfg(target_arch = "wasm32")]
-    wasm_bindgen_futures::spawn_local(async {
-        tracing_wasm::set_as_global_default_with_config(
-            tracing_wasm::WASMLayerConfigBuilder::default()
-                .set_console_config(tracing_wasm::ConsoleConfig::ReportWithConsoleColor)
-                .set_max_level(tracing::Level::INFO)
-                .build(),
-        );
-        tracing::info!("tracing::info");
-    });
+            let db_path = config_path::db_path();
+            let new_localstore =
+                moksha_wallet::sqlx_localstore::SqliteLocalStore::with_path(db_path.clone())
+                    .await
+                    .map_err(anyhow::Error::from)
+                    .unwrap();
+            new_localstore.migrate().await;
+            db_path
+        });
+        drop(rt);
+        Ok(db_path)
+    }
 
     #[cfg(target_arch = "wasm32")]
-    let db_path = "".to_owned();
+    {
+        wasm_bindgen_futures::spawn_local(async {
+            tracing_wasm::set_as_global_default_with_config(
+                tracing_wasm::WASMLayerConfigBuilder::default()
+                    .set_console_config(tracing_wasm::ConsoleConfig::ReportWithConsoleColor)
+                    .set_max_level(tracing::Level::INFO)
+                    .build(),
+            );
+            tracing::info!("tracing::info");
+        });
 
-    Ok(db_path)
+        Ok("".to_owned())
+    }
 }
 
 pub fn get_cashu_balance(sink: StreamSink<u64>) -> anyhow::Result<()> {
