@@ -8,7 +8,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
-import '../ffi.io.dart' if (dart.library.html) '../ffi.web.dart';
+import 'ffi.io.dart' if (dart.library.html) 'ffi.web.dart';
 
 abstract class Native {
   Future<String> initCashu({dynamic hint});
@@ -63,7 +63,7 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kReceiveTokenConstMeta;
 
-  Future<double> getBtcprice({dynamic hint});
+  Stream<double> getBtcprice({dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kGetBtcpriceConstMeta;
 }

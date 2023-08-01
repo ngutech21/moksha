@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:moksha_wallet/pages/util.dart';
 import 'package:go_router/go_router.dart';
-import '../ffi.io.dart' if (dart.library.html) '../ffi.web.dart';
+import '../generated/ffi.io.dart'
+    if (dart.library.html) '../generated/ffi.web.dart';
 
 class OverviewPage extends StatefulWidget {
   const OverviewPage({required this.label, Key? key}) : super(key: key);
@@ -17,14 +18,14 @@ class OverviewPage extends StatefulWidget {
 class _OverviewPageState extends State<OverviewPage> {
   late Stream<int> cashuBalance;
   late Stream<int> fedimintBalance;
-  // late Future<double> btcPrice;
+  late Stream<double> btcPrice;
   @override
   void initState() {
     super.initState();
     try {
       cashuBalance = api.getCashuBalance();
       fedimintBalance = api.getFedimintBalance();
-      // btcPrice = api.getBtcprice();
+      btcPrice = api.getBtcprice();
     } catch (e) {
       Future<void>.delayed(Duration.zero, () {
         showErrorSnackBar(context, e, 'Error fetching data');
@@ -35,8 +36,9 @@ class _OverviewPageState extends State<OverviewPage> {
   Stream<List<dynamic>> getCombinedStream() {
     final cashuBalanceStream = api.getCashuBalance();
     final fedimintBalanceStream = api.getFedimintBalance();
+    final btcStream = btcPrice = api.getBtcprice();
 
-    return StreamZip([cashuBalanceStream, fedimintBalanceStream]);
+    return StreamZip([cashuBalanceStream, fedimintBalanceStream, btcStream]);
   }
 
   @override
@@ -47,6 +49,7 @@ class _OverviewPageState extends State<OverviewPage> {
       try {
         cashuBalance = api.getCashuBalance();
         fedimintBalance = api.getFedimintBalance();
+        btcPrice = api.getBtcprice();
       } catch (e) {
         Future<void>.delayed(Duration.zero, () {
           showErrorSnackBar(context, e, 'Error fetching data');
@@ -76,8 +79,7 @@ class _OverviewPageState extends State<OverviewPage> {
 
                   var cashuBalance = data[0];
                   var fedimintBalance = data[1];
-                  //var btcPriceUsd = data[2]; // FIXME
-                  var btcPriceUsd = 30000.0;
+                  var btcPriceUsd = data[2]; // FIXME
                   var pricePerSat = btcPriceUsd / 100000000;
                   var totalBalance = cashuBalance + fedimintBalance;
 

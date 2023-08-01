@@ -3,7 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:moksha_wallet/pages/util.dart';
 
-import '../ffi.io.dart' if (dart.library.html) '../ffi.web.dart';
+import '../generated/ffi.io.dart'
+    if (dart.library.html) '../generated/ffi.web.dart';
 
 class ReceivePage extends StatefulWidget {
   const ReceivePage({super.key});

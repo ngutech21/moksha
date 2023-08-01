@@ -195,13 +195,13 @@ fn wire_receive_token_impl(port_: MessagePort, token: impl Wire2Api<String> + Un
     )
 }
 fn wire_get_btcprice_impl(port_: MessagePort) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, f64>(
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, ()>(
         WrapInfo {
             debug_name: "get_btcprice",
             port: Some(port_),
-            mode: FfiCallMode::Normal,
+            mode: FfiCallMode::Stream,
         },
-        move || move |task_callback| get_btcprice(),
+        move || move |task_callback| get_btcprice(task_callback.stream_sink::<_, f64>()),
     )
 }
 // Section: wrapper structs

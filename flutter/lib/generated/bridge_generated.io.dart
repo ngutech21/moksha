@@ -8,7 +8,7 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
 import 'package:uuid/uuid.dart';
-import '../ffi.io.dart' if (dart.library.html) '../ffi.web.dart';
+import 'ffi.io.dart' if (dart.library.html) 'ffi.web.dart';
 import 'bridge_generated.dart';
 export 'bridge_generated.dart';
 import 'dart:ffi' as ffi;
@@ -52,18 +52,13 @@ class NativeWire implements FlutterRustBridgeWireBase {
   late final dartApi = DartApiDl(init_frb_dart_api_dl);
 
   /// Holds the symbol lookup function.
-  final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
-      _lookup;
+  final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) _lookup;
 
   /// The symbols are looked up in [dynamicLibrary].
-  NativeWire(ffi.DynamicLibrary dynamicLibrary)
-      : _lookup = dynamicLibrary.lookup;
+  NativeWire(ffi.DynamicLibrary dynamicLibrary) : _lookup = dynamicLibrary.lookup;
 
   /// The symbols are looked up with [lookup].
-  NativeWire.fromLookup(
-      ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
-          lookup)
-      : _lookup = lookup;
+  NativeWire.fromLookup(ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup) : _lookup = lookup;
 
   void store_dart_post_cobject(
     DartPostCObjectFnType ptr,
@@ -74,10 +69,8 @@ class NativeWire implements FlutterRustBridgeWireBase {
   }
 
   late final _store_dart_post_cobjectPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(DartPostCObjectFnType)>>(
-          'store_dart_post_cobject');
-  late final _store_dart_post_cobject = _store_dart_post_cobjectPtr
-      .asFunction<void Function(DartPostCObjectFnType)>();
+      _lookup<ffi.NativeFunction<ffi.Void Function(DartPostCObjectFnType)>>('store_dart_post_cobject');
+  late final _store_dart_post_cobject = _store_dart_post_cobjectPtr.asFunction<void Function(DartPostCObjectFnType)>();
 
   Object get_dart_object(
     int ptr,
@@ -87,11 +80,8 @@ class NativeWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _get_dart_objectPtr =
-      _lookup<ffi.NativeFunction<ffi.Handle Function(ffi.UintPtr)>>(
-          'get_dart_object');
-  late final _get_dart_object =
-      _get_dart_objectPtr.asFunction<Object Function(int)>();
+  late final _get_dart_objectPtr = _lookup<ffi.NativeFunction<ffi.Handle Function(ffi.UintPtr)>>('get_dart_object');
+  late final _get_dart_object = _get_dart_objectPtr.asFunction<Object Function(int)>();
 
   void drop_dart_object(
     int ptr,
@@ -101,11 +91,8 @@ class NativeWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _drop_dart_objectPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.UintPtr)>>(
-          'drop_dart_object');
-  late final _drop_dart_object =
-      _drop_dart_objectPtr.asFunction<void Function(int)>();
+  late final _drop_dart_objectPtr = _lookup<ffi.NativeFunction<ffi.Void Function(ffi.UintPtr)>>('drop_dart_object');
+  late final _drop_dart_object = _drop_dart_objectPtr.asFunction<void Function(int)>();
 
   int new_dart_opaque(
     Object handle,
@@ -115,11 +102,8 @@ class NativeWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _new_dart_opaquePtr =
-      _lookup<ffi.NativeFunction<ffi.UintPtr Function(ffi.Handle)>>(
-          'new_dart_opaque');
-  late final _new_dart_opaque =
-      _new_dart_opaquePtr.asFunction<int Function(Object)>();
+  late final _new_dart_opaquePtr = _lookup<ffi.NativeFunction<ffi.UintPtr Function(ffi.Handle)>>('new_dart_opaque');
+  late final _new_dart_opaque = _new_dart_opaquePtr.asFunction<int Function(Object)>();
 
   int init_frb_dart_api_dl(
     ffi.Pointer<ffi.Void> obj,
@@ -130,10 +114,8 @@ class NativeWire implements FlutterRustBridgeWireBase {
   }
 
   late final _init_frb_dart_api_dlPtr =
-      _lookup<ffi.NativeFunction<ffi.IntPtr Function(ffi.Pointer<ffi.Void>)>>(
-          'init_frb_dart_api_dl');
-  late final _init_frb_dart_api_dl = _init_frb_dart_api_dlPtr
-      .asFunction<int Function(ffi.Pointer<ffi.Void>)>();
+      _lookup<ffi.NativeFunction<ffi.IntPtr Function(ffi.Pointer<ffi.Void>)>>('init_frb_dart_api_dl');
+  late final _init_frb_dart_api_dl = _init_frb_dart_api_dlPtr.asFunction<int Function(ffi.Pointer<ffi.Void>)>();
 
   void wire_init_cashu(
     int port_,
@@ -143,11 +125,8 @@ class NativeWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _wire_init_cashuPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_init_cashu');
-  late final _wire_init_cashu =
-      _wire_init_cashuPtr.asFunction<void Function(int)>();
+  late final _wire_init_cashuPtr = _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>('wire_init_cashu');
+  late final _wire_init_cashu = _wire_init_cashuPtr.asFunction<void Function(int)>();
 
   void wire_get_cashu_balance(
     int port_,
@@ -158,10 +137,8 @@ class NativeWire implements FlutterRustBridgeWireBase {
   }
 
   late final _wire_get_cashu_balancePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_get_cashu_balance');
-  late final _wire_get_cashu_balance =
-      _wire_get_cashu_balancePtr.asFunction<void Function(int)>();
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>('wire_get_cashu_balance');
+  late final _wire_get_cashu_balance = _wire_get_cashu_balancePtr.asFunction<void Function(int)>();
 
   void wire_cashu_mint_tokens(
     int port_,
@@ -175,12 +152,11 @@ class NativeWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _wire_cashu_mint_tokensPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64, ffi.Uint64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_cashu_mint_tokens');
-  late final _wire_cashu_mint_tokens = _wire_cashu_mint_tokensPtr
-      .asFunction<void Function(int, int, ffi.Pointer<wire_uint_8_list>)>();
+  late final _wire_cashu_mint_tokensPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint64, ffi.Pointer<wire_uint_8_list>)>>(
+          'wire_cashu_mint_tokens');
+  late final _wire_cashu_mint_tokens =
+      _wire_cashu_mint_tokensPtr.asFunction<void Function(int, int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_cashu_mint_payment_request(
     int port_,
@@ -193,11 +169,9 @@ class NativeWire implements FlutterRustBridgeWireBase {
   }
 
   late final _wire_get_cashu_mint_payment_requestPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint64)>>(
-          'wire_get_cashu_mint_payment_request');
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint64)>>('wire_get_cashu_mint_payment_request');
   late final _wire_get_cashu_mint_payment_request =
-      _wire_get_cashu_mint_payment_requestPtr
-          .asFunction<void Function(int, int)>();
+      _wire_get_cashu_mint_payment_requestPtr.asFunction<void Function(int, int)>();
 
   void wire_decode_invoice(
     int port_,
@@ -209,12 +183,10 @@ class NativeWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _wire_decode_invoicePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_decode_invoice');
-  late final _wire_decode_invoice = _wire_decode_invoicePtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+  late final _wire_decode_invoicePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_decode_invoice');
+  late final _wire_decode_invoice =
+      _wire_decode_invoicePtr.asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_cashu_pay_invoice(
     int port_,
@@ -226,12 +198,11 @@ class NativeWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _wire_cashu_pay_invoicePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_cashu_pay_invoice');
-  late final _wire_cashu_pay_invoice = _wire_cashu_pay_invoicePtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+  late final _wire_cashu_pay_invoicePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>(
+          'wire_cashu_pay_invoice');
+  late final _wire_cashu_pay_invoice =
+      _wire_cashu_pay_invoicePtr.asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_join_federation(
     int port_,
@@ -243,12 +214,10 @@ class NativeWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _wire_join_federationPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_join_federation');
-  late final _wire_join_federation = _wire_join_federationPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+  late final _wire_join_federationPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_join_federation');
+  late final _wire_join_federation =
+      _wire_join_federationPtr.asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_fedimint_payment_request(
     int port_,
@@ -261,11 +230,9 @@ class NativeWire implements FlutterRustBridgeWireBase {
   }
 
   late final _wire_get_fedimint_payment_requestPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint64)>>(
-          'wire_get_fedimint_payment_request');
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint64)>>('wire_get_fedimint_payment_request');
   late final _wire_get_fedimint_payment_request =
-      _wire_get_fedimint_payment_requestPtr
-          .asFunction<void Function(int, int)>();
+      _wire_get_fedimint_payment_requestPtr.asFunction<void Function(int, int)>();
 
   void wire_fedimint_mint_tokens(
     int port_,
@@ -279,12 +246,11 @@ class NativeWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _wire_fedimint_mint_tokensPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64, ffi.Uint64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_fedimint_mint_tokens');
-  late final _wire_fedimint_mint_tokens = _wire_fedimint_mint_tokensPtr
-      .asFunction<void Function(int, int, ffi.Pointer<wire_uint_8_list>)>();
+  late final _wire_fedimint_mint_tokensPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Uint64, ffi.Pointer<wire_uint_8_list>)>>(
+          'wire_fedimint_mint_tokens');
+  late final _wire_fedimint_mint_tokens =
+      _wire_fedimint_mint_tokensPtr.asFunction<void Function(int, int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_fedimint_balance(
     int port_,
@@ -295,10 +261,8 @@ class NativeWire implements FlutterRustBridgeWireBase {
   }
 
   late final _wire_get_fedimint_balancePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_get_fedimint_balance');
-  late final _wire_get_fedimint_balance =
-      _wire_get_fedimint_balancePtr.asFunction<void Function(int)>();
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>('wire_get_fedimint_balance');
+  late final _wire_get_fedimint_balance = _wire_get_fedimint_balancePtr.asFunction<void Function(int)>();
 
   void wire_fedimint_pay_invoice(
     int port_,
@@ -310,12 +274,11 @@ class NativeWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _wire_fedimint_pay_invoicePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_uint_8_list>)>>('wire_fedimint_pay_invoice');
-  late final _wire_fedimint_pay_invoice = _wire_fedimint_pay_invoicePtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+  late final _wire_fedimint_pay_invoicePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>(
+          'wire_fedimint_pay_invoice');
+  late final _wire_fedimint_pay_invoice =
+      _wire_fedimint_pay_invoicePtr.asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_receive_token(
     int port_,
@@ -327,12 +290,10 @@ class NativeWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _wire_receive_tokenPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_receive_token');
-  late final _wire_receive_token = _wire_receive_tokenPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
+  late final _wire_receive_tokenPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Pointer<wire_uint_8_list>)>>('wire_receive_token');
+  late final _wire_receive_token =
+      _wire_receive_tokenPtr.asFunction<void Function(int, ffi.Pointer<wire_uint_8_list>)>();
 
   void wire_get_btcprice(
     int port_,
@@ -342,11 +303,8 @@ class NativeWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _wire_get_btcpricePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_get_btcprice');
-  late final _wire_get_btcprice =
-      _wire_get_btcpricePtr.asFunction<void Function(int)>();
+  late final _wire_get_btcpricePtr = _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>('wire_get_btcprice');
+  late final _wire_get_btcprice = _wire_get_btcpricePtr.asFunction<void Function(int)>();
 
   ffi.Pointer<wire_uint_8_list> new_uint_8_list_0(
     int len,
@@ -356,12 +314,9 @@ class NativeWire implements FlutterRustBridgeWireBase {
     );
   }
 
-  late final _new_uint_8_list_0Ptr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<wire_uint_8_list> Function(
-              ffi.Int32)>>('new_uint_8_list_0');
-  late final _new_uint_8_list_0 = _new_uint_8_list_0Ptr
-      .asFunction<ffi.Pointer<wire_uint_8_list> Function(int)>();
+  late final _new_uint_8_list_0Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<wire_uint_8_list> Function(ffi.Int32)>>('new_uint_8_list_0');
+  late final _new_uint_8_list_0 = _new_uint_8_list_0Ptr.asFunction<ffi.Pointer<wire_uint_8_list> Function(int)>();
 
   void free_WireSyncReturn(
     WireSyncReturn ptr,
@@ -372,10 +327,8 @@ class NativeWire implements FlutterRustBridgeWireBase {
   }
 
   late final _free_WireSyncReturnPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(WireSyncReturn)>>(
-          'free_WireSyncReturn');
-  late final _free_WireSyncReturn =
-      _free_WireSyncReturnPtr.asFunction<void Function(WireSyncReturn)>();
+      _lookup<ffi.NativeFunction<ffi.Void Function(WireSyncReturn)>>('free_WireSyncReturn');
+  late final _free_WireSyncReturn = _free_WireSyncReturnPtr.asFunction<void Function(WireSyncReturn)>();
 }
 
 final class _Dart_Handle extends ffi.Opaque {}
@@ -387,7 +340,6 @@ final class wire_uint_8_list extends ffi.Struct {
   external int len;
 }
 
-typedef DartPostCObjectFnType = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Bool Function(DartPort port_id, ffi.Pointer<ffi.Void> message)>>;
+typedef DartPostCObjectFnType
+    = ffi.Pointer<ffi.NativeFunction<ffi.Bool Function(DartPort port_id, ffi.Pointer<ffi.Void> message)>>;
 typedef DartPort = ffi.Int64;

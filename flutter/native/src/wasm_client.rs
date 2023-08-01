@@ -36,13 +36,12 @@ impl Client for WasmClient {
             outputs,
         };
 
-        let resp = Request::post(mint_url.join("split").unwrap().as_str())
+        let resp = Request::post(mint_url.join("split")?.as_str())
             .header("content-type", "application/json")
-            .json(body)
-            .unwrap()
+            .json(body)?
             .send()
-            .await
-            .unwrap();
+            .await?;
+
         extract_response_data::<PostSplitResponse>(resp).await
     }
 
@@ -59,13 +58,11 @@ impl Client for WasmClient {
             outputs,
         };
 
-        let resp = Request::post(mint_url.join("melt").unwrap().as_str())
+        let resp = Request::post(mint_url.join("melt")?.as_str())
             .header("content-type", "application/json")
-            .json(body)
-            .unwrap()
+            .json(body)?
             .send()
-            .await
-            .unwrap();
+            .await?;
         extract_response_data::<PostMeltResponse>(resp).await
     }
 
@@ -74,13 +71,11 @@ impl Client for WasmClient {
         mint_url: &Url,
         pr: String,
     ) -> Result<CheckFeesResponse, MokshaWalletError> {
-        let resp = Request::post(mint_url.join("checkfees").unwrap().as_str())
+        let resp = Request::post(mint_url.join("checkfees")?.as_str())
             .header("content-type", "application/json")
-            .json(&CheckFeesRequest { pr })
-            .unwrap()
+            .json(&CheckFeesRequest { pr })?
             .send()
-            .await
-            .unwrap(); // FIXME error handling
+            .await?;
 
         extract_response_data::<CheckFeesResponse>(resp).await
     }
@@ -89,18 +84,14 @@ impl Client for WasmClient {
         &self,
         mint_url: &Url,
     ) -> Result<HashMap<u64, PublicKey>, MokshaWalletError> {
-        let resp = Request::get(mint_url.join("keys").unwrap().as_str())
-            .send()
-            .await
-            .unwrap();
+        let resp = Request::get(mint_url.join("keys")?.as_str()).send().await?;
         extract_response_data::<HashMap<u64, PublicKey>>(resp).await
     }
 
     async fn get_mint_keysets(&self, mint_url: &Url) -> Result<Keysets, MokshaWalletError> {
-        let resp = Request::get(mint_url.join("keysets").unwrap().as_str())
+        let resp = Request::get(mint_url.join("keysets")?.as_str())
             .send()
-            .await
-            .unwrap();
+            .await?;
         extract_response_data::<Keysets>(resp).await
     }
 
@@ -109,15 +100,9 @@ impl Client for WasmClient {
         mint_url: &Url,
         amount: u64,
     ) -> Result<PaymentRequest, MokshaWalletError> {
-        let resp = Request::get(
-            mint_url
-                .join(&format!("mint?amount={}", amount))
-                .unwrap()
-                .as_str(),
-        )
-        .send()
-        .await
-        .unwrap();
+        let resp = Request::get(mint_url.join(&format!("mint?amount={}", amount))?.as_str())
+            .send()
+            .await?;
         extract_response_data::<PaymentRequest>(resp).await
     }
 
@@ -131,18 +116,11 @@ impl Client for WasmClient {
             outputs: blinded_messages,
         };
 
-        let resp = Request::post(
-            mint_url
-                .join(&format!("mint?hash={}", hash))
-                .unwrap()
-                .as_str(),
-        )
-        .header("content-type", "application/json")
-        .json(body)
-        .unwrap()
-        .send()
-        .await
-        .unwrap();
+        let resp = Request::post(mint_url.join(&format!("mint?hash={}", hash))?.as_str())
+            .header("content-type", "application/json")
+            .json(body)?
+            .send()
+            .await?;
         extract_response_data::<PostMintResponse>(resp).await
     }
 }

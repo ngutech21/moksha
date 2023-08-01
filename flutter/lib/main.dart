@@ -7,8 +7,10 @@ import 'package:moksha_wallet/pages/pay_invoice_page.dart';
 import 'package:moksha_wallet/pages/receive_page.dart';
 import 'package:moksha_wallet/pages/settings_page.dart';
 
-import 'ffi.io.dart' if (dart.library.html) 'ffi.web.dart';
-export 'ffi.io.dart' if (dart.library.html) 'ffi.web.dart' show api;
+import '../generated/ffi.io.dart'
+    if (dart.library.html) '../generated/ffi.web.dart';
+export '../generated/ffi.io.dart'
+    if (dart.library.html) '../generated/ffi.web.dart' show api;
 
 final dbPathProvider = FutureProvider<String>((ref) async {
   return await api.initCashu();

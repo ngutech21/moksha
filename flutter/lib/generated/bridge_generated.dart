@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
-import '../ffi.io.dart' if (dart.library.html) '../ffi.web.dart';
+import 'ffi.io.dart' if (dart.library.html) 'ffi.web.dart';
 import 'bridge_generated.io.dart'
     if (dart.library.html) 'bridge_generated.web.dart';
 
@@ -233,8 +233,8 @@ class NativeImpl implements Native {
         argNames: ["token"],
       );
 
-  Future<double> getBtcprice({dynamic hint}) {
-    return _platform.executeNormal(FlutterRustBridgeTask(
+  Stream<double> getBtcprice({dynamic hint}) {
+    return _platform.executeStream(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_get_btcprice(port_),
       parseSuccessData: _wire2api_f64,
       constMeta: kGetBtcpriceConstMeta,

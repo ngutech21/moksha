@@ -421,24 +421,16 @@ fn fedimint_receive_token(token: String) -> anyhow::Result<u64> {
     Ok(result)
 }
 
-fn get_btcprice_desktop() -> anyhow::Result<f64> {
-    let rt = lock_runtime!();
-    let result = rt.block_on(async {
-        moksha_wallet::btcprice::get_btcprice()
+pub fn get_btcprice(sink: StreamSink<f64>) -> anyhow::Result<()> {
+    block_on(async move {
+        let price = moksha_wallet::btcprice::get_btcprice()
             .await
-            .map_err(anyhow::Error::from)
-    })?;
-    drop(rt);
-    Ok(result)
-}
+            .map_err(anyhow::Error::from);
+        sink.add(price.unwrap());
+        sink.close();
+    });
 
-pub fn get_btcprice() -> anyhow::Result<f64> {
-    #[cfg(not(target_arch = "wasm32"))]
-    return get_btcprice_desktop();
-
-    #[cfg(target_arch = "wasm32")]
-    Ok(21_000.21f64)
-    // FIXME implement get_btcprice for wasm
+    Ok(())
 }
 
 #[cfg(test)]

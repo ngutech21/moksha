@@ -5,6 +5,10 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum MokshaWalletError {
+    #[cfg(target_arch = "wasm32")]
+    #[error("GlooNetError - {0}")]
+    GlooNet(#[from] gloo_net::Error),
+
     #[error("SerdeJsonError - {0}")]
     Json(#[from] serde_json::Error),
 

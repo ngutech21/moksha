@@ -4,7 +4,7 @@
 // ignore_for_file: avoid_web_libraries_in_flutter
 import 'dart:html';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
-import 'generated/bridge_generated.web.dart';
+import 'package:moksha_wallet/generated/bridge_generated.web.dart';
 
 const root = 'pkg/native';
 

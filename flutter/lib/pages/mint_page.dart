@@ -7,7 +7,8 @@ import 'package:moksha_wallet/pages/util.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../ffi.io.dart' if (dart.library.html) '../ffi.web.dart';
+import '../generated/ffi.io.dart'
+    if (dart.library.html) '../generated/ffi.web.dart';
 
 enum MintType { cashu, fedimint }
 
