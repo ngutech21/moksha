@@ -78,7 +78,7 @@ class _PayInvoicePageState extends State<PayInvoicePage> {
                   if (selectedMintType == MintType.cashu) {
                     paid = await api.cashuPayInvoice(invoice: invoice).first;
                   } else if (selectedMintType == MintType.fedimint) {
-                    paid = await api.fedimintPayInvoice(invoice: invoice);
+                    paid = await api.fedimintPayInvoice(invoice: invoice).first;
                   } else {
                     throw Exception("Unknown mint type");
                   }

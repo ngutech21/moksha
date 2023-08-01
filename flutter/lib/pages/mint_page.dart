@@ -232,19 +232,21 @@ class _MintWidgetState extends State<MintWidget> {
                             }
                           } else if (selectedMintType == MintType.fedimint) {
                             try {
-                              var fedimintPaymentRequest =
-                                  await api.getFedimintPaymentRequest(
-                                      amount:
-                                          cleanAmount); // use decimalTextfield
+                              var fedimintPaymentRequest = await api
+                                  .getFedimintPaymentRequest(
+                                      amount: cleanAmount)
+                                  .first; // use decimalTextfield
                               setState(() {
                                 paymentRequest = fedimintPaymentRequest.pr;
                                 _isInvoiceCreated = true;
                               });
 
-                              var mintedTokens = await api.fedimintMintTokens(
-                                  amount: cleanAmount,
-                                  operationId:
-                                      fedimintPaymentRequest.operationId);
+                              var mintedTokens = await api
+                                  .fedimintMintTokens(
+                                      amount: cleanAmount,
+                                      operationId:
+                                          fedimintPaymentRequest.operationId)
+                                  .first;
                               setState(() {
                                 paymentRequest = null;
                                 _isInvoiceCreated = false;

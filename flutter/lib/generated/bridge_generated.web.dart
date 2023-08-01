@@ -7,12 +7,12 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
+import 'package:uuid/uuid.dart';
 import 'ffi.io.dart' if (dart.library.html) 'ffi.web.dart';
 import 'bridge_generated.dart';
 export 'bridge_generated.dart';
 
-class NativePlatform extends FlutterRustBridgeBase<NativeWire>
-    with FlutterRustBridgeSetupMixin {
+class NativePlatform extends FlutterRustBridgeBase<NativeWire> with FlutterRustBridgeSetupMixin {
   NativePlatform(FutureOr<WasmModule> dylib) : super(NativeWire(dylib)) {
     setupMixinConstructor();
   }
@@ -51,34 +51,25 @@ class NativeWasmModule implements WasmModule {
 
   external dynamic /* void */ wire_get_cashu_balance(NativePortType port_);
 
-  external dynamic /* void */ wire_cashu_mint_tokens(
-      NativePortType port_, Object amount, String hash);
+  external dynamic /* void */ wire_cashu_mint_tokens(NativePortType port_, Object amount, String hash);
 
-  external dynamic /* void */ wire_get_cashu_mint_payment_request(
-      NativePortType port_, Object amount);
+  external dynamic /* void */ wire_get_cashu_mint_payment_request(NativePortType port_, Object amount);
 
-  external dynamic /* void */ wire_decode_invoice(
-      NativePortType port_, String invoice);
+  external dynamic /* void */ wire_decode_invoice(NativePortType port_, String invoice);
 
-  external dynamic /* void */ wire_cashu_pay_invoice(
-      NativePortType port_, String invoice);
+  external dynamic /* void */ wire_cashu_pay_invoice(NativePortType port_, String invoice);
 
-  external dynamic /* void */ wire_join_federation(
-      NativePortType port_, String federation);
+  external dynamic /* void */ wire_join_federation(NativePortType port_, String federation);
 
-  external dynamic /* void */ wire_get_fedimint_payment_request(
-      NativePortType port_, Object amount);
+  external dynamic /* void */ wire_get_fedimint_payment_request(NativePortType port_, Object amount);
 
-  external dynamic /* void */ wire_fedimint_mint_tokens(
-      NativePortType port_, Object amount, String operation_id);
+  external dynamic /* void */ wire_fedimint_mint_tokens(NativePortType port_, Object amount, String operation_id);
 
   external dynamic /* void */ wire_get_fedimint_balance(NativePortType port_);
 
-  external dynamic /* void */ wire_fedimint_pay_invoice(
-      NativePortType port_, String invoice);
+  external dynamic /* void */ wire_fedimint_pay_invoice(NativePortType port_, String invoice);
 
-  external dynamic /* void */ wire_receive_token(
-      NativePortType port_, String token);
+  external dynamic /* void */ wire_receive_token(NativePortType port_, String token);
 
   external dynamic /* void */ wire_get_btcprice(NativePortType port_);
 }
@@ -86,25 +77,19 @@ class NativeWasmModule implements WasmModule {
 // Section: WASM wire connector
 
 class NativeWire extends FlutterRustBridgeWasmWireBase<NativeWasmModule> {
-  NativeWire(FutureOr<WasmModule> module)
-      : super(WasmModule.cast<NativeWasmModule>(module));
+  NativeWire(FutureOr<WasmModule> module) : super(WasmModule.cast<NativeWasmModule>(module));
 
-  void wire_init_cashu(NativePortType port_) =>
-      wasmModule.wire_init_cashu(port_);
+  void wire_init_cashu(NativePortType port_) => wasmModule.wire_init_cashu(port_);
 
-  void wire_get_cashu_balance(NativePortType port_) =>
-      wasmModule.wire_get_cashu_balance(port_);
+  void wire_get_cashu_balance(NativePortType port_) => wasmModule.wire_get_cashu_balance(port_);
 
-  void wire_cashu_mint_tokens(
-          NativePortType port_, Object amount, String hash) =>
+  void wire_cashu_mint_tokens(NativePortType port_, Object amount, String hash) =>
       wasmModule.wire_cashu_mint_tokens(port_, amount, hash);
 
-  void wire_get_cashu_mint_payment_request(
-          NativePortType port_, Object amount) =>
+  void wire_get_cashu_mint_payment_request(NativePortType port_, Object amount) =>
       wasmModule.wire_get_cashu_mint_payment_request(port_, amount);
 
-  void wire_decode_invoice(NativePortType port_, String invoice) =>
-      wasmModule.wire_decode_invoice(port_, invoice);
+  void wire_decode_invoice(NativePortType port_, String invoice) => wasmModule.wire_decode_invoice(port_, invoice);
 
   void wire_cashu_pay_invoice(NativePortType port_, String invoice) =>
       wasmModule.wire_cashu_pay_invoice(port_, invoice);
@@ -115,19 +100,15 @@ class NativeWire extends FlutterRustBridgeWasmWireBase<NativeWasmModule> {
   void wire_get_fedimint_payment_request(NativePortType port_, Object amount) =>
       wasmModule.wire_get_fedimint_payment_request(port_, amount);
 
-  void wire_fedimint_mint_tokens(
-          NativePortType port_, Object amount, String operation_id) =>
+  void wire_fedimint_mint_tokens(NativePortType port_, Object amount, String operation_id) =>
       wasmModule.wire_fedimint_mint_tokens(port_, amount, operation_id);
 
-  void wire_get_fedimint_balance(NativePortType port_) =>
-      wasmModule.wire_get_fedimint_balance(port_);
+  void wire_get_fedimint_balance(NativePortType port_) => wasmModule.wire_get_fedimint_balance(port_);
 
   void wire_fedimint_pay_invoice(NativePortType port_, String invoice) =>
       wasmModule.wire_fedimint_pay_invoice(port_, invoice);
 
-  void wire_receive_token(NativePortType port_, String token) =>
-      wasmModule.wire_receive_token(port_, token);
+  void wire_receive_token(NativePortType port_, String token) => wasmModule.wire_receive_token(port_, token);
 
-  void wire_get_btcprice(NativePortType port_) =>
-      wasmModule.wire_get_btcprice(port_);
+  void wire_get_btcprice(NativePortType port_) => wasmModule.wire_get_btcprice(port_);
 }

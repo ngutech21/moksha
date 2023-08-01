@@ -2,8 +2,6 @@ import 'package:moksha_wallet/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moksha_wallet/pages/util.dart';
-import '../generated/ffi.io.dart'
-    if (dart.library.html) '../generated/ffi.web.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});

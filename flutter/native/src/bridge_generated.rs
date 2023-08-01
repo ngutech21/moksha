@@ -128,15 +128,20 @@ fn wire_get_fedimint_payment_request_impl(
     port_: MessagePort,
     amount: impl Wire2Api<u64> + UnwindSafe,
 ) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, FedimintPaymentRequest>(
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, ()>(
         WrapInfo {
             debug_name: "get_fedimint_payment_request",
             port: Some(port_),
-            mode: FfiCallMode::Normal,
+            mode: FfiCallMode::Stream,
         },
         move || {
             let api_amount = amount.wire2api();
-            move |task_callback| get_fedimint_payment_request(api_amount)
+            move |task_callback| {
+                get_fedimint_payment_request(
+                    task_callback.stream_sink::<_, FedimintPaymentRequest>(),
+                    api_amount,
+                )
+            }
         },
     )
 }
@@ -145,16 +150,22 @@ fn wire_fedimint_mint_tokens_impl(
     amount: impl Wire2Api<u64> + UnwindSafe,
     operation_id: impl Wire2Api<String> + UnwindSafe,
 ) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, u64>(
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, ()>(
         WrapInfo {
             debug_name: "fedimint_mint_tokens",
             port: Some(port_),
-            mode: FfiCallMode::Normal,
+            mode: FfiCallMode::Stream,
         },
         move || {
             let api_amount = amount.wire2api();
             let api_operation_id = operation_id.wire2api();
-            move |task_callback| fedimint_mint_tokens(api_amount, api_operation_id)
+            move |task_callback| {
+                fedimint_mint_tokens(
+                    task_callback.stream_sink::<_, u64>(),
+                    api_amount,
+                    api_operation_id,
+                )
+            }
         },
     )
 }
@@ -169,15 +180,17 @@ fn wire_get_fedimint_balance_impl(port_: MessagePort) {
     )
 }
 fn wire_fedimint_pay_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> + UnwindSafe) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, bool>(
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, ()>(
         WrapInfo {
             debug_name: "fedimint_pay_invoice",
             port: Some(port_),
-            mode: FfiCallMode::Normal,
+            mode: FfiCallMode::Stream,
         },
         move || {
             let api_invoice = invoice.wire2api();
-            move |task_callback| fedimint_pay_invoice(api_invoice)
+            move |task_callback| {
+                fedimint_pay_invoice(task_callback.stream_sink::<_, bool>(), api_invoice)
+            }
         },
     )
 }

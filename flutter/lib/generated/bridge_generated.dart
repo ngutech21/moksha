@@ -7,18 +7,16 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge.dart';
+import 'package:uuid/uuid.dart';
 import 'ffi.io.dart' if (dart.library.html) 'ffi.web.dart';
-import 'bridge_generated.io.dart'
-    if (dart.library.html) 'bridge_generated.web.dart';
+import 'bridge_generated.io.dart' if (dart.library.html) 'bridge_generated.web.dart';
 
 class NativeImpl implements Native {
   final NativePlatform _platform;
-  factory NativeImpl(ExternalLibrary dylib) =>
-      NativeImpl.raw(NativePlatform(dylib));
+  factory NativeImpl(ExternalLibrary dylib) => NativeImpl.raw(NativePlatform(dylib));
 
   /// Only valid on web/WASM platforms.
-  factory NativeImpl.wasm(FutureOr<WasmModule> module) =>
-      NativeImpl(module as ExternalLibrary);
+  factory NativeImpl.wasm(FutureOr<WasmModule> module) => NativeImpl(module as ExternalLibrary);
   NativeImpl.raw(this._platform);
   Future<String> initCashu({dynamic hint}) {
     return _platform.executeNormal(FlutterRustBridgeTask(
@@ -30,8 +28,7 @@ class NativeImpl implements Native {
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kInitCashuConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
+  FlutterRustBridgeTaskConstMeta get kInitCashuConstMeta => const FlutterRustBridgeTaskConstMeta(
         debugName: "init_cashu",
         argNames: [],
       );
@@ -46,19 +43,16 @@ class NativeImpl implements Native {
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kGetCashuBalanceConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
+  FlutterRustBridgeTaskConstMeta get kGetCashuBalanceConstMeta => const FlutterRustBridgeTaskConstMeta(
         debugName: "get_cashu_balance",
         argNames: [],
       );
 
-  Stream<int> cashuMintTokens(
-      {required int amount, required String hash, dynamic hint}) {
+  Stream<int> cashuMintTokens({required int amount, required String hash, dynamic hint}) {
     var arg0 = _platform.api2wire_u64(amount);
     var arg1 = _platform.api2wire_String(hash);
     return _platform.executeStream(FlutterRustBridgeTask(
-      callFfi: (port_) =>
-          _platform.inner.wire_cashu_mint_tokens(port_, arg0, arg1),
+      callFfi: (port_) => _platform.inner.wire_cashu_mint_tokens(port_, arg0, arg1),
       parseSuccessData: _wire2api_u64,
       constMeta: kCashuMintTokensConstMeta,
       argValues: [amount, hash],
@@ -66,18 +60,15 @@ class NativeImpl implements Native {
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kCashuMintTokensConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
+  FlutterRustBridgeTaskConstMeta get kCashuMintTokensConstMeta => const FlutterRustBridgeTaskConstMeta(
         debugName: "cashu_mint_tokens",
         argNames: ["amount", "hash"],
       );
 
-  Stream<FlutterPaymentRequest> getCashuMintPaymentRequest(
-      {required int amount, dynamic hint}) {
+  Stream<FlutterPaymentRequest> getCashuMintPaymentRequest({required int amount, dynamic hint}) {
     var arg0 = _platform.api2wire_u64(amount);
     return _platform.executeStream(FlutterRustBridgeTask(
-      callFfi: (port_) =>
-          _platform.inner.wire_get_cashu_mint_payment_request(port_, arg0),
+      callFfi: (port_) => _platform.inner.wire_get_cashu_mint_payment_request(port_, arg0),
       parseSuccessData: _wire2api_flutter_payment_request,
       constMeta: kGetCashuMintPaymentRequestConstMeta,
       argValues: [amount],
@@ -85,14 +76,12 @@ class NativeImpl implements Native {
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kGetCashuMintPaymentRequestConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
+  FlutterRustBridgeTaskConstMeta get kGetCashuMintPaymentRequestConstMeta => const FlutterRustBridgeTaskConstMeta(
         debugName: "get_cashu_mint_payment_request",
         argNames: ["amount"],
       );
 
-  Future<FlutterInvoice> decodeInvoice(
-      {required String invoice, dynamic hint}) {
+  Future<FlutterInvoice> decodeInvoice({required String invoice, dynamic hint}) {
     var arg0 = _platform.api2wire_String(invoice);
     return _platform.executeNormal(FlutterRustBridgeTask(
       callFfi: (port_) => _platform.inner.wire_decode_invoice(port_, arg0),
@@ -103,8 +92,7 @@ class NativeImpl implements Native {
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kDecodeInvoiceConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
+  FlutterRustBridgeTaskConstMeta get kDecodeInvoiceConstMeta => const FlutterRustBridgeTaskConstMeta(
         debugName: "decode_invoice",
         argNames: ["invoice"],
       );
@@ -120,8 +108,7 @@ class NativeImpl implements Native {
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kCashuPayInvoiceConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
+  FlutterRustBridgeTaskConstMeta get kCashuPayInvoiceConstMeta => const FlutterRustBridgeTaskConstMeta(
         debugName: "cashu_pay_invoice",
         argNames: ["invoice"],
       );
@@ -137,18 +124,15 @@ class NativeImpl implements Native {
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kJoinFederationConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
+  FlutterRustBridgeTaskConstMeta get kJoinFederationConstMeta => const FlutterRustBridgeTaskConstMeta(
         debugName: "join_federation",
         argNames: ["federation"],
       );
 
-  Future<FedimintPaymentRequest> getFedimintPaymentRequest(
-      {required int amount, dynamic hint}) {
+  Stream<FedimintPaymentRequest> getFedimintPaymentRequest({required int amount, dynamic hint}) {
     var arg0 = _platform.api2wire_u64(amount);
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) =>
-          _platform.inner.wire_get_fedimint_payment_request(port_, arg0),
+    return _platform.executeStream(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_get_fedimint_payment_request(port_, arg0),
       parseSuccessData: _wire2api_fedimint_payment_request,
       constMeta: kGetFedimintPaymentRequestConstMeta,
       argValues: [amount],
@@ -156,19 +140,16 @@ class NativeImpl implements Native {
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kGetFedimintPaymentRequestConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
+  FlutterRustBridgeTaskConstMeta get kGetFedimintPaymentRequestConstMeta => const FlutterRustBridgeTaskConstMeta(
         debugName: "get_fedimint_payment_request",
         argNames: ["amount"],
       );
 
-  Future<int> fedimintMintTokens(
-      {required int amount, required String operationId, dynamic hint}) {
+  Stream<int> fedimintMintTokens({required int amount, required String operationId, dynamic hint}) {
     var arg0 = _platform.api2wire_u64(amount);
     var arg1 = _platform.api2wire_String(operationId);
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) =>
-          _platform.inner.wire_fedimint_mint_tokens(port_, arg0, arg1),
+    return _platform.executeStream(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_fedimint_mint_tokens(port_, arg0, arg1),
       parseSuccessData: _wire2api_u64,
       constMeta: kFedimintMintTokensConstMeta,
       argValues: [amount, operationId],
@@ -176,8 +157,7 @@ class NativeImpl implements Native {
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kFedimintMintTokensConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
+  FlutterRustBridgeTaskConstMeta get kFedimintMintTokensConstMeta => const FlutterRustBridgeTaskConstMeta(
         debugName: "fedimint_mint_tokens",
         argNames: ["amount", "operationId"],
       );
@@ -192,17 +172,15 @@ class NativeImpl implements Native {
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kGetFedimintBalanceConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
+  FlutterRustBridgeTaskConstMeta get kGetFedimintBalanceConstMeta => const FlutterRustBridgeTaskConstMeta(
         debugName: "get_fedimint_balance",
         argNames: [],
       );
 
-  Future<bool> fedimintPayInvoice({required String invoice, dynamic hint}) {
+  Stream<bool> fedimintPayInvoice({required String invoice, dynamic hint}) {
     var arg0 = _platform.api2wire_String(invoice);
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) =>
-          _platform.inner.wire_fedimint_pay_invoice(port_, arg0),
+    return _platform.executeStream(FlutterRustBridgeTask(
+      callFfi: (port_) => _platform.inner.wire_fedimint_pay_invoice(port_, arg0),
       parseSuccessData: _wire2api_bool,
       constMeta: kFedimintPayInvoiceConstMeta,
       argValues: [invoice],
@@ -210,8 +188,7 @@ class NativeImpl implements Native {
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kFedimintPayInvoiceConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
+  FlutterRustBridgeTaskConstMeta get kFedimintPayInvoiceConstMeta => const FlutterRustBridgeTaskConstMeta(
         debugName: "fedimint_pay_invoice",
         argNames: ["invoice"],
       );
@@ -227,8 +204,7 @@ class NativeImpl implements Native {
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kReceiveTokenConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
+  FlutterRustBridgeTaskConstMeta get kReceiveTokenConstMeta => const FlutterRustBridgeTaskConstMeta(
         debugName: "receive_token",
         argNames: ["token"],
       );
@@ -243,8 +219,7 @@ class NativeImpl implements Native {
     ));
   }
 
-  FlutterRustBridgeTaskConstMeta get kGetBtcpriceConstMeta =>
-      const FlutterRustBridgeTaskConstMeta(
+  FlutterRustBridgeTaskConstMeta get kGetBtcpriceConstMeta => const FlutterRustBridgeTaskConstMeta(
         debugName: "get_btcprice",
         argNames: [],
       );
@@ -268,8 +243,7 @@ class NativeImpl implements Native {
 
   FedimintPaymentRequest _wire2api_fedimint_payment_request(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    if (arr.length != 2) throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
     return FedimintPaymentRequest(
       pr: _wire2api_String(arr[0]),
       operationId: _wire2api_String(arr[1]),
@@ -278,8 +252,7 @@ class NativeImpl implements Native {
 
   FlutterInvoice _wire2api_flutter_invoice(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 3)
-      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    if (arr.length != 3) throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
     return FlutterInvoice(
       pr: _wire2api_String(arr[0]),
       amountSats: _wire2api_u64(arr[1]),
@@ -289,8 +262,7 @@ class NativeImpl implements Native {
 
   FlutterPaymentRequest _wire2api_flutter_payment_request(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    if (arr.length != 2) throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
     return FlutterPaymentRequest(
       pr: _wire2api_String(arr[0]),
       hash: _wire2api_String(arr[1]),
