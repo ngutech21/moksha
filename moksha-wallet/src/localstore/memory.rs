@@ -48,3 +48,90 @@ impl LocalStore for MemoryLocalStore {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use moksha_core::model::{Proof, Proofs};
+    use serde_json::json;
+
+    #[tokio::test]
+    async fn test_add_proofs() -> anyhow::Result<()> {
+        let local_store = MemoryLocalStore::default();
+
+        let proof1 = serde_json::from_value::<Proof>(json!(
+            {
+                  "id": "DSAl9nvvyfva",
+                  "amount": 2,
+                  "secret": "EhpennC9qB3iFlW8FZ_pZw",
+                  "C": "02c020067db727d586bc3183aecf97fcb800c3f4cc4759f69c626c9db5d8f5b5d4"
+            }
+        ))?;
+
+        let proof2 = serde_json::from_value::<Proof>(json!(
+            {
+                  "id": "DSAl9nvvyfva",
+                  "amount": 8,
+                  "secret": "TmS6Cv0YT5PU_5ATVKnukw",
+                  "C": "02ac910bef28cbe5d7325415d5c263026f15f9b967a079ca9779ab6e5c2db133a7"
+                }
+        ))?;
+
+        let proofs = Proofs::new(vec![proof1, proof2]);
+        assert_eq!(local_store.get_proofs().await?.len(), 0);
+        local_store.add_proofs(&proofs).await?;
+        let stored_proofs = local_store.get_proofs().await?;
+        assert_eq!(stored_proofs.proofs().len(), 2);
+        assert_eq!(stored_proofs.total_amount(), 10);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_delete_proofs() -> anyhow::Result<()> {
+        let local_store = MemoryLocalStore::default();
+
+        let proof1 = serde_json::from_value::<Proof>(json!(
+            {
+                  "id": "DSAl9nvvyfva",
+                  "amount": 2,
+                  "secret": "EhpennC9qB3iFlW8FZ_pZw",
+                  "C": "02c020067db727d586bc3183aecf97fcb800c3f4cc4759f69c626c9db5d8f5b5d4"
+            }
+        ))?;
+
+        let proof2 = serde_json::from_value::<Proof>(json!(
+            {
+                  "id": "DSAl9nvvyfva",
+                  "amount": 8,
+                  "secret": "TmS6Cv0YT5PU_5ATVKnukw",
+                  "C": "02ac910bef28cbe5d7325415d5c263026f15f9b967a079ca9779ab6e5c2db133a7"
+                }
+        ))?;
+
+        let proof3 = serde_json::from_value::<Proof>(json!(
+        {
+                "amount": 64,
+                "secret": "sYYrrhUD3IwJzGFCGsUqqXXa",
+                "C": "0359760ad29ae24cd8535d83d9dcf09b585d36e0649235354aa7001e60206b3a66",
+                "id": "paFbO142_sui"
+        }
+            ))?;
+
+        let proofs = Proofs::new(vec![proof1, proof2, proof3.clone()]);
+        assert_eq!(local_store.get_proofs().await?.len(), 0);
+        local_store.add_proofs(&proofs).await?;
+        let stored_proofs = local_store.get_proofs().await?;
+        assert_eq!(stored_proofs.proofs().len(), 3);
+        assert_eq!(stored_proofs.total_amount(), 74);
+
+        local_store
+            .delete_proofs(&Proofs::new(vec![proof3]))
+            .await?;
+        let proofs_after_delete = local_store.get_proofs().await?;
+        assert_eq!(proofs_after_delete.proofs().len(), 2);
+        assert_eq!(proofs_after_delete.total_amount(), 10);
+
+        Ok(())
+    }
+}
