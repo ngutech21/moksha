@@ -11,11 +11,11 @@ clean:
 
 # run the cashu-mint
 run-mint:
-  cargo run --bin moksha-mint
+  RUST_BACKTRACE=1 cargo run --bin moksha-mint
 
 # run the cli-wallet with given args
 run-cli *ARGS:
-  cargo run --bin moksha-cli -- -m http://127.0.0.1:3338 -d ./data/wallet  {{ARGS}} 
+  RUST_BACKTRACE=1 cargo run --bin moksha-cli -- -m http://127.0.0.1:3338 -d ./data/wallet  {{ARGS}} 
 
 
 # check code for typos

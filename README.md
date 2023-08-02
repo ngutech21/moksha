@@ -73,7 +73,7 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 
 ```bash
 git clone https://github.com/ngutech21/moksha.git
-cargo install just typos-cli sqlx-cli grcov
+cargo install just typos-cli sqlx-cli grcov flutter_rust_bridge_codegen
 rustup component add llvm-tools-preview
 cd moksha
 ```

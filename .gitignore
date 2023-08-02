@@ -5,3 +5,4 @@ data
 .DS_Store
 *.profraw
 build
+**/node_modules
