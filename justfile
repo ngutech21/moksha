@@ -72,6 +72,11 @@ run-flutter:
     cd flutter && \
     flutter run -d {{ platform }}
 
+# run flutter web-app
+run-web:
+    cd flutter && \
+    dart run flutter_rust_bridge:serve 
+
 
 # build flutter desktop-app
 build-flutter:
