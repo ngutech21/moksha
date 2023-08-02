@@ -2458,6 +2458,7 @@ dependencies = [
  "tonic_lnd",
  "tower",
  "tower-http",
+ "tower-service",
  "tracing",
  "tracing-subscriber",
  "url",
