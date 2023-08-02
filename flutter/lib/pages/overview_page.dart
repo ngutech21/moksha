@@ -6,56 +6,24 @@ import 'package:go_router/go_router.dart';
 import '../generated/ffi.io.dart'
     if (dart.library.html) '../generated/ffi.web.dart';
 
-class OverviewPage extends StatefulWidget {
+class OverviewPage extends StatelessWidget {
   const OverviewPage({required this.label, Key? key}) : super(key: key);
 
   final String label;
 
-  @override
-  State<OverviewPage> createState() => _OverviewPageState();
-}
-
-class _OverviewPageState extends State<OverviewPage> {
-  late Stream<int> cashuBalance;
-  late Stream<int> fedimintBalance;
-  late Stream<double> btcPrice;
-  @override
-  void initState() {
-    super.initState();
+  Stream<List<dynamic>>? getCombinedStream(BuildContext context) {
+    print("getCombinedStream");
     try {
-      cashuBalance = api.getCashuBalance();
-      fedimintBalance = api.getFedimintBalance();
-      btcPrice = api.getBtcprice();
+      final cashuBalanceStream = api.getCashuBalance();
+      final fedimintBalanceStream = api.getFedimintBalance();
+      final btcStream = api.getBtcprice();
+      return StreamZip([cashuBalanceStream, fedimintBalanceStream, btcStream]);
     } catch (e) {
       Future<void>.delayed(Duration.zero, () {
         showErrorSnackBar(context, e, 'Error fetching data');
       });
     }
-  }
-
-  Stream<List<dynamic>> getCombinedStream() {
-    final cashuBalanceStream = api.getCashuBalance();
-    final fedimintBalanceStream = api.getFedimintBalance();
-    final btcStream = btcPrice = api.getBtcprice();
-
-    return StreamZip([cashuBalanceStream, fedimintBalanceStream, btcStream]);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    print("did change deps");
-    setState(() {
-      try {
-        cashuBalance = api.getCashuBalance();
-        fedimintBalance = api.getFedimintBalance();
-        btcPrice = api.getBtcprice();
-      } catch (e) {
-        Future<void>.delayed(Duration.zero, () {
-          showErrorSnackBar(context, e, 'Error fetching data');
-        });
-      }
-    });
+    return null;
   }
 
   @override
@@ -65,7 +33,7 @@ class _OverviewPageState extends State<OverviewPage> {
         child: Center(
           child: Column(children: [
             StreamBuilder(
-                stream: getCombinedStream(),
+                stream: getCombinedStream(context),
                 builder: (context, snap) {
                   if (snap.error != null) {
                     debugPrint(snap.error.toString());
@@ -79,7 +47,7 @@ class _OverviewPageState extends State<OverviewPage> {
 
                   var cashuBalance = data[0];
                   var fedimintBalance = data[1];
-                  var btcPriceUsd = data[2]; // FIXME
+                  var btcPriceUsd = data[2];
                   var pricePerSat = btcPriceUsd / 100000000;
                   var totalBalance = cashuBalance + fedimintBalance;
 
