@@ -530,11 +530,12 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.0.79"
+version = "1.0.80"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50d30906286121d95be3d479533b458f87493b30a4b5f79a607db8f5d11aa91f"
+checksum = "51f1226cd9da55587234753d1245dd5b132343ea240f26b6a9003d68706141ba"
 dependencies = [
  "jobserver",
+ "libc",
 ]
 
 [[package]]
@@ -773,6 +774,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "deranged"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8810e7e2cf385b1e9b50d68264908ec367ba642c96d02edfe61c39e88e2a3c01"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "difflib"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -876,9 +886,9 @@ dependencies = [
 
 [[package]]
 name = "errno"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bcfec3a70f97c962c307b2d2c56e358cf1d00b558d74262b5f929ee8cc7e73a"
+checksum = "6b30f669a7961ef1631673d2766cc92f52d64f7ef354d4fe0ddfd30ed52f0f4f"
 dependencies = [
  "errno-dragonfly",
  "libc",
@@ -1329,9 +1339,9 @@ dependencies = [
 
 [[package]]
 name = "flutter_rust_bridge_macros"
-version = "1.79.0"
+version = "1.80.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "237edf0d1cea56e5699ee37f906c265de99d55657df4ff2c006ada9541c04996"
+checksum = "df72ed73cd22d3fb77333d6ed1f02f7284b23266f2f6b5d0cbaed82013a8cd29"
 
 [[package]]
 name = "fnv"
@@ -1788,7 +1798,7 @@ dependencies = [
  "futures-util",
  "http",
  "hyper",
- "rustls 0.21.5",
+ "rustls 0.21.6",
  "tokio",
  "tokio-rustls 0.24.1",
 ]
@@ -2235,9 +2245,9 @@ dependencies = [
 
 [[package]]
 name = "linux-raw-sys"
-version = "0.4.3"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09fc20d2ca12cb9f044c93e3bd6d32d523e6e2ec3db4f7b2939cd99026ecd3f0"
+checksum = "57bcfdad1b858c2db7c38303a6d2ad4dfaf5eb53dfeb0910128b2c26d6158503"
 
 [[package]]
 name = "lock_api"
@@ -2292,9 +2302,9 @@ dependencies = [
 
 [[package]]
 name = "matchit"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b87248edafb776e59e6ee64a79086f65890d3510f2c656c000bf2a7e8a0aea40"
+checksum = "67827e6ea8ee8a7c4a72227ef4fc08957040acffdb5f122733b24fa12daff41b"
 
 [[package]]
 name = "md-5"
@@ -2477,6 +2487,7 @@ dependencies = [
  "moksha-core",
  "rand",
  "reqwest",
+ "rexie",
  "ring",
  "secp256k1 0.27.0",
  "serde",
@@ -3076,7 +3087,7 @@ checksum = "b2eae68fc220f7cf2532e4494aded17545fce192d59cd996e0fe7887f4ceb575"
 dependencies = [
  "aho-corasick",
  "memchr",
- "regex-automata 0.3.3",
+ "regex-automata 0.3.4",
  "regex-syntax 0.7.4",
 ]
 
@@ -3091,9 +3102,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39354c10dd07468c2e73926b23bb9c2caca74c5501e38a35da70406f1d923310"
+checksum = "b7b6d6190b7594385f61bd3911cd1be99dfddcfc365a4160cc2ab5bff4aed294"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -3137,7 +3148,7 @@ dependencies = [
  "once_cell",
  "percent-encoding",
  "pin-project-lite",
- "rustls 0.21.5",
+ "rustls 0.21.6",
  "rustls-pemfile",
  "serde",
  "serde_json",
@@ -3153,6 +3164,21 @@ dependencies = [
  "web-sys",
  "webpki-roots 0.22.6",
  "winreg",
+]
+
+[[package]]
+name = "rexie"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fef172ff9cdf146cdc934e28cdeb137517bf954fb75e6ee8987dd44b58f351b1"
+dependencies = [
+ "console_error_panic_hook",
+ "js-sys",
+ "num-traits",
+ "thiserror",
+ "tokio",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -3253,9 +3279,9 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.21.5"
+version = "0.21.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79ea77c539259495ce8ca47f53e66ae0330a8819f67e23ac96ca02f50e7b7d36"
+checksum = "1d1feddffcfcc0b33f5c6ce9a29e341e4cd59c3f78e7ee45f4a40c038b1d6cbb"
 dependencies = [
  "log",
  "ring",
@@ -3504,7 +3530,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with_macros",
- "time 0.3.23",
+ "time 0.3.24",
 ]
 
 [[package]]
@@ -3715,7 +3741,7 @@ dependencies = [
  "once_cell",
  "paste",
  "percent-encoding",
- "rustls 0.21.5",
+ "rustls 0.21.6",
  "rustls-pemfile",
  "serde",
  "serde_json",
@@ -4051,10 +4077,11 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.23"
+version = "0.3.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59e399c068f43a5d116fedaf73b203fa4f9c519f17e2b34f63221d3792f81446"
+checksum = "b79eabcd964882a646b3584543ccabeae7869e9ac32a46f6f22b7a5bd405308b"
 dependencies = [
+ "deranged",
  "itoa",
  "serde",
  "time-core",
@@ -4069,9 +4096,9 @@ checksum = "7300fbefb4dadc1af235a9cef3737cea692a9d97e1b9cbcd4ebdae6f8868e6fb"
 
 [[package]]
 name = "time-macros"
-version = "0.2.10"
+version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96ba15a897f3c86766b757e5ac7221554c6750054d74d5b28844fce5fb36a6c4"
+checksum = "eb71511c991639bb078fd5bf97757e03914361c48100d52878b8e52b46fb92cd"
 dependencies = [
  "time-core",
 ]
@@ -4179,7 +4206,7 @@ version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c28327cf380ac148141087fbfb9de9d7bd4e84ab5d2c28fbc911d753de8a7081"
 dependencies = [
- "rustls 0.21.5",
+ "rustls 0.21.6",
  "tokio",
 ]
 
