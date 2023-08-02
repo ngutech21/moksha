@@ -1,12 +1,9 @@
-use lazy_static::lazy_static;
-
-use std::future::Future;
-
 use flutter_rust_bridge::StreamSink;
 use lightning_invoice::Invoice;
 use moksha_core::model::PaymentRequest;
 use moksha_fedimint::FedimintWallet;
 use moksha_wallet::localstore::LocalStore;
+use std::future::Future;
 
 use moksha_wallet::config_path;
 
@@ -17,7 +14,10 @@ use std::sync::Mutex as StdMutex;
 use tokio::runtime::{Builder, Runtime};
 use tracing::info;
 
-use crate::memory_localstore::MemoryLocalStore;
+use std::sync::OnceLock;
+
+#[cfg(target_arch = "wasm32")]
+use moksha_wallet::localstore::memory::MemoryLocalStore;
 
 #[cfg(not(target_arch = "wasm32"))]
 static RUNTIME: once_cell::sync::Lazy<StdMutex<Runtime>> = once_cell::sync::Lazy::new(|| {
@@ -29,10 +29,19 @@ static RUNTIME: once_cell::sync::Lazy<StdMutex<Runtime>> = once_cell::sync::Lazy
     )
 });
 
-lazy_static! {
-    static ref MEMORY_LOCAL_STORE: MemoryLocalStore = MemoryLocalStore::default();
-}
+#[cfg(target_arch = "wasm32")]
+static WASM_WALLET: OnceLock<Wallet<crate::wasm_client::WasmClient, MemoryLocalStore>> =
+    OnceLock::new();
 
+#[cfg(not(target_arch = "wasm32"))]
+static DESKTOP_WALLET: OnceLock<
+    Wallet<
+        moksha_wallet::reqwest_client::HttpClient,
+        moksha_wallet::localstore::sqlite::SqliteLocalStore,
+    >,
+> = OnceLock::new();
+
+#[cfg(not(target_arch = "wasm32"))]
 macro_rules! lock_runtime {
     () => {
         match RUNTIME.lock() {
@@ -60,7 +69,7 @@ pub fn init_cashu() -> anyhow::Result<String> {
 
             let db_path = config_path::db_path();
             let new_localstore =
-                moksha_wallet::sqlx_localstore::SqliteLocalStore::with_path(db_path.clone())
+                moksha_wallet::localstore::sqlite::SqliteLocalStore::with_path(db_path.clone())
                     .await
                     .map_err(anyhow::Error::from)
                     .unwrap();
@@ -99,33 +108,42 @@ pub fn get_cashu_balance(sink: StreamSink<u64>) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn create_local_wallet() -> anyhow::Result<Wallet<impl Client, impl LocalStore>> {
+async fn create_local_wallet() -> anyhow::Result<&'static Wallet<impl Client, impl LocalStore>> {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let db_path = config_path::db_path();
-        let client = moksha_wallet::reqwest_client::HttpClient::new();
-        let localstore =
-            moksha_wallet::sqlx_localstore::SqliteLocalStore::with_path(db_path).await?;
-        let mint_url = url::Url::parse("http://127.0.0.1:3338").expect("invalid url"); // FIXME redundant
+        if DESKTOP_WALLET.get().is_none() {
+            let db_path = config_path::db_path();
+            let client = moksha_wallet::reqwest_client::HttpClient::new();
+            let localstore =
+                moksha_wallet::localstore::sqlite::SqliteLocalStore::with_path(db_path).await?;
+            let mint_url = url::Url::parse("http://127.0.0.1:3338").expect("invalid url"); // FIXME redundant
 
-        Ok(WalletBuilder::default()
-            .with_client(client)
-            .with_localstore(localstore)
-            .with_mint_url(mint_url)
-            .build()
-            .await?)
+            let wallet = WalletBuilder::default()
+                .with_client(client)
+                .with_localstore(localstore)
+                .with_mint_url(mint_url)
+                .build()
+                .await?;
+            let _ = DESKTOP_WALLET.set(wallet);
+        }
+        Ok(DESKTOP_WALLET.get().unwrap())
     }
 
     #[cfg(target_arch = "wasm32")]
     {
-        let client = crate::wasm_client::WasmClient::new();
-        let mint_url = url::Url::parse("http://127.0.0.1:3338").expect("invalid url"); // FIXME redundant
-        Ok(WalletBuilder::default()
-            .with_client(client)
-            .with_localstore(MEMORY_LOCAL_STORE.clone())
-            .with_mint_url(mint_url)
-            .build()
-            .await?)
+        if WASM_WALLET.get().is_none() {
+            let client = crate::wasm_client::WasmClient::new();
+            let lc = MemoryLocalStore::default();
+            let mint_url = url::Url::parse("http://127.0.0.1:3338").expect("invalid url"); // FIXME redundant
+            let wallet = WalletBuilder::default()
+                .with_client(client)
+                .with_localstore(lc)
+                .with_mint_url(mint_url)
+                .build()
+                .await?;
+            let _ = WASM_WALLET.set(wallet);
+        }
+        Ok(WASM_WALLET.get().unwrap())
     }
 }
 

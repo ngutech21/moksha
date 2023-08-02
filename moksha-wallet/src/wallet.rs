@@ -482,7 +482,7 @@ mod tests {
         }
     }
 
-    #[async_trait]
+    #[async_trait(?Send)]
     impl LocalStore for MockLocalStore {
         async fn migrate(&self) {}
 

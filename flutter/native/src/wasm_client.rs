@@ -13,6 +13,7 @@ use url::Url;
 
 use moksha_core::model::CashuErrorResponse;
 
+#[derive(Debug, Clone)]
 pub struct WasmClient;
 
 impl WasmClient {

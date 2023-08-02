@@ -5,9 +5,10 @@ use moksha_core::model::{
     BlindedMessage, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest, PostMeltResponse,
     PostMintResponse, PostSplitResponse, Proofs, TokenV3,
 };
+use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::localstore::LocalStore;
 use moksha_wallet::wallet::WalletBuilder;
-use moksha_wallet::{client::Client, error::MokshaWalletError, sqlx_localstore::SqliteLocalStore};
+use moksha_wallet::{client::Client, error::MokshaWalletError};
 use reqwest::Url;
 use secp256k1::PublicKey;
 

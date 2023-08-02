@@ -3,13 +3,21 @@ use moksha_core::model::Proofs;
 
 use crate::error::MokshaWalletError;
 
+#[cfg(not(target_arch = "wasm32"))]
+pub mod sqlite;
+
+pub mod memory;
+
+#[cfg(target_arch = "wasm32")]
+pub mod rexie;
+
 #[derive(Debug, Clone)]
 pub struct WalletKeyset {
     pub id: String,
     pub mint_url: String,
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 pub trait LocalStore {
     async fn delete_proofs(&self, proofs: &Proofs) -> Result<(), MokshaWalletError>;
     async fn add_proofs(&self, proofs: &Proofs) -> Result<(), MokshaWalletError>;

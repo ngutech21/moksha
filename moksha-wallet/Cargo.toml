@@ -27,6 +27,8 @@ dirs = "5.0.1"
 [target.'cfg(target_family = "wasm")'.dependencies]
 ring = { version = "0.16.20", features = ["wasm32_unknown_unknown_js"] }
 gloo-net = { version = "0.3.1" }
+rexie = "0.4.2"
+tokio = { version = "1.29.1", features = ["rt", "sync"] }
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
 reqwest = { version = "0.11.18", features = ["serde_json", "json", "rustls-tls"], default-features = false }

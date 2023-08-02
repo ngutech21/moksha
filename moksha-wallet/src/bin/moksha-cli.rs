@@ -46,8 +46,7 @@ enum Command {
 #[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    use moksha_wallet::localstore::LocalStore;
-    use moksha_wallet::sqlx_localstore::SqliteLocalStore;
+    use moksha_wallet::localstore::{sqlite::SqliteLocalStore, LocalStore};
 
     let cli = Opts::parse();
 

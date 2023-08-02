@@ -13,7 +13,7 @@ pub struct SqliteLocalStore {
     pool: sqlx::SqlitePool,
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl LocalStore for SqliteLocalStore {
     async fn migrate(&self) {
         sqlx::migrate!("../moksha-wallet/migrations")
