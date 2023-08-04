@@ -85,7 +85,7 @@ pub fn init_cashu() -> anyhow::Result<String> {
             tracing_wasm::set_as_global_default_with_config(
                 tracing_wasm::WASMLayerConfigBuilder::default()
                     .set_console_config(tracing_wasm::ConsoleConfig::ReportWithConsoleColor)
-                    .set_max_level(tracing::Level::INFO)
+                    .set_max_level(tracing::Level::DEBUG)
                     .build(),
             );
             tracing::info!("tracing::info");
@@ -125,7 +125,7 @@ async fn local_wallet() -> anyhow::Result<&'static Wallet<impl Client, impl Loca
                 .await?;
             let _ = WALLET.set(wallet);
         }
-        Ok(WALLET.get().unwrap())
+        Ok(WALLET.get().expect("wallet is not initialized"))
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -142,7 +142,7 @@ async fn local_wallet() -> anyhow::Result<&'static Wallet<impl Client, impl Loca
                 .await?;
             let _ = WALLET.set(wallet);
         }
-        Ok(WALLET.get().unwrap())
+        Ok(WALLET.get().expect("wallet is not initialized"))
     }
 }
 
@@ -175,7 +175,7 @@ pub fn cashu_mint_tokens(sink: StreamSink<u64>, amount: u64, hash: String) -> an
                 Err(moksha_wallet::error::MokshaWalletError::InvoiceNotPaidYet(_, _)) => {
                     continue;
                 }
-                Err(e) => {
+                Err(_) => {
                     //return Err(e); // FIXME return error
                     break;
                 }
@@ -193,7 +193,7 @@ pub fn cashu_mint_tokens(sink: StreamSink<u64>, amount: u64, hash: String) -> an
 fn block_on<F: Future<Output = ()> + 'static>(future: F) {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let rt = RUNTIME.lock().unwrap(); // FIXME handle error
+        let rt = RUNTIME.lock().expect("Failed to lock the runtime mutex");
         rt.block_on(future);
         drop(rt);
     }
