@@ -7,3 +7,8 @@ void showErrorSnackBar(BuildContext context, Object e, String msg) {
     showCloseIcon: true,
   ));
 }
+
+String formatSats(int sats) {
+  matchFunc(Match match) => '${match[1]},';
+  return sats.toString().replaceAll(',', '').replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), matchFunc);
+}

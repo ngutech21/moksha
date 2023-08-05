@@ -60,11 +60,12 @@ pub fn init_cashu() -> anyhow::Result<String> {
     {
         let rt = lock_runtime!();
         let db_path = rt.block_on(async {
-            use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
-            use tracing_subscriber::util::SubscriberInitExt;
-            tracing_subscriber::registry()
-                .with(tracing_subscriber::fmt::layer())
-                .init();
+            // use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
+            // use tracing_subscriber::util::SubscriberInitExt;
+            // tracing_subscriber::registry()
+            //     .with(tracing_subscriber::fmt::layer())
+            //     .init();
+            // FIXME
 
             let db_path = config_path::db_path();
             let new_localstore =
@@ -85,7 +86,7 @@ pub fn init_cashu() -> anyhow::Result<String> {
             tracing_wasm::set_as_global_default_with_config(
                 tracing_wasm::WASMLayerConfigBuilder::default()
                     .set_console_config(tracing_wasm::ConsoleConfig::ReportWithConsoleColor)
-                    .set_max_level(tracing::Level::DEBUG)
+                    .set_max_level(tracing::Level::INFO)
                     .build(),
             );
             tracing::info!("tracing::info");
@@ -96,7 +97,6 @@ pub fn init_cashu() -> anyhow::Result<String> {
 }
 
 pub fn get_cashu_balance(sink: StreamSink<u64>) -> anyhow::Result<()> {
-    tracing::info!("get cashu balance");
     block_on(async move {
         let wallet = local_wallet().await.unwrap();
         let balance = wallet.get_balance().await.unwrap();

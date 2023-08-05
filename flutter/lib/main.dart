@@ -1,3 +1,4 @@
+import 'package:async/async.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:moksha_wallet/pages/mint_page.dart';
@@ -7,14 +8,16 @@ import 'package:moksha_wallet/pages/pay_invoice_page.dart';
 import 'package:moksha_wallet/pages/receive_page.dart';
 import 'package:moksha_wallet/pages/settings_page.dart';
 
-import '../generated/ffi.io.dart'
-    if (dart.library.html) '../generated/ffi.web.dart';
-export '../generated/ffi.io.dart'
-    if (dart.library.html) '../generated/ffi.web.dart' show api;
+import '../generated/ffi.io.dart' if (dart.library.html) '../generated/ffi.web.dart';
+export '../generated/ffi.io.dart' if (dart.library.html) '../generated/ffi.web.dart' show api;
 
 final dbPathProvider = FutureProvider<String>((ref) async {
   return await api.initCashu();
 });
+
+final cashuBalanceProvider = StateProvider((ref) => 0);
+final fedimintBalanceProvider = StateProvider((ref) => 0);
+final btcPriceProvider = StateProvider((ref) => 0.0);
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _keyHome = GlobalKey<NavigatorState>(debugLabel: 'shellHome');
@@ -24,61 +27,55 @@ final _keyReceive = GlobalKey<NavigatorState>(debugLabel: 'shellReceive');
 final _keyPay = GlobalKey<NavigatorState>(debugLabel: 'shellPay');
 final _keySettings = GlobalKey<NavigatorState>(debugLabel: 'shellSettings');
 
-final goRouter = GoRouter(
-    initialLocation: '/home',
-    navigatorKey: _rootNavigatorKey,
-    debugLogDiagnostics: true,
-    routes: [
-      StatefulShellRoute.indexedStack(
-          builder: (context, state, navigationShell) {
-            return ScaffoldWithNestedNavigation(
-                navigationShell: navigationShell);
-          },
-          branches: [
-            StatefulShellBranch(navigatorKey: _keyHome, routes: [
-              GoRoute(
-                  path: '/home',
-                  pageBuilder: (context, state) => const NoTransitionPage(
-                        child: OverviewPage(label: 'Home'),
-                      )),
-            ]),
-            StatefulShellBranch(navigatorKey: _keyMint, routes: [
-              GoRoute(
-                  path: '/mint',
-                  pageBuilder: (context, state) => const NoTransitionPage(
-                        child: MintPage(),
-                      )),
-            ]),
-            StatefulShellBranch(navigatorKey: _keyReceive, routes: [
-              GoRoute(
-                  path: '/receive',
-                  pageBuilder: (context, state) => const NoTransitionPage(
-                        child: ReceivePage(),
-                      )),
-            ]),
-            StatefulShellBranch(navigatorKey: _keyPay, routes: [
-              GoRoute(
-                  path: '/pay',
-                  pageBuilder: (context, state) => const NoTransitionPage(
-                        child: PayInvoicePage(),
-                      )),
-            ]),
-            StatefulShellBranch(navigatorKey: _keySettings, routes: [
-              GoRoute(
-                  path: '/settings',
-                  pageBuilder: (context, state) => const NoTransitionPage(
-                        child: SettingsPage(),
-                      ))
-            ]),
-          ]),
-    ]);
+final goRouter = GoRouter(initialLocation: '/home', navigatorKey: _rootNavigatorKey, debugLogDiagnostics: true, routes: [
+  StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) {
+        return ScaffoldWithNestedNavigation(navigationShell: navigationShell);
+      },
+      branches: [
+        StatefulShellBranch(navigatorKey: _keyHome, routes: [
+          GoRoute(
+              path: '/home',
+              pageBuilder: (context, state) => const NoTransitionPage(
+                    child: OverviewPage(label: 'Home'),
+                  )),
+        ]),
+        StatefulShellBranch(navigatorKey: _keyMint, routes: [
+          GoRoute(
+              path: '/mint',
+              pageBuilder: (context, state) => const NoTransitionPage(
+                    child: MintPage(),
+                  )),
+        ]),
+        StatefulShellBranch(navigatorKey: _keyReceive, routes: [
+          GoRoute(
+              path: '/receive',
+              pageBuilder: (context, state) => const NoTransitionPage(
+                    child: ReceivePage(),
+                  )),
+        ]),
+        StatefulShellBranch(navigatorKey: _keyPay, routes: [
+          GoRoute(
+              path: '/pay',
+              pageBuilder: (context, state) => const NoTransitionPage(
+                    child: PayInvoicePage(),
+                  )),
+        ]),
+        StatefulShellBranch(navigatorKey: _keySettings, routes: [
+          GoRoute(
+              path: '/settings',
+              pageBuilder: (context, state) => const NoTransitionPage(
+                    child: SettingsPage(),
+                  ))
+        ]),
+      ]),
+]);
 
 class ScaffoldWithNestedNavigation extends StatelessWidget {
   const ScaffoldWithNestedNavigation({
     Key? key,
     required this.navigationShell,
-  }) : super(
-            key: key ?? const ValueKey<String>('ScaffoldWithNestedNavigation'));
+  }) : super(key: key ?? const ValueKey<String>('ScaffoldWithNestedNavigation'));
   final StatefulNavigationShell navigationShell;
 
   void _goBranch(int index) {
@@ -118,16 +115,12 @@ class ScaffoldWithNavigationBar extends StatelessWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         destinations: const [
-          NavigationDestination(
-              label: 'Home', tooltip: '', icon: Icon(Icons.home)),
-          NavigationDestination(
-              label: 'Mint', tooltip: '', icon: Icon(Icons.currency_bitcoin)),
-          NavigationDestination(
-              label: 'Receive', tooltip: '', icon: Icon(Icons.import_export)),
-          NavigationDestination(
-              label: 'Pay', tooltip: '', icon: Icon(Icons.bolt)),
-          NavigationDestination(
-              label: 'Settings', tooltip: '', icon: Icon(Icons.settings)),
+          NavigationDestination(label: 'Home', tooltip: '', icon: Icon(Icons.home)),
+          NavigationDestination(label: 'Mint', tooltip: '', icon: Icon(Icons.currency_bitcoin)),
+          NavigationDestination(label: 'Receive', tooltip: '', icon: Icon(Icons.import_export)),
+          NavigationDestination(label: 'Pay', tooltip: '', icon: Icon(Icons.bolt)),
+          NavigationDestination(label: 'Settings', tooltip: '', icon: Icon(Icons.settings)),
+          NavigationDestination(label: 'Debug', tooltip: '', icon: Icon(Icons.bug_report)),
         ],
         onDestinationSelected: onDestinationSelected,
       ),
@@ -170,6 +163,18 @@ void main() {
   );
 }
 
+Future<int> _getCashuBalance() async {
+  return await api.getCashuBalance().first;
+}
+
+Future<int> _getFedimintBalance() async {
+  return await api.getFedimintBalance().first;
+}
+
+Future<double> _getBtcPrice() async {
+  return await api.getBtcprice().first;
+}
+
 class MyApp extends ConsumerWidget {
   const MyApp({Key? key}) : super(key: key);
 
@@ -177,6 +182,12 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(dbPathProvider); // this is a hack to trigger the provider
+
+    // FIXME error handling
+    ResultFuture<int>(_getCashuBalance()).then((p0) => ref.read(cashuBalanceProvider.notifier).state = p0);
+    ResultFuture<int>(_getFedimintBalance()).then((p0) => ref.read(fedimintBalanceProvider.notifier).state = p0);
+    ResultFuture<double>(_getBtcPrice()).then((p0) => ref.read(btcPriceProvider.notifier).state = p0);
+
     return MaterialApp.router(
       title: 'Moksha e-cash Wallet',
       debugShowCheckedModeBanner: false,
