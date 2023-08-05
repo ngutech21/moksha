@@ -32,7 +32,7 @@ pub async fn main() -> anyhow::Result<()> {
         "Lnd" => {
             let lnd_settings = envy::prefixed("LND_")
                 .from_env::<LndLightningSettings>()
-                .expect("Please provide lnbits info");
+                .expect("Please provide lnd info");
             LightningType::Lnd(lnd_settings)
         }
         _ => panic!(
