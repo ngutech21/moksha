@@ -15,7 +15,7 @@ path = "src/lnbitsmock.rs"
 
 [dependencies]
 rand = "0.8.5"
-axum = "0.6.19"
+axum = "0.6.20"
 anyhow = { version = "1.0.72", features = ["backtrace"] }
 serde = { version = "1.0.177", features = ["derive"] }
 serde_derive = "1.0.180"
