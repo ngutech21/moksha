@@ -1,4 +1,3 @@
-import 'package:async/async.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:moksha_wallet/pages/mint_page.dart';
@@ -7,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moksha_wallet/pages/pay_invoice_page.dart';
 import 'package:moksha_wallet/pages/receive_page.dart';
 import 'package:moksha_wallet/pages/settings_page.dart';
+import 'package:moksha_wallet/pages/util.dart';
 
 import '../generated/ffi.io.dart' if (dart.library.html) '../generated/ffi.web.dart';
 export '../generated/ffi.io.dart' if (dart.library.html) '../generated/ffi.web.dart' show api;
@@ -155,6 +155,8 @@ void main() {
     );
   };
 
+  WidgetsFlutterBinding.ensureInitialized();
+
   runApp(
     const ProviderScope(
       child: MyApp(),
@@ -162,30 +164,16 @@ void main() {
   );
 }
 
-Future<int> _getCashuBalance() async {
-  return await api.getCashuBalance().first;
-}
-
-Future<int> _getFedimintBalance() async {
-  return await api.getFedimintBalance().first;
-}
-
-Future<double> _getBtcPrice() async {
-  return await api.getBtcprice().first;
-}
-
 class MyApp extends ConsumerWidget {
   const MyApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(dbPathProvider); // this is a hack to trigger the provider
 
-    // FIXME error handling
-    ResultFuture<int>(_getCashuBalance()).then((p0) => ref.read(cashuBalanceProvider.notifier).state = p0);
-    ResultFuture<int>(_getFedimintBalance()).then((p0) => ref.read(fedimintBalanceProvider.notifier).state = p0);
-    ResultFuture<double>(_getBtcPrice()).then((p0) => ref.read(btcPriceProvider.notifier).state = p0);
+    updateCashuBalance(ref);
+    updateFedimintBalance(ref);
+    updateBtcPrice(ref);
 
     return MaterialApp.router(
       title: 'Moksha e-cash Wallet',

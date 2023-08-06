@@ -17,7 +17,7 @@ use tracing::info;
 use std::sync::OnceLock;
 
 #[cfg(target_arch = "wasm32")]
-use moksha_wallet::localstore::memory::MemoryLocalStore;
+use moksha_wallet::localstore::rexie::RexieLocalStore;
 
 #[cfg(not(target_arch = "wasm32"))]
 static RUNTIME: once_cell::sync::Lazy<StdMutex<Runtime>> = once_cell::sync::Lazy::new(|| {
@@ -30,7 +30,7 @@ static RUNTIME: once_cell::sync::Lazy<StdMutex<Runtime>> = once_cell::sync::Lazy
 });
 
 #[cfg(target_arch = "wasm32")]
-static WALLET: OnceLock<Wallet<crate::wasm_client::WasmClient, MemoryLocalStore>> = OnceLock::new();
+static WALLET: OnceLock<Wallet<crate::wasm_client::WasmClient, RexieLocalStore>> = OnceLock::new();
 
 #[cfg(not(target_arch = "wasm32"))]
 static WALLET: OnceLock<
@@ -132,7 +132,7 @@ async fn local_wallet() -> anyhow::Result<&'static Wallet<impl Client, impl Loca
     {
         if WALLET.get().is_none() {
             let client = crate::wasm_client::WasmClient::new();
-            let lc = MemoryLocalStore::default();
+            let lc = RexieLocalStore::default();
             let mint_url = url::Url::parse("http://127.0.0.1:3338").expect("invalid url"); // FIXME redundant
             let wallet = WalletBuilder::default()
                 .with_client(client)

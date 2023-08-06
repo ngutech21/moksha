@@ -22,3 +22,7 @@ void updateCashuBalance(WidgetRef ref) {
 void updateFedimintBalance(WidgetRef ref) {
   api.getFedimintBalance().first.then((value) => ref.read(fedimintBalanceProvider.notifier).state = value);
 }
+
+void updateBtcPrice(WidgetRef ref) {
+  api.getBtcprice().first.then((value) => ref.read(btcPriceProvider.notifier).state = value);
+}
