@@ -200,7 +200,7 @@ class _MintWidgetState extends ConsumerState<MintWidget> {
                                 amount = ''; // FIMXE clear textfield
                               });
 
-                              ref.read(cashuBalanceProvider.notifier).state += mintedTokens;
+                              updateCashuBalance(ref);
 
                               if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -227,7 +227,7 @@ class _MintWidgetState extends ConsumerState<MintWidget> {
                                 amount = ''; // FIMXE clear textfield
                               });
 
-                              ref.read(fedimintBalanceProvider.notifier).state += mintedTokens;
+                              updateFedimintBalance(ref);
 
                               if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(

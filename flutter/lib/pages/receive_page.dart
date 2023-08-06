@@ -1,19 +1,18 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:moksha_wallet/main.dart';
 import 'package:moksha_wallet/pages/util.dart';
 
-import '../generated/ffi.io.dart'
-    if (dart.library.html) '../generated/ffi.web.dart';
-
-class ReceivePage extends StatefulWidget {
+class ReceivePage extends ConsumerStatefulWidget {
   const ReceivePage({super.key});
 
   @override
-  State<ReceivePage> createState() => _ReceivePageState();
+  ConsumerState<ReceivePage> createState() => _ReceivePageState();
 }
 
-class _ReceivePageState extends State<ReceivePage> {
+class _ReceivePageState extends ConsumerState<ReceivePage> {
   String token = '';
 
   @override
@@ -39,13 +38,17 @@ class _ReceivePageState extends State<ReceivePage> {
           ElevatedButton(
               onPressed: () async {
                 try {
-                  var amountImported =
-                      await api.receiveToken(token: token).first;
+                  var amountImported = await api.receiveToken(token: token).first;
+
+                  if (token.startsWith("cashu")) {
+                    ref.read(cashuBalanceProvider.notifier).state += amountImported;
+                  } else {
+                    ref.read(fedimintBalanceProvider.notifier).state += amountImported;
+                  }
 
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Column(
-                        children: [Text('Imported $amountImported sats')]),
+                    content: Column(children: [Text('Imported $amountImported sats')]),
                     showCloseIcon: true,
                   ));
                 } catch (e) {

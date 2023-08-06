@@ -120,7 +120,6 @@ class ScaffoldWithNavigationBar extends StatelessWidget {
           NavigationDestination(label: 'Receive', tooltip: '', icon: Icon(Icons.import_export)),
           NavigationDestination(label: 'Pay', tooltip: '', icon: Icon(Icons.bolt)),
           NavigationDestination(label: 'Settings', tooltip: '', icon: Icon(Icons.settings)),
-          NavigationDestination(label: 'Debug', tooltip: '', icon: Icon(Icons.bug_report)),
         ],
         onDestinationSelected: onDestinationSelected,
       ),

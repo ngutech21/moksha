@@ -1,19 +1,20 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moksha_wallet/generated/bridge_definitions.dart';
+import 'package:moksha_wallet/main.dart';
 import 'package:moksha_wallet/pages/util.dart';
 import 'package:moksha_wallet/pages/common.dart';
-import '../generated/ffi.io.dart' if (dart.library.html) '../generated/ffi.web.dart';
 
-class PayInvoicePage extends StatefulWidget {
+class PayInvoicePage extends ConsumerStatefulWidget {
   const PayInvoicePage({super.key});
 
   @override
-  State<PayInvoicePage> createState() => _PayInvoicePageState();
+  ConsumerState<PayInvoicePage> createState() => _PayInvoicePageState();
 }
 
-class _PayInvoicePageState extends State<PayInvoicePage> {
+class _PayInvoicePageState extends ConsumerState<PayInvoicePage> {
   String invoice = '';
   FlutterInvoice? decodedInvoice;
   MintType? selectedMintType = MintType.cashu;
@@ -72,8 +73,10 @@ class _PayInvoicePageState extends State<PayInvoicePage> {
                   var paid = false;
                   if (selectedMintType == MintType.cashu) {
                     paid = await api.cashuPayInvoice(invoice: invoice).first;
+                    updateCashuBalance(ref);
                   } else if (selectedMintType == MintType.fedimint) {
                     paid = await api.fedimintPayInvoice(invoice: invoice).first;
+                    updateFedimintBalance(ref);
                   } else {
                     throw Exception("Unknown mint type");
                   }

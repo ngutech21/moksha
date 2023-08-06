@@ -281,7 +281,6 @@ pub fn cashu_pay_invoice(sink: StreamSink<bool>, invoice: String) -> anyhow::Res
 fn cashu_receive_token(sink: StreamSink<u64>, token: String) -> anyhow::Result<()> {
     let deserialized_token = token.try_into().map_err(anyhow::Error::from)?;
 
-    info!("deserialized_token: {:?}", deserialized_token);
     block_on(async move {
         let wallet = local_wallet().await.unwrap();
         let _ = wallet.receive_tokens(&deserialized_token).await;
