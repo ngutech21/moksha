@@ -22,8 +22,8 @@ pub fn wire_get_cashu_mint_payment_request(port_: MessagePort, amount: u64) {
 }
 
 #[wasm_bindgen]
-pub fn wire_decode_invoice(port_: MessagePort, invoice: String) {
-    wire_decode_invoice_impl(port_, invoice)
+pub fn wire_decode_invoice(invoice: String) -> support::WireSyncReturn {
+    wire_decode_invoice_impl(invoice)
 }
 
 #[wasm_bindgen]

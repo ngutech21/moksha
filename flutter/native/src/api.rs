@@ -1,4 +1,4 @@
-use flutter_rust_bridge::StreamSink;
+use flutter_rust_bridge::{StreamSink, SyncReturn};
 use lightning_invoice::Invoice;
 use moksha_core::model::PaymentRequest;
 use moksha_fedimint::FedimintWallet;
@@ -222,10 +222,9 @@ pub fn get_cashu_mint_payment_request(
     Ok(())
 }
 
-// FIXME turn into sync function
-pub fn decode_invoice(invoice: String) -> anyhow::Result<FlutterInvoice> {
+pub fn decode_invoice(invoice: String) -> anyhow::Result<SyncReturn<FlutterInvoice>> {
     let invoice = Invoice::from_str(&invoice).map_err(anyhow::Error::from)?;
-    Ok(invoice.into())
+    Ok(SyncReturn(invoice.into()))
 }
 
 #[derive(Debug, Clone)]

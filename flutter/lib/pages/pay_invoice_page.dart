@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:moksha_wallet/generated/bridge_definitions.dart';
 import 'package:moksha_wallet/pages/util.dart';
 import 'package:moksha_wallet/pages/common.dart';
-import '../generated/ffi.io.dart'
-    if (dart.library.html) '../generated/ffi.web.dart';
+import '../generated/ffi.io.dart' if (dart.library.html) '../generated/ffi.web.dart';
 
 class PayInvoicePage extends StatefulWidget {
   const PayInvoicePage({super.key});
@@ -32,7 +31,7 @@ class _PayInvoicePageState extends State<PayInvoicePage> {
             autofocus: true,
             onChanged: (value) async {
               try {
-                var decoded = await api.decodeInvoice(invoice: value);
+                var decoded = api.decodeInvoice(invoice: value);
                 setState(() {
                   invoice = value;
                   decodedInvoice = decoded;
@@ -48,19 +47,15 @@ class _PayInvoicePageState extends State<PayInvoicePage> {
             ),
           ),
           Visibility(
-              visible: invoice.isNotEmpty,
-              child: Text(
-                  "Amount: ${decodedInvoice?.amountSats} (sats)\nExpires in: ${decodedInvoice?.expiryTime} (seconds)")),
+              visible: invoice.isNotEmpty, child: Text("Amount: ${decodedInvoice?.amountSats} (sats)\nExpires in: ${decodedInvoice?.expiryTime} (seconds)")),
           const Spacer(),
           Visibility(
               visible: invoice.isNotEmpty,
               child: DropdownButton<MintType>(
                   value: selectedMintType,
                   items: const [
-                    DropdownMenuItem(
-                        value: MintType.cashu, child: Text("Cashu")),
-                    DropdownMenuItem(
-                        value: MintType.fedimint, child: Text("Fedimint"))
+                    DropdownMenuItem(value: MintType.cashu, child: Text("Cashu")),
+                    DropdownMenuItem(value: MintType.fedimint, child: Text("Fedimint"))
                   ],
                   onChanged: (value) {
                     setState(() {
@@ -85,12 +80,7 @@ class _PayInvoicePageState extends State<PayInvoicePage> {
 
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Column(children: [
-                      paid
-                          ? const Text(
-                              'Invoice has been paid: Tokens melted successfully')
-                          : const Text('Error paying invoice')
-                    ]),
+                    content: Column(children: [paid ? const Text('Invoice has been paid: Tokens melted successfully') : const Text('Error paying invoice')]),
                     showCloseIcon: true,
                   ));
                 } catch (e) {

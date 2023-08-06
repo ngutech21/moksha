@@ -83,16 +83,18 @@ fn wire_get_cashu_mint_payment_request_impl(
         },
     )
 }
-fn wire_decode_invoice_impl(port_: MessagePort, invoice: impl Wire2Api<String> + UnwindSafe) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap::<_, _, _, FlutterInvoice>(
+fn wire_decode_invoice_impl(
+    invoice: impl Wire2Api<String> + UnwindSafe,
+) -> support::WireSyncReturn {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync(
         WrapInfo {
             debug_name: "decode_invoice",
-            port: Some(port_),
-            mode: FfiCallMode::Normal,
+            port: None,
+            mode: FfiCallMode::Sync,
         },
         move || {
             let api_invoice = invoice.wire2api();
-            move |task_callback| decode_invoice(api_invoice)
+            decode_invoice(api_invoice)
         },
     )
 }

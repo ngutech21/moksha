@@ -55,7 +55,7 @@ class NativeWasmModule implements WasmModule {
 
   external dynamic /* void */ wire_get_cashu_mint_payment_request(NativePortType port_, Object amount);
 
-  external dynamic /* void */ wire_decode_invoice(NativePortType port_, String invoice);
+  external dynamic /* List<dynamic> */ wire_decode_invoice(String invoice);
 
   external dynamic /* void */ wire_cashu_pay_invoice(NativePortType port_, String invoice);
 
@@ -89,7 +89,7 @@ class NativeWire extends FlutterRustBridgeWasmWireBase<NativeWasmModule> {
   void wire_get_cashu_mint_payment_request(NativePortType port_, Object amount) =>
       wasmModule.wire_get_cashu_mint_payment_request(port_, amount);
 
-  void wire_decode_invoice(NativePortType port_, String invoice) => wasmModule.wire_decode_invoice(port_, invoice);
+  dynamic /* List<dynamic> */ wire_decode_invoice(String invoice) => wasmModule.wire_decode_invoice(invoice);
 
   void wire_cashu_pay_invoice(NativePortType port_, String invoice) =>
       wasmModule.wire_cashu_pay_invoice(port_, invoice);

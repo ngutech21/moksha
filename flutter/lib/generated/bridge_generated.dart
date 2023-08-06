@@ -81,10 +81,10 @@ class NativeImpl implements Native {
         argNames: ["amount"],
       );
 
-  Future<FlutterInvoice> decodeInvoice({required String invoice, dynamic hint}) {
+  FlutterInvoice decodeInvoice({required String invoice, dynamic hint}) {
     var arg0 = _platform.api2wire_String(invoice);
-    return _platform.executeNormal(FlutterRustBridgeTask(
-      callFfi: (port_) => _platform.inner.wire_decode_invoice(port_, arg0),
+    return _platform.executeSync(FlutterRustBridgeSyncTask(
+      callFfi: () => _platform.inner.wire_decode_invoice(arg0),
       parseSuccessData: _wire2api_flutter_invoice,
       constMeta: kDecodeInvoiceConstMeta,
       argValues: [invoice],

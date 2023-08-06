@@ -22,8 +22,8 @@ pub extern "C" fn wire_get_cashu_mint_payment_request(port_: i64, amount: u64) {
 }
 
 #[no_mangle]
-pub extern "C" fn wire_decode_invoice(port_: i64, invoice: *mut wire_uint_8_list) {
-    wire_decode_invoice_impl(port_, invoice)
+pub extern "C" fn wire_decode_invoice(invoice: *mut wire_uint_8_list) -> support::WireSyncReturn {
+    wire_decode_invoice_impl(invoice)
 }
 
 #[no_mangle]

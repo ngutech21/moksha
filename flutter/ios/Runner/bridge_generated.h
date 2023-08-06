@@ -34,7 +34,7 @@ void wire_cashu_mint_tokens(int64_t port_, uint64_t amount, struct wire_uint_8_l
 
 void wire_get_cashu_mint_payment_request(int64_t port_, uint64_t amount);
 
-void wire_decode_invoice(int64_t port_, struct wire_uint_8_list *invoice);
+WireSyncReturn wire_decode_invoice(struct wire_uint_8_list *invoice);
 
 void wire_cashu_pay_invoice(int64_t port_, struct wire_uint_8_list *invoice);
 

@@ -27,7 +27,7 @@ abstract class Native {
 
   FlutterRustBridgeTaskConstMeta get kGetCashuMintPaymentRequestConstMeta;
 
-  Future<FlutterInvoice> decodeInvoice({required String invoice, dynamic hint});
+  FlutterInvoice decodeInvoice({required String invoice, dynamic hint});
 
   FlutterRustBridgeTaskConstMeta get kDecodeInvoiceConstMeta;
 
