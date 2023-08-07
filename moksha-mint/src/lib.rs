@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::convert::Infallible;
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::extract::{Query, State};
@@ -124,11 +125,10 @@ impl MintBuilder {
     }
 }
 
-pub async fn run_server(mint: Mint, port: u16) -> anyhow::Result<()> {
+pub async fn run_server(mint: Mint, addr: SocketAddr) -> anyhow::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .init();
-    let addr = format!("[::]:{port}").parse()?;
     info!("listening on: {}", addr);
     info!("mint_info: {:?}", mint.mint_info);
     info!("lightning_backend: {}", mint.lightning_type);

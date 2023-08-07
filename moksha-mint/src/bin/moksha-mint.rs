@@ -3,7 +3,7 @@ use mokshamint::{
     lightning::{LightningType, LnbitsLightningSettings, LndLightningSettings},
     MintBuilder,
 };
-use std::{env, fmt};
+use std::{env, fmt, net::SocketAddr};
 
 #[tokio::main]
 pub async fn main() -> anyhow::Result<()> {
@@ -20,6 +20,10 @@ pub async fn main() -> anyhow::Result<()> {
             Err(e) => panic!("Could not load .env file: {e}"),
         };
     }
+
+    let host_port: SocketAddr = env::var("MINT_HOST_PORT")
+        .unwrap_or_else(|_| "[::]:3338".to_string())
+        .parse()?;
 
     let ln_backend = get_env("MINT_LIGHTNING_BACKEND");
     let ln_type = match ln_backend.as_str() {
@@ -56,7 +60,7 @@ pub async fn main() -> anyhow::Result<()> {
         .build()
         .await;
 
-    mokshamint::run_server(mint?, 3338).await
+    mokshamint::run_server(mint?, host_port).await
 }
 
 #[derive(Debug, PartialEq)]

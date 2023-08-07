@@ -40,7 +40,7 @@ pub fn test_integration() -> anyhow::Result<()> {
 
             let result = mokshamint::run_server(
                 mint.await.expect("Can not connect to lightning backend"),
-                8686,
+                "127.0.0.1:8686".parse().expect("invalid address"),
             )
             .await;
             drop(tmp);
