@@ -341,7 +341,10 @@ pub fn fedimint_mint_tokens(
         let workdir = fedimint_workdir();
         let wallet = FedimintWallet::new(workdir).await.unwrap();
 
-        wallet.mint(operation_id).await;
+        wallet
+            .mint(operation_id)
+            .await
+            .expect("Failed to mint tokens");
         sink.add(amount);
         sink.close();
     });
@@ -447,10 +450,9 @@ mod tests {
 
         std::env::set_var(config_path::ENV_DB_PATH, format!("{}/wallet.db", tmp_dir));
         let _ = init_cashu()?;
-        //let sink = StreamSink::new(Rust2Dart::new(0));
-        // let result = get_cashu_balance(sink);
-        // assert!(result.is_ok());
-        // FIXME
+        let sink: StreamSink<u64> = StreamSink::new(Rust2Dart::new(0));
+        let result = get_cashu_balance(sink);
+        assert!(result.is_ok());
         Ok(())
     }
 }
