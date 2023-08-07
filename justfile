@@ -9,14 +9,6 @@ clean:
   cargo clean
   cd flutter && flutter clean
 
-# run the cashu-mint
-run-mint:
-  RUST_BACKTRACE=1 cargo run --bin moksha-mint
-
-# run the cli-wallet with given args
-run-cli *ARGS:
-  RUST_BACKTRACE=1 cargo run --bin moksha-cli -- -m http://127.0.0.1:3338 -d ./data/wallet  {{ARGS}} 
-
 
 # check code for typos
 [no-exit-message]
@@ -67,6 +59,15 @@ gen-flutter-bridge:
         --no-use-bridge-in-method \
         --wasm
 
+# run the cashu-mint
+run-mint:
+  RUST_BACKTRACE=1 cargo run --bin moksha-mint
+
+# run cli-wallet with the given args
+run-cli *ARGS:
+  RUST_BACKTRACE=1 cargo run --bin moksha-cli -- -m http://127.0.0.1:3338 -d ./data/wallet  {{ARGS}} 
+
+
 # run flutter desktop-app 
 run-flutter:
     cd flutter && \
@@ -79,10 +80,16 @@ run-web:
 
 
 # build flutter desktop-app
-build-flutter:
+build-desktop:
     cd flutter && \
     flutter clean && \
     flutter build {{ platform }}
+
+# build flutter web-app in flutter/build/web
+build-web:
+    cd flutter && \
+    flutter clean && \
+    flutter build web
 
 # build the mint docker-image
 build-docker:

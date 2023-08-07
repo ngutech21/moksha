@@ -152,7 +152,7 @@ flutter pub get
 ### Run flutter desktop app
 
 ```bash
-just run-flutter
+just run-desktop
 ```
 
 ### Development
@@ -161,15 +161,19 @@ To run coverage, check for typos, generate the flutter rust bridge etc. use the 
 
 ```bash
 Available recipes:
-    build-flutter      # build flutter desktop-app
+    build-desktop      # build flutter desktop-app
+    build-docker       # build the mint docker-image
+    build-wasm         # compile all rust crates, that are relevant for the client, to wasm
+    build-web          # build flutter web-app in flutter/build/web
     clean              # clean cargo and flutter
     coverage           # run coverage
     default            # list all tasks
     final-check        # format code, check typos and run tests
     gen-flutter-bridge # generate flutter-rust bridge
-    run-cli *ARGS      # run the cli-wallet with given args
+    run-cli *ARGS      # run cli-wallet with the given args
     run-flutter        # run flutter desktop-app
     run-mint           # run the cashu-mint
+    run-web            # run flutter web-app
     typos              # check code for typos
     typos-fix-all      # fix all typos
 ```

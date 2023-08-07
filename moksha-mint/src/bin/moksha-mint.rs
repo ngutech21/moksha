@@ -3,7 +3,7 @@ use mokshamint::{
     lightning::{LightningType, LnbitsLightningSettings, LndLightningSettings},
     MintBuilder,
 };
-use std::{env, fmt, net::SocketAddr};
+use std::{env, fmt, net::SocketAddr, path::PathBuf};
 
 #[tokio::main]
 pub async fn main() -> anyhow::Result<()> {
@@ -60,7 +60,13 @@ pub async fn main() -> anyhow::Result<()> {
         .build()
         .await;
 
-    mokshamint::run_server(mint?, host_port).await
+    let serve_wallet_path = env::var("MINT_SERVE_WALLET_PATH");
+    let serve_wallet_path = match serve_wallet_path {
+        Ok(value) => Some(PathBuf::from(value)),
+        Err(_) => None,
+    };
+
+    mokshamint::run_server(mint?, host_port, serve_wallet_path).await
 }
 
 #[derive(Debug, PartialEq)]

@@ -11,7 +11,6 @@ use moksha_wallet::client::Client;
 use moksha_wallet::wallet::{Wallet, WalletBuilder};
 use std::str::FromStr;
 use std::sync::Mutex as StdMutex;
-use tokio::runtime::{Builder, Runtime};
 use tracing::info;
 
 use std::sync::OnceLock;
@@ -20,14 +19,15 @@ use std::sync::OnceLock;
 use moksha_wallet::localstore::rexie::RexieLocalStore;
 
 #[cfg(not(target_arch = "wasm32"))]
-static RUNTIME: once_cell::sync::Lazy<StdMutex<Runtime>> = once_cell::sync::Lazy::new(|| {
-    StdMutex::new(
-        Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .expect("Failed to create runtime"),
-    )
-});
+static RUNTIME: once_cell::sync::Lazy<StdMutex<tokio::runtime::Runtime>> =
+    once_cell::sync::Lazy::new(|| {
+        StdMutex::new(
+            tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("Failed to create runtime"),
+        )
+    });
 
 #[cfg(target_arch = "wasm32")]
 static WALLET: OnceLock<Wallet<crate::wasm_client::WasmClient, RexieLocalStore>> = OnceLock::new();

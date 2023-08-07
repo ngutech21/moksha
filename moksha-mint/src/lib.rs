@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use axum::extract::{Query, State};
@@ -125,17 +126,27 @@ impl MintBuilder {
     }
 }
 
-pub async fn run_server(mint: Mint, addr: SocketAddr) -> anyhow::Result<()> {
+pub async fn run_server(
+    mint: Mint,
+    addr: SocketAddr,
+    serve_wallet_path: Option<PathBuf>,
+) -> anyhow::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .init();
     info!("listening on: {}", addr);
     info!("mint_info: {:?}", mint.mint_info);
     info!("lightning_backend: {}", mint.lightning_type);
+    if serve_wallet_path.is_some() {
+        info!(
+            "serving wallet from path: {:?}",
+            serve_wallet_path.clone().unwrap()
+        );
+    }
 
     axum::Server::bind(&addr)
         .serve(
-            app(mint)
+            app(mint, serve_wallet_path)
                 .layer(
                     CorsLayer::new()
                         .allow_origin(Any)
@@ -149,8 +160,8 @@ pub async fn run_server(mint: Mint, addr: SocketAddr) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn app(mint: Mint) -> Router {
-    Router::new()
+fn app(mint: Mint, serve_wallet_path: Option<PathBuf>) -> Router {
+    let router = Router::new()
         .route("/keys", get(get_keys))
         .route("/keysets", get(get_keysets))
         .route("/mint", get(get_mint).post(post_mint))
@@ -159,11 +170,12 @@ fn app(mint: Mint) -> Router {
         .route("/split", post(post_split))
         .route("/info", get(get_info))
         .with_state(mint)
-        .layer(TraceLayer::new_for_http())
-        // TODO add configuration option for this
-        .nest_service(
+        .layer(TraceLayer::new_for_http());
+
+    if let Some(serve_wallet_path) = serve_wallet_path {
+        return router.nest_service(
             "/",
-            get_service(ServeDir::new("./flutter/build/web"))
+            get_service(ServeDir::new(serve_wallet_path))
                 .layer::<_, _, Infallible>(SetResponseHeaderLayer::if_not_present(
                     HeaderName::from_static("cross-origin-embedder-policy"),
                     HeaderValue::from_static("require-corp"),
@@ -172,7 +184,9 @@ fn app(mint: Mint) -> Router {
                     HeaderName::from_static("cross-origin-opener-policy"),
                     HeaderValue::from_static("same-origin"),
                 )),
-        )
+        );
+    }
+    router
 }
 
 async fn post_split(
@@ -301,7 +315,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keys() -> anyhow::Result<()> {
-        let app = app(create_mock_mint());
+        let app = app(create_mock_mint(), None);
         let response = app
             .oneshot(Request::builder().uri("/keys").body(Body::empty())?)
             .await?;
@@ -315,7 +329,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keysets() -> anyhow::Result<()> {
-        let app = app(create_mock_mint());
+        let app = app(create_mock_mint(), None);
         let response = app
             .oneshot(Request::builder().uri("/keysets").body(Body::empty())?)
             .await?;
