@@ -38,7 +38,7 @@ final-check:
   cargo fmt --all
   just typos
   cargo test
-  just build-wasm
+  cargo check -p native  -p  moksha-core -p moksha-wallet -p moksha-fedimint --target wasm32-unknown-unknown
 
 #run coverage
 coverage:
