@@ -53,7 +53,7 @@ impl LocalStore for RexieLocalStore {
             store
                 .add(&js_value, Some(&Self::get_key(&proof)))
                 .await
-                .expect("db store eror");
+                .expect("db store error");
             transaction.done().await.expect("db error");
         }
 
