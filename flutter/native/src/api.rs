@@ -108,7 +108,8 @@ pub fn get_cashu_balance(sink: StreamSink<u64>) -> anyhow::Result<()> {
 }
 
 async fn local_wallet() -> anyhow::Result<&'static Wallet<impl Client, impl LocalStore>> {
-    let mint_url = "http://127.0.0.1:3338";
+    let mint_url = "https://mint.mutinynet.moksha.cash:3338";
+    //let mint_url = "http://127.0.0.1:3338";
 
     #[cfg(not(target_arch = "wasm32"))]
     {

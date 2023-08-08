@@ -8,6 +8,7 @@ import 'package:moksha_wallet/main.dart';
 import 'package:moksha_wallet/pages/util.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 enum MintType { cashu, fedimint }
 
@@ -130,7 +131,7 @@ class _MintWidgetState extends ConsumerState<MintWidget> {
               children: [
                 const Spacer(),
                 Visibility(
-                    visible: !_isInvoiceCreated,
+                    visible: !_isInvoiceCreated && !kIsWeb,
                     child: DropdownButton<MintType>(
                         value: selectedMintType,
                         items: const [

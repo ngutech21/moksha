@@ -119,7 +119,7 @@ class ScaffoldWithNavigationBar extends StatelessWidget {
           NavigationDestination(label: 'Mint', tooltip: '', icon: Icon(Icons.currency_bitcoin)),
           NavigationDestination(label: 'Receive', tooltip: '', icon: Icon(Icons.import_export)),
           NavigationDestination(label: 'Pay', tooltip: '', icon: Icon(Icons.bolt)),
-          NavigationDestination(label: 'Settings', tooltip: '', icon: Icon(Icons.settings)),
+          Visibility(visible: true, child: NavigationDestination(label: 'Settings', tooltip: '', icon: Icon(Icons.settings)))
         ],
         onDestinationSelected: onDestinationSelected,
       ),
