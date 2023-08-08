@@ -439,7 +439,6 @@ pub fn get_btcprice(sink: StreamSink<f64>) -> anyhow::Result<()> {
 #[cfg(not(target_arch = "wasm32"))]
 mod tests {
     use flutter_rust_bridge::{rust2dart::Rust2Dart, StreamSink};
-    use moksha_wallet::config_path;
 
     use super::{get_cashu_balance, init_cashu};
 
