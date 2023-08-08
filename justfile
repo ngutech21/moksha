@@ -1,5 +1,6 @@
 platform := if os_family() == "unix" { "macos"} else {os_family()}
 
+
 # list all tasks
 default:
   @just --list
@@ -96,10 +97,9 @@ build-web:
   just build-wasm
   cd flutter && \
   flutter clean && \
-  RUSTUP_TOOLCHAIN=nightly wasm-pack build -t no-modules -d /flutter/web/pkg --no-typescript --out-name native --dev native -- -Z build-std=std,panic_abort && \
+  RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals" RUSTUP_TOOLCHAIN=nightly wasm-pack build -t no-modules -d  $(pwd)/web/pkg --no-typescript --out-name native --dev native -- -Z build-std=std,panic_abort && \
   flutter build web --profile
-
-
+  
 
 
 # compile all rust crates, that are relevant for the client, to wasm
@@ -107,6 +107,8 @@ build-wasm:
    RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals" cargo +nightly build -p native  -p  moksha-core -p moksha-wallet -p moksha-fedimint \
    --target wasm32-unknown-unknown \
    -Z build-std=std,panic_abort
+
+
 
 
    
