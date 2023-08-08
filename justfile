@@ -98,6 +98,7 @@ build-web:
   cd flutter && \
   flutter clean && \
   RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals" RUSTUP_TOOLCHAIN=nightly wasm-pack build -t no-modules -d  $(pwd)/web/pkg --no-typescript --out-name native --dev native -- -Z build-std=std,panic_abort && \
+  wasm-opt -Oz -o $(pwd)/web/pkg/native_bg.wasm $(pwd)/web/pkg/native_bg.wasm && \
   flutter build web --profile
   
 
