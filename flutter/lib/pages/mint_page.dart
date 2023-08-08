@@ -205,7 +205,7 @@ class _MintWidgetState extends ConsumerState<MintWidget> {
 
                               if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Column(children: [Text('Minted $mintedTokens sats')]),
+                                content: Column(children: [Text('Minted ${formatSats(mintedTokens)} sats')]),
                                 showCloseIcon: true,
                               ));
                             } catch (e) {
@@ -232,7 +232,7 @@ class _MintWidgetState extends ConsumerState<MintWidget> {
 
                               if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Column(children: [Text('Minted $mintedTokens sats')]),
+                                content: Column(children: [Text('Minted ${formatSats(mintedTokens)} sats')]),
                                 showCloseIcon: true,
                               ));
                             } catch (e) {

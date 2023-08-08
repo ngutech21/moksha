@@ -48,7 +48,7 @@ class _ReceivePageState extends ConsumerState<ReceivePage> {
 
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Column(children: [Text('Imported $amountImported sats')]),
+                    content: Column(children: [Text('Imported ${formatSats(amountImported)} sats')]),
                     showCloseIcon: true,
                   ));
                 } catch (e) {

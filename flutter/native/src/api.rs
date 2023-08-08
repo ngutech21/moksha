@@ -5,12 +5,9 @@ use moksha_fedimint::FedimintWallet;
 use moksha_wallet::localstore::LocalStore;
 use std::future::Future;
 
-use moksha_wallet::config_path;
-
 use moksha_wallet::client::Client;
 use moksha_wallet::wallet::{Wallet, WalletBuilder};
 use std::str::FromStr;
-use std::sync::Mutex as StdMutex;
 use tracing::info;
 
 use std::sync::OnceLock;
@@ -19,9 +16,9 @@ use std::sync::OnceLock;
 use moksha_wallet::localstore::rexie::RexieLocalStore;
 
 #[cfg(not(target_arch = "wasm32"))]
-static RUNTIME: once_cell::sync::Lazy<StdMutex<tokio::runtime::Runtime>> =
+static RUNTIME: once_cell::sync::Lazy<std::sync::Mutex<tokio::runtime::Runtime>> =
     once_cell::sync::Lazy::new(|| {
-        StdMutex::new(
+        std::sync::Mutex::new(
             tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()
@@ -67,7 +64,7 @@ pub fn init_cashu() -> anyhow::Result<String> {
             //     .init();
             // FIXME
 
-            let db_path = config_path::db_path();
+            let db_path = moksha_wallet::config_path::db_path();
             let new_localstore =
                 moksha_wallet::localstore::sqlite::SqliteLocalStore::with_path(db_path.clone())
                     .await
@@ -114,7 +111,7 @@ async fn local_wallet() -> anyhow::Result<&'static Wallet<impl Client, impl Loca
     #[cfg(not(target_arch = "wasm32"))]
     {
         if WALLET.get().is_none() {
-            let db_path = config_path::db_path();
+            let db_path = moksha_wallet::config_path::db_path();
             let client = moksha_wallet::reqwest_client::HttpClient::new();
             let localstore =
                 moksha_wallet::localstore::sqlite::SqliteLocalStore::with_path(db_path).await?;
@@ -297,7 +294,7 @@ fn cashu_receive_token(sink: StreamSink<u64>, token: String) -> anyhow::Result<(
 fn fedimint_workdir() -> std::path::PathBuf {
     // FIXME
     #[cfg(not(target_arch = "wasm32"))]
-    return config_path::config_dir().join("fedimint");
+    return moksha_wallet::config_path::config_dir().join("fedimint");
 
     #[cfg(target_arch = "wasm32")]
     return std::path::PathBuf::from("/fedimint");
@@ -452,7 +449,10 @@ mod tests {
         let tmp = tempfile::tempdir().expect("Could not create tmp dir");
         let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
 
-        std::env::set_var(config_path::ENV_DB_PATH, format!("{}/wallet.db", tmp_dir));
+        std::env::set_var(
+            moksha_wallet::config_path::ENV_DB_PATH,
+            format!("{}/wallet.db", tmp_dir),
+        );
         let _ = init_cashu()?;
         let sink: StreamSink<u64> = StreamSink::new(Rust2Dart::new(0));
         // FIXME test calls get keysets and fails
