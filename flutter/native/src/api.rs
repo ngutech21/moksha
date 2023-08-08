@@ -108,6 +108,8 @@ pub fn get_cashu_balance(sink: StreamSink<u64>) -> anyhow::Result<()> {
 }
 
 async fn local_wallet() -> anyhow::Result<&'static Wallet<impl Client, impl LocalStore>> {
+    let mint_url = "http://127.0.0.1:3338";
+
     #[cfg(not(target_arch = "wasm32"))]
     {
         if WALLET.get().is_none() {
@@ -115,7 +117,7 @@ async fn local_wallet() -> anyhow::Result<&'static Wallet<impl Client, impl Loca
             let client = moksha_wallet::reqwest_client::HttpClient::new();
             let localstore =
                 moksha_wallet::localstore::sqlite::SqliteLocalStore::with_path(db_path).await?;
-            let mint_url = url::Url::parse("http://127.0.0.1:3338").expect("invalid url"); // FIXME redundant
+            let mint_url = url::Url::parse(mint_url).expect("invalid url"); // FIXME redundant
 
             let wallet = WalletBuilder::default()
                 .with_client(client)
@@ -133,7 +135,7 @@ async fn local_wallet() -> anyhow::Result<&'static Wallet<impl Client, impl Loca
         if WALLET.get().is_none() {
             let client = crate::wasm_client::WasmClient::new();
             let lc = RexieLocalStore::default();
-            let mint_url = url::Url::parse("http://127.0.0.1:3338").expect("invalid url"); // FIXME redundant
+            let mint_url = url::Url::parse(mint_url).expect("invalid url"); // FIXME redundant
             let wallet = WalletBuilder::default()
                 .with_client(client)
                 .with_localstore(lc)
