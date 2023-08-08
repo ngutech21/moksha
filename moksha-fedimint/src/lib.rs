@@ -200,12 +200,12 @@ impl FedimintWallet {
     async fn build_client(
         cfg: &ClientConfig,
         module_gens: &ClientModuleGenRegistry,
-        workdir: &Path,
+        _workdir: &Path,
     ) -> anyhow::Result<fedimint_client::Client> {
         let mut tg = TaskGroup::new();
 
         #[cfg(not(target_arch = "wasm32"))]
-        let db = Self::load_db(workdir).await?;
+        let db = Self::load_db(_workdir).await?;
 
         #[cfg(target_arch = "wasm32")]
         let db = fedimint_core::db::mem_impl::MemDatabase::default();
