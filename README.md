@@ -73,7 +73,7 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 
 ```bash
 git clone https://github.com/ngutech21/moksha.git
-cargo install just typos-cli sqlx-cli grcov flutter_rust_bridge_codegen
+cargo install just typos-cli sqlx-cli grcov flutter_rust_bridge_codegen wasm-pack wasm-opt
 rustup component add llvm-tools-preview
 cd moksha
 ```
@@ -171,7 +171,7 @@ Available recipes:
     final-check        # format code, check typos and run tests
     gen-flutter-bridge # generate flutter-rust bridge
     run-cli *ARGS      # run cli-wallet with the given args
-    run-flutter        # run flutter desktop-app
+    run-desktop        # run flutter desktop-app
     run-mint           # run the cashu-mint
     run-web            # run flutter web-app
     typos              # check code for typos

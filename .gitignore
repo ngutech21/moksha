@@ -6,3 +6,4 @@ data
 *.profraw
 build
 **/node_modules
+*.tgz

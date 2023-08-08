@@ -85,19 +85,28 @@ build-desktop:
     flutter clean && \
     flutter build {{ platform }}
 
-# build flutter web-app in flutter/build/web
-build-web:
-    cd flutter && \
-    flutter clean && \
-    flutter build web
 
 # build the mint docker-image
 build-docker:
     docker build -t moksha:latest .
 
 
+# build flutter web-app in flutter/build/web
+build-web:
+  just build-wasm
+  cd flutter && \
+  flutter clean && \
+  RUSTUP_TOOLCHAIN=nightly wasm-pack build -t no-modules -d /flutter/web/pkg --no-typescript --out-name native --dev native -- -Z build-std=std,panic_abort && \
+  flutter build web --profile
+
+
+
+
 # compile all rust crates, that are relevant for the client, to wasm
 build-wasm:
-   cargo build -p native  -p  moksha-core -p moksha-wallet -p moksha-fedimint --target wasm32-unknown-unknown
+   RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals" cargo +nightly build -p native  -p  moksha-core -p moksha-wallet -p moksha-fedimint \
+   --target wasm32-unknown-unknown \
+   -Z build-std=std,panic_abort
+
+
    
-    
