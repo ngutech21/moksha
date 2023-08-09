@@ -42,6 +42,7 @@ dependencies:
   fl_chart: ^0.63.0
   go_router: ^10.0.0
   async: ^2.11.0
+  mobile_scanner: ^3.4.1
 
 dev_dependencies:
   flutter_test:

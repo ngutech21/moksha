@@ -5,6 +5,7 @@ import 'package:moksha_wallet/pages/overview_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moksha_wallet/pages/pay_invoice_page.dart';
 import 'package:moksha_wallet/pages/receive_page.dart';
+import 'package:moksha_wallet/pages/scan_page.dart';
 import 'package:moksha_wallet/pages/settings_page.dart';
 import 'package:moksha_wallet/pages/util.dart';
 
@@ -27,7 +28,7 @@ final _keyReceive = GlobalKey<NavigatorState>(debugLabel: 'shellReceive');
 final _keyPay = GlobalKey<NavigatorState>(debugLabel: 'shellPay');
 final _keySettings = GlobalKey<NavigatorState>(debugLabel: 'shellSettings');
 
-final goRouter = GoRouter(initialLocation: '/home', navigatorKey: _rootNavigatorKey, debugLogDiagnostics: true, routes: [
+final goRouter = GoRouter(initialLocation: '/', navigatorKey: _rootNavigatorKey, debugLogDiagnostics: true, routes: [
   StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return ScaffoldWithNestedNavigation(navigationShell: navigationShell);
@@ -35,10 +36,17 @@ final goRouter = GoRouter(initialLocation: '/home', navigatorKey: _rootNavigator
       branches: [
         StatefulShellBranch(navigatorKey: _keyHome, routes: [
           GoRoute(
-              path: '/home',
+              path: '/',
               pageBuilder: (context, state) => const NoTransitionPage(
                     child: OverviewPage(label: 'Home'),
-                  )),
+                  ),
+              routes: [
+                GoRoute(
+                    path: 'scan',
+                    pageBuilder: (context, state) => NoTransitionPage(
+                          child: ScanPage(),
+                        )),
+              ])
         ]),
         StatefulShellBranch(navigatorKey: _keyMint, routes: [
           GoRoute(
@@ -50,16 +58,20 @@ final goRouter = GoRouter(initialLocation: '/home', navigatorKey: _rootNavigator
         StatefulShellBranch(navigatorKey: _keyReceive, routes: [
           GoRoute(
               path: '/receive',
-              pageBuilder: (context, state) => const NoTransitionPage(
-                    child: ReceivePage(),
-                  )),
+              pageBuilder: (context, state) {
+                return const NoTransitionPage(
+                  child: ReceivePage(),
+                );
+              }),
         ]),
         StatefulShellBranch(navigatorKey: _keyPay, routes: [
           GoRoute(
               path: '/pay',
-              pageBuilder: (context, state) => const NoTransitionPage(
-                    child: PayInvoicePage(),
-                  )),
+              pageBuilder: (context, state) {
+                return const NoTransitionPage(
+                  child: PayInvoicePage(),
+                );
+              }),
         ]),
         StatefulShellBranch(navigatorKey: _keySettings, routes: [
           GoRoute(

@@ -70,7 +70,7 @@ run-cli *ARGS:
 
 
 # run flutter desktop-app 
-run-flutter:
+run-desktop:
     cd flutter && \
     flutter run -d {{ platform }}
 

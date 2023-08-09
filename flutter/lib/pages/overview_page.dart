@@ -38,9 +38,9 @@ class OverviewPage extends ConsumerWidget {
                   )),
               ElevatedButton(
                   onPressed: () {
-                    context.go("/pay");
+                    context.go("/scan");
                   },
-                  child: const Text("Pay"))
+                  child: const Text("Scan"))
             ],
           ),
         ));
