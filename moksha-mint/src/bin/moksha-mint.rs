@@ -25,6 +25,11 @@ pub async fn main() -> anyhow::Result<()> {
         .unwrap_or_else(|_| "[::]:3338".to_string())
         .parse()?;
 
+    // read optional env var
+    // MINT_API_PREFIX
+
+    let api_prefix = env::var("MINT_API_PREFIX").ok();
+
     let ln_backend = get_env("MINT_LIGHTNING_BACKEND");
     let ln_type = match ln_backend.as_str() {
         "Lnbits" => {
@@ -66,7 +71,7 @@ pub async fn main() -> anyhow::Result<()> {
         Err(_) => None,
     };
 
-    mokshamint::run_server(mint?, host_port, serve_wallet_path).await
+    mokshamint::run_server(mint?, host_port, serve_wallet_path, api_prefix).await
 }
 
 #[derive(Debug, PartialEq)]

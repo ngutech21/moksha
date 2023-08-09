@@ -130,6 +130,7 @@ pub async fn run_server(
     mint: Mint,
     addr: SocketAddr,
     serve_wallet_path: Option<PathBuf>,
+    api_prefix: Option<String>,
 ) -> anyhow::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
@@ -146,7 +147,7 @@ pub async fn run_server(
 
     axum::Server::bind(&addr)
         .serve(
-            app(mint, serve_wallet_path)
+            app(mint, serve_wallet_path, api_prefix)
                 .layer(
                     CorsLayer::new()
                         .allow_origin(Any)
@@ -160,15 +161,18 @@ pub async fn run_server(
     Ok(())
 }
 
-fn app(mint: Mint, serve_wallet_path: Option<PathBuf>) -> Router {
-    let router = Router::new()
+fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -> Router {
+    let routes = Router::new()
         .route("/keys", get(get_keys))
         .route("/keysets", get(get_keysets))
         .route("/mint", get(get_mint).post(post_mint))
         .route("/checkfees", post(post_check_fees))
         .route("/melt", post(post_melt))
         .route("/split", post(post_split))
-        .route("/info", get(get_info))
+        .route("/info", get(get_info));
+
+    let router = Router::new()
+        .nest(&prefix.unwrap_or_else(|| "".to_owned()), routes)
         .with_state(mint)
         .layer(TraceLayer::new_for_http());
 
@@ -315,7 +319,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keys() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(), None);
+        let app = app(create_mock_mint(), None, None);
         let response = app
             .oneshot(Request::builder().uri("/keys").body(Body::empty())?)
             .await?;
@@ -329,7 +333,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keysets() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(), None);
+        let app = app(create_mock_mint(), None, None);
         let response = app
             .oneshot(Request::builder().uri("/keysets").body(Body::empty())?)
             .await?;

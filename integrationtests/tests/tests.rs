@@ -42,6 +42,7 @@ pub fn test_integration() -> anyhow::Result<()> {
                 mint.await.expect("Can not connect to lightning backend"),
                 "127.0.0.1:8686".parse().expect("invalid address"),
                 None,
+                None,
             )
             .await;
             drop(tmp);
