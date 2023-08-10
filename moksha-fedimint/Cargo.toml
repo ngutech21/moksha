@@ -23,7 +23,7 @@ fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", rev = "
 futures = "0.3.26"
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
-tokio = { version = "1.29.0", features = ["rt"] }
+tokio = { version = "1.30.0", features = ["rt"] }
 #futures = "0.3.26"
 fedimint-sqlite = { git = "https://github.com/fedimint/fedimint", rev = "7070b3b4d3a4ae82a17f38b4e38e932ccbfd9af9" }
 
