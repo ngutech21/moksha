@@ -8,7 +8,8 @@ import 'package:moksha_wallet/pages/util.dart';
 import 'package:moksha_wallet/pages/common.dart';
 
 class PayInvoicePage extends ConsumerStatefulWidget {
-  const PayInvoicePage({super.key});
+  final FlutterInvoice? invoice;
+  const PayInvoicePage({super.key, this.invoice});
 
   @override
   ConsumerState<PayInvoicePage> createState() => _PayInvoicePageState();
@@ -21,6 +22,11 @@ class _PayInvoicePageState extends ConsumerState<PayInvoicePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.invoice != null) {
+      invoice = widget.invoice!.pr;
+      decodedInvoice = widget.invoice;
+    }
+
     return Container(
       margin: const EdgeInsets.all(24),
       child: Center(
@@ -30,6 +36,7 @@ class _PayInvoicePageState extends ConsumerState<PayInvoicePage> {
             obscureText: false,
             maxLines: 2,
             autofocus: true,
+            controller: TextEditingController(text: invoice),
             onChanged: (value) async {
               try {
                 var decoded = api.decodeInvoice(invoice: value);

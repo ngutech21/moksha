@@ -1,12 +1,12 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:moksha_wallet/main.dart';
+import 'package:go_router/go_router.dart';
 
 class ScanPage extends StatelessWidget {
   ScanPage({super.key});
 
-  MobileScannerController cameraController = MobileScannerController();
+  final MobileScannerController cameraController = MobileScannerController();
 
   @override
   Widget build(BuildContext context) {
@@ -55,12 +55,14 @@ class ScanPage extends StatelessWidget {
         controller: cameraController,
         onDetect: (capture) {
           final List<Barcode> barcodes = capture.barcodes;
-          final Uint8List? image = capture.image;
           for (final barcode in barcodes) {
-            debugPrint('Barcode found! ${barcode.rawValue}');
+            debugPrint('Barcode found! ${barcode.rawValue} ${barcode.type}');
             print('Barcode type ${barcode.type} ${barcode.rawValue}');
-            if (barcode.type == BarcodeType.url && barcode.rawValue!.startsWith("ln")) {
+            if (barcode.type == BarcodeType.text && barcode.rawValue!.startsWith("ln")) {
+              var decodedInvoice = api.decodeInvoice(invoice: barcode.rawValue!);
+              print('decodedInvoice ${decodedInvoice.amountSats} ${decodedInvoice.expiryTime} ${decodedInvoice.pr}');
               //context.go(Uri(path: '/pay', queryParameters: {'pr': barcode.rawValue!}).toString());
+              context.goNamed("pay", extra: decodedInvoice);
             }
           }
         },

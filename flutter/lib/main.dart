@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
+import 'package:moksha_wallet/generated/bridge_definitions.dart';
 import 'package:moksha_wallet/pages/mint_page.dart';
 import 'package:moksha_wallet/pages/overview_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,9 +68,11 @@ final goRouter = GoRouter(initialLocation: '/', navigatorKey: _rootNavigatorKey,
         StatefulShellBranch(navigatorKey: _keyPay, routes: [
           GoRoute(
               path: '/pay',
+              name: 'pay',
               pageBuilder: (context, state) {
-                return const NoTransitionPage(
-                  child: PayInvoicePage(),
+                final FlutterInvoice invoice = state.extra as FlutterInvoice;
+                return NoTransitionPage(
+                  child: PayInvoicePage(invoice: invoice),
                 );
               }),
         ]),
