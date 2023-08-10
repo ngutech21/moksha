@@ -70,9 +70,8 @@ final goRouter = GoRouter(initialLocation: '/', navigatorKey: _rootNavigatorKey,
               path: '/pay',
               name: 'pay',
               pageBuilder: (context, state) {
-                final FlutterInvoice invoice = state.extra as FlutterInvoice;
                 return NoTransitionPage(
-                  child: PayInvoicePage(invoice: invoice),
+                  child: PayInvoicePage(invoice: state.extra as FlutterInvoice?),
                 );
               }),
         ]),
