@@ -126,10 +126,9 @@ class _MintWidgetState extends ConsumerState<MintWidget> {
           Container(
             margin: const EdgeInsets.all(24),
             padding: const EdgeInsets.all(24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Spacer(),
                 Visibility(
                     visible: !_isInvoiceCreated && !kIsWeb,
                     child: DropdownButton<MintType>(
@@ -153,6 +152,7 @@ class _MintWidgetState extends ConsumerState<MintWidget> {
                           children: [
                             TextField(
                               controller: _textController,
+                              autofocus: true,
                               inputFormatters: [
                                 LengthLimitingTextInputFormatter(9),
                                 FilteringTextInputFormatter.digitsOnly,
@@ -250,7 +250,6 @@ class _MintWidgetState extends ConsumerState<MintWidget> {
                           }
                         },
                         child: const Text('Mint tokens'))),
-                const Spacer(),
               ],
             ),
           ),
