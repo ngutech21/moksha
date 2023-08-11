@@ -1908,7 +1908,7 @@ dependencies = [
  "axum",
  "bitcoin_hashes 0.11.0",
  "hyper",
- "lightning 0.0.115",
+ "lightning 0.0.116",
  "lightning-invoice 0.23.0",
  "moksha-core",
  "moksha-mint",
@@ -2174,6 +2174,15 @@ name = "lightning"
 version = "0.0.115"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e009e1c0c21f66378b491bb40f548682138c63e09db6f3a05af59f8804bb9f4a"
+dependencies = [
+ "bitcoin",
+]
+
+[[package]]
+name = "lightning"
+version = "0.0.116"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "90a0f2155316f1570446a0447c993480673f840748c8ed25bbc59dfc442ac770"
 dependencies = [
  "bitcoin",
 ]
