@@ -20,8 +20,8 @@ anyhow = { version = "1.0.72", features = ["backtrace"] }
 serde = { version = "1.0.183", features = ["derive"] }
 serde_derive = "1.0.180"
 serde_json = "1.0.103"
-lightning-invoice = "0.23.0"
-lightning = "0.0.115"
+lightning-invoice = "0.24.0"
+lightning = "0.0.116"
 hyper = { version = "0.14", features = ["full"] }
 bitcoin_hashes = { version = "0.11.0", default-features = false }
 secp256k1 = { version = "0.24.0", default-features = false, features = ["recovery", "alloc", "rand"] }
