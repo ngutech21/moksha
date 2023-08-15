@@ -16,7 +16,7 @@ use crate::{
     error::MokshaWalletError,
     localstore::{LocalStore, WalletKeyset},
 };
-use lightning_invoice::Invoice as LNInvoice;
+use lightning_invoice::Bolt11Invoice as LNInvoice;
 use std::str::FromStr;
 
 #[derive(Clone)]

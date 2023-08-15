@@ -20,7 +20,7 @@ serde = "1.0.183"
 rand = "0.8.5"
 thiserror = "1.0.44"
 async-trait = "0.1.72"
-lightning-invoice = "0.23.0"
+lightning-invoice = "0.24.0"
 url = "2.4.0"
 dirs = "5.0.1"
 

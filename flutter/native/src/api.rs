@@ -1,5 +1,5 @@
 use flutter_rust_bridge::{StreamSink, SyncReturn};
-use lightning_invoice::Invoice;
+use lightning_invoice::Bolt11Invoice;
 use moksha_core::model::PaymentRequest;
 use moksha_fedimint::FedimintWallet;
 use moksha_wallet::localstore::LocalStore;
@@ -223,7 +223,7 @@ pub fn get_cashu_mint_payment_request(
 }
 
 pub fn decode_invoice(invoice: String) -> anyhow::Result<SyncReturn<FlutterInvoice>> {
-    let invoice = Invoice::from_str(&invoice).map_err(anyhow::Error::from)?;
+    let invoice = Bolt11Invoice::from_str(&invoice).map_err(anyhow::Error::from)?;
     Ok(SyncReturn(invoice.into()))
 }
 
@@ -234,8 +234,8 @@ pub struct FlutterInvoice {
     pub expiry_time: u64,
 }
 
-impl From<Invoice> for FlutterInvoice {
-    fn from(invoice: Invoice) -> Self {
+impl From<Bolt11Invoice> for FlutterInvoice {
+    fn from(invoice: Bolt11Invoice) -> Self {
         Self {
             pr: invoice.to_string(),
             amount_sats: match invoice.amount_milli_satoshis() {

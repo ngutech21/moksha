@@ -397,7 +397,7 @@ mod tests {
     #[tokio::test]
     /// melt 20 sats with 60 tokens and receive 40 tokens as change
     async fn test_melt_overpay() -> anyhow::Result<()> {
-        use lightning_invoice::Invoice as LNInvoice;
+        use lightning_invoice::Bolt11Invoice as LNInvoice;
 
         let mut lightning = MockLightning::new();
 

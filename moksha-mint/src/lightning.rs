@@ -12,7 +12,7 @@ use crate::{
     lnbits::{CreateInvoiceParams, CreateInvoiceResult, LNBitsClient, PayInvoiceResult},
 };
 
-use lightning_invoice::Invoice as LNInvoice;
+use lightning_invoice::Bolt11Invoice as LNInvoice;
 
 #[cfg(test)]
 use mockall::automock;

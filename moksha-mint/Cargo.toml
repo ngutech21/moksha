@@ -34,7 +34,7 @@ secp256k1 = { version = "0.27.0", features = ["rand", "serde"] }
 thiserror = "1.0.44"
 moksha-core = { path = "../moksha-core" }
 rocksdb = "0.21.0"
-lightning-invoice = "0.23.0"
+lightning-invoice = "0.24.0"
 reqwest = { version = "0.11.18", default-features = false, features = ["serde_json", "json", "rustls-tls-webpki-roots", "socks"] }
 url = "2.4.0"
 dotenvy = "0.15.7"

@@ -2171,15 +2171,6 @@ dependencies = [
 
 [[package]]
 name = "lightning"
-version = "0.0.115"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e009e1c0c21f66378b491bb40f548682138c63e09db6f3a05af59f8804bb9f4a"
-dependencies = [
- "bitcoin",
-]
-
-[[package]]
-name = "lightning"
 version = "0.0.116"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90a0f2155316f1570446a0447c993480673f840748c8ed25bbc59dfc442ac770"
@@ -2199,20 +2190,6 @@ dependencies = [
  "num-traits",
  "secp256k1 0.24.3",
  "serde",
-]
-
-[[package]]
-name = "lightning-invoice"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4e44b0e2822c8811470137d2339fdfe67a699b3248bb1606d1d02eb6a1e9f0a"
-dependencies = [
- "bech32",
- "bitcoin",
- "bitcoin_hashes 0.11.0",
- "lightning 0.0.115",
- "num-traits",
- "secp256k1 0.24.3",
 ]
 
 [[package]]
@@ -2438,7 +2415,7 @@ dependencies = [
  "envy",
  "hex",
  "hyper",
- "lightning-invoice 0.23.0",
+ "lightning-invoice 0.24.0",
  "mockall",
  "moksha-core",
  "reqwest",
@@ -2469,7 +2446,7 @@ dependencies = [
  "clap",
  "dirs",
  "gloo-net 0.3.1",
- "lightning-invoice 0.23.0",
+ "lightning-invoice 0.24.0",
  "moksha-core",
  "rand",
  "reqwest",
@@ -2503,7 +2480,7 @@ dependencies = [
  "gloo-net 0.3.1",
  "gloo-timers",
  "lazy_static",
- "lightning-invoice 0.23.0",
+ "lightning-invoice 0.24.0",
  "moksha-core",
  "moksha-fedimint",
  "moksha-wallet",
