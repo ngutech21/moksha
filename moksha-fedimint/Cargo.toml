@@ -11,7 +11,7 @@ path = "src/lib.rs"
 
 [dependencies]
 dotenvy = "0.15.7"
-base64 = "0.20.0"
+base64 = "0.21.2"
 anyhow = { version = "1.0.73", features = ["backtrace"] }
 serde_json = "1.0.103"
 lightning-invoice = { version = "0.21.0", features = ["serde"] }
