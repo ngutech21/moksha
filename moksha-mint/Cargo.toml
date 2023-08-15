@@ -17,7 +17,7 @@ path = "src/lib.rs"
 hex = "0.4.3"
 async-trait = "0.1.72"
 bitcoin_hashes = "0.12.0"
-anyhow = { version = "1.0.72", features = ["backtrace"] }
+anyhow = { version = "1.0.73", features = ["backtrace"] }
 axum = { version = "0.6.20", features = ["http2"] }
 
 hyper = "0.14.27"
