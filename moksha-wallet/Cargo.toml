@@ -11,7 +11,7 @@ name = "moksha_wallet"
 path = "src/lib.rs"
 
 [dependencies]
-anyhow = { version = "1.0.72", features = ["backtrace"] }
+anyhow = { version = "1.0.73", features = ["backtrace"] }
 clap = { version = "4.3.21", features = ["derive"] }
 secp256k1 = { version = "0.27.0", features = ["serde"] }
 moksha-core = { path = "../moksha-core" }
