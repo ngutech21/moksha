@@ -15,7 +15,7 @@ anyhow = { version = "1.0.73", features = ["backtrace"] }
 clap = { version = "4.3.21", features = ["derive"] }
 secp256k1 = { version = "0.27.0", features = ["serde"] }
 moksha-core = { path = "../moksha-core" }
-serde_json = "1.0.103"
+serde_json = "1.0.105"
 serde = "1.0.183"
 rand = "0.8.5"
 thiserror = "1.0.44"
