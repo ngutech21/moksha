@@ -29,4 +29,4 @@ itertools = "0.11.0"
 getrandom = { version = "0.2.8", features = ["js"] }
 
 [dev-dependencies]
-anyhow = "1.0.73"
+anyhow = "1.0.75"
