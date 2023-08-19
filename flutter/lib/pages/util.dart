@@ -3,9 +3,19 @@ import 'package:moksha_wallet/main.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void showErrorSnackBar(BuildContext context, Object e, String msg) {
+  if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
     duration: const Duration(seconds: 5),
     content: Column(children: [Text('$msg\nError:$e')]),
+    showCloseIcon: true,
+  ));
+}
+
+void showMessageSnackBar(BuildContext context, String msg) {
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    duration: const Duration(seconds: 5),
+    content: Column(children: [Text(msg)]),
     showCloseIcon: true,
   ));
 }

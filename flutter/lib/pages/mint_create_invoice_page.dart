@@ -6,14 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moksha_wallet/generated/bridge_definitions.dart';
 import 'package:moksha_wallet/main.dart';
 import 'package:moksha_wallet/pages/util.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:moksha_wallet/widgets/qr_viewer.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 enum MintType { cashu, fedimint }
 
-class MintPage extends StatelessWidget {
-  const MintPage({super.key});
+class MintCreateInvoicePage extends StatelessWidget {
+  const MintCreateInvoicePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -71,54 +70,7 @@ class _MintWidgetState extends ConsumerState<MintWidget> {
       child: Column(
         children: [
           _isInvoiceCreated
-              ? Column(
-                  children: [
-                    QrImageView(
-                      data: paymentRequest!,
-                      version: QrVersions.auto,
-                      size: 200.0,
-                      backgroundColor: Colors.white,
-                      eyeStyle: const QrEyeStyle(
-                        eyeShape: QrEyeShape.square,
-                        color: Colors.black,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      margin: const EdgeInsets.all(8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Spacer(),
-                          ElevatedButton(
-                              onPressed: () {
-                                Clipboard.setData(
-                                  ClipboardData(
-                                    text: paymentRequest!,
-                                  ),
-                                );
-
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                                  content: Column(children: [
-                                    Text('Copied invoice to clipboard'),
-                                  ]),
-                                  showCloseIcon: true,
-                                ));
-                              },
-                              child: const Text('Copy')),
-                          const SizedBox(width: 8),
-                          ElevatedButton(
-                              onPressed: () {
-                                Share.share(paymentRequest!);
-                              },
-                              child: const Text('Share')),
-                          const Spacer(),
-                        ],
-                      ),
-                    )
-                  ],
-                )
+              ? QrViewer(paymentRequest: paymentRequest)
               : const Text(
                   "Pay a lighting invoice to mint tokens",
                   style: TextStyle(fontSize: 20),
@@ -175,11 +127,7 @@ class _MintWidgetState extends ConsumerState<MintWidget> {
                     child: ElevatedButton(
                         onPressed: () async {
                           if (amount == '' || amount == '0') {
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                              content: Column(children: [Text('Amount must be greater than 0')]),
-                              showCloseIcon: true,
-                            ));
+                            showMessageSnackBar(context, 'Amount must be greater than 0');
                             return;
                           }
 
@@ -198,18 +146,13 @@ class _MintWidgetState extends ConsumerState<MintWidget> {
                               setState(() {
                                 paymentRequest = null;
                                 _isInvoiceCreated = false;
-                                amount = ''; // FIMXE clear textfield
+                                amount = ''; // FIXME clear textfield
                               });
 
                               updateCashuBalance(ref);
 
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Column(children: [Text('Minted ${formatSats(mintedTokens)} sats')]),
-                                showCloseIcon: true,
-                              ));
+                              showMessageSnackBar(context, 'Minted ${formatSats(mintedTokens)} sats');
                             } catch (e) {
-                              if (!context.mounted) return;
                               showErrorSnackBar(context, e, "Error creating invoice");
                               return;
                             }
@@ -225,27 +168,17 @@ class _MintWidgetState extends ConsumerState<MintWidget> {
                               setState(() {
                                 paymentRequest = null;
                                 _isInvoiceCreated = false;
-                                amount = ''; // FIMXE clear textfield
+                                amount = ''; // FIXME clear textfield
                               });
 
                               updateFedimintBalance(ref);
-
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Column(children: [Text('Minted ${formatSats(mintedTokens)} sats')]),
-                                showCloseIcon: true,
-                              ));
+                              showMessageSnackBar(context, 'Minted ${formatSats(mintedTokens)} sats');
                             } catch (e) {
-                              if (!context.mounted) return;
                               showErrorSnackBar(context, e, "Error creating invoice");
                               return;
                             }
                           } else {
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                              content: Column(children: [Text('Select a mint type')]),
-                              showCloseIcon: true,
-                            ));
+                            showMessageSnackBar(context, 'Select a mint type');
                             return;
                           }
                         },

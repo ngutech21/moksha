@@ -1,7 +1,8 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:moksha_wallet/generated/bridge_definitions.dart';
-import 'package:moksha_wallet/pages/mint_page.dart';
+import 'package:moksha_wallet/pages/mint_create_invoice_page.dart';
+import 'package:moksha_wallet/pages/mint_pay_invoice.dart';
 import 'package:moksha_wallet/pages/overview_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:moksha_wallet/pages/pay_invoice_page.dart';
@@ -53,8 +54,15 @@ final goRouter = GoRouter(initialLocation: '/', navigatorKey: _rootNavigatorKey,
           GoRoute(
               path: '/mint',
               pageBuilder: (context, state) => const NoTransitionPage(
-                    child: MintPage(),
-                  )),
+                    child: MintCreateInvoicePage(),
+                  ),
+              routes: [
+                GoRoute(
+                    path: '/mint_pay_invoice',
+                    pageBuilder: (context, state) => const NoTransitionPage(
+                          child: MintPayInvoice(),
+                        )),
+              ]),
         ]),
         StatefulShellBranch(navigatorKey: _keyReceive, routes: [
           GoRoute(
