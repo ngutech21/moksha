@@ -58,7 +58,7 @@ final goRouter = GoRouter(initialLocation: '/', navigatorKey: _rootNavigatorKey,
                   ),
               routes: [
                 GoRoute(
-                    path: '/mint_pay_invoice',
+                    path: 'mint_pay_invoice',
                     pageBuilder: (context, state) => const NoTransitionPage(
                           child: MintPayInvoice(),
                         )),
