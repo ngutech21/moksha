@@ -4,13 +4,12 @@ use fedimint_client::module::gen::{ClientModuleGenRegistry, IClientModuleGen};
 use fedimint_client::secret::PlainRootSecretStrategy;
 use fedimint_client::sm::OperationId;
 use fedimint_client::ClientBuilder;
-use fedimint_core::api::GlobalFederationApi;
+use fedimint_core::api::{GlobalFederationApi, InviteCode};
 use fedimint_core::config::load_from_file;
 use fedimint_core::encoding::Encodable;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
-use fedimint_core::task::TaskGroup;
 use fedimint_core::{
-    api::{IGlobalFederationApi, WsClientConnectInfo, WsFederationApi},
+    api::{IGlobalFederationApi, WsFederationApi},
     config::ClientConfig,
 };
 use fedimint_core::{Amount, TieredMulti};
@@ -46,8 +45,8 @@ impl FedimintWallet {
     }
 
     pub async fn connect(workdir: PathBuf, connect: &str) -> anyhow::Result<()> {
-        let connect_obj: WsClientConnectInfo = WsClientConnectInfo::from_str(connect)?;
-        let api = Arc::new(WsFederationApi::from_connect_info(&[connect_obj.clone()]))
+        let connect_obj = InviteCode::from_str(connect)?;
+        let api = Arc::new(WsFederationApi::from_invite_code(&[connect_obj.clone()]))
             as Arc<dyn IGlobalFederationApi + Send + Sync + 'static>;
         let cfg: ClientConfig = api.download_client_config(&connect_obj).await?;
         create_dir_all(workdir.clone())?;
@@ -202,10 +201,8 @@ impl FedimintWallet {
         module_gens: &ClientModuleGenRegistry,
         _workdir: &Path,
     ) -> anyhow::Result<fedimint_client::Client> {
-        let mut tg = TaskGroup::new();
-
         #[cfg(not(target_arch = "wasm32"))]
-        let db = Self::load_db(_workdir).await?;
+        let db = Self::load_db(_workdir)?;
 
         #[cfg(target_arch = "wasm32")]
         let db = fedimint_core::db::mem_impl::MemDatabase::default();
@@ -216,17 +213,13 @@ impl FedimintWallet {
         client_builder.with_primary_module(1);
         client_builder.with_config(cfg.clone());
         client_builder.with_database(db);
-        client_builder
-            .build::<PlainRootSecretStrategy>(&mut tg)
-            .await
+        client_builder.build::<PlainRootSecretStrategy>().await
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    async fn load_db(workdir: &Path) -> anyhow::Result<fedimint_sqlite::SqliteDb> {
+    fn load_db(workdir: &Path) -> anyhow::Result<fedimint_rocksdb::RocksDb> {
         let db_path = workdir.join("client.db");
-        fedimint_sqlite::SqliteDb::open(db_path.to_str().unwrap())
-            .await
-            .map_err(anyhow::Error::new)
+        fedimint_rocksdb::RocksDb::open(db_path.to_str().unwrap()).map_err(anyhow::Error::new)
     }
 
     fn load_decoders(

@@ -15,17 +15,16 @@ base64 = "0.20.0"
 anyhow = { version = "1.0.75", features = ["backtrace"] }
 serde_json = "1.0.105"
 lightning-invoice = { version = "0.21.0", features = ["serde"] }
-fedimint-client = { git = "https://github.com/fedimint/fedimint", rev = "7070b3b4d3a4ae82a17f38b4e38e932ccbfd9af9" }
-fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "7070b3b4d3a4ae82a17f38b4e38e932ccbfd9af9" }
-fedimint-mint-client = { git = "https://github.com/fedimint/fedimint", rev = "7070b3b4d3a4ae82a17f38b4e38e932ccbfd9af9" }
-fedimint-ln-client = { git = "https://github.com/fedimint/fedimint", rev = "7070b3b4d3a4ae82a17f38b4e38e932ccbfd9af9" }
-fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", rev = "7070b3b4d3a4ae82a17f38b4e38e932ccbfd9af9" }
+fedimint-client = { git = "https://github.com/fedimint/fedimint", rev = "6d833d0a85db07245c627d9bbab0757e41043eb2" }
+fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "6d833d0a85db07245c627d9bbab0757e41043eb2" }
+fedimint-mint-client = { git = "https://github.com/fedimint/fedimint", rev = "6d833d0a85db07245c627d9bbab0757e41043eb2" }
+fedimint-ln-client = { git = "https://github.com/fedimint/fedimint", rev = "6d833d0a85db07245c627d9bbab0757e41043eb2" }
+fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", rev = "6d833d0a85db07245c627d9bbab0757e41043eb2" }
 futures = "0.3.26"
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
 tokio = { version = "1.30.0", features = ["rt"] }
-#futures = "0.3.26"
-fedimint-sqlite = { git = "https://github.com/fedimint/fedimint", rev = "7070b3b4d3a4ae82a17f38b4e38e932ccbfd9af9" }
+fedimint-rocksdb = { git = "https://github.com/fedimint/fedimint", rev = "6d833d0a85db07245c627d9bbab0757e41043eb2" }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 wasm-bindgen-futures = "0.4.37"
@@ -33,4 +32,4 @@ wasm-bindgen-futures = "0.4.37"
 # on wasm, we need to enable the js backend
 # see https://docs.rs/getrandom/latest/getrandom/#indirect-dependencies and https://docs.rs/getrandom/latest/getrandom/#webassembly-support
 getrandom = { version = "0.2.10", features = ["js"] }
-ring = { version = "0.16.20", features = ["wasm32_unknown_unknown_js"] }
+ring = { version = "0.16.20", features = ["wasm32_unknown_unknown_js", "wasm32_c"] }
