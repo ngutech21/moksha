@@ -16,5 +16,6 @@ jobs:
         with:
           flutter-version: 3.13.0
           channel: "stable"
+          architecture: x64
       - working-directory: "flutter"
         run: flutter build macos
