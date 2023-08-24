@@ -62,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
     let localstore = SqliteLocalStore::with_path(db_path.clone()).await?;
     localstore.migrate().await;
 
-    let client = moksha_wallet::reqwest_client::HttpClient::new();
+    let client = moksha_wallet::client::reqwest::HttpClient::new();
 
     let wallet = moksha_wallet::wallet::WalletBuilder::default()
         .with_client(client)

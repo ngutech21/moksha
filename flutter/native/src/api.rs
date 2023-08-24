@@ -32,7 +32,7 @@ static WALLET: OnceLock<Wallet<crate::wasm_client::WasmClient, RexieLocalStore>>
 #[cfg(not(target_arch = "wasm32"))]
 static WALLET: OnceLock<
     Wallet<
-        moksha_wallet::reqwest_client::HttpClient,
+        moksha_wallet::client::reqwest::HttpClient,
         moksha_wallet::localstore::sqlite::SqliteLocalStore,
     >,
 > = OnceLock::new();
@@ -112,7 +112,7 @@ async fn local_wallet() -> anyhow::Result<&'static Wallet<impl Client, impl Loca
     {
         if WALLET.get().is_none() {
             let db_path = moksha_wallet::config_path::db_path();
-            let client = moksha_wallet::reqwest_client::HttpClient::new();
+            let client = moksha_wallet::client::reqwest::HttpClient::new();
             let localstore =
                 moksha_wallet::localstore::sqlite::SqliteLocalStore::with_path(db_path).await?;
             let mint_url = url::Url::parse(mint_url).expect("invalid url"); // FIXME redundant

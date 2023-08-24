@@ -10,6 +10,9 @@ use url::Url;
 
 use crate::error::MokshaWalletError;
 
+#[cfg(not(target_arch = "wasm32"))]
+pub mod reqwest;
+
 #[async_trait(?Send)]
 pub trait Client {
     async fn post_split_tokens(
