@@ -457,6 +457,7 @@ mod tests {
         PostMintResponse, PostSplitResponse, Proofs, Token, TokenV3,
     };
     use secp256k1::PublicKey;
+    use serde::de;
     use std::collections::HashMap;
     use url::Url;
 
@@ -622,9 +623,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_mint_tokens() -> anyhow::Result<()> {
-        let raw_response = read_fixture("post_mint_response_20.json")?;
-        let mint_response = serde_json::from_str::<PostMintResponse>(&raw_response)?;
-
+        let mint_response = read_fixture_as::<PostMintResponse>("post_mint_response_20.json")?;
         let client = MockClient::with_mint_response(mint_response);
         let localstore = MockLocalStore::default();
         let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
@@ -646,9 +645,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_split() -> anyhow::Result<()> {
-        let raw_response = read_fixture("post_split_response_24_40.json")?;
-        let split_response = serde_json::from_str::<PostSplitResponse>(&raw_response)?;
-
+        let split_response =
+            read_fixture_as::<PostSplitResponse>("post_split_response_24_40.json")?;
         let client = MockClient::with_split_response(split_response);
         let localstore = MockLocalStore::default();
 
@@ -656,7 +654,7 @@ mod tests {
         let wallet = WalletBuilder::new()
             .with_client(client)
             .with_localstore(localstore)
-            .with_mint_url(mint_url.clone())
+            .with_mint_url(mint_url)
             .build()
             .await?;
 
@@ -676,7 +674,7 @@ mod tests {
         let wallet = WalletBuilder::new()
             .with_client(MockClient::default())
             .with_localstore(local_store)
-            .with_mint_url(mint_url.clone())
+            .with_mint_url(mint_url)
             .build()
             .await?;
 
@@ -690,16 +688,14 @@ mod tests {
         let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
         let local_store = MockLocalStore::with_tokens(fixture.try_into()?);
 
-        let melt_response = read_fixture("post_melt_response_21.json")?; // 60 tokens (4,8,16,32)
-        let mock_client = MockClient::with_melt_response(serde_json::from_str::<PostMeltResponse>(
-            &melt_response,
-        )?);
+        let melt_response = read_fixture_as::<PostMeltResponse>("post_melt_response_21.json")?; // 60 tokens (4,8,16,32)
+        let mock_client = MockClient::with_melt_response(melt_response);
 
         let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
         let wallet = WalletBuilder::new()
             .with_client(mock_client)
             .with_localstore(local_store)
-            .with_mint_url(mint_url.clone())
+            .with_mint_url(mint_url)
             .build()
             .await?;
 
@@ -715,5 +711,12 @@ mod tests {
         let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{name}"))?;
         Ok(raw_token.trim().to_string())
+    }
+
+    fn read_fixture_as<T>(name: &str) -> anyhow::Result<T>
+    where
+        T: de::DeserializeOwned,
+    {
+        Ok(serde_json::from_str::<T>(&read_fixture(name)?)?)
     }
 }
