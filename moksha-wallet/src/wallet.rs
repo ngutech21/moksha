@@ -36,7 +36,7 @@ pub struct WalletBuilder<C: Client, L: LocalStore> {
 }
 
 impl<C: Client, L: LocalStore> WalletBuilder<C, L> {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             client: None,
             localstore: None,
@@ -445,7 +445,7 @@ fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, SecretKey)>) -> Vec<Bl
 
 #[cfg(test)]
 mod tests {
-    use super::Wallet;
+    use crate::wallet::WalletBuilder;
     use crate::{
         client::Client,
         error::MokshaWalletError,
@@ -504,11 +504,24 @@ mod tests {
         }
 
         async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
-            unimplemented!()
+            Ok(vec![])
         }
 
         async fn add_keyset(&self, _keyset: &WalletKeyset) -> Result<(), MokshaWalletError> {
-            unimplemented!()
+            Ok(())
+        }
+    }
+
+    #[derive(Clone)]
+    struct MockKeys {
+        mint_keyset: MintKeyset,
+    }
+
+    impl Default for MockKeys {
+        fn default() -> Self {
+            Self {
+                mint_keyset: MintKeyset::new("mysecret".to_string(), "".to_string()),
+            }
         }
     }
 
@@ -517,6 +530,7 @@ mod tests {
         split_response: PostSplitResponse,
         post_mint_response: PostMintResponse,
         post_melt_response: PostMeltResponse,
+        keyset: MockKeys,
     }
 
     impl MockClient {
@@ -586,11 +600,15 @@ mod tests {
             &self,
             _mint_url: &Url,
         ) -> Result<HashMap<u64, PublicKey>, MokshaWalletError> {
-            unimplemented!()
+            Ok(self.keyset.mint_keyset.public_keys.clone())
         }
 
         async fn get_mint_keysets(&self, _mint_url: &Url) -> Result<Keysets, MokshaWalletError> {
-            unimplemented!()
+            Ok(Keysets::new(vec![self
+                .keyset
+                .mint_keyset
+                .keyset_id
+                .clone()]))
         }
 
         async fn get_mint_payment_request(
@@ -611,15 +629,12 @@ mod tests {
         let localstore = MockLocalStore::default();
         let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
 
-        let mint_keyset = MintKeyset::new("superprivatesecretkey".to_string(), "".to_string());
-        // FIXME use WalletBuilder
-        let wallet = Wallet::new(
-            client,
-            mint_keyset.public_keys,
-            Keysets::new(vec![mint_keyset.keyset_id]),
-            localstore,
-            mint_url.clone(),
-        );
+        let wallet = WalletBuilder::new()
+            .with_client(client)
+            .with_localstore(localstore)
+            .with_mint_url(mint_url.clone())
+            .build()
+            .await?;
 
         let result = wallet.mint_tokens(20.into(), "hash".to_string()).await?;
         assert_eq!(20, result.total_amount());
@@ -637,15 +652,13 @@ mod tests {
         let client = MockClient::with_split_response(split_response);
         let localstore = MockLocalStore::default();
 
-        let mint_keyset = MintKeyset::new("mysecret".to_string(), "".to_string());
-        // FIXME use WalletBuilder
-        let wallet = Wallet::new(
-            client,
-            mint_keyset.public_keys,
-            Keysets::new(vec![mint_keyset.keyset_id]),
-            localstore,
-            Url::parse("http://localhost:8080").expect("invalid url"),
-        );
+        let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
+        let wallet = WalletBuilder::new()
+            .with_client(client)
+            .with_localstore(localstore)
+            .with_mint_url(mint_url.clone())
+            .build()
+            .await?;
 
         let tokens = read_fixture("token_64.cashu")?.try_into()?;
         let result = wallet.split_tokens(&tokens, 20.into()).await?;
@@ -659,13 +672,13 @@ mod tests {
         let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
         let local_store = MockLocalStore::with_tokens(fixture.try_into()?);
 
-        let wallet = Wallet::new(
-            MockClient::default(),
-            HashMap::new(),
-            Keysets::new(vec!["foo".to_string()]),
-            local_store,
-            Url::parse("http://localhost:8080").expect("invalid url"),
-        );
+        let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
+        let wallet = WalletBuilder::new()
+            .with_client(MockClient::default())
+            .with_localstore(local_store)
+            .with_mint_url(mint_url.clone())
+            .build()
+            .await?;
 
         let result = wallet.get_balance().await?;
         assert_eq!(60, result);
@@ -682,15 +695,13 @@ mod tests {
             &melt_response,
         )?);
 
-        let mint_keyset = MintKeyset::new("mysecret".to_string(), "".to_string());
-        // FIXME use WalletBuilder
-        let wallet = Wallet::new(
-            mock_client,
-            mint_keyset.public_keys,
-            Keysets::new(vec![mint_keyset.keyset_id]),
-            local_store,
-            Url::parse("http://localhost:8080").expect("invalid url"),
-        );
+        let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
+        let wallet = WalletBuilder::new()
+            .with_client(mock_client)
+            .with_localstore(local_store)
+            .with_mint_url(mint_url.clone())
+            .build()
+            .await?;
 
         // 21 sats
         let invoice = "lnbcrt210n1pjg6mqhpp5pza5wzh0csjjuvfpjpv4zdjmg30vedj9ycv5tyfes9x7dp8axy0sdqqcqzzsxqyz5vqsp5vtxg4c5tw2s2zxxya2a7an0psn9mcfmlqctxzntm3sngnpyk3muq9qyyssqf8z5f90yu3wrmsufnnza25qjlnvc6ukdr094ckzn63ktcy6z5fw5mxf9skndpg2p4648gfjfvvx4qg2lqvlryyycg5k7x9h4dw70t4qq37pegm".to_string();
