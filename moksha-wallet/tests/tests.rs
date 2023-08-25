@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
+use moksha_core::fixture::{read_fixture, read_fixture_as};
 use moksha_core::model::{
     BlindedMessage, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest, PostMeltResponse,
     PostMintResponse, PostSplitResponse, Proofs, TokenV3,
@@ -117,14 +118,14 @@ async fn test_pay_invoice_can_not_melt() -> anyhow::Result<()> {
     localstore.add_proofs(&tokens.proofs()).await?;
     assert_eq!(64, localstore.get_proofs().await?.total_amount());
 
-    let melt_response = read_fixture("post_melt_response_not_paid.json")?;
-    let split_response = read_fixture("post_split_response_24_40.json")?;
+    let melt_response = read_fixture_as::<PostMeltResponse>("post_melt_response_not_paid.json")?;
+    let split_response = read_fixture_as::<PostSplitResponse>("post_split_response_24_40.json")?;
     let mint_keyset = MintKeyset::new("mysecret".to_string(), "".to_string());
     let keysets = Keysets::new(vec![mint_keyset.keyset_id]);
 
     let mock_client = MockClient::with(
-        serde_json::from_str::<PostMeltResponse>(&melt_response)?,
-        serde_json::from_str::<PostSplitResponse>(&split_response)?,
+        melt_response,
+        split_response,
         mint_keyset.public_keys,
         keysets,
     );
@@ -144,10 +145,4 @@ async fn test_pay_invoice_can_not_melt() -> anyhow::Result<()> {
     assert_eq!(64, localstore.get_proofs().await?.total_amount());
     assert!(!result.paid);
     Ok(())
-}
-
-fn read_fixture(name: &str) -> anyhow::Result<String> {
-    let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
-    let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{name}"))?;
-    Ok(raw_token.trim().to_string())
 }

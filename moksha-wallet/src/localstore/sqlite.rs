@@ -137,7 +137,7 @@ impl SqliteLocalStore {
 mod tests {
     use std::sync::Arc;
 
-    use moksha_core::model::TokenV3;
+    use moksha_core::{fixture::read_fixture, model::TokenV3};
 
     use super::SqliteLocalStore;
     use crate::localstore::LocalStore;
@@ -151,7 +151,10 @@ mod tests {
         db.migrate().await;
 
         let tx = db.start_transaction().await?;
-        let tokens = read_fixture("token_60.cashu")?;
+        let tokens: TokenV3 = read_fixture("token_60.cashu")?
+            .trim()
+            .to_string()
+            .try_into()?;
         let store: Arc<dyn LocalStore> = Arc::new(db.clone());
         store.add_proofs(&tokens.proofs()).await?;
         db.commit_transaction(tx).await?;
@@ -170,7 +173,10 @@ mod tests {
             Arc::new(SqliteLocalStore::with_path(format!("{tmp_dir}/test_wallet.db")).await?);
         localstore.migrate().await;
 
-        let tokens = read_fixture("token_60.cashu")?;
+        let tokens: TokenV3 = read_fixture("token_60.cashu")?
+            .trim()
+            .to_string()
+            .try_into()?;
         localstore.add_proofs(&tokens.proofs()).await?;
 
         let loaded_tokens = localstore.get_proofs().await?;
@@ -192,12 +198,5 @@ mod tests {
         assert_eq!(56, result_tokens.total_amount());
 
         Ok(())
-    }
-
-    // FIXME move all helper functions to a separate file
-    fn read_fixture(name: &str) -> anyhow::Result<TokenV3> {
-        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
-        let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{name}"))?;
-        Ok(raw_token.trim().to_string().try_into()?)
     }
 }

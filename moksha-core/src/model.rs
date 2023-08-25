@@ -442,6 +442,7 @@ pub struct CashuErrorResponse {
 mod tests {
     use crate::{
         dhke,
+        fixture::read_fixture,
         model::{PostSplitResponse, Proof, Proofs, SplitAmount, Token, TokenV3},
     };
     use serde_json::{json, Value};
@@ -591,11 +592,5 @@ mod tests {
         assert_eq!(tokens.memo, Some("Thankyou.".to_string()),);
         assert_eq!(tokens.tokens.len(), 1);
         Ok(())
-    }
-
-    fn read_fixture(name: &str) -> anyhow::Result<String> {
-        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
-        let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{name}"))?;
-        Ok(raw_token.trim().to_string())
     }
 }

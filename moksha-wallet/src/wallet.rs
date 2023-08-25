@@ -452,12 +452,12 @@ mod tests {
         localstore::{LocalStore, WalletKeyset},
     };
     use async_trait::async_trait;
+    use moksha_core::fixture::{read_fixture, read_fixture_as};
     use moksha_core::model::{
         BlindedMessage, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest, PostMeltResponse,
         PostMintResponse, PostSplitResponse, Proofs, Token, TokenV3,
     };
     use secp256k1::PublicKey;
-    use serde::de;
     use std::collections::HashMap;
     use url::Url;
 
@@ -705,18 +705,5 @@ mod tests {
         let result = wallet.pay_invoice(invoice).await?;
         assert!(result.paid);
         Ok(())
-    }
-
-    fn read_fixture(name: &str) -> anyhow::Result<String> {
-        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
-        let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{name}"))?;
-        Ok(raw_token.trim().to_string())
-    }
-
-    fn read_fixture_as<T>(name: &str) -> anyhow::Result<T>
-    where
-        T: de::DeserializeOwned,
-    {
-        Ok(serde_json::from_str::<T>(&read_fixture(name)?)?)
     }
 }
