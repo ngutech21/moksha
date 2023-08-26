@@ -14,7 +14,7 @@ jobs:
       - name: Install Flutter SDK
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 3.13.0
+          flutter-version: 3.13.1
           channel: "stable"
           architecture: x64
       - working-directory: "flutter"
