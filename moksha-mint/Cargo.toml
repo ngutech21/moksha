@@ -36,7 +36,7 @@ moksha-core = { path = "../moksha-core" }
 rocksdb = "0.21.0"
 lightning-invoice = "0.24.0"
 reqwest = { version = "0.11.19", default-features = false, features = ["serde_json", "json", "rustls-tls-webpki-roots", "socks"] }
-url = "2.4.0"
+url = "2.4.1"
 dotenvy = "0.15.7"
 envy = "0.4.2"
 tonic_lnd = "0.5.1"
