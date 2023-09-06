@@ -270,8 +270,8 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
                 promises: Some(promises),
             } => {
                 let len_first = first_secrets.len();
-                let secrets = vec![first_secrets, second_secrets].concat();
-                let outputs = vec![first_outputs, second_outputs].concat();
+                let secrets = [first_secrets, second_secrets].concat();
+                let outputs = [first_outputs, second_outputs].concat();
 
                 let proofs = self
                     .create_proofs_from_blinded_signatures(promises, secrets, outputs)?

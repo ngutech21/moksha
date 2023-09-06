@@ -75,7 +75,9 @@ impl FedimintWallet {
         let ln_invoice = Invoice::from_str(&invoice)?;
 
         let (pay_types, _) = self.client.pay_bolt11_invoice(ln_invoice).await?;
-        let PayType::Lightning(operation_id) = pay_types else { unreachable!("paying invoice over lightning"); };
+        let PayType::Lightning(operation_id) = pay_types else {
+            unreachable!("paying invoice over lightning");
+        };
         let mut updates = self
             .client
             .subscribe_ln_pay(operation_id)

@@ -75,7 +75,7 @@ impl Database for RocksDB {
             used_proofs
                 .proofs()
                 .into_iter()
-                .chain(proofs.proofs().into_iter())
+                .chain(proofs.proofs())
                 .collect(),
         );
         self.put_serialized(DbKeyPrefix::UsedProofs, &insert)?;
