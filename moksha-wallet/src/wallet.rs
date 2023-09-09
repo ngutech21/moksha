@@ -398,8 +398,7 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             .into_iter()
             .zip(secrets)
             .map(|(amount, secret)| {
-                let (b_, alice_secret_key) =
-                    self.dhke.step1_alice(secret.to_string(), None).unwrap(); // FIXME
+                let (b_, alice_secret_key) = self.dhke.step1_alice(secret, None).unwrap(); // FIXME
                 (BlindedMessage { amount, b_ }, alice_secret_key)
             })
             .collect::<Vec<(BlindedMessage, SecretKey)>>())

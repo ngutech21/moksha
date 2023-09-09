@@ -77,12 +77,12 @@ impl Dhke {
 
     pub fn step1_alice(
         &self,
-        secret_msg: String,
+        secret_msg: impl Into<String>,
         blinding_factor: Option<&[u8]>,
     ) -> Result<(PublicKey, SecretKey), MokshaCoreError> {
         let mut rng = rand::thread_rng();
 
-        let y = Dhke::hash_to_curve(secret_msg.as_bytes());
+        let y = Dhke::hash_to_curve(secret_msg.into().as_bytes());
         let secret_key = match blinding_factor {
             Some(f) => SecretKey::from_slice(f)?,
             None => SecretKey::new(&mut rng),
@@ -114,9 +114,9 @@ impl Dhke {
         &self,
         a: SecretKey,
         c: PublicKey,
-        secret_msg: String,
+        secret_msg: impl Into<String>,
     ) -> Result<bool, MokshaCoreError> {
-        let y = Dhke::hash_to_curve(secret_msg.as_bytes());
+        let y = Dhke::hash_to_curve(secret_msg.into().as_bytes());
         Some(c == y.mul_tweak(&self.secp, &Scalar::from(a))?).ok_or(
             MokshaCoreError::Secp256k1Error(secp256k1::Error::InvalidPublicKey),
         )
@@ -185,7 +185,7 @@ mod tests {
         let blinding_factor =
             hex_to_string("0000000000000000000000000000000000000000000000000000000000000001");
         let (pub_key, secret_key) =
-            dhke.step1_alice("test_message".to_string(), Some(blinding_factor.as_bytes()))?;
+            dhke.step1_alice("test_message", Some(blinding_factor.as_bytes()))?;
         let pub_key_str = pub_key.to_string();
 
         assert_eq!(
@@ -205,8 +205,7 @@ mod tests {
         let dhke = Dhke::new();
         let blinding_factor =
             hex_to_string("0000000000000000000000000000000000000000000000000000000000000001");
-        let (pub_key, _) =
-            dhke.step1_alice("test_message".to_string(), Some(blinding_factor.as_bytes()))?;
+        let (pub_key, _) = dhke.step1_alice("test_message", Some(blinding_factor.as_bytes()))?;
 
         let a = private_key_from_hex(
             "0000000000000000000000000000000000000000000000000000000000000001",
@@ -271,7 +270,7 @@ mod tests {
             hex_to_string("0000000000000000000000000000000000000000000000000000000000000002");
 
         // Generate a shared secret
-        let secret_msg = "test".to_string();
+        let secret_msg = "test";
         let (B_, r) = dhke.step1_alice(secret_msg.clone(), Some(blinding_factor.as_bytes()))?;
         let C_ = dhke.step2_bob(B_, &a)?;
         let C = dhke.step3_alice(C_, r, A)?;
