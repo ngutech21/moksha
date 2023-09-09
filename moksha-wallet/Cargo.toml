@@ -18,7 +18,7 @@ moksha-core = { path = "../moksha-core" }
 serde_json = "1.0.105"
 serde = "1.0.188"
 rand = "0.8.5"
-thiserror = "1.0.44"
+thiserror = "1.0.48"
 async-trait = "0.1.72"
 lightning-invoice = "0.24.0"
 url = "2.4.1"
@@ -30,7 +30,7 @@ gloo-net = { version = "0.3.1" }
 serde-wasm-bindgen = "0.5.0"
 wasm-bindgen = "0.2.87"
 
-rexie = "0.4.2"
+rexie = "0.5.0"
 tokio = { version = "1.30.0", features = ["rt", "sync"] }
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
