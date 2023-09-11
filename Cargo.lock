@@ -2208,6 +2208,7 @@ dependencies = [
  "lightning 0.0.116",
  "num-traits",
  "secp256k1 0.24.3",
+ "serde",
 ]
 
 [[package]]
@@ -2401,7 +2402,7 @@ dependencies = [
  "fedimint-wallet-client",
  "futures",
  "getrandom",
- "lightning-invoice 0.21.0",
+ "lightning-invoice 0.24.0",
  "ring",
  "serde_json",
  "tokio",
