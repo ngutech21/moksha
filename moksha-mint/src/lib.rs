@@ -13,7 +13,7 @@ use error::MokshaMintError;
 use hyper::http::{HeaderName, HeaderValue};
 use hyper::Method;
 use info::{MintInfoResponse, MintInfoSettings, Parameter};
-use lightning::{Lightning, LightningType, LnbitsLightning};
+use lightning::{AlbyLightning, Lightning, LightningType, LnbitsLightning};
 use mint::{LightningFeeConfig, Mint};
 use model::{GetMintQuery, PostMintQuery};
 use moksha_core::model::{
@@ -33,6 +33,7 @@ use tracing::{event, info, Level};
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
+mod alby;
 mod database;
 mod error;
 pub mod info;
@@ -88,7 +89,9 @@ impl MintBuilder {
                 lnbits_settings.admin_key.expect("LNBITS_ADMIN_KEY not set"),
                 lnbits_settings.url.expect("LNBITS_URL not set"),
             )),
-
+            Some(LightningType::Alby(alby_settings)) => Arc::new(AlbyLightning::new(
+                alby_settings.api_key.expect("ALBY_API_KEY not set"),
+            )),
             Some(LightningType::Lnd(lnd_settings)) => Arc::new(
                 lightning::LndLightning::new(
                     lnd_settings.grpc_host.expect("LND_GRPC_HOST not set"),

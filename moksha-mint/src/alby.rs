@@ -5,7 +5,7 @@ use url::Url;
 use crate::model::{CreateInvoiceParams, CreateInvoiceResult, PayInvoiceResult};
 
 #[derive(Debug, thiserror::Error)]
-pub enum LNBitsError {
+pub enum AlbyError {
     #[error("reqwest error: {0}")]
     ReqwestError(#[from] reqwest::Error),
 
@@ -23,60 +23,49 @@ pub enum LNBitsError {
 }
 
 #[derive(Clone)]
-pub struct LNBitsClient {
-    admin_key: String,
-    lnbits_url: Url,
+pub struct AlbyClient {
+    api_key: String,
+    alby_url: Url,
     reqwest_client: reqwest::Client,
 }
 
-impl LNBitsClient {
-    pub fn new(
-        admin_key: &str,
-        lnbits_url: &str,
-        tor_socket: Option<&str>,
-    ) -> Result<LNBitsClient, LNBitsError> {
-        let lnbits_url = Url::parse(lnbits_url)?;
+impl AlbyClient {
+    pub fn new(api_key: &str) -> Result<AlbyClient, AlbyError> {
+        let alby_url = Url::parse("https://api.getalby.com")?;
 
-        let reqwest_client = {
-            if let Some(tor_socket) = tor_socket {
-                let proxy = reqwest::Proxy::all(tor_socket).expect("tor proxy should be there");
-                reqwest::Client::builder().proxy(proxy).build()?
-            } else {
-                reqwest::Client::builder().build()?
-            }
-        };
+        let reqwest_client = reqwest::Client::builder().build()?;
 
-        Ok(LNBitsClient {
-            admin_key: admin_key.to_string(),
-            lnbits_url,
+        Ok(AlbyClient {
+            api_key: api_key.to_owned(),
+            alby_url,
             reqwest_client,
         })
     }
 }
 
-impl LNBitsClient {
-    pub async fn make_get(&self, endpoint: &str) -> Result<String, LNBitsError> {
-        let url = self.lnbits_url.join(endpoint)?;
+impl AlbyClient {
+    pub async fn make_get(&self, endpoint: &str) -> Result<String, AlbyError> {
+        let url = self.alby_url.join(endpoint)?;
         let response = self
             .reqwest_client
             .get(url)
-            .header("X-Api-Key", self.admin_key.clone())
+            .bearer_auth(self.api_key.clone())
             .send()
             .await?;
 
         if response.status() == reqwest::StatusCode::NOT_FOUND {
-            return Err(LNBitsError::NotFound);
+            return Err(AlbyError::NotFound);
         }
 
         Ok(response.text().await?)
     }
 
-    pub async fn make_post(&self, endpoint: &str, body: &str) -> Result<String, LNBitsError> {
-        let url = self.lnbits_url.join(endpoint)?;
+    pub async fn make_post(&self, endpoint: &str, body: &str) -> Result<String, AlbyError> {
+        let url = self.alby_url.join(endpoint)?;
         let response = self
             .reqwest_client
             .post(url)
-            .header("X-Api-Key", self.admin_key.clone())
+            .bearer_auth(self.api_key.clone())
             .header(
                 CONTENT_TYPE,
                 HeaderValue::from_str("application/json").expect("Invalid header value"),
@@ -86,35 +75,29 @@ impl LNBitsClient {
             .await?;
 
         if response.status() == reqwest::StatusCode::NOT_FOUND {
-            return Err(LNBitsError::NotFound);
+            return Err(AlbyError::NotFound);
         }
 
         if response.status() == reqwest::StatusCode::UNAUTHORIZED {
-            return Err(LNBitsError::Unauthorized);
+            return Err(AlbyError::Unauthorized);
         }
 
         Ok(response.text().await?)
     }
 }
 
-impl LNBitsClient {
+impl AlbyClient {
     pub async fn create_invoice(
         &self,
         params: &CreateInvoiceParams,
-    ) -> Result<CreateInvoiceResult, LNBitsError> {
-        // Add out: true to the params
+    ) -> Result<CreateInvoiceResult, AlbyError> {
         let params = serde_json::json!({
-            "out": false,
             "amount": params.amount,
-            "unit": params.unit,
-            "memo": params.memo,
-            "webhook": params.webhook,
-            "internal": params.internal,
-            "expiry": params.expiry,
+            "description": params.memo,
         });
 
         let body = self
-            .make_post("api/v1/payments", &serde_json::to_string(&params)?)
+            .make_post("invoices", &serde_json::to_string(&params)?)
             .await?;
 
         let response: serde_json::Value = serde_json::from_str(&body)?;
@@ -133,23 +116,28 @@ impl LNBitsClient {
         })
     }
 
-    pub async fn pay_invoice(&self, bolt11: &str) -> Result<PayInvoiceResult, LNBitsError> {
+    pub async fn pay_invoice(&self, bolt11: &str) -> Result<PayInvoiceResult, AlbyError> {
         let body = self
             .make_post(
-                "api/v1/payments",
-                &serde_json::to_string(&serde_json::json!({ "out": true, "bolt11": bolt11 }))?,
+                "payments/bolt11",
+                &serde_json::to_string(&serde_json::json!({"invoice": bolt11 }))?,
             )
             .await?;
 
-        Ok(serde_json::from_str(&body)?)
+        let response: serde_json::Value = serde_json::from_str(&body)?;
+
+        Ok(PayInvoiceResult {
+            payment_hash: response["payment_hash"]
+                .as_str()
+                .expect("payment_hash is empty")
+                .to_owned(),
+        })
     }
 
-    pub async fn is_invoice_paid(&self, payment_hash: &str) -> Result<bool, LNBitsError> {
-        let body = self
-            .make_get(&format!("api/v1/payments/{payment_hash}"))
-            .await?;
+    pub async fn is_invoice_paid(&self, payment_hash: &str) -> Result<bool, AlbyError> {
+        let body = self.make_get(&format!("invoices/{payment_hash}")).await?;
 
-        Ok(serde_json::from_str::<serde_json::Value>(&body)?["paid"]
+        Ok(serde_json::from_str::<serde_json::Value>(&body)?["settled"]
             .as_bool()
             .unwrap_or(false))
     }
