@@ -1,6 +1,8 @@
 use mokshamint::{
     info::MintInfoSettings,
-    lightning::{LightningType, LnbitsLightningSettings, LndLightningSettings},
+    lightning::{
+        AlbyLightningSettings, LightningType, LnbitsLightningSettings, LndLightningSettings,
+    },
     MintBuilder,
 };
 use std::{env, fmt, net::SocketAddr, path::PathBuf};
@@ -43,6 +45,12 @@ pub async fn main() -> anyhow::Result<()> {
                 .from_env::<LndLightningSettings>()
                 .expect("Please provide lnd info");
             LightningType::Lnd(lnd_settings)
+        }
+        "Alby" => {
+            let alby_settings = envy::prefixed("ALBY_")
+                .from_env::<AlbyLightningSettings>()
+                .expect("Please provide alby info");
+            LightningType::Alby(alby_settings)
         }
         _ => panic!(
             "env MINT_LIGHTNING_BACKEND not found or invalid values. Valid values are Lnbits and Lnd"

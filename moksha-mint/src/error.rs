@@ -11,7 +11,7 @@ use thiserror::Error;
 use tonic_lnd::ConnectError;
 use tracing::{event, Level};
 
-use crate::lnbits::LNBitsError;
+use crate::{alby::AlbyError, lnbits::LNBitsError};
 
 #[derive(Error, Debug)]
 pub enum MokshaMintError {
@@ -23,6 +23,9 @@ pub enum MokshaMintError {
 
     #[error("Failed to pay invoice {0} - Error {1}")]
     PayInvoice(String, LNBitsError),
+
+    #[error("Failed to pay invoice {0} - Error {1}")]
+    PayInvoiceAlby(String, AlbyError),
 
     #[error("DB Error {0}")]
     Db(#[from] rocksdb::Error),
@@ -58,7 +61,10 @@ pub enum MokshaMintError {
     InvalidAmount,
 
     #[error("Lightning Error {0}")]
-    Lightning(#[from] LNBitsError),
+    LightningLNBits(#[from] LNBitsError),
+
+    #[error("Lightning Error {0}")]
+    LightningAlby(#[from] AlbyError),
 }
 
 impl IntoResponse for MokshaMintError {

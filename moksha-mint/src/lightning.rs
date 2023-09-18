@@ -8,8 +8,10 @@ use url::Url;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
+    alby::AlbyClient,
     error::MokshaMintError,
-    lnbits::{CreateInvoiceParams, CreateInvoiceResult, LNBitsClient, PayInvoiceResult},
+    lnbits::LNBitsClient,
+    model::{CreateInvoiceParams, CreateInvoiceResult, PayInvoiceResult},
 };
 
 use lightning_invoice::Bolt11Invoice as LNInvoice;
@@ -21,6 +23,7 @@ use std::{path::PathBuf, str::FromStr, sync::Arc};
 #[derive(Debug, Clone)]
 pub enum LightningType {
     Lnbits(LnbitsLightningSettings),
+    Alby(AlbyLightningSettings),
     Lnd(LndLightningSettings),
 }
 
@@ -28,7 +31,34 @@ impl fmt::Display for LightningType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             LightningType::Lnbits(settings) => write!(f, "Lnbits: {}", settings),
+            LightningType::Alby(settings) => write!(f, "Alby: {}", settings),
             LightningType::Lnd(settings) => write!(f, "Lnd: {}", settings),
+        }
+    }
+}
+
+#[cfg_attr(test, automock)]
+#[allow(implied_bounds_entailment)]
+#[async_trait]
+pub trait Lightning: Send + Sync {
+    async fn is_invoice_paid(&self, invoice: String) -> Result<bool, MokshaMintError>;
+    async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, MokshaMintError>;
+    async fn pay_invoice(
+        &self,
+        payment_request: String,
+    ) -> Result<PayInvoiceResult, MokshaMintError>;
+
+    async fn decode_invoice(&self, payment_request: String) -> Result<LNInvoice, MokshaMintError> {
+        LNInvoice::from_str(&payment_request)
+            .map_err(|err| MokshaMintError::DecodeInvoice(payment_request, err))
+    }
+}
+
+impl LnbitsLightning {
+    pub fn new(admin_key: String, url: String) -> Self {
+        Self {
+            client: LNBitsClient::new(&admin_key, &url, None)
+                .expect("Can not create Lnbits client"),
         }
     }
 }
@@ -64,31 +94,7 @@ impl LnbitsLightningSettings {
     }
 }
 
-#[cfg_attr(test, automock)]
-#[async_trait]
-pub trait Lightning: Send + Sync {
-    async fn is_invoice_paid(&self, invoice: String) -> Result<bool, MokshaMintError>;
-    async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, MokshaMintError>;
-    async fn pay_invoice(
-        &self,
-        payment_request: String,
-    ) -> Result<PayInvoiceResult, MokshaMintError>;
-
-    async fn decode_invoice(&self, payment_request: String) -> Result<LNInvoice, MokshaMintError> {
-        LNInvoice::from_str(&payment_request)
-            .map_err(|err| MokshaMintError::DecodeInvoice(payment_request, err))
-    }
-}
-
-impl LnbitsLightning {
-    pub fn new(admin_key: String, url: String) -> Self {
-        Self {
-            client: LNBitsClient::new(&admin_key, &url, None)
-                .expect("Can not create Lnbits client"),
-        }
-    }
-}
-
+#[allow(implied_bounds_entailment)]
 #[async_trait]
 impl Lightning for LnbitsLightning {
     async fn is_invoice_paid(&self, invoice: String) -> Result<bool, MokshaMintError> {
@@ -121,6 +127,74 @@ impl Lightning for LnbitsLightning {
             .pay_invoice(&payment_request)
             .await
             .map_err(|err| MokshaMintError::PayInvoice(payment_request, err))
+    }
+}
+
+#[derive(Clone)]
+pub struct AlbyLightning {
+    pub client: AlbyClient,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+pub struct AlbyLightningSettings {
+    pub api_key: Option<String>,
+}
+
+impl fmt::Display for AlbyLightningSettings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "api_key: {}", self.api_key.as_ref().unwrap(),)
+    }
+}
+
+impl AlbyLightningSettings {
+    pub fn new(api_key: &str) -> Self {
+        Self {
+            api_key: Some(api_key.to_owned()),
+        }
+    }
+}
+
+impl AlbyLightning {
+    pub fn new(api_key: String) -> Self {
+        Self {
+            client: AlbyClient::new(&api_key).expect("Can not create Alby client"),
+        }
+    }
+}
+
+#[allow(implied_bounds_entailment)]
+#[async_trait]
+impl Lightning for AlbyLightning {
+    async fn is_invoice_paid(&self, invoice: String) -> Result<bool, MokshaMintError> {
+        let decoded_invoice = self.decode_invoice(invoice).await?;
+        Ok(self
+            .client
+            .is_invoice_paid(&decoded_invoice.payment_hash().to_string())
+            .await?)
+    }
+
+    async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, MokshaMintError> {
+        Ok(self
+            .client
+            .create_invoice(&CreateInvoiceParams {
+                amount,
+                unit: "sat".to_string(),
+                memo: None,
+                expiry: Some(10000),
+                webhook: None,
+                internal: None,
+            })
+            .await?)
+    }
+
+    async fn pay_invoice(
+        &self,
+        payment_request: String,
+    ) -> Result<PayInvoiceResult, MokshaMintError> {
+        self.client
+            .pay_invoice(&payment_request)
+            .await
+            .map_err(|err| MokshaMintError::PayInvoiceAlby(payment_request, err))
     }
 }
 
@@ -195,6 +269,7 @@ impl LndLightning {
     }
 }
 
+#[allow(implied_bounds_entailment)]
 #[async_trait]
 impl Lightning for LndLightning {
     async fn is_invoice_paid(&self, payment_request: String) -> Result<bool, MokshaMintError> {
