@@ -245,16 +245,7 @@ impl Lightning for StrikeLightning {
             .0;
 
         // invoiceId is the first 32 bytes of the description hash
-        let invoice_id = hex::encode(&description_hash[..16]);
-        // then convert it to uuid format with hypens
-        let invoice_id = format!(
-            "{}-{}-{}-{}-{}",
-            &invoice_id[..8],
-            &invoice_id[8..12],
-            &invoice_id[12..16],
-            &invoice_id[16..20],
-            &invoice_id[20..]
-        );
+        let invoice_id = format_as_uuid_string(&description_hash[..16]);
         Ok(self.client.is_invoice_paid(&invoice_id).await?)
     }
 
@@ -314,6 +305,18 @@ impl Lightning for StrikeLightning {
             payment_hash: hex::encode(payment_hash),
         })
     }
+}
+
+fn format_as_uuid_string(bytes: &[u8]) -> String {
+    let byte_str = hex::encode(bytes);
+    format!(
+        "{}-{}-{}-{}-{}",
+        &byte_str[..8],
+        &byte_str[8..12],
+        &byte_str[12..16],
+        &byte_str[16..20],
+        &byte_str[20..]
+    )
 }
 
 fn deserialize_url<'de, D>(deserializer: D) -> Result<Option<Url>, D::Error>

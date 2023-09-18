@@ -1,9 +1,8 @@
 use hyper::{header::CONTENT_TYPE, http::HeaderValue};
-use lightning_invoice::{Bolt11Invoice, SignedRawBolt11Invoice};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use crate::model::{CreateInvoiceParams, CreateInvoiceResult, PayInvoiceResult};
+use crate::model::CreateInvoiceParams;
 
 #[derive(Debug, thiserror::Error)]
 pub enum StrikeError {
@@ -155,7 +154,7 @@ impl StrikeClient {
         let endpoint = format!("v1/invoices/{}/quote", invoice_id);
         let description_hash = format!(
             "{:0>64}",
-            hex::encode(hex::decode(invoice_id.replace("-", "").as_bytes()).unwrap())
+            hex::encode(hex::decode(invoice_id.replace('-', "").as_bytes()).unwrap())
         );
 
         let params = QuoteRequest { description_hash };
@@ -196,19 +195,13 @@ impl StrikeClient {
             .await?;
         let response: serde_json::Value = serde_json::from_str(&body)?;
 
-        let state = response["state"].as_str().unwrap_or("");
-        let is_paid = matches!(state, "COMPLETED");
-
-        Ok(is_paid)
+        Ok(response["state"].as_str().unwrap_or("") == "COMPLETED")
     }
 
     pub async fn is_invoice_paid(&self, invoice_id: &str) -> Result<bool, StrikeError> {
         let body = self.make_get(&format!("invoices/{invoice_id}")).await?;
         let response = serde_json::from_str::<serde_json::Value>(&body)?;
 
-        let state = response["state"].as_str().unwrap_or("");
-        let is_paid = matches!(state, "PAID");
-
-        Ok(is_paid)
+        Ok(response["state"].as_str().unwrap_or("") == "PAID")
     }
 }
