@@ -105,6 +105,10 @@ impl MintBuilder {
                 )
                 .await?,
             ),
+            Some(LightningType::Cln(cln_settings)) => Arc::new(
+                lightning::ClnLightning::new(&cln_settings.rpc_path.expect("CLN_PATH not set"))
+                    .await?,
+            ),
             None => panic!("Lightning backend not set"),
         };
 

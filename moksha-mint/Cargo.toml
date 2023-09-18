@@ -26,7 +26,12 @@ serde_derive = "1.0.171"
 serde_json = "1.0.106"
 serde_with = "3.1.0"
 tokio = { version = "1.30.0", features = ["full"] }
-tower-http = { version = "0.4.4", features = ["trace", "cors", "fs", "set-header"] }
+tower-http = { version = "0.4.4", features = [
+    "trace",
+    "cors",
+    "fs",
+    "set-header",
+] }
 tower-service = { version = "0.3.2" }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
@@ -35,11 +40,17 @@ thiserror = "1.0.48"
 moksha-core = { path = "../moksha-core" }
 rocksdb = "0.21.0"
 lightning-invoice = "0.24.0"
-reqwest = { version = "0.11.19", default-features = false, features = ["serde_json", "json", "rustls-tls-webpki-roots", "socks"] }
+reqwest = { version = "0.11.19", default-features = false, features = [
+    "serde_json",
+    "json",
+    "rustls-tls-webpki-roots",
+    "socks",
+] }
 url = "2.4.1"
 dotenvy = "0.15.7"
 envy = "0.4.2"
 tonic_lnd = "0.5.1"
+cln-rpc = "0.1.4"
 
 [dev-dependencies]
 tempfile = "3.7.1"
