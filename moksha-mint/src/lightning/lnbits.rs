@@ -3,23 +3,7 @@ use url::Url;
 
 use crate::model::{CreateInvoiceParams, CreateInvoiceResult, PayInvoiceResult};
 
-#[derive(Debug, thiserror::Error)]
-pub enum LNBitsError {
-    #[error("reqwest error: {0}")]
-    ReqwestError(#[from] reqwest::Error),
-
-    #[error("url error: {0}")]
-    UrlError(#[from] url::ParseError),
-
-    #[error("serde error: {0}")]
-    SerdeError(#[from] serde_json::Error),
-
-    #[error("Not found")]
-    NotFound,
-
-    #[error("Unauthorized")]
-    Unauthorized,
-}
+use super::error::LightningError;
 
 #[derive(Clone)]
 pub struct LNBitsClient {
@@ -33,7 +17,7 @@ impl LNBitsClient {
         admin_key: &str,
         lnbits_url: &str,
         tor_socket: Option<&str>,
-    ) -> Result<LNBitsClient, LNBitsError> {
+    ) -> Result<LNBitsClient, LightningError> {
         let lnbits_url = Url::parse(lnbits_url)?;
 
         let reqwest_client = {
@@ -54,7 +38,7 @@ impl LNBitsClient {
 }
 
 impl LNBitsClient {
-    pub async fn make_get(&self, endpoint: &str) -> Result<String, LNBitsError> {
+    pub async fn make_get(&self, endpoint: &str) -> Result<String, LightningError> {
         let url = self.lnbits_url.join(endpoint)?;
         let response = self
             .reqwest_client
@@ -64,13 +48,13 @@ impl LNBitsClient {
             .await?;
 
         if response.status() == reqwest::StatusCode::NOT_FOUND {
-            return Err(LNBitsError::NotFound);
+            return Err(LightningError::NotFound);
         }
 
         Ok(response.text().await?)
     }
 
-    pub async fn make_post(&self, endpoint: &str, body: &str) -> Result<String, LNBitsError> {
+    pub async fn make_post(&self, endpoint: &str, body: &str) -> Result<String, LightningError> {
         let url = self.lnbits_url.join(endpoint)?;
         let response = self
             .reqwest_client
@@ -85,11 +69,11 @@ impl LNBitsClient {
             .await?;
 
         if response.status() == reqwest::StatusCode::NOT_FOUND {
-            return Err(LNBitsError::NotFound);
+            return Err(LightningError::NotFound);
         }
 
         if response.status() == reqwest::StatusCode::UNAUTHORIZED {
-            return Err(LNBitsError::Unauthorized);
+            return Err(LightningError::Unauthorized);
         }
 
         Ok(response.text().await?)
@@ -100,7 +84,7 @@ impl LNBitsClient {
     pub async fn create_invoice(
         &self,
         params: &CreateInvoiceParams,
-    ) -> Result<CreateInvoiceResult, LNBitsError> {
+    ) -> Result<CreateInvoiceResult, LightningError> {
         // Add out: true to the params
         let params = serde_json::json!({
             "out": false,
@@ -132,7 +116,7 @@ impl LNBitsClient {
         })
     }
 
-    pub async fn pay_invoice(&self, bolt11: &str) -> Result<PayInvoiceResult, LNBitsError> {
+    pub async fn pay_invoice(&self, bolt11: &str) -> Result<PayInvoiceResult, LightningError> {
         let body = self
             .make_post(
                 "api/v1/payments",
@@ -143,7 +127,7 @@ impl LNBitsClient {
         Ok(serde_json::from_str(&body)?)
     }
 
-    pub async fn is_invoice_paid(&self, payment_hash: &str) -> Result<bool, LNBitsError> {
+    pub async fn is_invoice_paid(&self, payment_hash: &str) -> Result<bool, LightningError> {
         let body = self
             .make_get(&format!("api/v1/payments/{payment_hash}"))
             .await?;

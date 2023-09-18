@@ -33,15 +33,12 @@ use tracing::{event, info, Level};
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-mod alby;
 mod database;
 mod error;
 pub mod info;
 pub mod lightning;
-mod lnbits;
 pub mod mint;
 mod model;
-mod strike;
 
 #[derive(Debug, Default)]
 pub struct MintBuilder {

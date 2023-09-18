@@ -243,8 +243,8 @@ impl Mint {
 
 #[cfg(test)]
 mod tests {
+    use crate::lightning::error::LightningError;
     use crate::lightning::{LightningType, MockLightning};
-    use crate::lnbits::LNBitsError;
     use crate::model::{Invoice, PayInvoiceResult};
     use crate::{database::MockDatabase, error::MokshaMintError, Mint};
     use moksha_core::dhke;
@@ -411,7 +411,7 @@ mod tests {
             Ok(PayInvoiceResult {
                 payment_hash: "hash".to_string(),
             })
-            .map_err(|_err: LNBitsError| MokshaMintError::InvoiceNotFound("".to_string()))
+            .map_err(|_err: LightningError| MokshaMintError::InvoiceNotFound("".to_string()))
         });
 
         let mint = Mint::new(
