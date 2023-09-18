@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-// use serde_derive::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 use tonic_lnd::Client;
@@ -41,7 +40,6 @@ impl fmt::Display for LightningType {
 }
 
 #[cfg_attr(test, automock)]
-#[allow(implied_bounds_entailment)]
 #[async_trait]
 pub trait Lightning: Send + Sync {
     async fn is_invoice_paid(&self, invoice: String) -> Result<bool, MokshaMintError>;
@@ -97,7 +95,6 @@ impl LnbitsLightningSettings {
     }
 }
 
-#[allow(implied_bounds_entailment)]
 #[async_trait]
 impl Lightning for LnbitsLightning {
     async fn is_invoice_paid(&self, invoice: String) -> Result<bool, MokshaMintError> {
@@ -165,7 +162,6 @@ impl AlbyLightning {
     }
 }
 
-#[allow(implied_bounds_entailment)]
 #[async_trait]
 impl Lightning for AlbyLightning {
     async fn is_invoice_paid(&self, invoice: String) -> Result<bool, MokshaMintError> {
@@ -233,7 +229,6 @@ impl StrikeLightning {
     }
 }
 
-#[allow(implied_bounds_entailment)]
 #[async_trait]
 impl Lightning for StrikeLightning {
     async fn is_invoice_paid(&self, invoice: String) -> Result<bool, MokshaMintError> {
