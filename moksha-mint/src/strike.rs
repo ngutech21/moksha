@@ -171,13 +171,15 @@ impl StrikeClient {
     }
 
     pub async fn create_ln_payment_quote(&self, bolt11: &str) -> Result<String, StrikeError> {
-        let endpoint = format!("v1/payment-quotes/lightning");
         let params = serde_json::json!({
             "lnInvoice": bolt11,
             "sourceCurrency": "BTC",
         });
         let body = self
-            .make_post(&endpoint, &serde_json::to_string(&params)?)
+            .make_post(
+                "v1/payment-quotes/lightning",
+                &serde_json::to_string(&params)?,
+            )
             .await?;
         let response: serde_json::Value = serde_json::from_str(&body)?;
         let payment_quote_id = response["paymentQuoteId"]
