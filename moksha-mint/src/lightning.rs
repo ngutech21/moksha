@@ -12,9 +12,10 @@ use crate::{
     error::MokshaMintError,
     lnbits::LNBitsClient,
     model::{CreateInvoiceParams, CreateInvoiceResult, PayInvoiceResult},
+    strike::{StrikeClient, StrikeError},
 };
 
-use lightning_invoice::Bolt11Invoice as LNInvoice;
+use lightning_invoice::{Bolt11Invoice as LNInvoice, SignedRawBolt11Invoice};
 
 #[cfg(test)]
 use mockall::automock;
@@ -24,6 +25,7 @@ use std::{path::PathBuf, str::FromStr, sync::Arc};
 pub enum LightningType {
     Lnbits(LnbitsLightningSettings),
     Alby(AlbyLightningSettings),
+    Strike(StrikeLightningSettings),
     Lnd(LndLightningSettings),
 }
 
@@ -32,6 +34,7 @@ impl fmt::Display for LightningType {
         match self {
             LightningType::Lnbits(settings) => write!(f, "Lnbits: {}", settings),
             LightningType::Alby(settings) => write!(f, "Alby: {}", settings),
+            LightningType::Strike(settings) => write!(f, "Strike: {}", settings),
             LightningType::Lnd(settings) => write!(f, "Lnd: {}", settings),
         }
     }
@@ -195,6 +198,121 @@ impl Lightning for AlbyLightning {
             .pay_invoice(&payment_request)
             .await
             .map_err(|err| MokshaMintError::PayInvoiceAlby(payment_request, err))
+    }
+}
+
+#[derive(Clone)]
+pub struct StrikeLightning {
+    pub client: StrikeClient,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+pub struct StrikeLightningSettings {
+    pub api_key: Option<String>,
+}
+
+impl fmt::Display for StrikeLightningSettings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "api_key: {}", self.api_key.as_ref().unwrap(),)
+    }
+}
+
+impl StrikeLightningSettings {
+    pub fn new(api_key: &str) -> Self {
+        Self {
+            api_key: Some(api_key.to_owned()),
+        }
+    }
+}
+
+impl StrikeLightning {
+    pub fn new(api_key: String) -> Self {
+        Self {
+            client: StrikeClient::new(&api_key).expect("Can not create Strike client"),
+        }
+    }
+}
+
+#[allow(implied_bounds_entailment)]
+#[async_trait]
+impl Lightning for StrikeLightning {
+    async fn is_invoice_paid(&self, invoice: String) -> Result<bool, MokshaMintError> {
+        let decoded_invoice = self.decode_invoice(invoice).await?;
+        let description_hash = decoded_invoice
+            .into_signed_raw()
+            .description_hash()
+            .unwrap()
+            .0;
+
+        // invoiceId is the first 32 bytes of the description hash
+        let invoice_id = hex::encode(&description_hash[..16]);
+        // then convert it to uuid format with hypens
+        let invoice_id = format!(
+            "{}-{}-{}-{}-{}",
+            &invoice_id[..8],
+            &invoice_id[8..12],
+            &invoice_id[12..16],
+            &invoice_id[16..20],
+            &invoice_id[20..]
+        );
+        Ok(self.client.is_invoice_paid(&invoice_id).await?)
+    }
+
+    async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, MokshaMintError> {
+        let strike_invoice_id = self
+            .client
+            .create_strike_invoice(&CreateInvoiceParams {
+                amount,
+                unit: "sat".to_string(),
+                memo: None,
+                expiry: Some(10000),
+                webhook: None,
+                internal: None,
+            })
+            .await?;
+
+        let payment_request = self.client.create_strike_quote(&strike_invoice_id).await?;
+
+        // strike doesn't return the payment_hash so we have to read the invoice into a Bolt11 and extract it
+        let invoice =
+            LNInvoice::from_signed(payment_request.parse::<SignedRawBolt11Invoice>().unwrap())
+                .unwrap();
+        let payment_hash = invoice.payment_hash().to_vec();
+
+        Ok(CreateInvoiceResult {
+            payment_hash,
+            payment_request,
+        })
+    }
+
+    async fn pay_invoice(
+        &self,
+        payment_request: String,
+    ) -> Result<PayInvoiceResult, MokshaMintError> {
+        // strike doesn't return the payment_hash so we have to read the invoice into a Bolt11 and extract it
+        let invoice = self.decode_invoice(payment_request.clone()).await?;
+        let payment_hash = invoice.payment_hash().to_vec();
+
+        let payment_quote_id = self
+            .client
+            .create_ln_payment_quote(&invoice.into_signed_raw().to_string())
+            .await?;
+
+        let payment_result = self
+            .client
+            .execute_ln_payment_quote(&payment_quote_id)
+            .await?;
+
+        if !payment_result {
+            return Err(MokshaMintError::PayInvoiceStrike(
+                payment_request,
+                StrikeError::PaymentFailed,
+            ));
+        }
+
+        Ok(PayInvoiceResult {
+            payment_hash: hex::encode(payment_hash),
+        })
     }
 }
 
