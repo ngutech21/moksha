@@ -1,5 +1,4 @@
 use hyper::{header::CONTENT_TYPE, http::HeaderValue};
-use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::model::{CreateInvoiceParams, CreateInvoiceResult, PayInvoiceResult};
