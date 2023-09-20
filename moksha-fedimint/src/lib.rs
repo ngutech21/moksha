@@ -1,11 +1,10 @@
 use anyhow::Result;
-use fedimint_client::module::gen::DynClientModuleGen;
-use fedimint_client::module::gen::{ClientModuleGenRegistry, IClientModuleGen};
+
+use fedimint_client::module::init::{ClientModuleInitRegistry, IClientModuleInit};
 use fedimint_client::secret::PlainRootSecretStrategy;
 use fedimint_client::sm::OperationId;
 use fedimint_client::ClientBuilder;
 use fedimint_core::api::{GlobalFederationApi, InviteCode};
-use fedimint_core::config::load_from_file;
 use fedimint_core::encoding::Encodable;
 use fedimint_core::module::registry::ModuleDecoderRegistry;
 use fedimint_core::{
@@ -17,15 +16,13 @@ use fedimint_ln_client::{
     LightningClientExt, LightningClientGen, LnPayState, LnReceiveState, PayType,
 };
 use fedimint_mint_client::{
-    parse_ecash, MintClientExt, MintClientGen, MintClientModule, SpendableNote,
+    MintClientExt, MintClientGen, MintClientModule, OOBNotes, SpendableNote,
 };
-use fedimint_wallet_client::WalletClientGen;
 use lightning_invoice::Invoice;
 use std::fs::create_dir_all;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
-use std::vec;
 use std::{str::FromStr, sync::Arc};
 
 use futures::StreamExt;
@@ -100,7 +97,8 @@ impl FedimintWallet {
     }
 
     pub async fn receive_token(&self, tokens: String) -> anyhow::Result<u64> {
-        let notes = parse_ecash(&tokens)?;
+        let notes: OOBNotes = OOBNotes::from_str(&tokens)?;
+
         let total_amount = notes.total_amount().msats / 1_000;
 
         let operation_id = self.client.reissue_external_notes(notes, ()).await?;
@@ -134,7 +132,7 @@ impl FedimintWallet {
             .client
             .spend_notes(Amount::from_sats(min_amount), try_cancel_after, ())
             .await?;
-        Ok(Self::serialize_ecash(&notes))
+        Ok(notes.to_string())
     }
 
     pub async fn mint(&self, operation_id: String) -> anyhow::Result<()> {
@@ -177,20 +175,48 @@ impl FedimintWallet {
     }
 
     async fn create_client(workdir: &Path) -> Result<fedimint_client::Client> {
-        let module_gens = ClientModuleGenRegistry::from(vec![
-            DynClientModuleGen::from(LightningClientGen),
-            DynClientModuleGen::from(MintClientGen),
-            DynClientModuleGen::from(WalletClientGen::default()),
-        ]);
+        let mut registry = ClientModuleInitRegistry::new();
+        registry.attach(LightningClientGen);
+        registry.attach(MintClientGen);
+        registry.attach(WalletClientGen::default());
 
-        let config = Self::load_config(workdir)?;
-        Self::load_decoders(&config, &module_gens);
-        Self::build_client(&config, &module_gens, workdir).await
+        let client = Self::build_client_ng(&registry, None, workdir).await?;
+        let config = client.get_config().clone();
+        Self::load_decoders(&config, &registry);
+
+        Ok(client)
     }
 
-    fn load_config(workdir: &Path) -> anyhow::Result<ClientConfig> {
-        let cfg_path = workdir.join(CLIENT_CFG);
-        load_from_file(&cfg_path)
+    async fn build_client_ng(
+        module_inits: &ClientModuleInitRegistry,
+        invite_code: Option<InviteCode>,
+        workdir: &Path,
+    ) -> anyhow::Result<fedimint_client::Client> {
+        let client_builder =
+            Self::build_client_ng_builder(module_inits, invite_code, workdir).await?;
+        client_builder.build::<PlainRootSecretStrategy>().await
+    }
+
+    async fn build_client_ng_builder(
+        module_inits: &ClientModuleInitRegistry,
+        invite_code: Option<InviteCode>,
+        _workdir: &Path,
+    ) -> anyhow::Result<fedimint_client::ClientBuilder> {
+        #[cfg(not(target_arch = "wasm32"))]
+        let db = Self::load_db(_workdir)?;
+
+        #[cfg(target_arch = "wasm32")]
+        let db = fedimint_core::db::mem_impl::MemDatabase::default();
+
+        let mut client_builder = ClientBuilder::default();
+        client_builder.with_module_inits(module_inits.clone());
+        client_builder.with_primary_module(1);
+        if let Some(invite_code) = invite_code {
+            client_builder.with_invite_code(invite_code);
+        }
+        client_builder.with_database(db);
+
+        Ok(client_builder)
     }
 
     // FIXME: this is a hack
@@ -198,49 +224,31 @@ impl FedimintWallet {
         workdir.join(CLIENT_CFG).exists()
     }
 
-    async fn build_client(
-        cfg: &ClientConfig,
-        module_gens: &ClientModuleGenRegistry,
-        _workdir: &Path,
-    ) -> anyhow::Result<fedimint_client::Client> {
-        #[cfg(not(target_arch = "wasm32"))]
-        let db = Self::load_db(_workdir)?;
-
-        #[cfg(target_arch = "wasm32")]
-        let db = fedimint_core::db::mem_impl::MemDatabase::default();
-        // FIXME use different db for fedimint in wasm
-
-        let mut client_builder = ClientBuilder::default();
-        client_builder.with_module_gens(module_gens.clone());
-        client_builder.with_primary_module(1);
-        client_builder.with_config(cfg.clone());
-        client_builder.with_database(db);
-        client_builder.build::<PlainRootSecretStrategy>().await
-    }
-
     #[cfg(not(target_arch = "wasm32"))]
     fn load_db(workdir: &Path) -> anyhow::Result<fedimint_rocksdb::RocksDb> {
         let db_path = workdir.join("client.db");
+        println!("DB path: {:?}", db_path);
         fedimint_rocksdb::RocksDb::open(db_path.to_str().unwrap()).map_err(anyhow::Error::new)
     }
 
     fn load_decoders(
         cfg: &ClientConfig,
-        module_gens: &ClientModuleGenRegistry,
+        module_inits: &ClientModuleInitRegistry,
     ) -> ModuleDecoderRegistry {
         ModuleDecoderRegistry::new(cfg.clone().modules.into_iter().filter_map(
             |(id, module_cfg)| {
                 let kind = module_cfg.kind().clone();
-                module_gens.get(&kind).map(|module_gen| {
+                module_inits.get(&kind).map(|module_init| {
                     (
                         id,
                         kind,
-                        IClientModuleGen::decoder(AsRef::<dyn IClientModuleGen + 'static>::as_ref(
-                            module_gen,
-                        )),
+                        IClientModuleInit::decoder(
+                            AsRef::<dyn IClientModuleInit + 'static>::as_ref(module_init),
+                        ),
                     )
                 })
             },
         ))
+        .with_fallback()
     }
 }
