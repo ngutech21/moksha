@@ -31,11 +31,11 @@ serde-wasm-bindgen = "0.6.0"
 wasm-bindgen = "0.2.87"
 
 rexie = "0.5.0"
-tokio = { version = "1.30.0", features = ["rt", "sync"] }
+tokio = { version = "1.32.0", features = ["rt", "sync"] }
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
-reqwest = { version = "0.11.19", features = ["serde_json", "json", "rustls-tls"], default-features = false }
-tokio = { version = "1.30.0", features = ["rt", "rt-multi-thread", "macros"] }
+reqwest = { version = "0.11.20", features = ["serde_json", "json", "rustls-tls"], default-features = false }
+tokio = { version = "1.32.0", features = ["rt", "rt-multi-thread", "macros"] }
 sqlx = { version = "0.7.1", default-features = false, features = ["sqlite", "runtime-tokio-rustls", "migrate", "macros"] }
 
 [dev-dependencies]
