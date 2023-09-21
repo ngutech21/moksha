@@ -32,6 +32,8 @@ Mint Features:
 - Supported backends
   - [x] LNbits
   - [x] Lnd
+  - [x] Alby
+  - [x] Strike  
   - [] core-lightning
 
 Wallet Features:
