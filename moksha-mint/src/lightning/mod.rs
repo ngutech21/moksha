@@ -2,23 +2,28 @@ use async_trait::async_trait;
 use std::fmt::{self, Formatter};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 use tonic_lnd::Client;
+
 use url::Url;
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
-    alby::AlbyClient,
     error::MokshaMintError,
-    lnbits::LNBitsClient,
     model::{CreateInvoiceParams, CreateInvoiceResult, PayInvoiceResult},
-    strike::{StrikeClient, StrikeError},
 };
 
 use lightning_invoice::{Bolt11Invoice as LNInvoice, SignedRawBolt11Invoice};
 
+mod alby;
+pub mod error;
+mod lnbits;
+mod strike;
+
 #[cfg(test)]
 use mockall::automock;
 use std::{path::PathBuf, str::FromStr, sync::Arc};
+
+use self::{alby::AlbyClient, error::LightningError, lnbits::LNBitsClient, strike::StrikeClient};
 
 #[derive(Debug, Clone)]
 pub enum LightningType {
@@ -55,24 +60,19 @@ pub trait Lightning: Send + Sync {
     }
 }
 
-impl LnbitsLightning {
-    pub fn new(admin_key: String, url: String) -> Self {
-        Self {
-            client: LNBitsClient::new(&admin_key, &url, None)
-                .expect("Can not create Lnbits client"),
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct LnbitsLightning {
-    pub client: LNBitsClient,
-}
-
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct LnbitsLightningSettings {
     pub admin_key: Option<String>,
     pub url: Option<String>, // FIXME use Url type instead
+}
+
+impl LnbitsLightningSettings {
+    pub fn new(admin_key: &str, url: &str) -> Self {
+        Self {
+            admin_key: Some(admin_key.to_owned()),
+            url: Some(url.to_owned()),
+        }
+    }
 }
 
 impl fmt::Display for LnbitsLightningSettings {
@@ -86,11 +86,16 @@ impl fmt::Display for LnbitsLightningSettings {
     }
 }
 
-impl LnbitsLightningSettings {
-    pub fn new(admin_key: &str, url: &str) -> Self {
+#[derive(Clone)]
+pub struct LnbitsLightning {
+    pub client: LNBitsClient,
+}
+
+impl LnbitsLightning {
+    pub fn new(admin_key: String, url: String) -> Self {
         Self {
-            admin_key: Some(admin_key.to_owned()),
-            url: Some(url.to_owned()),
+            client: LNBitsClient::new(&admin_key, &url, None)
+                .expect("Can not create Lnbits client"),
         }
     }
 }
@@ -130,11 +135,6 @@ impl Lightning for LnbitsLightning {
     }
 }
 
-#[derive(Clone)]
-pub struct AlbyLightning {
-    pub client: AlbyClient,
-}
-
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct AlbyLightningSettings {
     pub api_key: Option<String>,
@@ -154,6 +154,11 @@ impl AlbyLightningSettings {
     }
 }
 
+#[derive(Clone)]
+pub struct AlbyLightning {
+    pub client: AlbyClient,
+}
+
 impl AlbyLightning {
     pub fn new(api_key: String) -> Self {
         Self {
@@ -161,7 +166,6 @@ impl AlbyLightning {
         }
     }
 }
-
 #[async_trait]
 impl Lightning for AlbyLightning {
     async fn is_invoice_paid(&self, invoice: String) -> Result<bool, MokshaMintError> {
@@ -193,13 +197,8 @@ impl Lightning for AlbyLightning {
         self.client
             .pay_invoice(&payment_request)
             .await
-            .map_err(|err| MokshaMintError::PayInvoiceAlby(payment_request, err))
+            .map_err(|err| MokshaMintError::PayInvoice(payment_request, err))
     }
-}
-
-#[derive(Clone)]
-pub struct StrikeLightning {
-    pub client: StrikeClient,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
@@ -221,6 +220,11 @@ impl StrikeLightningSettings {
     }
 }
 
+#[derive(Clone)]
+pub struct StrikeLightning {
+    pub client: StrikeClient,
+}
+
 impl StrikeLightning {
     pub fn new(api_key: String) -> Self {
         Self {
@@ -239,8 +243,9 @@ impl Lightning for StrikeLightning {
             .unwrap()
             .0;
 
-        // invoiceId is the first 32 bytes of the description hash
-        let invoice_id = format_as_uuid_string(&description_hash[..16]);
+        // invoiceId is the last 16 bytes of the description hash
+        let invoice_id = format_as_uuid_string(&description_hash[16..]);
+
         Ok(self.client.is_invoice_paid(&invoice_id).await?)
     }
 
@@ -258,7 +263,6 @@ impl Lightning for StrikeLightning {
             .await?;
 
         let payment_request = self.client.create_strike_quote(&strike_invoice_id).await?;
-
         // strike doesn't return the payment_hash so we have to read the invoice into a Bolt11 and extract it
         let invoice =
             LNInvoice::from_signed(payment_request.parse::<SignedRawBolt11Invoice>().unwrap())
@@ -290,9 +294,9 @@ impl Lightning for StrikeLightning {
             .await?;
 
         if !payment_result {
-            return Err(MokshaMintError::PayInvoiceStrike(
+            return Err(MokshaMintError::PayInvoice(
                 payment_request,
-                StrikeError::PaymentFailed,
+                LightningError::PaymentFailed,
             ));
         }
 

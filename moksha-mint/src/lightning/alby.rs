@@ -1,25 +1,12 @@
 use hyper::{header::CONTENT_TYPE, http::HeaderValue};
 use url::Url;
 
-use crate::model::{CreateInvoiceParams, CreateInvoiceResult, PayInvoiceResult};
+use crate::{
+    info,
+    model::{CreateInvoiceParams, CreateInvoiceResult, PayInvoiceResult},
+};
 
-#[derive(Debug, thiserror::Error)]
-pub enum AlbyError {
-    #[error("reqwest error: {0}")]
-    ReqwestError(#[from] reqwest::Error),
-
-    #[error("url error: {0}")]
-    UrlError(#[from] url::ParseError),
-
-    #[error("serde error: {0}")]
-    SerdeError(#[from] serde_json::Error),
-
-    #[error("Not found")]
-    NotFound,
-
-    #[error("Unauthorized")]
-    Unauthorized,
-}
+use super::error::LightningError;
 
 #[derive(Clone)]
 pub struct AlbyClient {
@@ -29,7 +16,7 @@ pub struct AlbyClient {
 }
 
 impl AlbyClient {
-    pub fn new(api_key: &str) -> Result<AlbyClient, AlbyError> {
+    pub fn new(api_key: &str) -> Result<AlbyClient, LightningError> {
         let alby_url = Url::parse("https://api.getalby.com")?;
 
         let reqwest_client = reqwest::Client::builder().build()?;
@@ -43,7 +30,7 @@ impl AlbyClient {
 }
 
 impl AlbyClient {
-    pub async fn make_get(&self, endpoint: &str) -> Result<String, AlbyError> {
+    pub async fn make_get(&self, endpoint: &str) -> Result<String, LightningError> {
         let url = self.alby_url.join(endpoint)?;
         let response = self
             .reqwest_client
@@ -52,14 +39,15 @@ impl AlbyClient {
             .send()
             .await?;
 
-        if response.status() == reqwest::StatusCode::NOT_FOUND {
-            return Err(AlbyError::NotFound);
-        }
+        // Alby API returns a 404 for invoices that aren't settled yet
+        // if response.status() == reqwest::StatusCode::NOT_FOUND {
+        //     return Err(LightningError::NotFound);
+        // }
 
         Ok(response.text().await?)
     }
 
-    pub async fn make_post(&self, endpoint: &str, body: &str) -> Result<String, AlbyError> {
+    pub async fn make_post(&self, endpoint: &str, body: &str) -> Result<String, LightningError> {
         let url = self.alby_url.join(endpoint)?;
         let response = self
             .reqwest_client
@@ -74,11 +62,11 @@ impl AlbyClient {
             .await?;
 
         if response.status() == reqwest::StatusCode::NOT_FOUND {
-            return Err(AlbyError::NotFound);
+            return Err(LightningError::NotFound);
         }
 
         if response.status() == reqwest::StatusCode::UNAUTHORIZED {
-            return Err(AlbyError::Unauthorized);
+            return Err(LightningError::Unauthorized);
         }
 
         Ok(response.text().await?)
@@ -89,7 +77,7 @@ impl AlbyClient {
     pub async fn create_invoice(
         &self,
         params: &CreateInvoiceParams,
-    ) -> Result<CreateInvoiceResult, AlbyError> {
+    ) -> Result<CreateInvoiceResult, LightningError> {
         let params = serde_json::json!({
             "amount": params.amount,
             "description": params.memo,
@@ -115,7 +103,7 @@ impl AlbyClient {
         })
     }
 
-    pub async fn pay_invoice(&self, bolt11: &str) -> Result<PayInvoiceResult, AlbyError> {
+    pub async fn pay_invoice(&self, bolt11: &str) -> Result<PayInvoiceResult, LightningError> {
         let body = self
             .make_post(
                 "payments/bolt11",
@@ -133,9 +121,10 @@ impl AlbyClient {
         })
     }
 
-    pub async fn is_invoice_paid(&self, payment_hash: &str) -> Result<bool, AlbyError> {
+    pub async fn is_invoice_paid(&self, payment_hash: &str) -> Result<bool, LightningError> {
+        info!("KODY checking if invoice is paid: {}", payment_hash);
         let body = self.make_get(&format!("invoices/{payment_hash}")).await?;
-
+        info!("KODY body: {}", body);
         Ok(serde_json::from_str::<serde_json::Value>(&body)?["settled"]
             .as_bool()
             .unwrap_or(false))

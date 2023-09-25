@@ -1,29 +1,11 @@
 use hyper::{header::CONTENT_TYPE, http::HeaderValue};
 use serde::{Deserialize, Serialize};
+
 use url::Url;
 
 use crate::model::CreateInvoiceParams;
 
-#[derive(Debug, thiserror::Error)]
-pub enum StrikeError {
-    #[error("reqwest error: {0}")]
-    ReqwestError(#[from] reqwest::Error),
-
-    #[error("url error: {0}")]
-    UrlError(#[from] url::ParseError),
-
-    #[error("serde error: {0}")]
-    SerdeError(#[from] serde_json::Error),
-
-    #[error("Not found")]
-    NotFound,
-
-    #[error("Unauthorized")]
-    Unauthorized,
-
-    #[error("Payment Failed")]
-    PaymentFailed,
-}
+use super::error::LightningError;
 
 #[derive(Clone)]
 pub struct StrikeClient {
@@ -33,7 +15,7 @@ pub struct StrikeClient {
 }
 
 impl StrikeClient {
-    pub fn new(api_key: &str) -> Result<StrikeClient, StrikeError> {
+    pub fn new(api_key: &str) -> Result<StrikeClient, LightningError> {
         let strike_url = Url::parse("https://api.strike.me")?;
 
         let reqwest_client = reqwest::Client::builder().build()?;
@@ -47,7 +29,7 @@ impl StrikeClient {
 }
 
 impl StrikeClient {
-    pub async fn make_get(&self, endpoint: &str) -> Result<String, StrikeError> {
+    pub async fn make_get(&self, endpoint: &str) -> Result<String, LightningError> {
         let url = self.strike_url.join(endpoint)?;
         let response = self
             .reqwest_client
@@ -57,13 +39,13 @@ impl StrikeClient {
             .await?;
 
         if response.status() == reqwest::StatusCode::NOT_FOUND {
-            return Err(StrikeError::NotFound);
+            return Err(LightningError::NotFound);
         }
 
         Ok(response.text().await?)
     }
 
-    pub async fn make_post(&self, endpoint: &str, body: &str) -> Result<String, StrikeError> {
+    pub async fn make_post(&self, endpoint: &str, body: &str) -> Result<String, LightningError> {
         let url = self.strike_url.join(endpoint)?;
         let response = self
             .reqwest_client
@@ -78,17 +60,17 @@ impl StrikeClient {
             .await?;
 
         if response.status() == reqwest::StatusCode::NOT_FOUND {
-            return Err(StrikeError::NotFound);
+            return Err(LightningError::NotFound);
         }
 
         if response.status() == reqwest::StatusCode::UNAUTHORIZED {
-            return Err(StrikeError::Unauthorized);
+            return Err(LightningError::Unauthorized);
         }
 
         Ok(response.text().await?)
     }
 
-    pub async fn make_patch(&self, endpoint: &str, body: &str) -> Result<String, StrikeError> {
+    pub async fn make_patch(&self, endpoint: &str, body: &str) -> Result<String, LightningError> {
         let url = self.strike_url.join(endpoint)?;
         let response = self
             .reqwest_client
@@ -103,11 +85,11 @@ impl StrikeClient {
             .await?;
 
         if response.status() == reqwest::StatusCode::NOT_FOUND {
-            return Err(StrikeError::NotFound);
+            return Err(LightningError::NotFound);
         }
 
         if response.status() == reqwest::StatusCode::UNAUTHORIZED {
-            return Err(StrikeError::Unauthorized);
+            return Err(LightningError::Unauthorized);
         }
 
         Ok(response.text().await?)
@@ -116,6 +98,7 @@ impl StrikeClient {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QuoteRequest {
+    #[serde(rename = "descriptionHash")]
     pub description_hash: String,
 }
 
@@ -127,8 +110,8 @@ impl StrikeClient {
     pub async fn create_strike_invoice(
         &self,
         params: &CreateInvoiceParams,
-    ) -> Result<String, StrikeError> {
-        let btc = params.amount / 100000000;
+    ) -> Result<String, LightningError> {
+        let btc = (params.amount as f64) / 100_000_000.0;
         let params = serde_json::json!({
             "amount": {
                 "amount": btc,
@@ -150,13 +133,12 @@ impl StrikeClient {
     }
 
     // this is how you get the actual lightning invoice
-    pub async fn create_strike_quote(&self, invoice_id: &str) -> Result<String, StrikeError> {
+    pub async fn create_strike_quote(&self, invoice_id: &str) -> Result<String, LightningError> {
         let endpoint = format!("v1/invoices/{}/quote", invoice_id);
         let description_hash = format!(
             "{:0>64}",
             hex::encode(hex::decode(invoice_id.replace('-', "").as_bytes()).unwrap())
         );
-
         let params = QuoteRequest { description_hash };
         let body = self
             .make_post(&endpoint, &serde_json::to_string(&params)?)
@@ -170,7 +152,7 @@ impl StrikeClient {
         Ok(payment_request)
     }
 
-    pub async fn create_ln_payment_quote(&self, bolt11: &str) -> Result<String, StrikeError> {
+    pub async fn create_ln_payment_quote(&self, bolt11: &str) -> Result<String, LightningError> {
         let params = serde_json::json!({
             "lnInvoice": bolt11,
             "sourceCurrency": "BTC",
@@ -190,7 +172,7 @@ impl StrikeClient {
         Ok(payment_quote_id)
     }
 
-    pub async fn execute_ln_payment_quote(&self, quote_id: &str) -> Result<bool, StrikeError> {
+    pub async fn execute_ln_payment_quote(&self, quote_id: &str) -> Result<bool, LightningError> {
         let endpoint = format!("v1/payment-quotes/{}/execute", quote_id);
         let body = self
             .make_patch(&endpoint, &serde_json::to_string(&serde_json::json!({}))?)
@@ -200,8 +182,8 @@ impl StrikeClient {
         Ok(response["state"].as_str().unwrap_or("") == "COMPLETED")
     }
 
-    pub async fn is_invoice_paid(&self, invoice_id: &str) -> Result<bool, StrikeError> {
-        let body = self.make_get(&format!("invoices/{invoice_id}")).await?;
+    pub async fn is_invoice_paid(&self, invoice_id: &str) -> Result<bool, LightningError> {
+        let body = self.make_get(&format!("v1/invoices/{invoice_id}")).await?;
         let response = serde_json::from_str::<serde_json::Value>(&body)?;
 
         Ok(response["state"].as_str().unwrap_or("") == "PAID")
