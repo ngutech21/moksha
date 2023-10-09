@@ -31,7 +31,7 @@ serde-wasm-bindgen = "0.6.0"
 wasm-bindgen = "0.2.87"
 
 rexie = "0.5.0"
-tokio = { version = "1.32.0", features = ["rt", "sync"] }
+tokio = { version = "1.33.0", features = ["rt", "sync"] }
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
 reqwest = { version = "0.11.22", features = ["serde_json", "json", "rustls-tls"], default-features = false }
