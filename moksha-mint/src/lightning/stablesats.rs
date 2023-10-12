@@ -80,9 +80,31 @@ impl StablesatsLightning {
 
 #[async_trait]
 impl Lightning for StablesatsLightning {
-    async fn is_invoice_paid(&self, _invoice: String) -> Result<bool, MokshaMintError> {
-        // Not implemented for Stablesats
-        unimplemented!()
+    async fn is_invoice_paid(&self, invoice: String) -> Result<bool, MokshaMintError> {
+        let input = LnInvoicePaymentStatusInput {
+            payment_request: invoice,
+        };
+        let query = format!(
+            r#"{{"query":"query LnInvoicePaymentStatus($input: LnInvoicePaymentStatusInput!) {{ lnInvoicePaymentStatus(input: $input) {{ status errors {{ message path code }} }} }}","variables":{{"input":{}}}}}"#,
+            serde_json::to_string(&input).map_err(MokshaMintError::Serialization)?
+        );
+
+        let response = self
+            .make_gqlpost(&query)
+            .await
+            .map_err(|err| MokshaMintError::PayInvoice("payment_request".to_string(), err))?;
+
+        println!("response: {:?}", response.clone());
+
+        let response: serde_json::Value = serde_json::from_str(&response).unwrap();
+        let status = response["data"]["lnInvoicePaymentStatus"]["status"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+
+        println!("invoice paid status: {}", status.clone());
+
+        Ok(status == "PAID")
     }
 
     async fn create_invoice(
@@ -177,37 +199,9 @@ struct LnInvoicePaymentSendInput {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct ResponseData {
-    pub data: LnInvoicePaymentSend,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct LnInvoicePaymentSend {
-    pub status: String,
-    pub errors: Option<Vec<LnInvoicePaymentStatusError>>, // FIXME use specific type
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct LnInvoicePaymentStatusInput {
     payment_request: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct LnInvoicePaymentStatusData {
-    pub ln_invoice_payment_status: LnInvoicePaymentStatus,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct LnInvoicePaymentStatus {
-    pub status: String,
-    pub errors: Option<Vec<LnInvoicePaymentStatusError>>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct LnInvoicePaymentStatusError {
-    pub message: String,
-    pub path: Vec<String>,
-    pub code: Option<String>,
 }
 
 // # create invoice
@@ -240,6 +234,16 @@ mod tests {
         let ln =
             StablesatsLightning::new("auth bearer", "https://api.blink.sv/graphql", "wallet id")?;
         let result = ln.create_invoice(50).await?;
+        println!("{:?}", result);
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_is_invoice_paid() -> anyhow::Result<()> {
+        let ln =
+            StablesatsLightning::new("auth bearer", "https://api.blink.sv/graphql", "wallet id")?;
+        let result = ln.is_invoice_paid("lnbc30...".to_owned()).await?;
         println!("{:?}", result);
         Ok(())
     }
