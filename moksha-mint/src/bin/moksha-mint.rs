@@ -1,8 +1,8 @@
 use mokshamint::{
     info::MintInfoSettings,
     lightning::{
-        AlbyLightningSettings, LightningType, LnbitsLightningSettings, LndLightningSettings,
-        StrikeLightningSettings,
+        stablesats::StablesatsSettings, AlbyLightningSettings, LightningType,
+        LnbitsLightningSettings, LndLightningSettings, StrikeLightningSettings,
     },
     MintBuilder,
 };
@@ -58,6 +58,12 @@ pub async fn main() -> anyhow::Result<()> {
                 .from_env::<StrikeLightningSettings>()
                 .expect("Please provide strike info");
             LightningType::Strike(strike_settings)
+        },
+        "Stablesats" => {
+            let settings = envy::prefixed("STABLESATS_")
+                .from_env::<StablesatsSettings>()
+                .expect("Please provide stablesats info");
+            LightningType::Stablesats(settings)
         }
         _ => panic!(
             "env MINT_LIGHTNING_BACKEND not found or invalid values. Valid values are Lnbits, Lnd, Alby, and Strike"

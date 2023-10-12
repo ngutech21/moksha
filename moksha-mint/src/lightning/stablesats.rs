@@ -1,8 +1,11 @@
+use std::fmt::{self, Formatter};
+
 use async_trait::async_trait;
 use axum::http::HeaderValue;
 
 use hyper::header::CONTENT_TYPE;
 use serde_derive::{Deserialize, Serialize};
+
 use url::Url;
 
 use crate::{
@@ -16,19 +19,32 @@ use super::{error::LightningError, Lightning};
 pub struct StablesatsSettings {
     pub auth_bearer: Option<String>,
     pub galoy_url: Option<String>, // FIXME use Url type instead
+    pub usd_wallet_id: Option<String>,
 }
 
 impl StablesatsSettings {
-    pub fn new(auth_bearer: &str, galoy_url: &str) -> StablesatsSettings {
+    pub fn new(auth_bearer: &str, galoy_url: &str, usd_wallet_id: &str) -> StablesatsSettings {
         StablesatsSettings {
             auth_bearer: Some(auth_bearer.to_owned()),
             galoy_url: Some(galoy_url.to_owned()),
+            usd_wallet_id: Some(usd_wallet_id.to_owned()),
         }
     }
 }
 
+impl fmt::Display for StablesatsSettings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "auth_bearer: {}, galoy_url: {}",
+            self.auth_bearer.as_ref().unwrap(),
+            self.galoy_url.as_ref().unwrap(),
+        )
+    }
+}
+
 #[derive(Clone, Debug)]
-struct StablesatsLightning {
+pub struct StablesatsLightning {
     auth_bearer: String,
     galoy_url: Url,
     usd_wallet_id: String,
@@ -36,21 +52,19 @@ struct StablesatsLightning {
 }
 
 impl StablesatsLightning {
-    pub fn new(
-        auth_bearer: &str,
-        galoy_url: &str,
-        usd_wallet_id: &str,
-    ) -> Result<StablesatsLightning, LightningError> {
-        let galoy_url = Url::parse(galoy_url)?;
+    pub fn new(auth_bearer: &str, galoy_url: &str, usd_wallet_id: &str) -> StablesatsLightning {
+        let galoy_url = Url::parse(galoy_url).expect("invalid galoy url");
 
-        let reqwest_client = reqwest::Client::builder().build()?;
+        let reqwest_client = reqwest::Client::builder()
+            .build()
+            .expect("invalid reqwest client");
 
-        Ok(StablesatsLightning {
+        StablesatsLightning {
             auth_bearer: auth_bearer.to_owned(),
             galoy_url,
             reqwest_client,
             usd_wallet_id: usd_wallet_id.to_owned(),
-        })
+        }
     }
 
     pub async fn make_gqlpost(&self, body: &str) -> Result<String, LightningError> {
@@ -222,7 +236,7 @@ mod tests {
     #[ignore]
     async fn test_pay_invoice() -> anyhow::Result<()> {
         let ln =
-            StablesatsLightning::new("auth bearer", "https://api.blink.sv/graphql", "wallet id")?;
+            StablesatsLightning::new("auth bearer", "https://api.blink.sv/graphql", "wallet id");
         let result = ln.pay_invoice("lnbc180...".to_string()).await;
         println!("{:?}", result);
         Ok(())
@@ -232,7 +246,7 @@ mod tests {
     #[ignore]
     async fn test_create_invoice() -> anyhow::Result<()> {
         let ln =
-            StablesatsLightning::new("auth bearer", "https://api.blink.sv/graphql", "wallet id")?;
+            StablesatsLightning::new("auth bearer", "https://api.blink.sv/graphql", "wallet id");
         let result = ln.create_invoice(50).await?;
         println!("{:?}", result);
         Ok(())
@@ -242,7 +256,7 @@ mod tests {
     #[ignore]
     async fn test_is_invoice_paid() -> anyhow::Result<()> {
         let ln =
-            StablesatsLightning::new("auth bearer", "https://api.blink.sv/graphql", "wallet id")?;
+            StablesatsLightning::new("auth bearer", "https://api.blink.sv/graphql", "wallet id");
         let result = ln.is_invoice_paid("lnbc30...".to_owned()).await?;
         println!("{:?}", result);
         Ok(())

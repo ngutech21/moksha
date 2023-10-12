@@ -13,6 +13,7 @@ use error::MokshaMintError;
 use hyper::http::{HeaderName, HeaderValue};
 use hyper::Method;
 use info::{MintInfoResponse, MintInfoSettings, Parameter};
+use lightning::stablesats::StablesatsLightning;
 use lightning::{AlbyLightning, Lightning, LightningType, LnbitsLightning, StrikeLightning};
 use mint::{LightningFeeConfig, Mint};
 use model::{GetMintQuery, PostMintQuery};
@@ -93,6 +94,21 @@ impl MintBuilder {
             Some(LightningType::Strike(strike_settings)) => Arc::new(StrikeLightning::new(
                 strike_settings.api_key.expect("STRIKE_API_KEY not set"),
             )),
+            Some(LightningType::Stablesats(settings)) => Arc::new(StablesatsLightning::new(
+                settings
+                    .auth_bearer
+                    .expect("STABLESATS_AUTH_BEARER not set")
+                    .as_str(),
+                settings
+                    .galoy_url
+                    .expect("STABLESATS_GALOY_URL not set")
+                    .as_str(),
+                settings
+                    .usd_wallet_id
+                    .expect("STABLESATS_USD_WALLET_ID not set")
+                    .as_str(),
+            )),
+
             Some(LightningType::Lnd(lnd_settings)) => Arc::new(
                 lightning::LndLightning::new(
                     lnd_settings.grpc_host.expect("LND_GRPC_HOST not set"),
