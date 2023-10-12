@@ -85,8 +85,46 @@ impl Lightning for StablesatsLightning {
         unimplemented!()
     }
 
-    async fn create_invoice(&self, _amount: u64) -> Result<CreateInvoiceResult, MokshaMintError> {
-        unimplemented!()
+    async fn create_invoice(
+        &self,
+        amount_in_usd_cent: u64,
+    ) -> Result<CreateInvoiceResult, MokshaMintError> {
+        let input = LnUsdInvoiceCreateInput {
+            amount: amount_in_usd_cent,
+            wallet_id: self.usd_wallet_id.clone(),
+        };
+        let query = format!(
+            r#"{{"query":"mutation lnUsdInvoiceCreate($input: LnUsdInvoiceCreateInput!) {{ lnUsdInvoiceCreate(input: $input) {{ invoice {{ paymentRequest paymentHash satoshis }} }} }}","variables":{{"input":{}}}}}"#,
+            serde_json::to_string(&input).map_err(MokshaMintError::Serialization)?
+        );
+
+        let response = self
+            .make_gqlpost(&query)
+            .await
+            .map_err(|err| MokshaMintError::PayInvoice("payment_request".to_string(), err))?; // FIXME
+
+        println!("response: {:?}", response.clone());
+
+        let response: serde_json::Value = serde_json::from_str(&response).unwrap();
+        let payment_request = response["data"]["lnUsdInvoiceCreate"]["invoice"]["paymentRequest"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+
+        let payment_hash = response["data"]["lnUsdInvoiceCreate"]["invoice"]["paymentHash"]
+            .as_str()
+            .unwrap();
+
+        let sats = response["data"]["lnUsdInvoiceCreate"]["invoice"]["satoshis"]
+            .as_u64()
+            .unwrap();
+
+        println!("sats {}", sats);
+
+        Ok(CreateInvoiceResult {
+            payment_hash: payment_hash.as_bytes().to_vec(),
+            payment_request,
+        })
     }
 
     async fn pay_invoice(
@@ -172,6 +210,14 @@ struct LnInvoicePaymentStatusError {
     pub code: Option<String>,
 }
 
+// # create invoice
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LnUsdInvoiceCreateInput {
+    amount: u64,
+    wallet_id: String,
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -184,6 +230,16 @@ mod tests {
         let ln =
             StablesatsLightning::new("auth bearer", "https://api.blink.sv/graphql", "wallet id")?;
         let result = ln.pay_invoice("lnbc180...".to_string()).await;
+        println!("{:?}", result);
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_create_invoice() -> anyhow::Result<()> {
+        let ln =
+            StablesatsLightning::new("auth bearer", "https://api.blink.sv/graphql", "wallet id")?;
+        let result = ln.create_invoice(50).await?;
         println!("{:?}", result);
         Ok(())
     }
