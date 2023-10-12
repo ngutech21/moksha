@@ -17,6 +17,7 @@ use lightning_invoice::{Bolt11Invoice as LNInvoice, SignedRawBolt11Invoice};
 mod alby;
 pub mod error;
 mod lnbits;
+mod stablesats;
 mod strike;
 
 #[cfg(test)]
