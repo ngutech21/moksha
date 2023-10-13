@@ -34,10 +34,10 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   ffi: ^2.0.1
-  flutter_rust_bridge: 1.82.3
+  flutter_rust_bridge: 1.82.1
   meta: ^1.8.0
   qr_flutter: ^4.1.0
-  share_plus: ^7.0.2
+  share_plus: ^7.1.0
   flutter_riverpod: ^2.3.6
   fl_chart: ^0.64.0
   go_router: ^11.0.0
