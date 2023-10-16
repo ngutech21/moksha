@@ -271,13 +271,13 @@ mod tests {
 
         // Generate a shared secret
         let secret_msg = "test";
-        let (B_, r) = dhke.step1_alice(secret_msg.clone(), Some(blinding_factor.as_bytes()))?;
+        let (B_, r) = dhke.step1_alice(secret_msg, Some(blinding_factor.as_bytes()))?;
         let C_ = dhke.step2_bob(B_, &a)?;
         let C = dhke.step3_alice(C_, r, A)?;
 
         // Verify the shared secret
-        assert!(dhke.verify(a, C, secret_msg.clone())?);
-        assert!(!dhke.verify(a, C.combine(&C)?, secret_msg.clone())?); // adding C twice shouldn't pass
+        assert!(dhke.verify(a, C, secret_msg)?);
+        assert!(!dhke.verify(a, C.combine(&C)?, secret_msg)?); // adding C twice shouldn't pass
         assert!(!dhke.verify(a, A, secret_msg)?); // A shouldn't pass
 
         Ok(())
