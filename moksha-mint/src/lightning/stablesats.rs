@@ -4,8 +4,11 @@ use async_trait::async_trait;
 use axum::http::HeaderValue;
 
 use hyper::header::CONTENT_TYPE;
+use lightning_invoice::Bolt11Invoice;
+use moksha_core::model::InvoiceQuoteResult;
 use serde_derive::{Deserialize, Serialize};
 
+use tracing::info;
 use url::Url;
 
 use crate::{
@@ -119,6 +122,18 @@ impl Lightning for StablesatsLightning {
         println!("invoice paid status: {}", status.clone());
 
         Ok(status == "PAID")
+    }
+
+    async fn get_quote(&self, pr: String) -> Result<InvoiceQuoteResult, MokshaMintError> {
+        let inv: Bolt11Invoice = self.decode_invoice(pr.clone()).await.unwrap();
+
+        let invoice_amount_sat = inv.amount_milli_satoshis().unwrap() / 1_000;
+        let btc_price_usd = 27915.68 / 100_000_000.0;
+        let price_in_usd_cents = (btc_price_usd * invoice_amount_sat as f64) * 100.0;
+
+        Ok(InvoiceQuoteResult {
+            amount_in_cent: price_in_usd_cents as u64,
+        })
     }
 
     async fn create_invoice(

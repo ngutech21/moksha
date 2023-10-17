@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use moksha_core::model::{
-    BlindedMessage, CheckFeesResponse, Keysets, PaymentRequest, PostMeltResponse, PostMintResponse,
-    PostSplitResponse, Proofs,
+    BlindedMessage, CheckFeesResponse, InvoiceQuoteResult, Keysets, PaymentRequest,
+    PostMeltResponse, PostMintResponse, PostSplitResponse, Proofs,
 };
 use secp256k1::PublicKey;
 use url::Url;
@@ -37,6 +37,12 @@ pub trait Client {
         pr: String,
         outputs: Vec<BlindedMessage>,
     ) -> Result<PostMeltResponse, MokshaWalletError>;
+
+    async fn get_melt_tokens(
+        &self,
+        mint_url: &Url,
+        pr: String,
+    ) -> Result<InvoiceQuoteResult, MokshaWalletError>;
 
     async fn post_checkfees(
         &self,

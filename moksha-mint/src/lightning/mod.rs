@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use moksha_core::model::InvoiceQuoteResult;
 use std::fmt::{self, Formatter};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 use tonic_lnd::Client;
@@ -63,6 +64,10 @@ pub trait Lightning: Send + Sync {
     async fn decode_invoice(&self, payment_request: String) -> Result<LNInvoice, MokshaMintError> {
         LNInvoice::from_str(&payment_request)
             .map_err(|err| MokshaMintError::DecodeInvoice(payment_request, err))
+    }
+
+    async fn get_quote(&self, _invoice: String) -> Result<InvoiceQuoteResult, MokshaMintError> {
+        Ok(Default::default())
     }
 }
 

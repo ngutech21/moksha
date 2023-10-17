@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use moksha_core::fixture::{read_fixture, read_fixture_as};
 use moksha_core::model::{
-    BlindedMessage, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest, PostMeltResponse,
-    PostMintResponse, PostSplitResponse, Proofs, TokenV3,
+    BlindedMessage, CheckFeesResponse, InvoiceQuoteResult, Keysets, MintKeyset, PaymentRequest,
+    PostMeltResponse, PostMintResponse, PostSplitResponse, Proofs, TokenV3,
 };
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::localstore::LocalStore;
@@ -49,6 +49,14 @@ impl Client for MockClient {
         _output: Vec<BlindedMessage>,
     ) -> Result<PostSplitResponse, MokshaWalletError> {
         Ok(self.split_response.clone())
+    }
+
+    async fn get_melt_tokens(
+        &self,
+        _mint_url: &Url,
+        _pr: String,
+    ) -> Result<InvoiceQuoteResult, MokshaWalletError> {
+        unimplemented!()
     }
 
     async fn post_mint_payment_request(

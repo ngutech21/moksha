@@ -438,6 +438,11 @@ pub struct CashuErrorResponse {
     pub error: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub struct InvoiceQuoteResult {
+    pub amount_in_cent: u64,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{

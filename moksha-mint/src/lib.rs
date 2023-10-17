@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use axum::extract::{Query, State};
+use axum::extract::{Path, Query, State};
 use axum::routing::{get_service, post};
 use axum::Router;
 use axum::{routing::get, Json};
@@ -18,8 +18,9 @@ use lightning::{AlbyLightning, Lightning, LightningType, LnbitsLightning, Strike
 use mint::{LightningFeeConfig, Mint};
 use model::{GetMintQuery, PostMintQuery};
 use moksha_core::model::{
-    CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
-    PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+    CheckFeesRequest, CheckFeesResponse, InvoiceQuoteResult, Keysets, PaymentRequest,
+    PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest,
+    PostSplitResponse,
 };
 use secp256k1::PublicKey;
 
@@ -187,6 +188,7 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .route("/keysets", get(get_keysets))
         .route("/mint", get(get_mint).post(post_mint))
         .route("/checkfees", post(post_check_fees))
+        .route("/melt/:invoice", get(get_melt))
         .route("/melt", post(post_melt))
         .route("/split", post(post_split))
         .route("/info", get(get_info));
@@ -255,6 +257,21 @@ async fn post_check_fees(
                 .amount_milli_satoshis()
                 .ok_or_else(|| error::MokshaMintError::InvalidAmount)?,
         ),
+    }))
+}
+
+async fn get_melt(
+    Path(invoice): Path<String>,
+    State(mint): State<Mint>,
+) -> Result<Json<InvoiceQuoteResult>, MokshaMintError> {
+    println!(">>>>>>>>>>>>>>>> melt2");
+
+    let quote = mint.lightning.get_quote(invoice.to_owned()).await?;
+
+    println!("quote: {:?}", &quote);
+
+    Ok(Json(InvoiceQuoteResult {
+        amount_in_cent: quote.amount_in_cent,
     }))
 }
 
