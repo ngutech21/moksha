@@ -93,6 +93,24 @@ impl StablesatsLightning {
 
         Ok(response.text().await?)
     }
+
+    async fn get_btc_price(&self) -> Result<f64, MokshaMintError> {
+        let query = r#"{"query":"query btcPrice {btcPrice { base currencyUnit formattedAmount offset}}","variables":{}}"#;
+
+        let response = self
+            .make_gqlpost(query)
+            .await
+            .map_err(|err| MokshaMintError::PayInvoice("payment_request".to_string(), err))?; // FIXME
+
+        let response: serde_json::Value = serde_json::from_str(&response).unwrap();
+        let formatted_amount = response["data"]["btcPrice"]["formattedAmount"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+
+        let btc_price = formatted_amount.parse::<f64>().unwrap(); // FIXME
+        Ok(btc_price / 100.0)
+    }
 }
 
 #[async_trait]
@@ -111,15 +129,11 @@ impl Lightning for StablesatsLightning {
             .await
             .map_err(|err| MokshaMintError::PayInvoice("payment_request".to_string(), err))?;
 
-        println!("response: {:?}", response.clone());
-
         let response: serde_json::Value = serde_json::from_str(&response).unwrap();
         let status = response["data"]["lnInvoicePaymentStatus"]["status"]
             .as_str()
             .unwrap()
             .to_owned();
-
-        println!("invoice paid status: {}", status.clone());
 
         Ok(status == "PAID")
     }
@@ -128,7 +142,7 @@ impl Lightning for StablesatsLightning {
         let inv: Bolt11Invoice = self.decode_invoice(pr.clone()).await.unwrap();
 
         let invoice_amount_sat = inv.amount_milli_satoshis().unwrap() / 1_000;
-        let btc_price_usd = 27915.68 / 100_000_000.0;
+        let btc_price_usd = self.get_btc_price().await?;
         let price_in_usd_cents = (btc_price_usd * invoice_amount_sat as f64) * 100.0;
 
         Ok(InvoiceQuoteResult {
