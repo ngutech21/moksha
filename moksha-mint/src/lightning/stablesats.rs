@@ -168,8 +168,6 @@ impl Lightning for StablesatsLightning {
             .await
             .map_err(|err| MokshaMintError::PayInvoice("payment_request".to_string(), err))?; // FIXME
 
-        println!("response: {:?}", response.clone());
-
         let response: serde_json::Value = serde_json::from_str(&response).unwrap();
         let payment_request = response["data"]["lnUsdInvoiceCreate"]["invoice"]["paymentRequest"]
             .as_str()
@@ -183,8 +181,6 @@ impl Lightning for StablesatsLightning {
         let sats = response["data"]["lnUsdInvoiceCreate"]["invoice"]["satoshis"]
             .as_u64()
             .unwrap();
-
-        println!("sats {}", sats);
 
         Ok(CreateInvoiceResult {
             payment_hash: payment_hash.as_bytes().to_vec(),
@@ -208,13 +204,10 @@ impl Lightning for StablesatsLightning {
             serde_json::to_string(&input).map_err(MokshaMintError::Serialization)?
         );
 
-        println!("query: {}", query.clone());
         let response = self
             .make_gqlpost(&query)
             .await
             .map_err(|err| MokshaMintError::PayInvoice(payment_request.clone(), err))?;
-
-        println!("response: {:?}", response.clone());
 
         let response: serde_json::Value = serde_json::from_str(&response).unwrap();
         let status = response["data"]["lnInvoicePaymentSend"]["status"]

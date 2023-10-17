@@ -264,12 +264,7 @@ async fn get_melt(
     Path(invoice): Path<String>,
     State(mint): State<Mint>,
 ) -> Result<Json<InvoiceQuoteResult>, MokshaMintError> {
-    println!(">>>>>>>>>>>>>>>> melt2");
-
     let quote = mint.lightning.get_quote(invoice.to_owned()).await?;
-
-    println!("quote: {:?}", &quote);
-
     Ok(Json(InvoiceQuoteResult {
         amount_in_cent: quote.amount_in_cent,
     }))
