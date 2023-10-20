@@ -1,3 +1,4 @@
+export CFLAGS := ""
 platform := if os_family() == "unix" { "macos"} else {os_family()}
 
 
