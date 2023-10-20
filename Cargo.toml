@@ -6,8 +6,8 @@ members = [
     "moksha-wallet",
     "moksha-mint",
     "moksha-fedimint",
-    "flutter/native",
     "integrationtests",
+    "flutter/native",
 ]
 
 [profile.dev]
@@ -17,6 +17,11 @@ split-debuginfo = "packed"
 strip = true # Automatically strip symbols from the binary.
 lto = true   # Enable link-time optimization.
 
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
 [workspace.metadata]
 authors = ["The moksha Developers"]
 edition = "2021"
@@ -25,6 +30,19 @@ readme = "README.md"
 repository = "https://github.com/ngutech21/moksha"
 license-file = "LICENSE"
 keywords = ["bitcoin", "e-cash"]
+
+# Config for 'cargo dist'
+[workspace.metadata.dist]
+# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.3.1"
+# CI backends to support
+ci = ["github"]
+# The installers to generate for each app
+installers = []
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-pc-windows-msvc"]
+# Publish jobs to run in CI
+pr-run-mode = "plan"
 
 [patch.crates-io]
 secp256k1-zkp = { git = "https://github.com/dpc/rust-secp256k1-zkp/", branch = "sanket-pr" }

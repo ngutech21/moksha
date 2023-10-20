@@ -1952,30 +1952,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "integrationtests"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "bitcoin_hashes 0.11.0",
- "hyper",
- "lightning 0.0.116",
- "lightning-invoice 0.24.0",
- "moksha-core",
- "moksha-mint",
- "moksha-wallet",
- "rand",
- "reqwest",
- "secp256k1 0.24.3",
- "serde",
- "serde_derive",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "ipnet"
 version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2442,6 +2418,30 @@ dependencies = [
  "serde_json",
  "tokio",
  "wasm-bindgen-futures",
+]
+
+[[package]]
+name = "moksha-integrationtests"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "bitcoin_hashes 0.11.0",
+ "hyper",
+ "lightning 0.0.116",
+ "lightning-invoice 0.24.0",
+ "moksha-core",
+ "moksha-mint",
+ "moksha-wallet",
+ "rand",
+ "reqwest",
+ "secp256k1 0.24.3",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
