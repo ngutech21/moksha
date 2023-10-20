@@ -146,6 +146,13 @@ impl TokenV3 {
         )?;
         Ok(serde_json::from_slice::<TokenV3>(&json)?)
     }
+
+    pub fn mint(&self) -> Option<Url> {
+        self.tokens
+            .first()
+            .and_then(|token| token.mint.as_ref())
+            .map(|url| url.to_owned())
+    }
 }
 
 impl TryFrom<TokenV3> for String {
