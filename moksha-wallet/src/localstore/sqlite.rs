@@ -16,7 +16,7 @@ pub struct SqliteLocalStore {
 #[async_trait(?Send)]
 impl LocalStore for SqliteLocalStore {
     async fn migrate(&self) {
-        sqlx::migrate!("../moksha-wallet/migrations")
+        sqlx::migrate!("./migrations")
             .run(&self.pool)
             .await
             .expect("Could not run migrations");
