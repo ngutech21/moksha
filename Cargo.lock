@@ -2381,7 +2381,7 @@ dependencies = [
 
 [[package]]
 name = "moksha-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "base64 0.21.2",
@@ -2400,7 +2400,7 @@ dependencies = [
 
 [[package]]
 name = "moksha-fedimint"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "base64 0.20.0",
@@ -2422,7 +2422,7 @@ dependencies = [
 
 [[package]]
 name = "moksha-integrationtests"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "axum",
@@ -2446,7 +2446,7 @@ dependencies = [
 
 [[package]]
 name = "moksha-mint"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2480,7 +2480,7 @@ dependencies = [
 
 [[package]]
 name = "moksha-wallet"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "async-trait",
