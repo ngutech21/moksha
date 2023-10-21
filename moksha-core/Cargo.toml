@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/ngutech21/moksha"
 license = "MIT"
-description = "A library for building cashu applications in Rust"
+description = "A library for building cashu applications"
 
 [lib]
 name = "moksha_core"
