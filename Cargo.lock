@@ -2380,6 +2380,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "moksha-cli"
+version = "0.1.2"
+dependencies = [
+ "anyhow",
+ "clap",
+ "moksha-wallet",
+ "tokio",
+ "url",
+]
+
+[[package]]
 name = "moksha-core"
 version = "0.1.2"
 dependencies = [
@@ -2484,7 +2495,6 @@ version = "0.1.2"
 dependencies = [
  "anyhow",
  "async-trait",
- "clap",
  "dirs",
  "gloo-net 0.4.0",
  "lightning-invoice 0.24.0",
