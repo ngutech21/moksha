@@ -3,35 +3,33 @@ use secp256k1::{All, PublicKey, Scalar, Secp256k1, SecretKey};
 
 use crate::error::MokshaCoreError;
 
-/*
-Implementation of https://gist.github.com/RubenSomsen/be7a4760dd4596d06963d67baf140406
-
-Bob (Mint):
-A = a*G
-return A
-
-Alice (Client):
-Y = hash_to_curve(secret_message)
-r = random blinding factor
-B'= Y + r*G
-return B'
-
-Bob:
-C' = a*B'
-  (= a*Y + a*r*G)
-return C'
-
-Alice:
-C = C' - r*A
- (= C' - a*r*G)
- (= a*Y)
-return C, secret_message
-
-Bob:
-Y = hash_to_curve(secret_message)
-C == a*Y
-If true, C must have originated from Bob
-*/
+/// Implementation of `<https://gist.github.com/RubenSomsen/be7a4760dd4596d06963d67baf140406>`
+///
+/// Bob (Mint):
+/// A = a*G
+/// return A
+///
+/// Alice (Client):
+/// Y = hash_to_curve(secret_message)
+/// r = random blinding factor
+/// B'= Y + r*G
+/// return B'
+///
+/// Bob:
+/// C' = a*B'
+///   (= a*Y + a*r*G)
+/// return C'
+///
+/// Alice:
+/// C = C' - r*A
+///  (= C' - a*r*G)
+///  (= a*Y)
+/// return C, secret_message
+///
+/// Bob:
+/// Y = hash_to_curve(secret_message)
+/// C == a*Y
+/// If true, C must have originated from Bob
 
 #[derive(Clone)]
 pub struct Dhke {
@@ -56,6 +54,8 @@ impl Dhke {
         hash.as_byte_array().to_vec()
     }
 
+    /// Generates a point from the message hash and checks if the point lies on the curve.
+    /// If it does not, iteratively tries to compute a new point from the hash.
     fn hash_to_curve(message: &[u8]) -> PublicKey {
         let mut point: Option<PublicKey> = None;
         let mut msg_to_hash = message.to_vec();

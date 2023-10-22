@@ -17,6 +17,16 @@ pub fn generate_hash() -> String {
     sha256::Hash::hash(&random).to_string()
 }
 
+/// Derives a set of secret keys from a master key using a given derivation path.
+///
+/// # Arguments
+///
+/// * `master_key` - A string slice that holds the master key.
+/// * `derivation_path` - A string slice that holds the derivation path.
+///
+/// # Returns
+///
+/// A HashMap containing the derived secret keys, where the key is a u64 value and the value is a SecretKey.
 pub fn derive_keys(master_key: &str, derivation_path: &str) -> HashMap<u64, SecretKey> {
     let mut keys = HashMap::new();
     for i in 0..MAX_ORDER {
@@ -27,6 +37,15 @@ pub fn derive_keys(master_key: &str, derivation_path: &str) -> HashMap<u64, Secr
     keys
 }
 
+/// Derives public keys from a given set of secret keys.
+///
+/// # Arguments
+///
+/// * `keys` - A HashMap containing the secret keys to derive public keys from.
+///
+/// # Returns
+///
+/// A HashMap containing the derived public keys.
 pub fn derive_pubkeys(keys: &HashMap<u64, SecretKey>) -> HashMap<u64, PublicKey> {
     let secp = Secp256k1::new();
     keys.keys()
@@ -34,6 +53,15 @@ pub fn derive_pubkeys(keys: &HashMap<u64, SecretKey>) -> HashMap<u64, PublicKey>
         .collect()
 }
 
+/// Derives a keyset ID from a HashMap of public keys.
+///
+/// # Arguments
+///
+/// * `keys` - A HashMap of public keys.
+///
+/// # Returns
+///
+/// A string representing the derived keyset ID.
 pub fn derive_keyset_id(keys: &HashMap<u64, PublicKey>) -> String {
     let pubkeys_concat = keys
         .iter()
@@ -44,6 +72,15 @@ pub fn derive_keyset_id(keys: &HashMap<u64, PublicKey>) -> String {
     general_purpose::STANDARD.encode(hashed_pubkeys)[..12].to_string()
 }
 
+/// Derives a public key from a given seed.
+///
+/// # Arguments
+///
+/// * `seed` - A string slice representing the seed to derive the public key from.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the derived `PublicKey` or a `MokshaCoreError` if an error occurs.
 pub fn derive_pubkey(seed: &str) -> Result<PublicKey, MokshaCoreError> {
     let hash = sha256::Hash::hash(seed.as_bytes());
     let key = SecretKey::from_slice(hash.as_byte_array())?;
