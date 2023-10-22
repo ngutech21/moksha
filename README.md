@@ -63,9 +63,10 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 ## Crates
 
 - [moksha-core](./moksha-core) The core of the cashu library. Contains all the logic for creating and verifying tokens.
+- [moksha-wallet](./moksha-wallet) Cashu wallet library
+- [moksha-cli](./moksha-wallet) Cashu cli wallet
 - [moksha-mint](./moksha-mint) Cashu mint server. Handles minting, melting and token requests.
-- [moksha-wallet](./moksha-wallet) Cashu cli-wallet and library
-- [moksha-fedimint](./moksha-fedimint) Fedimint wallet library
+- [moksha-fedimint](./moksha-fedimint) Fedimint wrapper for the cashu wallet
 - [integrationtests](./integrationtests) Spins up a mint and runs integration tests against it.
 - [flutter](./flutter/native) Thin wrapper using [flutter-rust-bridge](https://github.com/fzyzcjy/flutter_rust_bridge) around the wallet library for use in flutter.
 
