@@ -1,3 +1,4 @@
+[![crate](https://img.shields.io/crates/v/moksha-core.svg?logo=rust)](https://crates.io/crates/moksha-core)
 [![rust](https://github.com/ngutech21/moksha/actions/workflows/rust.yml/badge.svg?branch=master)](https://github.com/ngutech21/moksha/actions/workflows/rust.yml)
 [![wasm](https://github.com/ngutech21/moksha/actions/workflows/wasm.yml/badge.svg?branch=master)](https://github.com/ngutech21/moksha/actions/workflows/wasm.yml)
 [![coverage](https://img.shields.io/codecov/c/github/ngutech21/moksha)](https://app.codecov.io/gh/ngutech21/moksha/)
