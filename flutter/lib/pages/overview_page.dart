@@ -6,7 +6,7 @@ import 'package:moksha_wallet/pages/util.dart';
 import 'package:go_router/go_router.dart';
 
 class OverviewPage extends ConsumerWidget {
-  const OverviewPage({required this.label, Key? key}) : super(key: key);
+  const OverviewPage({required this.label, super.key});
 
   final String label;
 
