@@ -138,9 +138,10 @@ impl TokenV3 {
         ))
     }
 
-    pub fn deserialize(data: String) -> Result<TokenV3, MokshaCoreError> {
+    pub fn deserialize(data: impl Into<String>) -> Result<TokenV3, MokshaCoreError> {
         let json = general_purpose::URL_SAFE.decode(
-            data.strip_prefix(TOKEN_PREFIX_V3)
+            data.into()
+                .strip_prefix(TOKEN_PREFIX_V3)
                 .ok_or(MokshaCoreError::InvalidTokenPrefix)?
                 .as_bytes(),
         )?;
@@ -595,7 +596,7 @@ mod tests {
     #[test]
     fn test_tokens_deserialize() -> anyhow::Result<()> {
         let input = "cashuAeyJ0b2tlbiI6W3sibWludCI6Imh0dHBzOi8vODMzMy5zcGFjZTozMzM4IiwicHJvb2ZzIjpbeyJpZCI6IkRTQWw5bnZ2eWZ2YSIsImFtb3VudCI6Miwic2VjcmV0IjoiRWhwZW5uQzlxQjNpRmxXOEZaX3BadyIsIkMiOiIwMmMwMjAwNjdkYjcyN2Q1ODZiYzMxODNhZWNmOTdmY2I4MDBjM2Y0Y2M0NzU5ZjY5YzYyNmM5ZGI1ZDhmNWI1ZDQifSx7ImlkIjoiRFNBbDludnZ5ZnZhIiwiYW1vdW50Ijo4LCJzZWNyZXQiOiJUbVM2Q3YwWVQ1UFVfNUFUVktudWt3IiwiQyI6IjAyYWM5MTBiZWYyOGNiZTVkNzMyNTQxNWQ1YzI2MzAyNmYxNWY5Yjk2N2EwNzljYTk3NzlhYjZlNWMyZGIxMzNhNyJ9XX1dLCJtZW1vIjoiVGhhbmt5b3UuIn0=";
-        let tokens = TokenV3::deserialize(input.to_string())?;
+        let tokens = TokenV3::deserialize(input)?;
         assert_eq!(tokens.memo, Some("Thankyou.".to_string()),);
         assert_eq!(tokens.tokens.len(), 1);
         Ok(())
