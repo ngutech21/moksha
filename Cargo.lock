@@ -2195,6 +2195,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "lightning"
+version = "0.0.117"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb0cb32c79c42444453bfabed7bd4f4ef64dfdd2e35e191fa8f3b9099ad2a186"
+dependencies = [
+ "bitcoin",
+]
+
+[[package]]
 name = "lightning-invoice"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2439,7 +2448,7 @@ dependencies = [
  "axum",
  "bitcoin_hashes 0.11.0",
  "hyper",
- "lightning 0.0.116",
+ "lightning 0.0.117",
  "lightning-invoice 0.24.0",
  "moksha-core",
  "moksha-mint",
