@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use moksha_core::model::{
-    BlindedMessage, CashuErrorResponse, CheckFeesRequest, CheckFeesResponse, Keysets,
-    PaymentRequest, PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse,
+    BlindedMessage, CashuErrorResponse, CheckFeesRequest, CheckFeesResponse, InvoiceQuoteResult,
+    Keysets, PaymentRequest, PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse,
     PostSplitRequest, PostSplitResponse, Proofs,
 };
 use reqwest::{
@@ -98,6 +98,16 @@ impl Client for HttpClient {
             .await?;
 
         extract_response_data::<CheckFeesResponse>(resp).await
+    }
+
+    async fn get_melt_tokens(
+        &self,
+        mint_url: &Url,
+        pr: String,
+    ) -> Result<InvoiceQuoteResult, MokshaWalletError> {
+        let url = mint_url.join(&format!("melt/{}", pr))?;
+        let resp = self.request_client.get(url).send().await?;
+        extract_response_data::<InvoiceQuoteResult>(resp).await
     }
 
     async fn get_mint_keys(

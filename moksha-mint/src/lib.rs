@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use axum::extract::{Query, State};
+use axum::extract::{Path, Query, State};
 use axum::routing::{get_service, post};
 use axum::Router;
 use axum::{routing::get, Json};
@@ -13,12 +13,14 @@ use error::MokshaMintError;
 use hyper::http::{HeaderName, HeaderValue};
 use hyper::Method;
 use info::{MintInfoResponse, MintInfoSettings, Parameter};
+use lightning::stablesats::StablesatsLightning;
 use lightning::{AlbyLightning, Lightning, LightningType, LnbitsLightning, StrikeLightning};
 use mint::{LightningFeeConfig, Mint};
 use model::{GetMintQuery, PostMintQuery};
 use moksha_core::model::{
-    CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
-    PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+    CheckFeesRequest, CheckFeesResponse, InvoiceQuoteResult, Keysets, PaymentRequest,
+    PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest,
+    PostSplitResponse,
 };
 use secp256k1::PublicKey;
 
@@ -93,6 +95,21 @@ impl MintBuilder {
             Some(LightningType::Strike(strike_settings)) => Arc::new(StrikeLightning::new(
                 strike_settings.api_key.expect("STRIKE_API_KEY not set"),
             )),
+            Some(LightningType::Stablesats(settings)) => Arc::new(StablesatsLightning::new(
+                settings
+                    .auth_bearer
+                    .expect("STABLESATS_AUTH_BEARER not set")
+                    .as_str(),
+                settings
+                    .galoy_url
+                    .expect("STABLESATS_GALOY_URL not set")
+                    .as_str(),
+                settings
+                    .usd_wallet_id
+                    .expect("STABLESATS_USD_WALLET_ID not set")
+                    .as_str(),
+            )),
+
             Some(LightningType::Lnd(lnd_settings)) => Arc::new(
                 lightning::LndLightning::new(
                     lnd_settings.grpc_host.expect("LND_GRPC_HOST not set"),
@@ -171,6 +188,7 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .route("/keysets", get(get_keysets))
         .route("/mint", get(get_mint).post(post_mint))
         .route("/checkfees", post(post_check_fees))
+        .route("/melt/:invoice", get(get_melt))
         .route("/melt", post(post_melt))
         .route("/split", post(post_split))
         .route("/info", get(get_info));
@@ -239,6 +257,16 @@ async fn post_check_fees(
                 .amount_milli_satoshis()
                 .ok_or_else(|| error::MokshaMintError::InvalidAmount)?,
         ),
+    }))
+}
+
+async fn get_melt(
+    Path(invoice): Path<String>,
+    State(mint): State<Mint>,
+) -> Result<Json<InvoiceQuoteResult>, MokshaMintError> {
+    let quote = mint.lightning.get_quote(invoice.to_owned()).await?;
+    Ok(Json(InvoiceQuoteResult {
+        amount_in_cent: quote.amount_in_cent,
     }))
 }
 

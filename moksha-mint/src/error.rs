@@ -24,6 +24,9 @@ pub enum MokshaMintError {
     #[error("Failed to pay invoice {0} - Error {1}")]
     PayInvoice(String, LightningError),
 
+    #[error("Failed to pay invoice {0} - Error {1}")]
+    PayInvoiceStablesats(String, String), // FIXME
+
     #[error("DB Error {0}")]
     Db(#[from] rocksdb::Error),
 
@@ -59,6 +62,9 @@ pub enum MokshaMintError {
 
     #[error("Lightning Error {0}")]
     Lightning(#[from] LightningError),
+
+    #[error("Deserialize Error {0}")]
+    DeserializeResponse(String),
 }
 
 impl IntoResponse for MokshaMintError {

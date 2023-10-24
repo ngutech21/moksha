@@ -172,11 +172,22 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             .post_checkfees(&self.mint_url, invoice.clone())
             .await?;
 
-        let ln_amount = Self::get_invoice_amount(&invoice)? + fees.fee;
+        // FIXME check if quote is available
+        // FIXME get currency from mint
+        // let ln_amount = Self::get_invoice_amount(&invoice)? + fees.fee;
 
-        if ln_amount > all_proofs.total_amount() {
-            return Err(MokshaWalletError::NotEnoughTokens);
-        }
+        // if ln_amount > all_proofs.total_amount() {
+        //     return Err(MokshaWalletError::NotEnoughTokens);
+        // }
+
+        let quote_result = self
+            .client
+            .get_melt_tokens(&self.mint_url, invoice.clone())
+            .await?;
+
+        let ln_amount = quote_result.amount_in_cent;
+        println!("quote_result: {:?}", quote_result);
+
         let selected_proofs = all_proofs.proofs_for_amount(ln_amount)?;
 
         let total_proofs = {
@@ -453,8 +464,8 @@ mod tests {
     use async_trait::async_trait;
     use moksha_core::fixture::{read_fixture, read_fixture_as};
     use moksha_core::model::{
-        BlindedMessage, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest, PostMeltResponse,
-        PostMintResponse, PostSplitResponse, Proofs, Token, TokenV3,
+        BlindedMessage, CheckFeesResponse, InvoiceQuoteResult, Keysets, MintKeyset, PaymentRequest,
+        PostMeltResponse, PostMintResponse, PostSplitResponse, Proofs, Token, TokenV3,
     };
     use secp256k1::PublicKey;
     use std::collections::HashMap;
@@ -567,6 +578,14 @@ mod tests {
             _output: Vec<BlindedMessage>,
         ) -> Result<PostSplitResponse, MokshaWalletError> {
             Ok(self.split_response.clone())
+        }
+
+        async fn get_melt_tokens(
+            &self,
+            _mint_url: &Url,
+            _pr: String,
+        ) -> Result<InvoiceQuoteResult, MokshaWalletError> {
+            unimplemented!()
         }
 
         async fn post_mint_payment_request(

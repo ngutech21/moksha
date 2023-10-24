@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use moksha_core::model::InvoiceQuoteResult;
 use std::fmt::{self, Formatter};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 use tonic_lnd::Client;
@@ -17,13 +18,17 @@ use lightning_invoice::{Bolt11Invoice as LNInvoice, SignedRawBolt11Invoice};
 mod alby;
 pub mod error;
 mod lnbits;
+pub mod stablesats;
 mod strike;
 
 #[cfg(test)]
 use mockall::automock;
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
-use self::{alby::AlbyClient, error::LightningError, lnbits::LNBitsClient, strike::StrikeClient};
+use self::{
+    alby::AlbyClient, error::LightningError, lnbits::LNBitsClient, stablesats::StablesatsSettings,
+    strike::StrikeClient,
+};
 
 #[derive(Debug, Clone)]
 pub enum LightningType {
@@ -31,6 +36,7 @@ pub enum LightningType {
     Alby(AlbyLightningSettings),
     Strike(StrikeLightningSettings),
     Lnd(LndLightningSettings),
+    Stablesats(StablesatsSettings),
 }
 
 impl fmt::Display for LightningType {
@@ -40,6 +46,7 @@ impl fmt::Display for LightningType {
             LightningType::Alby(settings) => write!(f, "Alby: {}", settings),
             LightningType::Strike(settings) => write!(f, "Strike: {}", settings),
             LightningType::Lnd(settings) => write!(f, "Lnd: {}", settings),
+            LightningType::Stablesats(settings) => write!(f, "Stablesats: {}", settings),
         }
     }
 }
@@ -57,6 +64,10 @@ pub trait Lightning: Send + Sync {
     async fn decode_invoice(&self, payment_request: String) -> Result<LNInvoice, MokshaMintError> {
         LNInvoice::from_str(&payment_request)
             .map_err(|err| MokshaMintError::DecodeInvoice(payment_request, err))
+    }
+
+    async fn get_quote(&self, _invoice: String) -> Result<InvoiceQuoteResult, MokshaMintError> {
+        Ok(Default::default())
     }
 }
 
