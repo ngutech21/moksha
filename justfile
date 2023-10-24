@@ -1,5 +1,4 @@
 export CFLAGS := ""
-platform := if os_family() == "unix" { "macos"} else {os_family()}
 
 
 # list all tasks
@@ -73,7 +72,7 @@ run-cli *ARGS:
 # run flutter desktop-app 
 run-desktop:
     cd flutter && \
-    flutter run -d {{ platform }}
+    flutter run -d {{ os() }}
 
 # run flutter web-app
 run-web:
@@ -85,7 +84,7 @@ run-web:
 build-desktop:
     cd flutter && \
     flutter clean && \
-    flutter build {{ platform }}
+    flutter build {{ os() }}
 
 
 # build the mint docker-image
