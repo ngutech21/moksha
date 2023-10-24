@@ -317,13 +317,14 @@ mod tests {
     use crate::{
         app,
         database::MockDatabase,
+        info::{MintInfoResponse, MintInfoSettings},
         lightning::{LightningType, MockLightning},
         mint::{LightningFeeConfig, Mint},
     };
 
     #[tokio::test]
     async fn test_get_keys() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(), None, None);
+        let app = app(create_mock_mint(Default::default()), None, None);
         let response = app
             .oneshot(Request::builder().uri("/keys").body(Body::empty())?)
             .await?;
@@ -337,7 +338,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keysets() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(), None, None);
+        let app = app(create_mock_mint(Default::default()), None, None);
         let response = app
             .oneshot(Request::builder().uri("/keysets").body(Body::empty())?)
             .await?;
@@ -349,7 +350,35 @@ mod tests {
         Ok(())
     }
 
-    fn create_mock_mint() -> Mint {
+    #[tokio::test]
+    async fn test_get_info() -> anyhow::Result<()> {
+        let mint_info_settings = MintInfoSettings {
+            name: Some("Bob's Cashu mint".to_string()),
+            version: true,
+            description: Some("A mint for testing".to_string()),
+            description_long: Some("A mint for testing long".to_string()),
+            ..Default::default()
+        };
+        let app = app(create_mock_mint(mint_info_settings), None, None);
+        let response = app
+            .oneshot(Request::builder().uri("/info").body(Body::empty())?)
+            .await?;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = hyper::body::to_bytes(response.into_body()).await?;
+        let info = serde_json::from_slice::<MintInfoResponse>(&body)?;
+        assert!(!info.parameter.peg_out_only);
+        assert_eq!(info.nuts.len(), 8);
+        assert_eq!(info.name, Some("Bob's Cashu mint".to_string()));
+        assert_eq!(info.description, Some("A mint for testing".to_string()));
+        assert_eq!(
+            info.description_long,
+            Some("A mint for testing long".to_string())
+        );
+        Ok(())
+    }
+
+    fn create_mock_mint(mint_info: MintInfoSettings) -> Mint {
         let db = Arc::new(MockDatabase::new());
         let lightning = Arc::new(MockLightning::new());
 
@@ -360,7 +389,7 @@ mod tests {
             LightningType::Lnbits(Default::default()),
             db,
             LightningFeeConfig::default(),
-            Default::default(),
+            mint_info,
         )
     }
 }
