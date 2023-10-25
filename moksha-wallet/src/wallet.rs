@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use moksha_core::{
+    amount::{split_amount, Amount},
     dhke::Dhke,
     model::{
-        split_amount, Amount, BlindedMessage, BlindedSignature, Keysets, PaymentRequest,
-        PostMeltResponse, TotalAmount,
+        BlindedMessage, BlindedSignature, Keysets, PaymentRequest, PostMeltResponse, TotalAmount,
     },
     proof::{Proof, Proofs},
     token::TokenV3,
