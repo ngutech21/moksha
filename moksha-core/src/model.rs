@@ -106,6 +106,13 @@ impl TokenV3 {
         }
     }
 
+    pub fn empty() -> Self {
+        Self {
+            tokens: vec![],
+            memo: None,
+        }
+    }
+
     pub fn total_amount(&self) -> u64 {
         self.tokens
             .iter()
@@ -357,31 +364,16 @@ pub struct PostMeltResponse {
 pub struct PostSplitRequest {
     pub proofs: Proofs,
     pub outputs: Vec<BlindedMessage>,
-    pub amount: Option<u64>,
 }
 
-#[skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct PostSplitResponse {
-    pub fst: Option<Vec<BlindedSignature>>,
-    pub snd: Option<Vec<BlindedSignature>>,
-    pub promises: Option<Vec<BlindedSignature>>,
+    pub promises: Vec<BlindedSignature>,
 }
 
 impl PostSplitResponse {
     pub fn with_promises(promises: Vec<BlindedSignature>) -> Self {
-        Self {
-            promises: Some(promises),
-            ..Default::default()
-        }
-    }
-
-    pub fn with_fst_and_snd(fst: Vec<BlindedSignature>, snd: Vec<BlindedSignature>) -> Self {
-        Self {
-            fst: Some(fst),
-            snd: Some(snd),
-            ..Default::default()
-        }
+        Self { promises }
     }
 }
 
@@ -460,7 +452,7 @@ mod tests {
     fn test_serialize_empty_split_response() -> anyhow::Result<()> {
         let response = PostSplitResponse::default();
         let serialized = serde_json::to_string(&response)?;
-        assert_eq!(serialized, "{}");
+        assert_eq!(serialized, "{\"promises\":[]}");
         Ok(())
     }
 

@@ -4,7 +4,7 @@ use moksha_core::{
     dhke::Dhke,
     model::{
         split_amount, Amount, BlindedMessage, BlindedSignature, Keysets, PaymentRequest,
-        PostMeltResponse, PostSplitResponse, Proof, Proofs, TokenV3, TotalAmount,
+        PostMeltResponse, Proof, Proofs, TokenV3, TotalAmount,
     },
 };
 
@@ -232,66 +232,33 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
 
         let split_result = self
             .client
-            .post_split_tokens(
-                &self.mint_url,
-                splt_amount.0,
-                tokens.proofs(),
-                total_outputs,
-            )
+            .post_split_tokens(&self.mint_url, tokens.proofs(), total_outputs)
             .await?;
 
-        match split_result {
-            PostSplitResponse {
-                promises: None,
-                fst: Some(fst),
-                snd: Some(snd),
-            } => {
-                let first_tokens = (
-                    self.mint_url.to_owned(),
-                    self.create_proofs_from_blinded_signatures(fst, first_secrets, first_outputs)?,
-                )
-                    .into();
-
-                let second_tokens = (
-                    self.mint_url.to_owned(),
-                    self.create_proofs_from_blinded_signatures(
-                        snd,
-                        second_secrets,
-                        second_outputs,
-                    )?,
-                )
-                    .into();
-
-                Ok((first_tokens, second_tokens))
-            }
-            PostSplitResponse {
-                fst: None,
-                snd: None,
-                promises: Some(promises),
-            } => {
-                let len_first = first_secrets.len();
-                let secrets = [first_secrets, second_secrets].concat();
-                let outputs = [first_outputs, second_outputs].concat();
-
-                let proofs = self
-                    .create_proofs_from_blinded_signatures(promises, secrets, outputs)?
-                    .proofs();
-
-                let first_tokens = (
-                    self.mint_url.to_owned(),
-                    proofs[0..len_first].to_vec().into(),
-                )
-                    .into();
-                let second_tokens = (
-                    self.mint_url.to_owned(),
-                    proofs[len_first..proofs.len()].to_vec().into(),
-                )
-                    .into();
-
-                Ok((first_tokens, second_tokens))
-            }
-            _ => Err(MokshaWalletError::InvalidProofs),
+        if split_result.promises.is_empty() {
+            return Ok((TokenV3::empty(), TokenV3::empty()));
         }
+
+        let len_first = first_secrets.len();
+        let secrets = [first_secrets, second_secrets].concat();
+        let outputs = [first_outputs, second_outputs].concat();
+
+        let proofs = self
+            .create_proofs_from_blinded_signatures(split_result.promises, secrets, outputs)?
+            .proofs();
+
+        let first_tokens = (
+            self.mint_url.to_owned(),
+            proofs[0..len_first].to_vec().into(),
+        )
+            .into();
+        let second_tokens = (
+            self.mint_url.to_owned(),
+            proofs[len_first..proofs.len()].to_vec().into(),
+        )
+            .into();
+
+        Ok((first_tokens, second_tokens))
     }
 
     async fn melt_token(
@@ -551,7 +518,7 @@ mod tests {
         fn with_melt_response(post_melt_response: PostMeltResponse) -> Self {
             Self {
                 post_melt_response,
-                split_response: PostSplitResponse::with_fst_and_snd(vec![], vec![]),
+                split_response: PostSplitResponse::with_promises(vec![]),
                 ..Default::default()
             }
         }
@@ -562,7 +529,6 @@ mod tests {
         async fn post_split_tokens(
             &self,
             _mint_url: &Url,
-            _amount: u64,
             _proofs: Proofs,
             _output: Vec<BlindedMessage>,
         ) -> Result<PostSplitResponse, MokshaWalletError> {

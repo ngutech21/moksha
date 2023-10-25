@@ -27,15 +27,10 @@ impl Client for WasmClient {
     async fn post_split_tokens(
         &self,
         mint_url: &Url,
-        amount: u64,
         proofs: Proofs,
         outputs: Vec<BlindedMessage>,
     ) -> Result<PostSplitResponse, MokshaWalletError> {
-        let body = &PostSplitRequest {
-            amount: Some(amount),
-            proofs,
-            outputs,
-        };
+        let body = &PostSplitRequest { proofs, outputs };
 
         let resp = Request::post(mint_url.join("split")?.as_str())
             .header("content-type", "application/json")

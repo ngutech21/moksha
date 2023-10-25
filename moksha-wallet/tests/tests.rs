@@ -44,7 +44,6 @@ impl Client for MockClient {
     async fn post_split_tokens(
         &self,
         _mint_url: &Url,
-        _amount: u64,
         _proofs: Proofs,
         _output: Vec<BlindedMessage>,
     ) -> Result<PostSplitResponse, MokshaWalletError> {

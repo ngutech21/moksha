@@ -38,15 +38,10 @@ impl Client for HttpClient {
     async fn post_split_tokens(
         &self,
         mint_url: &Url,
-        amount: u64,
         proofs: Proofs,
         outputs: Vec<BlindedMessage>,
     ) -> Result<PostSplitResponse, MokshaWalletError> {
-        let body = serde_json::to_string(&PostSplitRequest {
-            amount: Some(amount),
-            proofs,
-            outputs,
-        })?;
+        let body = serde_json::to_string(&PostSplitRequest { proofs, outputs })?;
 
         let resp = self
             .request_client

@@ -18,7 +18,6 @@ pub trait Client {
     async fn post_split_tokens(
         &self,
         mint_url: &Url,
-        amount: u64,
         proofs: Proofs,
         output: Vec<BlindedMessage>,
     ) -> Result<PostSplitResponse, MokshaWalletError>;

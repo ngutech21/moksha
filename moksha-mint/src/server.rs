@@ -104,11 +104,7 @@ async fn post_split(
     Json(split_request): Json<PostSplitRequest>,
 ) -> Result<Json<PostSplitResponse>, MokshaMintError> {
     let response = mint
-        .split(
-            split_request.amount,
-            &split_request.proofs,
-            &split_request.outputs,
-        )
+        .split(&split_request.proofs, &split_request.outputs)
         .await?;
 
     Ok(Json(response))

@@ -3,10 +3,7 @@ use std::{collections::HashSet, sync::Arc};
 use moksha_core::{
     crypto,
     dhke::Dhke,
-    model::{
-        split_amount, BlindedMessage, BlindedSignature, MintKeyset, PostSplitResponse, Proofs,
-        TotalAmount,
-    },
+    model::{BlindedMessage, BlindedSignature, MintKeyset, PostSplitResponse, Proofs, TotalAmount},
 };
 
 use crate::{
@@ -138,7 +135,6 @@ impl Mint {
 
     pub async fn split(
         &self,
-        amount: Option<u64>,
         proofs: &Proofs,
         blinded_messages: &[BlindedMessage],
     ) -> Result<PostSplitResponse, MokshaMintError> {
@@ -150,42 +146,16 @@ impl Mint {
 
         let sum_proofs = proofs.total_amount();
 
-        match amount {
-            Some(amount) => {
-                if amount > sum_proofs {
-                    return Err(MokshaMintError::SplitAmountTooHigh);
-                }
-                let sum_first = split_amount(sum_proofs - amount).len();
-                let first_slice = blinded_messages[0..sum_first].to_vec();
-                let first_sigs = self.create_blinded_signatures(&first_slice)?;
-                let second_slice = blinded_messages[sum_first..blinded_messages.len()].to_vec();
-                let second_sigs = self.create_blinded_signatures(&second_slice)?;
-
-                let amount_first = first_sigs.total_amount();
-                let amount_second = second_sigs.total_amount();
-
-                if sum_proofs != (amount_first + amount_second) {
-                    return Err(MokshaMintError::SplitAmountMismatch(format!(
-                        "Split amount mismatch: {sum_proofs} != {amount_first} + {amount_second}"
-                    )));
-                }
-
-                self.db.add_used_proofs(proofs)?;
-                Ok(PostSplitResponse::with_fst_and_snd(first_sigs, second_sigs))
-            }
-            None => {
-                let promises = self.create_blinded_signatures(blinded_messages)?;
-                let amount_promises = promises.total_amount();
-                if sum_proofs != amount_promises {
-                    return Err(MokshaMintError::SplitAmountMismatch(format!(
-                        "Split amount mismatch: {sum_proofs} != {amount_promises}"
-                    )));
-                }
-
-                self.db.add_used_proofs(proofs)?;
-                Ok(PostSplitResponse::with_promises(promises))
-            }
+        let promises = self.create_blinded_signatures(blinded_messages)?;
+        let amount_promises = promises.total_amount();
+        if sum_proofs != amount_promises {
+            return Err(MokshaMintError::SplitAmountMismatch(format!(
+                "Split amount mismatch: {sum_proofs} != {amount_promises}"
+            )));
         }
+
+        self.db.add_used_proofs(proofs)?;
+        Ok(PostSplitResponse::with_promises(promises))
     }
 
     pub async fn melt(
@@ -405,11 +375,9 @@ mod tests {
         let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
 
         let proofs = Proofs::empty();
-        let result = mint.split(Some(0), &proofs, &blinded_messages).await?;
+        let result = mint.split(&proofs, &blinded_messages).await?;
 
-        assert!(result.promises.is_none());
-        assert_eq!(result.fst.unwrap().len(), 0);
-        assert_eq!(result.snd.unwrap().len(), 0);
+        assert!(result.promises.is_empty());
         Ok(())
     }
 
@@ -418,56 +386,20 @@ mod tests {
         let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
 
-        let result = mint
-            .split(Some(20), &request.proofs, &request.outputs)
-            .await?;
+        let result = mint.split(&request.proofs, &request.outputs).await?;
+        assert_eq!(result.promises.total_amount(), 64);
 
-        assert!(result.promises.is_none());
-        assert_eq!(result.fst.unwrap().total_amount(), 44);
-        assert_eq!(result.snd.unwrap().total_amount(), 20);
-        Ok(())
-    }
+        let prv_lst = result
+            .promises
+            .get((result.promises.len() - 2) as usize)
+            .unwrap();
+        let lst = result
+            .promises
+            .get((result.promises.len() - 1) as usize)
+            .unwrap();
 
-    #[tokio::test]
-    async fn test_split_64_in_20_no_amount() -> anyhow::Result<()> {
-        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
-        let request =
-            create_request_from_fixture("post_split_request_64_20_no_amount.json".to_string())?;
-
-        let result = mint.split(None, &request.proofs, &request.outputs).await?;
-
-        assert_eq!(result.promises.unwrap().total_amount(), 64);
-        assert!(result.fst.is_none());
-        assert!(result.snd.is_none());
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_split_64_in_64() -> anyhow::Result<()> {
-        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
-        let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
-
-        let result = mint
-            .split(Some(64), &request.proofs, &request.outputs)
-            .await?;
-
-        assert!(result.promises.is_none());
-        assert_eq!(result.fst.unwrap().total_amount(), 0);
-        assert_eq!(result.snd.unwrap().total_amount(), 64);
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_split_amount_is_too_high() -> anyhow::Result<()> {
-        let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
-        let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
-
-        let result = mint
-            .split(Some(65), &request.proofs, &request.outputs)
-            .await;
-        assert!(result.is_err());
-        let _err = result.unwrap_err();
-        assert!(matches!(MokshaMintError::SplitAmountTooHigh, _err));
+        assert_eq!(prv_lst.amount, 4);
+        assert_eq!(lst.amount, 16);
         Ok(())
     }
 
@@ -477,9 +409,7 @@ mod tests {
         let request =
             create_request_from_fixture("post_split_request_duplicate_key.json".to_string())?;
 
-        let result = mint
-            .split(Some(20), &request.proofs, &request.outputs)
-            .await;
+        let result = mint.split(&request.proofs, &request.outputs).await;
         assert!(result.is_err());
         Ok(())
     }
