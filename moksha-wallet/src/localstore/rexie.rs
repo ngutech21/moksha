@@ -1,7 +1,7 @@
 use super::{LocalStore, WalletKeyset};
 use crate::error::MokshaWalletError;
 use async_trait::async_trait;
-use moksha_core::model::{Proof, Proofs};
+use moksha_core::proof::{Proof, Proofs};
 use rexie::*;
 use wasm_bindgen::JsValue;
 

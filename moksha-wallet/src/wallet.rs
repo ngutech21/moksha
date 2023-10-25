@@ -4,8 +4,10 @@ use moksha_core::{
     dhke::Dhke,
     model::{
         split_amount, Amount, BlindedMessage, BlindedSignature, Keysets, PaymentRequest,
-        PostMeltResponse, Proof, Proofs, TokenV3, TotalAmount,
+        PostMeltResponse, TotalAmount,
     },
+    proof::{Proof, Proofs},
+    token::TokenV3,
 };
 
 use secp256k1::{PublicKey, SecretKey};
@@ -421,8 +423,10 @@ mod tests {
     use moksha_core::fixture::{read_fixture, read_fixture_as};
     use moksha_core::model::{
         BlindedMessage, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest, PostMeltResponse,
-        PostMintResponse, PostSplitResponse, Proofs, Token, TokenV3,
+        PostMintResponse, PostSplitResponse,
     };
+    use moksha_core::proof::Proofs;
+    use moksha_core::token::{Token, TokenV3};
     use secp256k1::PublicKey;
     use std::collections::HashMap;
     use url::Url;
@@ -459,7 +463,7 @@ mod tests {
 
         async fn get_proofs(
             &self,
-        ) -> Result<moksha_core::model::Proofs, crate::error::MokshaWalletError> {
+        ) -> Result<moksha_core::proof::Proofs, crate::error::MokshaWalletError> {
             Ok(self.tokens.clone().proofs())
         }
 

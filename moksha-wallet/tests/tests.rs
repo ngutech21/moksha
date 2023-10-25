@@ -4,8 +4,10 @@ use async_trait::async_trait;
 use moksha_core::fixture::{read_fixture, read_fixture_as};
 use moksha_core::model::{
     BlindedMessage, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest, PostMeltResponse,
-    PostMintResponse, PostSplitResponse, Proofs, TokenV3,
+    PostMintResponse, PostSplitResponse,
 };
+use moksha_core::proof::Proofs;
+use moksha_core::token::TokenV3;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::localstore::LocalStore;
 use moksha_wallet::wallet::WalletBuilder;

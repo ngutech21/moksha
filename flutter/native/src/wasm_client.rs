@@ -2,16 +2,15 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use gloo_net::http::{Request, Response};
+use moksha_core::model::CashuErrorResponse;
 use moksha_core::model::{
     BlindedMessage, CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
     PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
-    Proofs,
 };
+use moksha_core::proof::Proofs;
 use moksha_wallet::{client::Client, error::MokshaWalletError};
 use secp256k1::PublicKey;
 use url::Url;
-
-use moksha_core::model::CashuErrorResponse;
 
 #[derive(Debug, Clone)]
 pub struct WasmClient;

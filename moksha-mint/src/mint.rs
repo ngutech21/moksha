@@ -3,7 +3,8 @@ use std::{collections::HashSet, sync::Arc};
 use moksha_core::{
     crypto,
     dhke::Dhke,
-    model::{BlindedMessage, BlindedSignature, MintKeyset, PostSplitResponse, Proofs, TotalAmount},
+    model::{BlindedMessage, BlindedSignature, MintKeyset, PostSplitResponse, TotalAmount},
+    proof::Proofs,
 };
 
 use crate::{
@@ -308,8 +309,10 @@ mod tests {
     use crate::model::{Invoice, PayInvoiceResult};
     use crate::{database::MockDatabase, error::MokshaMintError};
     use moksha_core::dhke;
-    use moksha_core::model::{BlindedMessage, TokenV3, TotalAmount};
-    use moksha_core::model::{PostSplitRequest, Proofs};
+    use moksha_core::model::PostSplitRequest;
+    use moksha_core::model::{BlindedMessage, TotalAmount};
+    use moksha_core::proof::Proofs;
+    use moksha_core::token::TokenV3;
     use std::str::FromStr;
     use std::sync::Arc;
 

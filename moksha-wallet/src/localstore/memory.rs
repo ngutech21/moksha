@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use moksha_core::model::{Proof, Proofs};
+use moksha_core::proof::{Proof, Proofs};
 use tokio::sync::Mutex;
 
 use crate::error::MokshaWalletError;
@@ -24,7 +24,7 @@ impl LocalStore for MemoryLocalStore {
         Ok(())
     }
 
-    async fn get_proofs(&self) -> Result<moksha_core::model::Proofs, MokshaWalletError> {
+    async fn get_proofs(&self) -> Result<moksha_core::proof::Proofs, MokshaWalletError> {
         Ok(Proofs::new(self.proofs.lock().await.clone()))
     }
 
@@ -52,7 +52,7 @@ impl LocalStore for MemoryLocalStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use moksha_core::model::{Proof, Proofs};
+    use moksha_core::proof::{Proof, Proofs};
     use serde_json::json;
 
     #[tokio::test]

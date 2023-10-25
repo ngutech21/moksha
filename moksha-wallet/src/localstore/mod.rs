@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use moksha_core::model::Proofs;
+use moksha_core::proof::Proofs;
 
 use crate::error::MokshaWalletError;
 

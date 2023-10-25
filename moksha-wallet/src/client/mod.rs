@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use moksha_core::model::{
-    BlindedMessage, CheckFeesResponse, Keysets, PaymentRequest, PostMeltResponse, PostMintResponse,
-    PostSplitResponse, Proofs,
+use moksha_core::{
+    model::{
+        BlindedMessage, CheckFeesResponse, Keysets, PaymentRequest, PostMeltResponse,
+        PostMintResponse, PostSplitResponse,
+    },
+    proof::Proofs,
 };
 use secp256k1::PublicKey;
 use url::Url;

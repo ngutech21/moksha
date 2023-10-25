@@ -110,7 +110,7 @@ pub fn test_integration() -> anyhow::Result<()> {
         assert_eq!(5_000, balance);
 
         // receive 10 sats
-        let token_10: moksha_core::model::TokenV3 =
+        let token_10: moksha_core::token::TokenV3 =
             read_fixture("token_10.cashu").unwrap().try_into().unwrap();
         let result_receive = wallet.receive_tokens(&token_10).await;
         assert!(result_receive.is_ok());

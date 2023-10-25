@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use moksha_core::model::Proofs;
+use moksha_core::proof::Proofs;
 use rocksdb::DB;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -134,7 +134,7 @@ mod tests {
 
     use moksha_core::{
         dhke,
-        model::{Proof, Proofs},
+        proof::{Proof, Proofs},
     };
 
     use crate::{database::Database, model::Invoice};

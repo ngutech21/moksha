@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use moksha_core::model::{Proof, Proofs};
+use moksha_core::proof::{Proof, Proofs};
 
 use crate::error::MokshaWalletError;
 use crate::localstore::{LocalStore, WalletKeyset};
@@ -137,7 +137,7 @@ impl SqliteLocalStore {
 mod tests {
     use std::sync::Arc;
 
-    use moksha_core::{fixture::read_fixture, model::TokenV3};
+    use moksha_core::{fixture::read_fixture, token::TokenV3};
 
     use super::SqliteLocalStore;
     use crate::localstore::LocalStore;
