@@ -1,6 +1,6 @@
 use flutter_rust_bridge::{StreamSink, SyncReturn};
 use lightning_invoice::Bolt11Invoice;
-use moksha_core::model::PaymentRequest;
+use moksha_core::primitives::PaymentRequest;
 use moksha_fedimint::FedimintWallet;
 use moksha_wallet::localstore::LocalStore;
 use std::future::Future;

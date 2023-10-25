@@ -8,6 +8,7 @@ use axum::extract::{Query, State};
 use axum::routing::{get_service, post};
 use axum::Router;
 use axum::{routing::get, Json};
+use moksha_core::model::Keysets;
 
 use crate::info::{MintInfoResponse, Parameter};
 
@@ -15,9 +16,9 @@ use crate::mint::Mint;
 use crate::model::{GetMintQuery, PostMintQuery};
 use hyper::http::{HeaderName, HeaderValue};
 use hyper::Method;
-use moksha_core::model::{
-    CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
-    PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+use moksha_core::primitives::{
+    CheckFeesRequest, CheckFeesResponse, PaymentRequest, PostMeltRequest, PostMeltResponse,
+    PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
 };
 use secp256k1::PublicKey;
 

@@ -2,10 +2,11 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use gloo_net::http::{Request, Response};
-use moksha_core::model::CashuErrorResponse;
-use moksha_core::model::{
-    BlindedMessage, CheckFeesRequest, CheckFeesResponse, Keysets, PaymentRequest, PostMeltRequest,
-    PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+use moksha_core::model::{BlindedMessage, Keysets};
+use moksha_core::primitives::CashuErrorResponse;
+use moksha_core::primitives::{
+    CheckFeesRequest, CheckFeesResponse, PaymentRequest, PostMeltRequest, PostMeltResponse,
+    PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
 };
 use moksha_core::proof::Proofs;
 use moksha_wallet::{client::Client, error::MokshaWalletError};

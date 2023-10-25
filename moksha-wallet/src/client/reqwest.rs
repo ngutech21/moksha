@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use moksha_core::{
-    model::{
-        BlindedMessage, CashuErrorResponse, CheckFeesRequest, CheckFeesResponse, Keysets,
-        PaymentRequest, PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse,
-        PostSplitRequest, PostSplitResponse,
+    model::{BlindedMessage, Keysets},
+    primitives::{
+        CashuErrorResponse, CheckFeesRequest, CheckFeesResponse, PaymentRequest, PostMeltRequest,
+        PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
     },
     proof::Proofs,
 };

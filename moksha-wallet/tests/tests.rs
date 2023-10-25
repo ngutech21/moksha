@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use moksha_core::fixture::{read_fixture, read_fixture_as};
-use moksha_core::model::{
-    BlindedMessage, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest, PostMeltResponse,
-    PostMintResponse, PostSplitResponse,
+use moksha_core::model::{BlindedMessage, Keysets, MintKeyset};
+use moksha_core::primitives::{
+    CheckFeesResponse, PaymentRequest, PostMeltResponse, PostMintResponse, PostSplitResponse,
 };
 use moksha_core::proof::Proofs;
 use moksha_core::token::TokenV3;

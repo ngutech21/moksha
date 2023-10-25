@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use moksha_core::{
-    model::{
-        BlindedMessage, CheckFeesResponse, Keysets, PaymentRequest, PostMeltResponse,
-        PostMintResponse, PostSplitResponse,
+    model::{BlindedMessage, Keysets},
+    primitives::{
+        CheckFeesResponse, PaymentRequest, PostMeltResponse, PostMintResponse, PostSplitResponse,
     },
     proof::Proofs,
 };

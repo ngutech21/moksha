@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use moksha_core::{
     amount::{split_amount, Amount},
     dhke::Dhke,
-    model::{
-        BlindedMessage, BlindedSignature, Keysets, PaymentRequest, PostMeltResponse, TotalAmount,
-    },
+    model::{BlindedMessage, BlindedSignature, Keysets, TotalAmount},
+    primitives::{PaymentRequest, PostMeltResponse},
     proof::{Proof, Proofs},
     token::TokenV3,
 };
@@ -325,7 +324,7 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             .await?;
 
         // step 3: unblind signatures
-        let current_keyset = self.keysets.get_current_keyset(&self.mint_keys)?;
+        let current_keyset = self.keysets.current_keyset(&self.mint_keys)?;
 
         let private_keys = blinded_messages
             .clone()
@@ -379,7 +378,7 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
         secrets: Vec<String>,
         outputs: Vec<(BlindedMessage, SecretKey)>,
     ) -> Result<Proofs, MokshaWalletError> {
-        let current_keyset = self.keysets.get_current_keyset(&self.mint_keys)?;
+        let current_keyset = self.keysets.current_keyset(&self.mint_keys)?;
 
         let private_keys = outputs
             .into_iter()
@@ -421,9 +420,9 @@ mod tests {
     };
     use async_trait::async_trait;
     use moksha_core::fixture::{read_fixture, read_fixture_as};
-    use moksha_core::model::{
-        BlindedMessage, CheckFeesResponse, Keysets, MintKeyset, PaymentRequest, PostMeltResponse,
-        PostMintResponse, PostSplitResponse,
+    use moksha_core::model::{BlindedMessage, Keysets, MintKeyset};
+    use moksha_core::primitives::{
+        CheckFeesResponse, PaymentRequest, PostMeltResponse, PostMintResponse, PostSplitResponse,
     };
     use moksha_core::proof::Proofs;
     use moksha_core::token::{Token, TokenV3};
