@@ -8,7 +8,7 @@ use axum::extract::{Query, State};
 use axum::routing::{get_service, post};
 use axum::Router;
 use axum::{routing::get, Json};
-use moksha_core::model::Keysets;
+use moksha_core::keyset::Keysets;
 
 use crate::info::{MintInfoResponse, Parameter};
 
@@ -210,7 +210,7 @@ mod tests {
 
     use crate::server::app;
     use hyper::{Body, Request, StatusCode};
-    use moksha_core::model::Keysets;
+    use moksha_core::keyset::Keysets;
     use secp256k1::PublicKey;
     use tower::ServiceExt;
 

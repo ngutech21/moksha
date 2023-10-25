@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    model::{BlindedMessage, BlindedSignature},
+    blind::{BlindedMessage, BlindedSignature},
     proof::Proofs,
 };
 

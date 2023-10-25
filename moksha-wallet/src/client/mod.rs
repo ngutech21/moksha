@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use moksha_core::{
-    model::{BlindedMessage, Keysets},
+    blind::BlindedMessage,
+    keyset::Keysets,
     primitives::{
         CheckFeesResponse, PaymentRequest, PostMeltResponse, PostMintResponse, PostSplitResponse,
     },

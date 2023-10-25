@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use gloo_net::http::{Request, Response};
-use moksha_core::model::{BlindedMessage, Keysets};
+use moksha_core::blind::BlindedMessage;
+use moksha_core::keyset::Keysets;
 use moksha_core::primitives::CashuErrorResponse;
 use moksha_core::primitives::{
     CheckFeesRequest, CheckFeesResponse, PaymentRequest, PostMeltRequest, PostMeltResponse,

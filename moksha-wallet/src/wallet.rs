@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use moksha_core::{
     amount::{split_amount, Amount},
+    blind::{BlindedMessage, BlindedSignature, TotalAmount},
     dhke::Dhke,
-    model::{BlindedMessage, BlindedSignature, Keysets, TotalAmount},
+    keyset::Keysets,
     primitives::{PaymentRequest, PostMeltResponse},
     proof::{Proof, Proofs},
     token::TokenV3,
@@ -419,8 +420,9 @@ mod tests {
         localstore::{LocalStore, WalletKeyset},
     };
     use async_trait::async_trait;
+    use moksha_core::blind::BlindedMessage;
     use moksha_core::fixture::{read_fixture, read_fixture_as};
-    use moksha_core::model::{BlindedMessage, Keysets, MintKeyset};
+    use moksha_core::keyset::{Keysets, MintKeyset};
     use moksha_core::primitives::{
         CheckFeesResponse, PaymentRequest, PostMeltResponse, PostMintResponse, PostSplitResponse,
     };

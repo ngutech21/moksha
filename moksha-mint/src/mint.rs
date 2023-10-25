@@ -1,9 +1,10 @@
 use std::{collections::HashSet, sync::Arc};
 
 use moksha_core::{
+    blind::{BlindedMessage, BlindedSignature, TotalAmount},
     crypto,
     dhke::Dhke,
-    model::{BlindedMessage, BlindedSignature, MintKeyset, TotalAmount},
+    keyset::MintKeyset,
     primitives::PostSplitResponse,
     proof::Proofs,
 };
@@ -309,8 +310,8 @@ mod tests {
     use crate::mint::Mint;
     use crate::model::{Invoice, PayInvoiceResult};
     use crate::{database::MockDatabase, error::MokshaMintError};
+    use moksha_core::blind::{BlindedMessage, TotalAmount};
     use moksha_core::dhke;
-    use moksha_core::model::{BlindedMessage, TotalAmount};
     use moksha_core::primitives::PostSplitRequest;
     use moksha_core::proof::Proofs;
     use moksha_core::token::TokenV3;
