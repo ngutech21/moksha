@@ -38,7 +38,7 @@ pub fn test_integration() -> anyhow::Result<()> {
                 .with_fee(0.0, 0)
                 .build();
 
-            let result = mokshamint::run_server(
+            let result = mokshamint::server::run_server(
                 mint.await.expect("Can not connect to lightning backend"),
                 "127.0.0.1:8686".parse().expect("invalid address"),
                 None,

@@ -4,7 +4,7 @@ use mokshamint::{
         AlbyLightningSettings, LightningType, LnbitsLightningSettings, LndLightningSettings,
         StrikeLightningSettings,
     },
-    MintBuilder,
+    mint::MintBuilder,
 };
 use std::{env, fmt, net::SocketAddr, path::PathBuf};
 
@@ -27,9 +27,6 @@ pub async fn main() -> anyhow::Result<()> {
     let host_port: SocketAddr = env::var("MINT_HOST_PORT")
         .unwrap_or_else(|_| "[::]:3338".to_string())
         .parse()?;
-
-    // read optional env var
-    // MINT_API_PREFIX
 
     let api_prefix = env::var("MINT_API_PREFIX").ok();
 
@@ -86,7 +83,7 @@ pub async fn main() -> anyhow::Result<()> {
         Err(_) => None,
     };
 
-    mokshamint::run_server(mint?, host_port, serve_wallet_path, api_prefix).await
+    mokshamint::server::run_server(mint?, host_port, serve_wallet_path, api_prefix).await
 }
 
 #[derive(Debug, PartialEq)]

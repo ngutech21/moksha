@@ -1,10 +1,8 @@
 use hyper::{header::CONTENT_TYPE, http::HeaderValue};
+use tracing::info;
 use url::Url;
 
-use crate::{
-    info,
-    model::{CreateInvoiceParams, CreateInvoiceResult, PayInvoiceResult},
-};
+use crate::model::{CreateInvoiceParams, CreateInvoiceResult, PayInvoiceResult};
 
 use super::error::LightningError;
 

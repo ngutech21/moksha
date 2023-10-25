@@ -13,9 +13,8 @@ use crate::{
     database::Database,
     error::MokshaMintError,
     info::MintInfoSettings,
-    lightning::{Lightning, LightningType},
+    lightning::{AlbyLightning, Lightning, LightningType, LnbitsLightning, StrikeLightning},
     model::Invoice,
-    MintBuilder,
 };
 
 #[derive(Clone)]
@@ -241,12 +240,103 @@ impl Mint {
     }
 }
 
+#[derive(Debug, Default)]
+pub struct MintBuilder {
+    private_key: Option<String>,
+    lightning_type: Option<LightningType>,
+    db_path: Option<String>,
+    fee_percent: Option<f32>,
+    fee_reserve_min: Option<u64>,
+    mint_info_settings: Option<MintInfoSettings>,
+}
+
+impl MintBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_mint_info(mut self, mint_info: MintInfoSettings) -> MintBuilder {
+        self.mint_info_settings = Some(mint_info);
+        self
+    }
+
+    pub fn with_private_key(mut self, private_key: String) -> MintBuilder {
+        self.private_key = Some(private_key);
+        self
+    }
+
+    pub fn with_db(mut self, db_path: String) -> MintBuilder {
+        self.db_path = Some(db_path);
+        self
+    }
+
+    pub fn with_lightning(mut self, lightning: LightningType) -> MintBuilder {
+        self.lightning_type = Some(lightning);
+        self
+    }
+
+    pub fn with_fee(mut self, fee_percent: f32, fee_reserve_min: u64) -> MintBuilder {
+        self.fee_percent = Some(fee_percent);
+        self.fee_reserve_min = Some(fee_reserve_min);
+        self
+    }
+
+    pub async fn build(self) -> Result<Mint, MokshaMintError> {
+        let ln: Arc<dyn Lightning + Send + Sync> = match self.lightning_type.clone() {
+            Some(LightningType::Lnbits(lnbits_settings)) => Arc::new(LnbitsLightning::new(
+                lnbits_settings.admin_key.expect("LNBITS_ADMIN_KEY not set"),
+                lnbits_settings.url.expect("LNBITS_URL not set"),
+            )),
+            Some(LightningType::Alby(alby_settings)) => Arc::new(AlbyLightning::new(
+                alby_settings.api_key.expect("ALBY_API_KEY not set"),
+            )),
+            Some(LightningType::Strike(strike_settings)) => Arc::new(StrikeLightning::new(
+                strike_settings.api_key.expect("STRIKE_API_KEY not set"),
+            )),
+            Some(LightningType::Lnd(lnd_settings)) => Arc::new(
+                crate::lightning::LndLightning::new(
+                    lnd_settings.grpc_host.expect("LND_GRPC_HOST not set"),
+                    &lnd_settings
+                        .tls_cert_path
+                        .expect("LND_TLS_CERT_PATH not set"),
+                    &lnd_settings
+                        .macaroon_path
+                        .expect("LND_MACAROON_PATH not set"),
+                )
+                .await?,
+            ),
+            None => panic!("Lightning backend not set"),
+        };
+
+        let db = Arc::new(crate::database::RocksDB::new(
+            self.db_path.expect("MINT_DB_PATH not set"),
+        ));
+
+        let fee_config = LightningFeeConfig::new(
+            self.fee_percent.expect("LIGHTNING_FEE_PERCENT not set"),
+            self.fee_reserve_min
+                .expect("LIGHTNING_RESERVE_FEE_MIN not set"),
+        );
+
+        Ok(Mint::new(
+            self.private_key.expect("MINT_PRIVATE_KEY not set"),
+            "".to_string(),
+            ln,
+            self.lightning_type.expect("Lightning backend not set"),
+            db,
+            fee_config,
+            self.mint_info_settings.unwrap_or_default(),
+        ))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::lightning::error::LightningError;
     use crate::lightning::{LightningType, MockLightning};
+    use crate::mint::Mint;
     use crate::model::{Invoice, PayInvoiceResult};
-    use crate::{database::MockDatabase, error::MokshaMintError, Mint};
+    use crate::{database::MockDatabase, error::MokshaMintError};
     use moksha_core::dhke;
     use moksha_core::model::{BlindedMessage, TokenV3, TotalAmount};
     use moksha_core::model::{PostSplitRequest, Proofs};

@@ -15,7 +15,7 @@ crate-type = ["cdylib", "staticlib"]
 [dependencies]
 moksha-wallet = { version = "0.1.2", path = "../../moksha-wallet" }
 moksha-core = { ersion = "0.1.2", path = "../../moksha-core" }
-moksha-fedimint = { ersion = "0.1.2", path = "../../moksha-fedimint" }
+moksha-fedimint = { version = "0.1.2", path = "../../moksha-fedimint" }
 
 tracing = "0.1.40"
 anyhow = { version = "1.0.75", features = ["backtrace"] }
