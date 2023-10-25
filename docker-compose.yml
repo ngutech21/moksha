@@ -1,0 +1,58 @@
+version: "3"
+
+services:
+  app:
+    image: "moksha:latest"
+    ports:
+      - 3338:3338
+    environment:
+      - MINT_APP_ENV=prod
+      - LND_MACAROON_PATH=/config/admin.macaroon
+      - LND_TLS_CERT_PATH=/config/tls.cert
+      - LND_GRPC_HOST=https://host.docker.internal:10001
+    env_file:
+      - .env
+    volumes:
+      - type: bind
+        source: "${LND_MACAROON_PATH}"
+        target: "/config/admin.macaroon"
+      - type: bind
+        source: "${LND_TLS_CERT_PATH}"
+        target: "/config/tls.cert"
+    labels:
+      - traefik.http.routers.hello.rule=Host(`webdev.local`)
+      - traefik.http.routers.hello.tls=true
+      - traefik.http.routers.hello.tls.certresolver=myresolver
+      - traefik.http.routers.hello.tls.domains[0].main=webdev.local
+      - traefik.http.routers.hello.tls.domains[0].sans=*.webdev.local
+      - traefik.http.routers.hello.entrypoints=websecure
+  traefik:
+    image: traefik:v2.3
+    command:
+      - --log.level=INFO
+      - --api.insecure=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --providers.docker
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data/certs:/etc/traefik/certs:ro
+      - ./_traefik.yml:/etc/traefik/dynamic_conf/conf.yml:ro
+    ports:
+      - "80:80"
+      - "443:443"
+
+  certresolver:
+    image: traefik:v2.3
+    command:
+      #- storeconfig
+      - --providers.docker
+      - --providers.docker.exposedbydefault=false
+      - --providers.file.directory=/etc/traefik/dynamic_conf
+      - --providers.file.watch=true
+    volumes:
+      - ./_traefik.yml:/etc/traefik/dynamic_conf/conf.yml:ro
+      - ./data/certs:/etc/traefik/certs:ro
+    labels:
+      - traefik.enable=false
