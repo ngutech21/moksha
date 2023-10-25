@@ -28,7 +28,7 @@ itertools = "0.11.0"
 # getrandom is transitive dependency of rand
 # on wasm, we need to enable the js backend
 # see https://docs.rs/getrandom/latest/getrandom/#indirect-dependencies and https://docs.rs/getrandom/latest/getrandom/#webassembly-support
-getrandom = { version = "0.2.8", features = ["js"] }
+getrandom = { version = "0.2.10", features = ["js"] }
 
 [dev-dependencies]
 anyhow = "1.0.75"
