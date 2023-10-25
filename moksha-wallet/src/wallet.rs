@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use moksha_core::{
-    amount::{split_amount, Amount},
+    amount::Amount,
     blind::{BlindedMessage, BlindedSignature, TotalAmount},
     dhke::Dhke,
     keyset::Keysets,
@@ -216,13 +216,13 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
         let total_token_amount = tokens.total_amount();
         let first_amount: Amount = (total_token_amount - splt_amount.0).into();
         let first_secrets = first_amount.split().create_secrets();
-        let first_outputs = self.create_blinded_messages(first_amount.0, &first_secrets)?;
+        let first_outputs = self.create_blinded_messages(first_amount, &first_secrets)?;
 
         // ############################################################################
 
         let second_amount = splt_amount.clone();
         let second_secrets = second_amount.split().create_secrets();
-        let second_outputs = self.create_blinded_messages(second_amount.0, &second_secrets)?;
+        let second_outputs = self.create_blinded_messages(second_amount, &second_secrets)?;
 
         let mut total_outputs = vec![];
         total_outputs.extend(get_blinded_msg(first_outputs.clone()));
@@ -302,7 +302,6 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
         let secrets = split_amount.create_secrets();
 
         let blinded_messages = split_amount
-            .0
             .into_iter()
             .zip(secrets.clone())
             .map(|(amount, secret)| {
@@ -358,10 +357,10 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
     // FIXME implement for Amount
     fn create_blinded_messages(
         &self,
-        amount: u64,
+        amount: Amount,
         secrets: &[String],
     ) -> Result<Vec<(BlindedMessage, SecretKey)>, MokshaWalletError> {
-        let split_amount = split_amount(amount);
+        let split_amount = amount.split();
 
         Ok(split_amount
             .into_iter()

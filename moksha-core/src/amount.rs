@@ -11,7 +11,7 @@ impl Amount {
 }
 
 #[derive(Debug, Clone)]
-pub struct SplitAmount(pub Vec<u64>);
+pub struct SplitAmount(Vec<u64>);
 
 impl From<Vec<u64>> for SplitAmount {
     fn from(from: Vec<u64>) -> Self {
@@ -33,8 +33,17 @@ impl From<u64> for Amount {
     }
 }
 
+impl IntoIterator for SplitAmount {
+    type Item = u64;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
 /// split a decimal amount into a vector of powers of 2
-pub fn split_amount(amount: u64) -> Vec<u64> {
+fn split_amount(amount: u64) -> Vec<u64> {
     format!("{amount:b}")
         .chars()
         .rev()
