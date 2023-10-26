@@ -1,6 +1,5 @@
 pub mod amount;
 pub mod blind;
-pub mod crypto;
 pub mod dhke;
 pub mod error;
 pub mod fixture;

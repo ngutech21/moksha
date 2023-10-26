@@ -1,35 +1,34 @@
+//! Implementation of `<https://gist.github.com/RubenSomsen/be7a4760dd4596d06963d67baf140406>`
+//!
+//! Bob (Mint):
+//! A = a*G
+//! return A
+//!
+//! Alice (Client):
+//! Y = hash_to_curve(secret_message)
+//! r = random blinding factor
+//! B'= Y + r*G
+//! return B'
+//!
+//! Bob:
+//! C' = a*B'
+//!   (= a*Y + a*r*G)
+//! return C'
+//!
+//! Alice:
+//! C = C' - r*A
+//!  (= C' - a*r*G)
+//!  (= a*Y)
+//! return C, secret_message
+//!
+//! Bob:
+//! Y = hash_to_curve(secret_message)
+//! C == a*Y
+//! If true, C must have originated from Bob
+//!
+use crate::error::MokshaCoreError;
 use bitcoin_hashes::{sha256, Hash};
 use secp256k1::{All, PublicKey, Scalar, Secp256k1, SecretKey};
-
-use crate::error::MokshaCoreError;
-
-/// Implementation of `<https://gist.github.com/RubenSomsen/be7a4760dd4596d06963d67baf140406>`
-///
-/// Bob (Mint):
-/// A = a*G
-/// return A
-///
-/// Alice (Client):
-/// Y = hash_to_curve(secret_message)
-/// r = random blinding factor
-/// B'= Y + r*G
-/// return B'
-///
-/// Bob:
-/// C' = a*B'
-///   (= a*Y + a*r*G)
-/// return C'
-///
-/// Alice:
-/// C = C' - r*A
-///  (= C' - a*r*G)
-///  (= a*Y)
-/// return C, secret_message
-///
-/// Bob:
-/// Y = hash_to_curve(secret_message)
-/// C == a*Y
-/// If true, C must have originated from Bob
 
 #[derive(Clone)]
 pub struct Dhke {
