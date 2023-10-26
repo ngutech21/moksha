@@ -32,7 +32,7 @@ once_cell = "1.18.0"
 [target.'cfg(target_family="wasm")'.dependencies]
 gloo-net = { version = "0.4.0" }
 gloo-timers = { version = "0.3.0", features = ["futures"] }
-serde = "1.0.189"
+serde = "1.0.190"
 serde_json = "1.0.107"
 tracing-wasm = "0.2.1"
 wasm-bindgen-futures = "0.4.37"
