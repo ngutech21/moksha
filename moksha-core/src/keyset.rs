@@ -1,3 +1,15 @@
+//! This module defines the `MintKeyset` and `Keysets` structs, which are used for managing keysets in Cashu as described in [Nut-02](https://github.com/cashubtc/nuts/blob/main/02.md)
+//!
+//! The `MintKeyset` struct represents a keyset for the Mint, with a `private_keys` field for the private keys, a `public_keys` field for the public keys, a `keyset_id` field for the ID of the keyset, and a `mint_pubkey` field for the public key of the Mint.
+//!
+//! The `MintKeyset` struct provides a `new` method for creating a new keyset from a seed and derivation path.
+//!
+//! The `Keysets` struct represents a collection of keysets, with a `keysets` field for the keysets and a `current_keyset_id` field for the ID of the current keyset.
+//!
+//! Both the `MintKeyset` and `Keysets` structs are serializable and deserializable using serde.
+//!
+//! The module also defines a `generate_hash` function for generating a random hash, and several helper functions for deriving keys and keyset IDs.
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

@@ -1,3 +1,6 @@
+//! This module contains all the request and response objects that are used for interacting between the Mint and Wallet in Cashu.
+//! All of these structs are serializable and deserializable using serde.
+
 use serde::{Deserialize, Serialize};
 
 use crate::{

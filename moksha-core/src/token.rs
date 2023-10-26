@@ -1,3 +1,7 @@
+//! This module defines the `Token` struct, which is used for representing tokens in Cashu as described in [Nut-00](https://github.com/cashubtc/nuts/blob/main/00.md)
+//!
+//! The `Token` struct represents a token, with an optional `mint` field for the URL of the Mint and a `proofs` field for the proofs associated with the token.
+
 use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::skip_serializing_none;

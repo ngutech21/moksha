@@ -1,4 +1,4 @@
-//! Blind Diffie-Hellman Key Exchange (blind ecash).
+//! This module defines the basic crypto primitives for Blind Diffie-Hellman Key Exchange (blind ecash).
 //!
 //! Implementation of [RubenSomsen/Blind-DH-ecash.md](https://gist.github.com/RubenSomsen/be7a4760dd4596d06963d67baf140406)
 //!

@@ -1,3 +1,10 @@
+//! This module defines the `Amount` and `SplitAmount` structs, which are used for representing and splitting amounts in Cashu.
+//!
+//! The `Amount` struct represents an amount in satoshis, with a single `u64` field for the amount. The struct provides a `split` method that splits the amount into a `SplitAmount` struct.
+//!
+//! The `SplitAmount` struct represents a split amount, with a `Vec<u64>` field for the split amounts. The struct provides a `create_secrets` method that generates a vector of random strings for use as secrets in the split transaction. The struct also implements the `IntoIterator` trait, which allows it to be iterated over as a vector of `u64` values.
+//!
+//! Both the `Amount` and `SplitAmount` structs are serializable and deserializable using serde.
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 

@@ -1,3 +1,15 @@
+//! This module defines the `Proof`, `P2SHScript`, and `Proofs` structs, which are used for representing proofs in the Moksha Core library as described in [Nut-00](https://github.com/cashubtc/nuts/blob/main/00.md)
+//!
+//! The `Proof` struct represents a proof, with an `amount` field for the amount in satoshis, a `secret` field for the secret string, a `c` field for the public key of the blinding factor, an `id` field for the ID of the proof, and an optional `script` field for the P2SH script.
+//!
+//! The `Proof` struct provides a `new` method for creating a new proof from its constituent fields.
+//!
+//! The `P2SHScript` struct represents a P2SH script, and is currently not implemented.
+//!
+//! The `Proofs` struct represents a collection of proofs, with a `Vec<Proof>` field for the proofs.
+//!
+//! Both the `Proof` and `Proofs` structs are serializable and deserializable using serde.
+
 use secp256k1::PublicKey;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
