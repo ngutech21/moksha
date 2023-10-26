@@ -1,29 +1,43 @@
-//! Implementation of `<https://gist.github.com/RubenSomsen/be7a4760dd4596d06963d67baf140406>`
+//! Blind Diffie-Hellman Key Exchange (blind ecash).
+//!
+//! Implementation of [RubenSomsen/Blind-DH-ecash.md](https://gist.github.com/RubenSomsen/be7a4760dd4596d06963d67baf140406)
 //!
 //! Bob (Mint):
+//!```python
 //! A = a*G
 //! return A
+//! ```
+//!
 //!
 //! Alice (Client):
+//!```python
 //! Y = hash_to_curve(secret_message)
 //! r = random blinding factor
 //! B'= Y + r*G
 //! return B'
+//! ```
+//!
 //!
 //! Bob:
+//!```python
 //! C' = a*B'
-//!   (= a*Y + a*r*G)
+//! (= a*Y + a*r*G)
 //! return C'
+//!```
 //!
 //! Alice:
+//!```python
 //! C = C' - r*A
-//!  (= C' - a*r*G)
-//!  (= a*Y)
+//! (= C' - a*r*G)
+//! (= a*Y)
 //! return C, secret_message
+//!```
 //!
 //! Bob:
+//!```python
 //! Y = hash_to_curve(secret_message)
 //! C == a*Y
+//!```
 //! If true, C must have originated from Bob
 //!
 use crate::error::MokshaCoreError;

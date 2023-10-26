@@ -100,7 +100,6 @@ impl From<Proof> for Proofs {
 }
 
 #[cfg(test)]
-
 mod tests {
     use serde_json::json;
 
