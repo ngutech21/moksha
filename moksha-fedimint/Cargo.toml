@@ -23,7 +23,7 @@ fedimint-core = { git = "https://github.com/fedimint/fedimint", rev = "6d833d0a8
 fedimint-mint-client = { git = "https://github.com/fedimint/fedimint", rev = "6d833d0a85db07245c627d9bbab0757e41043eb2" }
 fedimint-ln-client = { git = "https://github.com/fedimint/fedimint", rev = "6d833d0a85db07245c627d9bbab0757e41043eb2" }
 fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", rev = "6d833d0a85db07245c627d9bbab0757e41043eb2" }
-futures = "0.3.26"
+futures = "0.3.29"
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
 tokio = { version = "1.33.0", features = ["rt"] }
