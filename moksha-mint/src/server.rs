@@ -10,15 +10,13 @@ use axum::Router;
 use axum::{routing::get, Json};
 use moksha_core::keyset::Keysets;
 
-use crate::info::{MintInfoResponse, Parameter};
-
 use crate::mint::Mint;
 use crate::model::{GetMintQuery, PostMintQuery};
 use hyper::http::{HeaderName, HeaderValue};
 use hyper::Method;
 use moksha_core::primitives::{
-    CheckFeesRequest, CheckFeesResponse, PaymentRequest, PostMeltRequest, PostMeltResponse,
-    PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+    CheckFeesRequest, CheckFeesResponse, MintInfoResponse, PaymentRequest, PostMeltRequest,
+    PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
 };
 use secp256k1::PublicKey;
 
@@ -163,9 +161,7 @@ async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, Mo
             "NUT-09".to_string(),
         ],
         motd: mint.mint_info.motd,
-        parameter: Parameter {
-            peg_out_only: false,
-        },
+        parameter: Default::default(),
     };
     Ok(Json(mint_info))
 }
@@ -210,13 +206,13 @@ mod tests {
 
     use crate::server::app;
     use hyper::{Body, Request, StatusCode};
-    use moksha_core::keyset::Keysets;
+    use moksha_core::{keyset::Keysets, primitives::MintInfoResponse};
     use secp256k1::PublicKey;
     use tower::ServiceExt;
 
     use crate::{
         database::MockDatabase,
-        info::{MintInfoResponse, MintInfoSettings},
+        info::MintInfoSettings,
         lightning::{LightningType, MockLightning},
         mint::{LightningFeeConfig, Mint},
     };
