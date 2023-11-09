@@ -393,14 +393,8 @@ mod tests {
         let result = mint.split(&request.proofs, &request.outputs).await?;
         assert_eq!(result.promises.total_amount(), 64);
 
-        let prv_lst = result
-            .promises
-            .get((result.promises.len() - 2) as usize)
-            .unwrap();
-        let lst = result
-            .promises
-            .get((result.promises.len() - 1) as usize)
-            .unwrap();
+        let prv_lst = result.promises.get(result.promises.len() - 2).unwrap();
+        let lst = result.promises.last().unwrap();
 
         assert_eq!(prv_lst.amount, 4);
         assert_eq!(lst.amount, 16);
