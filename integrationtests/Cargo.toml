@@ -21,7 +21,7 @@ path = "src/lnbitsmock.rs"
 rand = "0.8.5"
 axum = "0.6.20"
 anyhow = { version = "1.0.75", features = ["backtrace"] }
-serde = { version = "1.0.190", features = ["derive"] }
+serde = { version = "1.0.192", features = ["derive"] }
 serde_derive = "1.0.171"
 serde_json = "1.0.108"
 lightning-invoice = "0.24.0"
