@@ -26,7 +26,7 @@ fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", rev = "
 futures = "0.3.29"
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
-tokio = { version = "1.33.0", features = ["rt"] }
+tokio = { version = "1.34.0", features = ["rt"] }
 fedimint-rocksdb = { git = "https://github.com/fedimint/fedimint", rev = "6d833d0a85db07245c627d9bbab0757e41043eb2" }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
