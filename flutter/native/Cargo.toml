@@ -39,7 +39,7 @@ wasm-bindgen-futures = "0.4.37"
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
 reqwest = { version = "0.11.22", features = ["serde_json", "json", "rustls-tls"], default-features = false }
-tracing-subscriber = "0.3.17"
+tracing-subscriber = "0.3.18"
 
 [dev-dependencies]
 tempfile = "3.8.1"
