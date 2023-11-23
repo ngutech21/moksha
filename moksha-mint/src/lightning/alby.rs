@@ -105,7 +105,7 @@ impl AlbyClient {
         let body = self
             .make_post(
                 "payments/bolt11",
-                &serde_json::to_string(&serde_json::json!({"invoice": bolt11 }))?,
+                &serde_json::to_string(&serde_json::json!({ "invoice": bolt11 }))?,
             )
             .await?;
 
