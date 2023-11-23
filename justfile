@@ -1,5 +1,9 @@
 export CFLAGS := ""
 
+# install all dependencies
+deps:
+  cargo install flutter_rust_bridge_codegen@1.82.4 sqlx-cli@0.7.2 typos-cli  grcov wasm-pack wasm-opt just
+
 
 # list all tasks
 default:
