@@ -18,6 +18,7 @@ use fedimint_ln_client::{
 use fedimint_mint_client::{
     MintClientExt, MintClientGen, MintClientModule, OOBNotes, SpendableNote,
 };
+use fedimint_wallet_client::WalletClientGen;
 use lightning_invoice::Invoice;
 use std::fs::create_dir_all;
 use std::fs::File;
