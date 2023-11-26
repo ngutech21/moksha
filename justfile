@@ -34,9 +34,9 @@ typos-fix-all:
 # format code, check typos and run tests
 final-check:
   cargo fmt --all
-  just typos
+  typos
   cargo test
-  cargo check -p native  -p  moksha-core -p moksha-wallet -p moksha-fedimint --target wasm32-unknown-unknown
+  build-wasm
 
 #run coverage
 coverage:
@@ -99,7 +99,7 @@ build-docker:
 
 # build flutter web-app in flutter/build/web
 build-web:
-  just build-wasm
+  build-wasm
   cd flutter && \
   flutter clean && \
   RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals" RUSTUP_TOOLCHAIN=nightly wasm-pack build -t no-modules -d  $(pwd)/web/pkg --no-typescript --out-name native --dev native -- -Z build-std=std,panic_abort && \
@@ -110,7 +110,7 @@ build-web:
 
 # compile all rust crates, that are relevant for the client, to wasm
 build-wasm:
-   RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals" cargo +nightly build -p native  -p  moksha-core -p moksha-wallet -p moksha-fedimint \
+   RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals" cargo +nightly build -p native -p  moksha-core -p moksha-wallet -p moksha-fedimint \
    --target wasm32-unknown-unknown \
    -Z build-std=std,panic_abort
 

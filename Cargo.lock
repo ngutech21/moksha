@@ -2616,6 +2616,7 @@ dependencies = [
  "tracing-subscriber",
  "tracing-wasm",
  "url",
+ "wasm-bindgen",
  "wasm-bindgen-futures",
 ]
 

@@ -21,5 +21,7 @@ jobs:
           override: true
       - name: Add wasm32-unknown-unknown target
         run: rustup target add wasm32-unknown-unknown
+      - name: Install just
+        run: cargo install just
       - name: Build
-        run: cargo build -p native -p moksha-core -p moksha-wallet -p moksha-fedimint --target wasm32-unknown-unknown
+        run: just build-wasm
