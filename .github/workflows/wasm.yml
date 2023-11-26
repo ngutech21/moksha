@@ -21,6 +21,8 @@ jobs:
           override: true
       - name: Add wasm32-unknown-unknown target
         run: rustup target add wasm32-unknown-unknown
+      - name: Add nightly toolchain
+        run: rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
       - name: Install just
         run: cargo install just
       - name: Build
