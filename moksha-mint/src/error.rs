@@ -4,11 +4,11 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use fedimint_tonic_lnd::ConnectError;
 use hyper::StatusCode;
 use lightning_invoice::ParseOrSemanticError;
 use serde_json::json;
 use thiserror::Error;
-use tonic_lnd::ConnectError;
 use tracing::{event, Level};
 
 use crate::lightning::error::LightningError;

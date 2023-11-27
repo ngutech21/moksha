@@ -42,7 +42,7 @@ reqwest = { version = "0.11.22", default-features = false, features = ["serde_js
 url = "2.4.1"
 dotenvy = "0.15.7"
 envy = "0.4.2"
-tonic_lnd = "0.5.1"
+fedimint-tonic-lnd = { version = "0.1.3", features = ["lightningrpc"] }
 
 [dev-dependencies]
 tempfile = "3.8.1"

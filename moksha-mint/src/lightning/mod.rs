@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use fedimint_tonic_lnd::Client;
 use std::fmt::{self, Formatter};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
-use tonic_lnd::Client;
 
 use url::Url;
 
@@ -374,7 +374,8 @@ impl LndLightning {
         cert_file: &PathBuf,
         macaroon_file: &PathBuf,
     ) -> Result<Self, MokshaMintError> {
-        let client = tonic_lnd::connect(address.to_string(), cert_file, &macaroon_file).await;
+        let client =
+            fedimint_tonic_lnd::connect(address.to_string(), cert_file, &macaroon_file).await;
 
         Ok(Self(Arc::new(Mutex::new(
             client.map_err(MokshaMintError::ConnectError)?,
@@ -383,7 +384,7 @@ impl LndLightning {
 
     pub async fn client_lock(
         &self,
-    ) -> anyhow::Result<MappedMutexGuard<'_, tonic_lnd::LightningClient>> {
+    ) -> anyhow::Result<MappedMutexGuard<'_, fedimint_tonic_lnd::LightningClient>> {
         let guard = self.0.lock().await;
         Ok(MutexGuard::map(guard, |client| client.lightning()))
     }
@@ -395,7 +396,7 @@ impl Lightning for LndLightning {
     async fn is_invoice_paid(&self, payment_request: String) -> Result<bool, MokshaMintError> {
         let invoice = self.decode_invoice(payment_request).await?;
         let payment_hash = invoice.payment_hash();
-        let invoice_request = tonic_lnd::lnrpc::PaymentHash {
+        let invoice_request = fedimint_tonic_lnd::lnrpc::PaymentHash {
             r_hash: payment_hash.to_vec(),
             ..Default::default()
         };
@@ -404,16 +405,16 @@ impl Lightning for LndLightning {
             .client_lock()
             .await
             .expect("failed to lock client")
-            .lookup_invoice(tonic_lnd::tonic::Request::new(invoice_request))
+            .lookup_invoice(fedimint_tonic_lnd::tonic::Request::new(invoice_request))
             .await
             .expect("failed to lookup invoice")
             .into_inner();
 
-        Ok(invoice.state == tonic_lnd::lnrpc::invoice::InvoiceState::Settled as i32)
+        Ok(invoice.state == fedimint_tonic_lnd::lnrpc::invoice::InvoiceState::Settled as i32)
     }
 
     async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, MokshaMintError> {
-        let invoice_request = tonic_lnd::lnrpc::Invoice {
+        let invoice_request = fedimint_tonic_lnd::lnrpc::Invoice {
             value: amount as i64,
             ..Default::default()
         };
@@ -422,7 +423,7 @@ impl Lightning for LndLightning {
             .client_lock()
             .await
             .expect("failed to lock client")
-            .add_invoice(tonic_lnd::tonic::Request::new(invoice_request))
+            .add_invoice(fedimint_tonic_lnd::tonic::Request::new(invoice_request))
             .await
             .expect("failed to create invoice")
             .into_inner();
@@ -437,7 +438,7 @@ impl Lightning for LndLightning {
         &self,
         payment_request: String,
     ) -> Result<PayInvoiceResult, MokshaMintError> {
-        let pay_req = tonic_lnd::lnrpc::SendRequest {
+        let pay_req = fedimint_tonic_lnd::lnrpc::SendRequest {
             payment_request,
             ..Default::default()
         };
@@ -445,7 +446,7 @@ impl Lightning for LndLightning {
             .client_lock()
             .await
             .expect("failed to lock client") //FIXME map error
-            .send_payment_sync(tonic_lnd::tonic::Request::new(pay_req))
+            .send_payment_sync(fedimint_tonic_lnd::tonic::Request::new(pay_req))
             .await
             .expect("failed to pay invoice")
             .into_inner();
