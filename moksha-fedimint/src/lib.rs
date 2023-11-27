@@ -121,7 +121,8 @@ impl FedimintWallet {
     pub fn serialize_ecash(c: &TieredMulti<SpendableNote>) -> String {
         let mut bytes = Vec::new();
         Encodable::consensus_encode(c, &mut bytes).expect("encodes correctly");
-        base64::encode(&bytes)
+        use base64::{engine::general_purpose, Engine as _};
+        general_purpose::STANDARD.encode(&bytes)
     }
 
     pub async fn send_tokens(
