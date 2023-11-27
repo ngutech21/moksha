@@ -1,11 +1,12 @@
 use std::string::FromUtf8Error;
 
 use axum::{
+    http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
 use fedimint_tonic_lnd::ConnectError;
-use hyper::StatusCode;
+
 use lightning_invoice::ParseOrSemanticError;
 use serde_json::json;
 use thiserror::Error;

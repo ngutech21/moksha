@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 use crate::error::MokshaMintError;
 use axum::extract::{Query, State};
+use axum::http::HeaderName;
 use axum::routing::{get_service, post};
 use axum::Router;
 use axum::{routing::get, Json};
@@ -12,7 +13,7 @@ use moksha_core::keyset::Keysets;
 
 use crate::mint::Mint;
 use crate::model::{GetMintQuery, PostMintQuery};
-use hyper::http::{HeaderName, HeaderValue};
+use hyper::http::HeaderValue;
 use hyper::Method;
 use moksha_core::primitives::{
     CheckFeesRequest, CheckFeesResponse, MintInfoResponse, PaymentRequest, PostMeltRequest,
@@ -50,23 +51,25 @@ pub async fn run_server(
         );
     }
 
-    axum::Server::bind(&addr)
-        .serve(
-            app(mint, serve_wallet_path, api_prefix)
-                .layer(
-                    CorsLayer::new()
-                        .allow_origin(Any)
-                        .allow_headers(Any)
-                        .allow_methods([Method::GET, Method::POST]),
-                )
-                .into_make_service(),
-        )
-        .await?;
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+
+    axum::serve(
+        listener,
+        app(mint, serve_wallet_path, api_prefix)
+            .layer(
+                CorsLayer::new()
+                    .allow_origin(Any)
+                    .allow_headers(Any)
+                    .allow_methods([axum::http::Method::GET, axum::http::Method::POST]),
+            )
+            .into_make_service(),
+    )
+    .await?;
 
     Ok(())
 }
 
-fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -> Router {
+fn app(mint: Mint, _serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -> Router {
     let routes = Router::new()
         .route("/keys", get(get_keys))
         .route("/keysets", get(get_keysets))
@@ -76,26 +79,27 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .route("/split", post(post_split))
         .route("/info", get(get_info));
 
-    let router = Router::new()
+    Router::new()
         .nest(&prefix.unwrap_or_else(|| "".to_owned()), routes)
         .with_state(mint)
-        .layer(TraceLayer::new_for_http());
+        .layer(TraceLayer::new_for_http())
 
-    if let Some(serve_wallet_path) = serve_wallet_path {
-        return router.nest_service(
-            "/",
-            get_service(ServeDir::new(serve_wallet_path))
-                .layer::<_, _, Infallible>(SetResponseHeaderLayer::if_not_present(
-                    HeaderName::from_static("cross-origin-embedder-policy"),
-                    HeaderValue::from_static("require-corp"),
-                ))
-                .layer(SetResponseHeaderLayer::if_not_present(
-                    HeaderName::from_static("cross-origin-opener-policy"),
-                    HeaderValue::from_static("same-origin"),
-                )),
-        );
-    }
-    router
+    // if let Some(serve_wallet_path) = serve_wallet_path {
+    //     return router.nest_service(
+    //         "/",
+    //         get_service(ServeDir::new(serve_wallet_path)).layer::<_, _, Infallible>(
+    //             SetResponseHeaderLayer::if_not_present(
+    //                 HeaderName::from_static("cross-origin-embedder-policy"),
+    //                 HeaderValue::from_static("require-corp"),
+    //             ),
+    //         ), // .layer(SetResponseHeaderLayer::if_not_present(
+    //            //     HeaderName::from_static("cross-origin-opener-policy"),
+    //            //     HeaderValue::from_static("same-origin"),
+    //            // )),
+    //     );
+    // }
+    //router
+    // FIXME doesn't compile anymore with axum 0.7.1
 }
 
 async fn post_split(
@@ -205,7 +209,11 @@ mod tests {
     use std::{collections::HashMap, sync::Arc};
 
     use crate::server::app;
-    use hyper::{Body, Request, StatusCode};
+    use axum::{
+        body::Body,
+        http::{Request, StatusCode},
+    };
+    use http_body_util::BodyExt;
     use moksha_core::{keyset::Keysets, primitives::MintInfoResponse};
     use secp256k1::PublicKey;
     use tower::ServiceExt;
@@ -225,7 +233,7 @@ mod tests {
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
-        let body = hyper::body::to_bytes(response.into_body()).await?;
+        let body = response.into_body().collect().await.unwrap().to_bytes();
         let keys: HashMap<u64, PublicKey> = serde_json::from_slice(&body)?;
         assert_eq!(64, keys.len());
         Ok(())
@@ -239,7 +247,7 @@ mod tests {
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
-        let body = hyper::body::to_bytes(response.into_body()).await?;
+        let body = response.into_body().collect().await.unwrap().to_bytes();
         let keysets = serde_json::from_slice::<Keysets>(&body)?;
         assert_eq!(Keysets::new(vec!["53eJP2+qJyTd".to_string()]), keysets);
         Ok(())
@@ -260,7 +268,7 @@ mod tests {
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
-        let body = hyper::body::to_bytes(response.into_body()).await?;
+        let body = response.into_body().collect().await.unwrap().to_bytes();
         let info = serde_json::from_slice::<MintInfoResponse>(&body)?;
         assert!(!info.parameter.peg_out_only);
         assert_eq!(info.nuts.len(), 8);
