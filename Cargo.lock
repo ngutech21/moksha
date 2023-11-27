@@ -2626,7 +2626,7 @@ dependencies = [
  "hex",
  "itertools 0.12.0",
  "rand",
- "secp256k1 0.27.0",
+ "secp256k1 0.28.0",
  "serde",
  "serde_json",
  "serde_with",
@@ -2699,7 +2699,7 @@ dependencies = [
  "moksha-core",
  "reqwest",
  "rocksdb",
- "secp256k1 0.27.0",
+ "secp256k1 0.28.0",
  "serde",
  "serde_derive",
  "serde_json",
@@ -2729,7 +2729,7 @@ dependencies = [
  "reqwest",
  "rexie",
  "ring 0.17.5",
- "secp256k1 0.27.0",
+ "secp256k1 0.28.0",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -2763,7 +2763,7 @@ dependencies = [
  "moksha-wallet",
  "once_cell",
  "reqwest",
- "secp256k1 0.27.0",
+ "secp256k1 0.28.0",
  "serde",
  "serde_json",
  "tempfile",
@@ -3528,12 +3528,12 @@ dependencies = [
 
 [[package]]
 name = "secp256k1"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25996b82292a7a57ed3508f052cfff8640d38d32018784acd714758b43da9c8f"
+checksum = "2acea373acb8c21ecb5a23741452acd2593ed44ee3d343e72baaa143bc89d0d5"
 dependencies = [
  "rand",
- "secp256k1-sys 0.8.1",
+ "secp256k1-sys 0.9.0",
  "serde",
 ]
 
@@ -3548,9 +3548,9 @@ dependencies = [
 
 [[package]]
 name = "secp256k1-sys"
-version = "0.8.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70a129b9e9efbfb223753b9163c4ab3b13cff7fd9c7f010fbac25ab4099fa07e"
+checksum = "09e67c467c38fd24bd5499dc9a18183b31575c12ee549197e3e20d57aa4fe3b7"
 dependencies = [
  "cc",
 ]
