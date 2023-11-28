@@ -1,20 +1,19 @@
 use std::collections::HashMap;
-use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use crate::error::MokshaMintError;
-use axum::extract::{Query, State};
-use axum::http::HeaderName;
+use axum::extract::{Query, Request, State};
+use axum::http::{HeaderName, HeaderValue, StatusCode};
+use axum::middleware::Next;
+use axum::response::IntoResponse;
 use axum::routing::{get_service, post};
-use axum::Router;
+use axum::{middleware, Router};
 use axum::{routing::get, Json};
 use moksha_core::keyset::Keysets;
 
 use crate::mint::Mint;
 use crate::model::{GetMintQuery, PostMintQuery};
-use hyper::http::HeaderValue;
-use hyper::Method;
 use moksha_core::primitives::{
     CheckFeesRequest, CheckFeesResponse, MintInfoResponse, PaymentRequest, PostMeltRequest,
     PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
@@ -22,7 +21,7 @@ use moksha_core::primitives::{
 use secp256k1::PublicKey;
 
 use tower_http::services::ServeDir;
-use tower_http::set_header::SetResponseHeaderLayer;
+
 use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
@@ -69,7 +68,7 @@ pub async fn run_server(
     Ok(())
 }
 
-fn app(mint: Mint, _serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -> Router {
+fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -> Router {
     let routes = Router::new()
         .route("/keys", get(get_keys))
         .route("/keysets", get(get_keysets))
@@ -79,27 +78,52 @@ fn app(mint: Mint, _serve_wallet_path: Option<PathBuf>, prefix: Option<String>) 
         .route("/split", post(post_split))
         .route("/info", get(get_info));
 
-    Router::new()
+    let router = Router::new()
         .nest(&prefix.unwrap_or_else(|| "".to_owned()), routes)
         .with_state(mint)
-        .layer(TraceLayer::new_for_http())
+        .layer(TraceLayer::new_for_http());
 
-    // if let Some(serve_wallet_path) = serve_wallet_path {
-    //     return router.nest_service(
-    //         "/",
-    //         get_service(ServeDir::new(serve_wallet_path)).layer::<_, _, Infallible>(
-    //             SetResponseHeaderLayer::if_not_present(
-    //                 HeaderName::from_static("cross-origin-embedder-policy"),
-    //                 HeaderValue::from_static("require-corp"),
-    //             ),
-    //         ), // .layer(SetResponseHeaderLayer::if_not_present(
-    //            //     HeaderName::from_static("cross-origin-opener-policy"),
-    //            //     HeaderValue::from_static("same-origin"),
-    //            // )),
-    //     );
-    // }
-    //router
-    // FIXME doesn't compile anymore with axum 0.7.1
+    if let Some(serve_wallet_path) = serve_wallet_path {
+        return router.nest_service(
+            "/",
+            get_service(ServeDir::new(serve_wallet_path))
+                .layer(middleware::from_fn(add_response_headers)),
+        );
+    }
+    router
+}
+
+/// This function adds response headers that are specific to Flutter web applications.
+///
+/// It sets the `cross-origin-embedder-policy` header to `require-corp` and the
+/// `cross-origin-opener-policy` header to `same-origin`. These headers are necessary
+/// for some features of Flutter web applications, such as isolating the application
+/// from potential security threats in other browsing contexts.
+///
+/// # Arguments
+///
+/// * `req` - The incoming request.
+/// * `next` - The next middleware or endpoint in the processing chain.
+///
+/// # Returns
+///
+/// This function returns a `Result` with the modified response, or an error if
+/// something went wrong while processing the request or response.
+async fn add_response_headers(
+    req: Request,
+    next: Next,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let mut res = next.run(req).await;
+
+    res.headers_mut().insert(
+        HeaderName::from_static("cross-origin-embedder-policy"),
+        HeaderValue::from_static("require-corp"),
+    );
+    res.headers_mut().insert(
+        HeaderName::from_static("cross-origin-opener-policy"),
+        HeaderValue::from_static("same-origin"),
+    );
+    Ok(res)
 }
 
 async fn post_split(
