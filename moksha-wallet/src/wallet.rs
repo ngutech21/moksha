@@ -194,11 +194,38 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             split_result.1.proofs()
         };
 
-        match self.melt_token(invoice, ln_amount, &total_proofs).await {
+        let fee_blind = BlindedMessage::blank(fees.fee.into())?;
+
+        let msgs = fee_blind
+            .iter()
+            .map(|(msg, _, _)| msg.clone())
+            .collect::<Vec<BlindedMessage>>();
+
+        let secrets = fee_blind
+            .iter()
+            .map(|(_, _, secret)| secret.clone())
+            .collect::<Vec<String>>();
+
+        let outputs = fee_blind
+            .iter()
+            .map(|(msg, secret, _)| (msg.clone(), secret.to_owned()))
+            .collect::<Vec<(BlindedMessage, SecretKey)>>();
+
+        match self
+            .melt_token(invoice, ln_amount, &total_proofs, msgs)
+            .await
+        {
             Ok(response) => {
                 if !response.paid {
                     self.localstore.add_proofs(&total_proofs).await?;
                 }
+                let change_proofs = self.create_proofs_from_blinded_signatures(
+                    response.clone().change,
+                    secrets,
+                    outputs,
+                )?;
+                self.localstore.add_proofs(&change_proofs).await?;
+
                 Ok(response)
             }
             Err(e) => {
@@ -268,10 +295,11 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
         pr: String,
         _invoice_amount: u64,
         proofs: &Proofs,
+        fee_blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMeltResponse, MokshaWalletError> {
         let melt_response = self
             .client
-            .post_melt_tokens(&self.mint_url, proofs.clone(), pr, vec![])
+            .post_melt_tokens(&self.mint_url, proofs.clone(), pr, fee_blinded_messages)
             .await?;
 
         if melt_response.paid {

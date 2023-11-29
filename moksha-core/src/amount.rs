@@ -64,7 +64,7 @@ fn split_amount(amount: u64) -> Vec<u64> {
         .collect::<Vec<u64>>()
 }
 
-fn generate_random_string() -> String {
+pub fn generate_random_string() -> String {
     rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(24)
