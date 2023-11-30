@@ -1,6 +1,8 @@
 //! This module contains all the request and response objects that are used for interacting between the Mint and Wallet in Cashu.
 //! All of these structs are serializable and deserializable using serde.
 
+use std::{collections::HashMap, fmt::Display};
+
 use secp256k1::PublicKey;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -91,6 +93,31 @@ pub struct MintInfoResponse {
 #[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq, Default)]
 pub struct Parameter {
     pub peg_out_only: bool,
+}
+
+#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq, Default)]
+pub struct KeysResponse {
+    pub keysets: Vec<KeyResponse>,
+}
+
+#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq)]
+pub struct KeyResponse {
+    pub id: String,
+    pub unit: CurrencyUnit,
+    pub keys: HashMap<u64, PublicKey>,
+}
+
+#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq)]
+pub enum CurrencyUnit {
+    Sat,
+}
+
+impl Display for CurrencyUnit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CurrencyUnit::Sat => write!(f, "sat"),
+        }
+    }
 }
 
 #[cfg(test)]

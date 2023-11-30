@@ -66,7 +66,7 @@ impl Mint {
             lightning,
             lightning_type,
             lightning_fee_config,
-            keyset: MintKeyset::new(secret, derivation_path),
+            keyset: MintKeyset::legacy_new(secret, derivation_path),
             db,
             dhke: Dhke::new(),
             mint_info,

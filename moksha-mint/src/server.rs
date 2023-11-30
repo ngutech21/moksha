@@ -15,8 +15,9 @@ use moksha_core::keyset::Keysets;
 use crate::mint::Mint;
 use crate::model::{GetMintQuery, PostMintQuery};
 use moksha_core::primitives::{
-    CheckFeesRequest, CheckFeesResponse, MintInfoResponse, PaymentRequest, PostMeltRequest,
-    PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+    CheckFeesRequest, CheckFeesResponse, CurrencyUnit, KeyResponse, KeysResponse, MintInfoResponse,
+    PaymentRequest, PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse,
+    PostSplitRequest, PostSplitResponse,
 };
 use secp256k1::PublicKey;
 
@@ -69,17 +70,29 @@ pub async fn run_server(
 }
 
 fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -> Router {
+    let legacy_routes = Router::new()
+        .route("/keys", get(get_legacy_keys))
+        .route("/keysets", get(get_legacy_keysets))
+        .route("/mint", get(get_mint).post(post_legacy_mint))
+        .route("/checkfees", post(post_legacy_check_fees))
+        .route("/melt", post(post_legacy_melt))
+        .route("/split", post(post_legacy_split))
+        .route("/info", get(get_legacy_info));
+
     let routes = Router::new()
-        .route("/keys", get(get_keys))
-        .route("/keysets", get(get_keysets))
-        .route("/mint", get(get_mint).post(post_mint))
-        .route("/checkfees", post(post_check_fees))
-        .route("/melt", post(post_melt))
-        .route("/split", post(post_split))
-        .route("/info", get(get_info));
+        .route("/v1/keys", get(get_keys))
+        .route("/v1/keysets", get(get_legacy_keysets))
+        .route("/v1/mint", get(get_mint).post(post_legacy_mint))
+        .route("/v1/checkfees", post(post_legacy_check_fees))
+        .route("/v1/melt", post(post_legacy_melt))
+        .route("/v1/split", post(post_legacy_split))
+        .route("/v1/info", get(get_legacy_info));
+
+    let prefix = prefix.unwrap_or_else(|| "".to_owned());
 
     let router = Router::new()
-        .nest(&prefix.unwrap_or_else(|| "".to_owned()), routes)
+        .nest(&prefix, legacy_routes)
+        .nest(&prefix, routes)
         .with_state(mint)
         .layer(TraceLayer::new_for_http());
 
@@ -126,7 +139,7 @@ async fn add_response_headers(
     Ok(res)
 }
 
-async fn post_split(
+async fn post_legacy_split(
     State(mint): State<Mint>,
     Json(split_request): Json<PostSplitRequest>,
 ) -> Result<Json<PostSplitResponse>, MokshaMintError> {
@@ -137,7 +150,7 @@ async fn post_split(
     Ok(Json(response))
 }
 
-async fn post_melt(
+async fn post_legacy_melt(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltRequest>,
 ) -> Result<Json<PostMeltResponse>, MokshaMintError> {
@@ -152,7 +165,7 @@ async fn post_melt(
     }))
 }
 
-async fn post_check_fees(
+async fn post_legacy_check_fees(
     State(mint): State<Mint>,
     Json(_check_fees): Json<CheckFeesRequest>,
 ) -> Result<Json<CheckFeesResponse>, MokshaMintError> {
@@ -167,7 +180,9 @@ async fn post_check_fees(
     }))
 }
 
-async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, MokshaMintError> {
+async fn get_legacy_info(
+    State(mint): State<Mint>,
+) -> Result<Json<MintInfoResponse>, MokshaMintError> {
     let mint_info = MintInfoResponse {
         name: mint.mint_info.name,
         pubkey: mint.keyset.mint_pubkey,
@@ -202,7 +217,7 @@ async fn get_mint(
     Ok(Json(PaymentRequest { pr, hash }))
 }
 
-async fn post_mint(
+async fn post_legacy_mint(
     State(mint): State<Mint>,
     Query(mint_query): Query<PostMintQuery>,
     Json(blinded_messages): Json<PostMintRequest>,
@@ -218,14 +233,26 @@ async fn post_mint(
     Ok(Json(PostMintResponse { promises }))
 }
 
-async fn get_keys(
+async fn get_legacy_keys(
     State(mint): State<Mint>,
 ) -> Result<Json<HashMap<u64, PublicKey>>, MokshaMintError> {
     Ok(Json(mint.keyset.public_keys))
 }
 
-async fn get_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, MokshaMintError> {
+async fn get_legacy_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, MokshaMintError> {
     Ok(Json(Keysets::new(vec![mint.keyset.keyset_id])))
+}
+
+// ######################################################################################################
+
+async fn get_keys(State(mint): State<Mint>) -> Result<Json<KeysResponse>, MokshaMintError> {
+    Ok(Json(KeysResponse {
+        keysets: vec![KeyResponse {
+            id: mint.keyset.keyset_id.clone(),
+            unit: CurrencyUnit::Sat,
+            keys: mint.keyset.public_keys.clone(),
+        }],
+    }))
 }
 
 #[cfg(test)]

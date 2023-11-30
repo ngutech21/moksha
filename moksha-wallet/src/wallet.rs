@@ -519,7 +519,7 @@ mod tests {
     impl Default for MockKeys {
         fn default() -> Self {
             Self {
-                mint_keyset: MintKeyset::new("mysecret".to_string(), "".to_string()),
+                mint_keyset: MintKeyset::legacy_new("mysecret".to_string(), "".to_string()),
             }
         }
     }

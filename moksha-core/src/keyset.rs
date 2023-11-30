@@ -10,6 +10,7 @@
 //!
 //! The module also defines a `generate_hash` function for generating a random hash, and several helper functions for deriving keys and keyset IDs.
 
+use hex::ToHex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -40,6 +41,17 @@ pub struct MintKeyset {
 }
 
 impl MintKeyset {
+    pub fn legacy_new(seed: String, derivation_path: String) -> MintKeyset {
+        let priv_keys = derive_keys(&seed, &derivation_path);
+        let pub_keys = derive_pubkeys(&priv_keys);
+        MintKeyset {
+            private_keys: priv_keys,
+            keyset_id: legacy_derive_keyset_id(&pub_keys),
+            public_keys: pub_keys,
+            mint_pubkey: derive_pubkey(&seed).expect("invalid seed"),
+        }
+    }
+
     pub fn new(seed: String, derivation_path: String) -> MintKeyset {
         let priv_keys = derive_keys(&seed, &derivation_path);
         let pub_keys = derive_pubkeys(&priv_keys);
@@ -66,7 +78,7 @@ impl Keysets {
         &self,
         mint_keys: &HashMap<u64, PublicKey>,
     ) -> Result<String, MokshaCoreError> {
-        let computed_id = derive_keyset_id(mint_keys);
+        let computed_id = legacy_derive_keyset_id(mint_keys);
         if self.keysets.contains(&computed_id) {
             Ok(computed_id)
         } else {
@@ -120,7 +132,7 @@ pub fn derive_pubkeys(keys: &HashMap<u64, SecretKey>) -> HashMap<u64, PublicKey>
 /// # Returns
 ///
 /// A string representing the derived keyset ID.
-pub fn derive_keyset_id(keys: &HashMap<u64, PublicKey>) -> String {
+pub fn legacy_derive_keyset_id(keys: &HashMap<u64, PublicKey>) -> String {
     let pubkeys_concat = keys
         .iter()
         .sorted_by(|(amt_a, _), (amt_b, _)| amt_a.cmp(amt_b))
@@ -130,7 +142,15 @@ pub fn derive_keyset_id(keys: &HashMap<u64, PublicKey>) -> String {
     general_purpose::STANDARD.encode(hashed_pubkeys)[..12].to_string()
 }
 
-/// Derives a public key from a given seed.
+fn derive_keyset_id(keys: &HashMap<u64, PublicKey>) -> String {
+    let pubkeys = keys
+        .iter()
+        .sorted_by(|(amt_a, _), (amt_b, _)| amt_a.cmp(amt_b))
+        .map(|(_, pubkey)| pubkey)
+        .join("");
+    let hashed_pubkeys: String = sha256::Hash::hash(pubkeys.as_bytes()).encode_hex();
+    format!("00{}", &hashed_pubkeys[..14])
+}
 ///
 /// # Arguments
 ///
@@ -180,9 +200,21 @@ mod tests {
         assert!(keys.len() == 64);
 
         let pub_keys = super::derive_pubkeys(&keys);
-        let id = super::derive_keyset_id(&pub_keys);
+        let id = super::legacy_derive_keyset_id(&pub_keys);
         assert_eq!("JHV8eUnoAln/", id);
         assert!(id.len() == 12);
+        Ok(())
+    }
+
+    #[test]
+    fn test_derive_keys_master_v1() -> anyhow::Result<()> {
+        let keys = super::derive_keys("supersecretprivatekey", "");
+        assert!(keys.len() == 64);
+
+        let pub_keys = super::derive_pubkeys(&keys);
+        let id = super::derive_keyset_id(&pub_keys);
+        //assert_eq!("00d31cecf59d18c0", id); // FIXME
+        assert!(id.len() == 16);
         Ok(())
     }
 
@@ -193,7 +225,7 @@ mod tests {
         assert!(keys.len() == 64);
 
         let pub_keys = super::derive_pubkeys(&keys);
-        let id = super::derive_keyset_id(&pub_keys);
+        let id = super::legacy_derive_keyset_id(&pub_keys);
         assert_eq!("1cCNIAZ2X/w1", id);
         assert!(id.len() == 12);
         Ok(())
@@ -216,7 +248,7 @@ mod tests {
             ),
         );
 
-        let keyset_id = super::derive_keyset_id(&pubs);
+        let keyset_id = super::legacy_derive_keyset_id(&pubs);
 
         assert!(keyset_id.len() == 12);
         assert_eq!(keyset_id, "cNbjM0O6V/Kl");

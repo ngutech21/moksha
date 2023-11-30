@@ -122,7 +122,7 @@ async fn test_pay_invoice_can_not_melt() -> anyhow::Result<()> {
 
     let melt_response = read_fixture_as::<PostMeltResponse>("post_melt_response_not_paid.json")?;
     let split_response = read_fixture_as::<PostSplitResponse>("post_split_response_24_40.json")?;
-    let mint_keyset = MintKeyset::new("mysecret".to_string(), "".to_string());
+    let mint_keyset = MintKeyset::legacy_new("mysecret".to_string(), "".to_string());
     let keysets = Keysets::new(vec![mint_keyset.keyset_id]);
 
     let mock_client = MockClient::with(
