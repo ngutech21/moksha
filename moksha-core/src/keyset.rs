@@ -21,7 +21,7 @@ use itertools::Itertools;
 use rand::RngCore;
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
-use crate::error::MokshaCoreError;
+use crate::{error::MokshaCoreError, primitives::CurrencyUnit};
 
 const MAX_ORDER: u64 = 64;
 
@@ -80,6 +80,38 @@ impl Keysets {
     ) -> Result<String, MokshaCoreError> {
         let computed_id = legacy_derive_keyset_id(mint_keys);
         if self.keysets.contains(&computed_id) {
+            Ok(computed_id)
+        } else {
+            Err(MokshaCoreError::InvalidKeysetid)
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct V1Keysets {
+    pub keysets: Vec<V1Keyset>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct V1Keyset {
+    pub id: String,
+    pub unit: CurrencyUnit,
+    pub active: bool,
+}
+
+impl V1Keysets {
+    pub fn new(id: String, unit: CurrencyUnit, active: bool) -> Self {
+        Self {
+            keysets: vec![V1Keyset { id, unit, active }],
+        }
+    }
+
+    pub fn current_keyset(
+        &self,
+        mint_keys: &HashMap<u64, PublicKey>,
+    ) -> Result<String, MokshaCoreError> {
+        let computed_id = derive_keyset_id(mint_keys);
+        if self.keysets.iter().any(|x| x.id.eq(&computed_id)) {
             Ok(computed_id)
         } else {
             Err(MokshaCoreError::InvalidKeysetid)

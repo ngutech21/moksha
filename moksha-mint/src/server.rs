@@ -10,7 +10,7 @@ use axum::response::IntoResponse;
 use axum::routing::{get_service, post};
 use axum::{middleware, Router};
 use axum::{routing::get, Json};
-use moksha_core::keyset::Keysets;
+use moksha_core::keyset::{Keysets, V1Keysets};
 
 use crate::mint::Mint;
 use crate::model::{GetMintQuery, PostMintQuery};
@@ -81,7 +81,7 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
 
     let routes = Router::new()
         .route("/v1/keys", get(get_keys))
-        .route("/v1/keysets", get(get_legacy_keysets))
+        .route("/v1/keysets", get(get_keysets))
         .route("/v1/mint", get(get_mint).post(post_legacy_mint))
         .route("/v1/checkfees", post(post_legacy_check_fees))
         .route("/v1/melt", post(post_legacy_melt))
@@ -253,6 +253,14 @@ async fn get_keys(State(mint): State<Mint>) -> Result<Json<KeysResponse>, Moksha
             keys: mint.keyset.public_keys.clone(),
         }],
     }))
+}
+
+async fn get_keysets(State(mint): State<Mint>) -> Result<Json<V1Keysets>, MokshaMintError> {
+    Ok(Json(V1Keysets::new(
+        mint.keyset.keyset_id,
+        CurrencyUnit::Sat,
+        true,
+    )))
 }
 
 #[cfg(test)]

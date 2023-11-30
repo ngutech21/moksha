@@ -107,7 +107,7 @@ pub struct KeyResponse {
     pub keys: HashMap<u64, PublicKey>,
 }
 
-#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq)]
+#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq, Clone)]
 pub enum CurrencyUnit {
     Sat,
 }
