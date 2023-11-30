@@ -16,8 +16,9 @@ use crate::mint::Mint;
 use crate::model::{GetMintQuery, PostMintQuery};
 use moksha_core::primitives::{
     CheckFeesRequest, CheckFeesResponse, CurrencyUnit, KeyResponse, KeysResponse, MintInfoResponse,
-    PaymentRequest, PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse,
-    PostSplitRequest, PostSplitResponse,
+    PaymentRequest, PostMeltRequest, PostMeltResponse, PostMintBolt11Request,
+    PostMintBolt11Response, PostMintQuoteBolt11Request, PostMintQuoteBolt11Response,
+    PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
 };
 use secp256k1::PublicKey;
 
@@ -73,19 +74,19 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
     let legacy_routes = Router::new()
         .route("/keys", get(get_legacy_keys))
         .route("/keysets", get(get_legacy_keysets))
-        .route("/mint", get(get_mint).post(post_legacy_mint))
+        .route("/mint", get(get_legacy_mint).post(post_legacy_mint))
         .route("/checkfees", post(post_legacy_check_fees))
         .route("/melt", post(post_legacy_melt))
-        .route("/split", post(post_legacy_split))
+        .route("/split", post(post_split))
         .route("/info", get(get_legacy_info));
 
     let routes = Router::new()
         .route("/v1/keys", get(get_keys))
         .route("/v1/keysets", get(get_keysets))
-        .route("/v1/mint", get(get_mint).post(post_legacy_mint))
-        .route("/v1/checkfees", post(post_legacy_check_fees))
+        .route("/v1/mint/quote/bolt11", post(post_mint_quote_bolt11))
+        .route("/v1/mint/bolt11", post(post_mint_bolt11))
         .route("/v1/melt", post(post_legacy_melt))
-        .route("/v1/split", post(post_legacy_split))
+        .route("/v1/split", post(post_split))
         .route("/v1/info", get(get_legacy_info));
 
     let prefix = prefix.unwrap_or_else(|| "".to_owned());
@@ -139,7 +140,7 @@ async fn add_response_headers(
     Ok(res)
 }
 
-async fn post_legacy_split(
+async fn post_split(
     State(mint): State<Mint>,
     Json(split_request): Json<PostSplitRequest>,
 ) -> Result<Json<PostSplitResponse>, MokshaMintError> {
@@ -209,7 +210,7 @@ async fn get_legacy_info(
     Ok(Json(mint_info))
 }
 
-async fn get_mint(
+async fn get_legacy_mint(
     State(mint): State<Mint>,
     Query(mint_query): Query<GetMintQuery>,
 ) -> Result<Json<PaymentRequest>, MokshaMintError> {
@@ -261,6 +262,27 @@ async fn get_keysets(State(mint): State<Mint>) -> Result<Json<V1Keysets>, Moksha
         CurrencyUnit::Sat,
         true,
     )))
+}
+
+async fn post_mint_quote_bolt11(
+    State(mint): State<Mint>,
+    Json(request): Json<PostMintQuoteBolt11Request>,
+) -> Result<Json<PostMintQuoteBolt11Response>, MokshaMintError> {
+    // FIXME check currency unit
+    let (pr, hash) = mint.create_invoice(request.amount).await?;
+    Ok(Json(PostMintQuoteBolt11Response {
+        quote: hash,
+        request: pr,
+    }))
+}
+
+async fn post_mint_bolt11(
+    State(mint): State<Mint>,
+    Json(request): Json<PostMintBolt11Request>,
+) -> Result<Json<PostMintBolt11Response>, MokshaMintError> {
+    // FIXME don't use hash as quote
+    let signatures = mint.mint_tokens(request.quote, &request.outputs).await?;
+    Ok(Json(PostMintBolt11Response { signatures }))
 }
 
 #[cfg(test)]

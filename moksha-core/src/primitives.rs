@@ -70,14 +70,14 @@ impl PostSplitResponse {
     }
 }
 
-#[derive(serde::Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct CashuErrorResponse {
     pub code: u64,
     pub error: String,
 }
 
 #[skip_serializing_none]
-#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
 pub struct MintInfoResponse {
     pub name: Option<String>,
     pub pubkey: PublicKey,
@@ -90,12 +90,12 @@ pub struct MintInfoResponse {
     pub parameter: Parameter,
 }
 
-#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq, Default)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default)]
 pub struct Parameter {
     pub peg_out_only: bool,
 }
 
-#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq, Default)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default)]
 pub struct KeysResponse {
     pub keysets: Vec<KeyResponse>,
 }
@@ -107,7 +107,7 @@ pub struct KeyResponse {
     pub keys: HashMap<u64, PublicKey>,
 }
 
-#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone)]
 pub enum CurrencyUnit {
     Sat,
 }
@@ -118,6 +118,29 @@ impl Display for CurrencyUnit {
             CurrencyUnit::Sat => write!(f, "sat"),
         }
     }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct PostMintQuoteBolt11Request {
+    pub amount: u64,
+    pub unit: CurrencyUnit,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct PostMintQuoteBolt11Response {
+    pub quote: String,
+    pub request: String,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct PostMintBolt11Request {
+    pub quote: String,
+    pub outputs: Vec<BlindedMessage>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct PostMintBolt11Response {
+    pub signatures: Vec<BlindedSignature>,
 }
 
 #[cfg(test)]
