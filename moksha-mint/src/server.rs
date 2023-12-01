@@ -16,7 +16,8 @@ use crate::mint::Mint;
 use crate::model::{GetMintQuery, PostMintQuery};
 use moksha_core::primitives::{
     CheckFeesRequest, CheckFeesResponse, CurrencyUnit, KeyResponse, KeysResponse, MintInfoResponse,
-    PaymentRequest, PostMeltRequest, PostMeltResponse, PostMintBolt11Request,
+    PaymentRequest, PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
+    PostMeltQuoteBolt11Response, PostMeltRequest, PostMeltResponse, PostMintBolt11Request,
     PostMintBolt11Response, PostMintQuoteBolt11Request, PostMintQuoteBolt11Response,
     PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
 };
@@ -85,7 +86,8 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .route("/v1/keysets", get(get_keysets))
         .route("/v1/mint/quote/bolt11", post(post_mint_quote_bolt11))
         .route("/v1/mint/bolt11", post(post_mint_bolt11))
-        .route("/v1/melt", post(post_legacy_melt))
+        .route("/v1/melt/quote/bolt11", post(post_melt_quote_bolt11))
+        .route("/v1/melt/bolt11", post(post_melt_bolt11))
         .route("/v1/split", post(post_split))
         .route("/v1/info", get(get_legacy_info));
 
@@ -283,6 +285,41 @@ async fn post_mint_bolt11(
     // FIXME don't use hash as quote
     let signatures = mint.mint_tokens(request.quote, &request.outputs).await?;
     Ok(Json(PostMintBolt11Response { signatures }))
+}
+
+async fn post_melt_quote_bolt11(
+    State(mint): State<Mint>,
+    Json(melt_request): Json<PostMeltQuoteBolt11Request>,
+) -> Result<Json<PostMeltQuoteBolt11Response>, MokshaMintError> {
+    let invoice = mint
+        .lightning
+        .decode_invoice(melt_request.request.clone())
+        .await?;
+    let amount = invoice
+        .amount_milli_satoshis()
+        .ok_or_else(|| crate::error::MokshaMintError::InvalidAmount)?;
+    let fee_reserve = mint.fee_reserve(amount);
+
+    Ok(Json(PostMeltQuoteBolt11Response {
+        amount,
+        fee_reserve,
+        quote: melt_request.request.clone(), // FIXME use uuid as quote
+    }))
+}
+
+async fn post_melt_bolt11(
+    State(mint): State<Mint>,
+    Json(melt_request): Json<PostMeltBolt11Request>,
+) -> Result<Json<PostMeltBolt11Response>, MokshaMintError> {
+    // FIXME get quote from db
+    let (paid, preimage, _change) = mint
+        .melt(melt_request.quote, &melt_request.inputs, &[])
+        .await?;
+
+    Ok(Json(PostMeltBolt11Response {
+        paid,
+        proof: preimage,
+    }))
 }
 
 #[cfg(test)]

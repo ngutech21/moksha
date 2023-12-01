@@ -143,6 +143,33 @@ pub struct PostMintBolt11Response {
     pub signatures: Vec<BlindedSignature>,
 }
 
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct PostMeltQuoteBolt11Request {
+    /// payment request
+    pub request: String,
+    pub unit: CurrencyUnit,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct PostMeltQuoteBolt11Response {
+    pub quote: String,
+    pub amount: u64,
+    pub fee_reserve: u64,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct PostMeltBolt11Request {
+    pub quote: String,
+    pub inputs: Proofs,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct PostMeltBolt11Response {
+    pub paid: bool,
+    /// payment preimage
+    pub proof: String,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
