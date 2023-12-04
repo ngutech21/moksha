@@ -326,14 +326,16 @@ async fn post_melt_bolt11(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltBolt11Request>,
 ) -> Result<Json<PostMeltBolt11Response>, MokshaMintError> {
-    // FIXME get quote from db
+    let quote = mint.db.get_quote(melt_request.quote)?;
+
     let (paid, preimage, _change) = mint
-        .melt(melt_request.quote, &melt_request.inputs, &[])
+        .melt(quote.payment_request, &melt_request.inputs, &[])
         .await?;
 
     Ok(Json(PostMeltBolt11Response {
         paid,
         payment_preimage: preimage,
+        change: vec![], // FIXME return change
     }))
 }
 

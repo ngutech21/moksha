@@ -169,6 +169,7 @@ pub struct PostMeltBolt11Request {
 pub struct PostMeltBolt11Response {
     pub paid: bool,
     pub payment_preimage: String,
+    pub change: Vec<BlindedSignature>,
 }
 
 #[cfg(test)]
