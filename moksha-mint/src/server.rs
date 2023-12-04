@@ -13,7 +13,7 @@ use axum::{routing::get, Json};
 use moksha_core::keyset::{Keysets, V1Keysets};
 
 use crate::mint::Mint;
-use crate::model::{GetMintQuery, PostMintQuery};
+use crate::model::{GetMintQuery, PostMintQuery, Quote};
 use moksha_core::primitives::{
     CheckFeesRequest, CheckFeesResponse, CurrencyUnit, KeyResponse, KeysResponse, MintInfoResponse,
     PaymentRequest, PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
@@ -271,9 +271,14 @@ async fn post_mint_quote_bolt11(
     Json(request): Json<PostMintQuoteBolt11Request>,
 ) -> Result<Json<PostMintQuoteBolt11Response>, MokshaMintError> {
     // FIXME check currency unit
-    let (pr, hash) = mint.create_invoice(request.amount).await?;
+    let (pr, _hash) = mint.create_invoice(request.amount).await?;
+
+    let quote = Quote::new(pr.clone());
+    let quote_id = quote.quote_id.to_string();
+    mint.db.add_quote(quote_id.clone(), quote)?;
+
     Ok(Json(PostMintQuoteBolt11Response {
-        quote: hash,
+        quote: quote_id,
         request: pr,
     }))
 }
@@ -282,8 +287,14 @@ async fn post_mint_bolt11(
     State(mint): State<Mint>,
     Json(request): Json<PostMintBolt11Request>,
 ) -> Result<Json<PostMintBolt11Response>, MokshaMintError> {
-    // FIXME don't use hash as quote
-    let signatures = mint.mint_tokens(request.quote, &request.outputs).await?;
+    let quotes = &mint.db.get_quotes()?;
+    let quote = quotes
+        .get(request.quote.as_str())
+        .ok_or_else(|| crate::error::MokshaMintError::InvalidQuote(request.quote.clone()))?;
+
+    let signatures = mint
+        .mint_tokens(quote.payment_request.clone(), &request.outputs)
+        .await?;
     Ok(Json(PostMintBolt11Response { signatures }))
 }
 

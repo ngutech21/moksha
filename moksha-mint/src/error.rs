@@ -60,6 +60,9 @@ pub enum MokshaMintError {
 
     #[error("Lightning Error {0}")]
     Lightning(#[from] LightningError),
+
+    #[error("Invalid quote {0}")]
+    InvalidQuote(String),
 }
 
 impl IntoResponse for MokshaMintError {

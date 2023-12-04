@@ -4,7 +4,10 @@ use moksha_core::proof::Proofs;
 use rocksdb::DB;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{error::MokshaMintError, model::Invoice};
+use crate::{
+    error::MokshaMintError,
+    model::{Invoice, Quote},
+};
 #[cfg(test)]
 use mockall::automock;
 
@@ -18,6 +21,7 @@ pub struct RocksDB {
 pub enum DbKeyPrefix {
     UsedProofs = 0x01,
     PendingInvoices = 0x02,
+    Quote = 0x03,
 }
 
 #[cfg_attr(test, automock)]
@@ -29,6 +33,11 @@ pub trait Database {
     fn get_pending_invoices(&self) -> Result<HashMap<String, Invoice>, MokshaMintError>;
     fn add_pending_invoice(&self, key: String, invoice: Invoice) -> Result<(), MokshaMintError>;
     fn remove_pending_invoice(&self, key: String) -> Result<(), MokshaMintError>;
+
+    fn get_quotes(&self) -> Result<HashMap<String, Quote>, MokshaMintError>;
+    fn get_quote(&self, key: String) -> Result<Quote, MokshaMintError>;
+    fn add_quote(&self, key: String, quote: Quote) -> Result<(), MokshaMintError>;
+    fn remove_quote(&self, key: String) -> Result<(), MokshaMintError>;
 }
 
 impl RocksDB {
@@ -67,6 +76,7 @@ impl RocksDB {
     }
 }
 
+// FIXME remove boilerplate code
 impl Database for RocksDB {
     fn add_used_proofs(&self, proofs: &Proofs) -> Result<(), MokshaMintError> {
         let used_proofs = self.get_used_proofs()?;
@@ -126,6 +136,45 @@ impl Database for RocksDB {
 
         Ok(())
     }
+
+    fn get_quotes(&self) -> Result<HashMap<String, Quote>, MokshaMintError> {
+        self.get_serialized::<HashMap<String, Quote>>(DbKeyPrefix::Quote)
+            .map(|maybe_quotes| maybe_quotes.unwrap_or_default())
+    }
+
+    fn add_quote(&self, key: String, quote: Quote) -> Result<(), MokshaMintError> {
+        let quotes = self.get_quotes();
+
+        quotes.and_then(|mut quotes| {
+            quotes.insert(key, quote);
+            self.put_serialized(DbKeyPrefix::Quote, &quotes)
+        })?;
+
+        Ok(())
+    }
+
+    fn remove_quote(&self, key: String) -> Result<(), MokshaMintError> {
+        let invoices = self.get_quotes();
+
+        invoices.and_then(|mut quotes| {
+            quotes.remove(key.as_str());
+            self.put_serialized(DbKeyPrefix::Quote, &quotes)
+        })?;
+
+        Ok(())
+    }
+
+    fn get_quote(&self, key: String) -> Result<Quote, MokshaMintError> {
+        let invoices = self
+            .get_serialized::<HashMap<String, Quote>>(DbKeyPrefix::Quote)
+            .map(|maybe_quotes| maybe_quotes.unwrap_or_default());
+        invoices.and_then(|quotes| {
+            quotes
+                .get(&key)
+                .cloned()
+                .ok_or_else(|| MokshaMintError::InvalidQuote(key))
+        })
+    }
 }
 
 #[cfg(test)]
@@ -137,7 +186,10 @@ mod tests {
         proof::{Proof, Proofs},
     };
 
-    use crate::{database::Database, model::Invoice};
+    use crate::{
+        database::Database,
+        model::{Invoice, Quote},
+    };
 
     #[test]
     fn test_write_proofs() -> anyhow::Result<()> {
@@ -202,6 +254,21 @@ mod tests {
         let lookup_invoice = db.get_pending_invoice(key.to_string())?;
 
         assert_eq!(invoice, lookup_invoice);
+        Ok(())
+    }
+
+    #[test]
+    fn test_read_write_quotes() -> anyhow::Result<()> {
+        let tmp = tempfile::tempdir()?;
+        let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
+        let db = super::RocksDB::new(tmp_dir.to_owned());
+
+        let quote = Quote::new("12345678".to_owned());
+        let key = quote.quote_id.to_string();
+        db.add_quote(key.clone(), quote.clone())?;
+        let lookup_quote = db.get_quote(key.to_string())?;
+
+        assert_eq!(quote, lookup_quote);
         Ok(())
     }
 }

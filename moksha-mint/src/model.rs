@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GetMintQuery {
@@ -44,4 +45,19 @@ pub struct CreateInvoiceParams {
     pub expiry: Option<u32>,
     pub webhook: Option<String>,
     pub internal: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Quote {
+    pub quote_id: Uuid,
+    pub payment_request: String,
+}
+
+impl Quote {
+    pub fn new(payment_request: String) -> Self {
+        Self {
+            quote_id: Uuid::new_v4(),
+            payment_request,
+        }
+    }
 }

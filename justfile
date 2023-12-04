@@ -34,9 +34,9 @@ typos-fix-all:
 # format code, check typos and run tests
 final-check:
   cargo fmt --all
-  typos
+  just typos
   cargo test
-  build-wasm
+  just build-wasm
 
 #run coverage
 coverage:
@@ -98,8 +98,7 @@ build-docker:
 
 
 # build flutter web-app in flutter/build/web
-build-web:
-  build-wasm
+build-web: build-wasm
   cd flutter && \
   flutter clean && \
   RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals" RUSTUP_TOOLCHAIN=nightly wasm-pack build -t no-modules -d  $(pwd)/web/pkg --no-typescript --out-name native --dev native -- -Z build-std=std,panic_abort && \
