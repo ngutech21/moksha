@@ -329,7 +329,7 @@ async fn post_melt_bolt11(
 
     Ok(Json(PostMeltBolt11Response {
         paid,
-        proof: preimage,
+        payment_preimage: preimage,
     }))
 }
 
