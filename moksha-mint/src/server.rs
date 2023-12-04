@@ -88,7 +88,7 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .route("/v1/mint/bolt11", post(post_mint_bolt11))
         .route("/v1/melt/quote/bolt11", post(post_melt_quote_bolt11))
         .route("/v1/melt/bolt11", post(post_melt_bolt11))
-        .route("/v1/split", post(post_split))
+        .route("/v1/swap", post(post_split))
         .route("/v1/info", get(get_legacy_info));
 
     let prefix = prefix.unwrap_or_else(|| "".to_owned());
