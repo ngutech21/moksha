@@ -130,6 +130,8 @@ pub struct PostMintQuoteBolt11Request {
 pub struct PostMintQuoteBolt11Response {
     pub quote: String,
     pub request: String,
+    pub paid: bool,
+    pub expiry: u64,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -166,8 +168,7 @@ pub struct PostMeltBolt11Request {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct PostMeltBolt11Response {
     pub paid: bool,
-    /// payment preimage
-    pub proof: String,
+    pub payment_preimage: String,
 }
 
 #[cfg(test)]

@@ -273,6 +273,8 @@ async fn post_mint_quote_bolt11(
     // FIXME check currency unit
     let (pr, _hash) = mint.create_invoice(request.amount).await?;
 
+    let invoice = mint.lightning.decode_invoice(pr.clone()).await?;
+
     let quote = Quote::new(pr.clone());
     let quote_id = quote.quote_id.to_string();
     mint.db.add_quote(quote_id.clone(), quote)?;
@@ -280,6 +282,8 @@ async fn post_mint_quote_bolt11(
     Ok(Json(PostMintQuoteBolt11Response {
         quote: quote_id,
         request: pr,
+        paid: false,
+        expiry: invoice.expiry_time().as_secs(), // FIXME check if this is correct
     }))
 }
 
