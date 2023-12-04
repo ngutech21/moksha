@@ -229,24 +229,24 @@ mod tests {
     #[test]
     fn test_derive_keys_master() -> anyhow::Result<()> {
         let keys = super::derive_keys("master", "0/0/0/0");
-        assert!(keys.len() == 64);
+        assert_eq!(keys.len(), 64);
 
         let pub_keys = super::derive_pubkeys(&keys);
         let id = super::legacy_derive_keyset_id(&pub_keys);
         assert_eq!("JHV8eUnoAln/", id);
-        assert!(id.len() == 12);
+        assert_eq!(id.len(), 12);
         Ok(())
     }
 
     #[test]
     fn test_derive_keys_master_v1() -> anyhow::Result<()> {
         let keys = super::derive_keys("supersecretprivatekey", "");
-        assert!(keys.len() == 64);
+        assert_eq!(keys.len(), 64);
 
         let pub_keys = super::derive_pubkeys(&keys);
         let id = super::derive_keyset_id(&pub_keys);
         //assert_eq!("00d31cecf59d18c0", id); // FIXME
-        assert!(id.len() == 16);
+        assert_eq!(id.len(), 16);
         Ok(())
     }
 
@@ -254,12 +254,12 @@ mod tests {
     #[test]
     fn test_derive_keys_cashu_py() -> anyhow::Result<()> {
         let keys = super::derive_keys("TEST_PRIVATE_KEY", "0/0/0/0");
-        assert!(keys.len() == 64);
+        assert_eq!(keys.len(), 64);
 
         let pub_keys = super::derive_pubkeys(&keys);
         let id = super::legacy_derive_keyset_id(&pub_keys);
         assert_eq!("1cCNIAZ2X/w1", id);
-        assert!(id.len() == 12);
+        assert_eq!(id.len(), 12);
         Ok(())
     }
 
@@ -282,7 +282,7 @@ mod tests {
 
         let keyset_id = super::legacy_derive_keyset_id(&pubs);
 
-        assert!(keyset_id.len() == 12);
+        assert_eq!(keyset_id.len(), 12);
         assert_eq!(keyset_id, "cNbjM0O6V/Kl");
         Ok(())
     }
