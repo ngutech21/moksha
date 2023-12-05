@@ -207,6 +207,7 @@ async fn get_legacy_info(
             "NUT-04".to_string(),
             "NUT-05".to_string(),
             "NUT-06".to_string(),
+            "NUT-08".to_string(),
             "NUT-09".to_string(),
         ],
         motd: mint.mint_info.motd,
@@ -494,7 +495,7 @@ mod tests {
         let body = response.into_body().collect().await.unwrap().to_bytes();
         let info = serde_json::from_slice::<MintInfoResponse>(&body)?;
         assert!(!info.parameter.peg_out_only);
-        assert_eq!(info.nuts.len(), 8);
+        assert_eq!(info.nuts.len(), 9);
         assert_eq!(info.name, Some("Bob's Cashu mint".to_string()));
         assert_eq!(info.description, Some("A mint for testing".to_string()));
         assert_eq!(
