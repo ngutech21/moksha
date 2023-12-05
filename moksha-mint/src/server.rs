@@ -86,9 +86,10 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .route("/v1/keys", get(get_keys))
         .route("/v1/keysets", get(get_keysets))
         .route("/v1/mint/quote/bolt11", post(post_mint_quote_bolt11))
-        .route("/v1/mint/quote/bolt11/:quote_id", get(get_mint_quote))
+        .route("/v1/mint/quote/bolt11/:quote", get(get_mint_quote_bolt11))
         .route("/v1/mint/bolt11", post(post_mint_bolt11))
         .route("/v1/melt/quote/bolt11", post(post_melt_quote_bolt11))
+        .route("/v1/melt/quote/bolt11/:quote", get(get_melt_quote_bolt11))
         .route("/v1/melt/bolt11", post(post_melt_bolt11))
         .route("/v1/swap", post(post_split))
         .route("/v1/info", get(get_legacy_info));
@@ -279,15 +280,20 @@ async fn post_mint_quote_bolt11(
     let (pr, _hash) = mint.create_invoice(key.to_string(), request.amount).await?;
     let invoice = mint.lightning.decode_invoice(pr.clone()).await?;
 
-    let quote = Quote::new(key, pr.clone());
-    let quote_id = quote.quote_id.to_string();
-    mint.db.add_quote(quote_id.clone(), quote)?;
+    let expiry = invoice.expiry_time().as_secs();
+    let quote = Quote::Bolt11Mint {
+        quote_id: key,
+        payment_request: pr.clone(),
+        expiry, // FIXME check if this is correct
+    };
+
+    mint.db.add_quote(key.to_string(), quote)?;
 
     Ok(Json(PostMintQuoteBolt11Response {
-        quote: quote_id,
+        quote: key.to_string(),
         request: pr,
         paid: false,
-        expiry: invoice.expiry_time().as_secs(), // FIXME check if this is correct
+        expiry,
     }))
 }
 
@@ -300,10 +306,15 @@ async fn post_mint_bolt11(
         .get(request.quote.as_str())
         .ok_or_else(|| crate::error::MokshaMintError::InvalidQuote(request.quote.clone()))?;
 
-    let signatures = mint
-        .mint_tokens(quote.quote_id.to_string(), &request.outputs)
-        .await?;
-    Ok(Json(PostMintBolt11Response { signatures }))
+    match quote {
+        Quote::Bolt11Mint { .. } => {
+            let signatures = mint.mint_tokens(request.quote, &request.outputs).await?;
+            Ok(Json(PostMintBolt11Response { signatures }))
+        }
+        _ => Err(crate::error::MokshaMintError::InvalidQuote(
+            request.quote.clone(),
+        )),
+    }
 }
 
 async fn post_melt_quote_bolt11(
@@ -319,10 +330,23 @@ async fn post_melt_quote_bolt11(
         .ok_or_else(|| crate::error::MokshaMintError::InvalidAmount)?;
     let fee_reserve = mint.fee_reserve(amount);
 
+    // Store quote in db
+    let key = Uuid::new_v4();
+    let quote = Quote::Bolt11Melt {
+        quote_id: key,
+        amount,
+        fee_reserve,
+        expiry: invoice.expiry_time().as_secs(), // FIXME check if this is correct
+    };
+    mint.db.add_quote(key.to_string(), quote)?;
+
+    // TODO implement into for Quote
     Ok(Json(PostMeltQuoteBolt11Response {
         amount,
         fee_reserve,
         quote: melt_request.request.clone(), // FIXME use uuid as quote
+        paid: false,
+        expiry: invoice.expiry_time().as_secs(), // FIXME check if this is correct
     }))
 }
 
@@ -330,42 +354,77 @@ async fn post_melt_bolt11(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltBolt11Request>,
 ) -> Result<Json<PostMeltBolt11Response>, MokshaMintError> {
-    let quote = mint.db.get_quote(melt_request.quote)?;
+    let quote = mint.db.get_quote(melt_request.quote.clone())?;
 
-    let (paid, preimage, _change) = mint
-        .melt(quote.payment_request, &melt_request.inputs, &[])
-        .await?;
+    match quote {
+        Quote::Bolt11Melt { .. } => {
+            let (paid, preimage, change) = mint
+                .melt(melt_request.quote, &melt_request.inputs, &[])
+                .await?;
 
-    Ok(Json(PostMeltBolt11Response {
-        paid,
-        payment_preimage: preimage,
-        change: vec![], // FIXME return change
-    }))
+            Ok(Json(PostMeltBolt11Response {
+                paid,
+                payment_preimage: preimage,
+                change,
+            }))
+        }
+        _ => Err(crate::error::MokshaMintError::InvalidQuote(
+            melt_request.quote.clone(),
+        )),
+    }
 }
 
-async fn get_mint_quote(
+async fn get_mint_quote_bolt11(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
 ) -> Result<Json<PostMintQuoteBolt11Response>, MokshaMintError> {
     info!("get_quote: {}", quote_id);
     let quote = mint.db.get_quote(quote_id.clone())?;
 
-    let invoice = mint
-        .lightning
-        .decode_invoice(quote.payment_request.clone())
-        .await?;
+    match quote {
+        Quote::Bolt11Mint {
+            quote_id,
+            payment_request,
+            expiry,
+        } => {
+            let paid = mint
+                .lightning
+                .is_invoice_paid(payment_request.clone())
+                .await?;
 
-    let is_paid = mint
-        .lightning
-        .is_invoice_paid(quote.payment_request.clone())
-        .await?;
+            Ok(Json(PostMintQuoteBolt11Response {
+                quote: quote_id.to_string(),
+                request: payment_request,
+                paid,
+                expiry,
+            }))
+        }
+        _ => Err(crate::error::MokshaMintError::InvalidQuote(quote_id)),
+    }
+}
 
-    Ok(Json(PostMintQuoteBolt11Response {
-        quote: quote_id,
-        request: quote.payment_request,
-        paid: is_paid,
-        expiry: invoice.expiry_time().as_secs(), // FIXME check if this is correct
-    }))
+async fn get_melt_quote_bolt11(
+    Path(quote_id): Path<String>,
+    State(mint): State<Mint>,
+) -> Result<Json<PostMeltQuoteBolt11Response>, MokshaMintError> {
+    info!("get_melt_quote: {}", quote_id);
+    let quote = mint.db.get_quote(quote_id.clone())?;
+
+    match quote {
+        Quote::Bolt11Melt {
+            quote_id,
+            amount,
+            fee_reserve,
+            expiry,
+        } => Ok(Json(PostMeltQuoteBolt11Response {
+            amount,
+            fee_reserve,
+            quote: quote_id.to_string(),
+            paid: false, // FIXME check if paid
+            expiry,
+        })),
+        _ => Err(crate::error::MokshaMintError::InvalidQuote(quote_id)),
+    }
 }
 
 #[cfg(test)]

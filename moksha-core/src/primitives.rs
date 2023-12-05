@@ -158,6 +158,8 @@ pub struct PostMeltQuoteBolt11Response {
     pub quote: String,
     pub amount: u64,
     pub fee_reserve: u64,
+    pub paid: bool,
+    pub expiry: u64,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

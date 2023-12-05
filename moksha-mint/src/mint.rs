@@ -115,10 +115,10 @@ impl Mint {
 
     pub async fn mint_tokens(
         &self,
-        invoice_hash: String,
+        key: String,
         outputs: &[BlindedMessage],
     ) -> Result<Vec<BlindedSignature>, MokshaMintError> {
-        let invoice = self.db.get_pending_invoice(invoice_hash.clone())?;
+        let invoice = self.db.get_pending_invoice(key.clone())?;
 
         let is_paid = self
             .lightning
@@ -129,7 +129,7 @@ impl Mint {
             return Err(MokshaMintError::InvoiceNotPaidYet);
         }
 
-        self.db.remove_pending_invoice(invoice_hash)?;
+        self.db.remove_pending_invoice(key)?;
         self.create_blinded_signatures(outputs)
     }
 
