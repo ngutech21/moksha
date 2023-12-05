@@ -71,7 +71,6 @@ impl IntoResponse for MokshaMintError {
 
         let status = match self {
             Self::Db(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            Self::InvoiceNotPaidYet => StatusCode::OK,
             _ => StatusCode::BAD_REQUEST,
         };
 
