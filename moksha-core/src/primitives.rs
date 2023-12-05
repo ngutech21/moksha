@@ -109,6 +109,7 @@ pub struct KeyResponse {
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone)]
 pub enum CurrencyUnit {
+    #[serde(rename = "sat")]
     Sat,
 }
 
@@ -176,7 +177,7 @@ pub struct PostMeltBolt11Response {
 mod tests {
     use crate::{
         dhke::public_key_from_hex,
-        primitives::{MintInfoResponse, Parameter, PostSplitResponse},
+        primitives::{KeyResponse, MintInfoResponse, Parameter, PostSplitResponse},
     };
 
     #[test]
@@ -184,6 +185,18 @@ mod tests {
         let response = PostSplitResponse::default();
         let serialized = serde_json::to_string(&response)?;
         assert_eq!(serialized, "{\"promises\":[]}");
+        Ok(())
+    }
+
+    #[test]
+    fn test_serialize_keyresponse() -> anyhow::Result<()> {
+        let response = KeyResponse {
+            id: "test".to_string(),
+            unit: crate::primitives::CurrencyUnit::Sat,
+            keys: std::collections::HashMap::new(),
+        };
+        let serialized = serde_json::to_string(&response)?;
+        assert_eq!(serialized, "{\"id\":\"test\",\"unit\":\"sat\",\"keys\":{}}");
         Ok(())
     }
 
