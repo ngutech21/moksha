@@ -185,6 +185,7 @@ mod tests {
         dhke,
         proof::{Proof, Proofs},
     };
+    use uuid::Uuid;
 
     use crate::{
         database::Database,
@@ -263,7 +264,7 @@ mod tests {
         let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
         let db = super::RocksDB::new(tmp_dir.to_owned());
 
-        let quote = Quote::new("12345678".to_owned());
+        let quote = Quote::new(Uuid::new_v4(), "12345678".to_owned());
         let key = quote.quote_id.to_string();
         db.add_quote(key.clone(), quote.clone())?;
         let lookup_quote = db.get_quote(key.to_string())?;

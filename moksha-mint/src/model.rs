@@ -54,9 +54,9 @@ pub struct Quote {
 }
 
 impl Quote {
-    pub fn new(payment_request: String) -> Self {
+    pub fn new(quote_id: Uuid, payment_request: String) -> Self {
         Self {
-            quote_id: Uuid::new_v4(),
+            quote_id,
             payment_request,
         }
     }

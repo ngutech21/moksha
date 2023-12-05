@@ -10,7 +10,8 @@ use axum::response::IntoResponse;
 use axum::routing::{get_service, post};
 use axum::{middleware, Router};
 use axum::{routing::get, Json};
-use moksha_core::keyset::{Keysets, V1Keysets};
+use moksha_core::keyset::{generate_hash, Keysets, V1Keysets};
+use uuid::Uuid;
 
 use crate::mint::Mint;
 use crate::model::{GetMintQuery, PostMintQuery, Quote};
@@ -217,7 +218,9 @@ async fn get_legacy_mint(
     State(mint): State<Mint>,
     Query(mint_query): Query<GetMintQuery>,
 ) -> Result<Json<PaymentRequest>, MokshaMintError> {
-    let (pr, hash) = mint.create_invoice(mint_query.amount).await?;
+    let (pr, hash) = mint
+        .create_invoice(generate_hash(), mint_query.amount)
+        .await?;
     Ok(Json(PaymentRequest { pr, hash }))
 }
 
@@ -272,12 +275,11 @@ async fn post_mint_quote_bolt11(
     Json(request): Json<PostMintQuoteBolt11Request>,
 ) -> Result<Json<PostMintQuoteBolt11Response>, MokshaMintError> {
     // FIXME check currency unit
-    // FIXME use uuid to store invoice
-    let (pr, _hash) = mint.create_invoice(request.amount).await?;
-
+    let key = Uuid::new_v4();
+    let (pr, _hash) = mint.create_invoice(key.to_string(), request.amount).await?;
     let invoice = mint.lightning.decode_invoice(pr.clone()).await?;
 
-    let quote = Quote::new(pr.clone());
+    let quote = Quote::new(key, pr.clone());
     let quote_id = quote.quote_id.to_string();
     mint.db.add_quote(quote_id.clone(), quote)?;
 
@@ -299,7 +301,7 @@ async fn post_mint_bolt11(
         .ok_or_else(|| crate::error::MokshaMintError::InvalidQuote(request.quote.clone()))?;
 
     let signatures = mint
-        .mint_tokens(quote.payment_request.clone(), &request.outputs)
+        .mint_tokens(quote.quote_id.to_string(), &request.outputs)
         .await?;
     Ok(Json(PostMintBolt11Response { signatures }))
 }

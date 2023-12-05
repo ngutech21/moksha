@@ -3,7 +3,7 @@ use std::{collections::HashSet, sync::Arc};
 use moksha_core::{
     blind::{BlindedMessage, BlindedSignature, TotalAmount},
     dhke::Dhke,
-    keyset::{generate_hash, MintKeyset},
+    keyset::MintKeyset,
     primitives::PostSplitResponse,
     proof::Proofs,
 };
@@ -102,9 +102,12 @@ impl Mint {
         Ok(promises)
     }
 
-    pub async fn create_invoice(&self, amount: u64) -> Result<(String, String), MokshaMintError> {
+    pub async fn create_invoice(
+        &self,
+        key: String,
+        amount: u64,
+    ) -> Result<(String, String), MokshaMintError> {
         let pr = self.lightning.create_invoice(amount).await?.payment_request;
-        let key = generate_hash();
         self.db
             .add_pending_invoice(key.clone(), Invoice::new(amount, pr.clone()))?;
         Ok((pr, key))
