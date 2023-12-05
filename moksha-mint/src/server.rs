@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use crate::error::MokshaMintError;
-use axum::extract::{Query, Request, State};
+use axum::extract::{Path, Query, Request, State};
 use axum::http::{HeaderName, HeaderValue, StatusCode};
 use axum::middleware::Next;
 use axum::response::IntoResponse;
@@ -85,6 +85,7 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .route("/v1/keys", get(get_keys))
         .route("/v1/keysets", get(get_keysets))
         .route("/v1/mint/quote/bolt11", post(post_mint_quote_bolt11))
+        .route("/v1/mint/quote/bolt11/:quote_id", get(get_mint_quote))
         .route("/v1/mint/bolt11", post(post_mint_bolt11))
         .route("/v1/melt/quote/bolt11", post(post_melt_quote_bolt11))
         .route("/v1/melt/bolt11", post(post_melt_bolt11))
@@ -271,6 +272,7 @@ async fn post_mint_quote_bolt11(
     Json(request): Json<PostMintQuoteBolt11Request>,
 ) -> Result<Json<PostMintQuoteBolt11Response>, MokshaMintError> {
     // FIXME check currency unit
+    // FIXME use uuid to store invoice
     let (pr, _hash) = mint.create_invoice(request.amount).await?;
 
     let invoice = mint.lightning.decode_invoice(pr.clone()).await?;
@@ -336,6 +338,31 @@ async fn post_melt_bolt11(
         paid,
         payment_preimage: preimage,
         change: vec![], // FIXME return change
+    }))
+}
+
+async fn get_mint_quote(
+    Path(quote_id): Path<String>,
+    State(mint): State<Mint>,
+) -> Result<Json<PostMintQuoteBolt11Response>, MokshaMintError> {
+    info!("get_quote: {}", quote_id);
+    let quote = mint.db.get_quote(quote_id.clone())?;
+
+    let invoice = mint
+        .lightning
+        .decode_invoice(quote.payment_request.clone())
+        .await?;
+
+    let is_paid = mint
+        .lightning
+        .is_invoice_paid(quote.payment_request.clone())
+        .await?;
+
+    Ok(Json(PostMintQuoteBolt11Response {
+        quote: quote_id,
+        request: quote.payment_request,
+        paid: is_paid,
+        expiry: invoice.expiry_time().as_secs(), // FIXME check if this is correct
     }))
 }
 
