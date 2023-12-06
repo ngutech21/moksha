@@ -331,11 +331,12 @@ async fn post_melt_quote_bolt11(
         .ok_or_else(|| crate::error::MokshaMintError::InvalidAmount)?;
     let fee_reserve = mint.fee_reserve(amount);
 
+    let amount_sat = amount / 1_000;
     // Store quote in db
     let key = Uuid::new_v4();
     let quote = Quote::Bolt11Melt {
         quote_id: key,
-        amount,
+        amount: amount_sat,
         fee_reserve,
         expiry: invoice.expiry_time().as_secs(), // FIXME check if this is correct
     };
@@ -343,9 +344,9 @@ async fn post_melt_quote_bolt11(
 
     // TODO implement into for Quote
     Ok(Json(PostMeltQuoteBolt11Response {
-        amount,
+        amount: amount_sat,
         fee_reserve,
-        quote: melt_request.request.clone(), // FIXME use uuid as quote
+        quote: key.to_string(),
         paid: false,
         expiry: invoice.expiry_time().as_secs(), // FIXME check if this is correct
     }))
