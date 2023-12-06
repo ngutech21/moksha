@@ -7,7 +7,7 @@ use moksha_core::keyset::Keysets;
 use moksha_core::primitives::CashuErrorResponse;
 use moksha_core::primitives::{
     CheckFeesRequest, CheckFeesResponse, PaymentRequest, PostMeltRequest, PostMeltResponse,
-    PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+    PostMintRequest, PostMintResponse, PostSwapRequest, PostSwapResponse,
 };
 use moksha_core::proof::Proofs;
 use moksha_wallet::{client::Client, error::MokshaWalletError};
@@ -30,8 +30,8 @@ impl Client for WasmClient {
         mint_url: &Url,
         proofs: Proofs,
         outputs: Vec<BlindedMessage>,
-    ) -> Result<PostSplitResponse, MokshaWalletError> {
-        let body = &PostSplitRequest { proofs, outputs };
+    ) -> Result<PostSwapResponse, MokshaWalletError> {
+        let body = &PostSwapRequest { proofs, outputs };
 
         let resp = Request::post(mint_url.join("split")?.as_str())
             .header("content-type", "application/json")
@@ -39,7 +39,7 @@ impl Client for WasmClient {
             .send()
             .await?;
 
-        extract_response_data::<PostSplitResponse>(resp).await
+        extract_response_data::<PostSwapResponse>(resp).await
     }
 
     async fn post_melt_tokens(
