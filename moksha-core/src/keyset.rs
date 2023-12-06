@@ -41,25 +41,25 @@ pub struct MintKeyset {
 }
 
 impl MintKeyset {
-    pub fn legacy_new(seed: String, derivation_path: String) -> MintKeyset {
-        let priv_keys = derive_keys(&seed, &derivation_path);
+    pub fn legacy_new(seed: &str, derivation_path: &str) -> MintKeyset {
+        let priv_keys = derive_keys(seed, derivation_path);
         let pub_keys = derive_pubkeys(&priv_keys);
         MintKeyset {
             private_keys: priv_keys,
             keyset_id: legacy_derive_keyset_id(&pub_keys),
             public_keys: pub_keys,
-            mint_pubkey: derive_pubkey(&seed).expect("invalid seed"),
+            mint_pubkey: derive_pubkey(seed).expect("invalid seed"),
         }
     }
 
-    pub fn new(seed: String, derivation_path: String) -> MintKeyset {
-        let priv_keys = derive_keys(&seed, &derivation_path);
+    pub fn new(seed: &str, derivation_path: &str) -> MintKeyset {
+        let priv_keys = derive_keys(seed, derivation_path);
         let pub_keys = derive_pubkeys(&priv_keys);
         MintKeyset {
             private_keys: priv_keys,
             keyset_id: derive_keyset_id(&pub_keys),
             public_keys: pub_keys,
-            mint_pubkey: derive_pubkey(&seed).expect("invalid seed"),
+            mint_pubkey: derive_pubkey(seed).expect("invalid seed"),
         }
     }
 }

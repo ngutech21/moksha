@@ -191,7 +191,7 @@ async fn get_legacy_info(
 ) -> Result<Json<MintInfoResponse>, MokshaMintError> {
     let mint_info = MintInfoResponse {
         name: mint.mint_info.name,
-        pubkey: mint.keyset.mint_pubkey,
+        pubkey: mint.keyset_legacy.mint_pubkey,
         version: match mint.mint_info.version {
             true => Some(env!("CARGO_PKG_VERSION").to_owned()),
             _ => None,
@@ -245,11 +245,11 @@ async fn post_legacy_mint(
 async fn get_legacy_keys(
     State(mint): State<Mint>,
 ) -> Result<Json<HashMap<u64, PublicKey>>, MokshaMintError> {
-    Ok(Json(mint.keyset.public_keys))
+    Ok(Json(mint.keyset_legacy.public_keys))
 }
 
 async fn get_legacy_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, MokshaMintError> {
-    Ok(Json(Keysets::new(vec![mint.keyset.keyset_id])))
+    Ok(Json(Keysets::new(vec![mint.keyset_legacy.keyset_id])))
 }
 
 // ######################################################################################################
@@ -538,6 +538,7 @@ mod tests {
         let keysets = keys.keysets;
         assert_eq!(&1, &keysets.len());
         assert_eq!(64, keysets[0].keys.len());
+        assert_eq!(16, keysets[0].id.len());
         assert_eq!(CurrencyUnit::Sat, keysets[0].unit);
         Ok(())
     }
@@ -553,6 +554,7 @@ mod tests {
         let body = response.into_body().collect().await.unwrap().to_bytes();
         let keysets = serde_json::from_slice::<V1Keysets>(&body)?;
         assert_eq!(1, keysets.keysets.len());
+        assert_eq!(16, keysets.keysets[0].id.len());
         Ok(())
     }
 }

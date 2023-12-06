@@ -20,6 +20,8 @@ use crate::{
 pub struct Mint {
     pub lightning: Arc<dyn Lightning + Send + Sync>,
     pub lightning_type: LightningType,
+    // FIXME remove after v1 api release
+    pub keyset_legacy: MintKeyset,
     pub keyset: MintKeyset,
     pub db: Arc<dyn Database + Send + Sync>,
     pub dhke: Dhke,
@@ -66,7 +68,8 @@ impl Mint {
             lightning,
             lightning_type,
             lightning_fee_config,
-            keyset: MintKeyset::legacy_new(secret, derivation_path),
+            keyset_legacy: MintKeyset::legacy_new(&secret, &derivation_path),
+            keyset: MintKeyset::new(&secret, &derivation_path),
             db,
             dhke: Dhke::new(),
             mint_info,
@@ -90,10 +93,14 @@ impl Mint {
         let promises = blinded_messages
             .iter()
             .map(|blinded_msg| {
-                let private_key = self.keyset.private_keys.get(&blinded_msg.amount).unwrap(); // FIXME unwrap
+                let private_key = self
+                    .keyset_legacy
+                    .private_keys
+                    .get(&blinded_msg.amount)
+                    .unwrap(); // FIXME unwrap
                 let blinded_sig = self.dhke.step2_bob(blinded_msg.b_, private_key).unwrap(); // FIXME unwrap
                 BlindedSignature {
-                    id: Some(self.keyset.keyset_id.clone()),
+                    id: Some(self.keyset_legacy.keyset_id.clone()),
                     amount: blinded_msg.amount,
                     c_: blinded_sig,
                 }
