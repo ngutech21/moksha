@@ -438,7 +438,10 @@ mod tests {
         http::{Request, StatusCode},
     };
     use http_body_util::BodyExt;
-    use moksha_core::{keyset::Keysets, primitives::MintInfoResponse};
+    use moksha_core::{
+        keyset::{Keysets, V1Keysets},
+        primitives::{CurrencyUnit, KeysResponse, MintInfoResponse},
+    };
     use secp256k1::PublicKey;
     use tower::ServiceExt;
 
@@ -518,5 +521,38 @@ mod tests {
             LightningFeeConfig::default(),
             mint_info,
         )
+    }
+
+    // ################ v1 api tests #####################
+
+    #[tokio::test]
+    async fn test_get_keys_v1() -> anyhow::Result<()> {
+        let app = app(create_mock_mint(Default::default()), None, None);
+        let response = app
+            .oneshot(Request::builder().uri("/v1/keys").body(Body::empty())?)
+            .await?;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let keys: KeysResponse = serde_json::from_slice(&body)?;
+        let keysets = keys.keysets;
+        assert_eq!(&1, &keysets.len());
+        assert_eq!(64, keysets[0].keys.len());
+        assert_eq!(CurrencyUnit::Sat, keysets[0].unit);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_keysets_v1() -> anyhow::Result<()> {
+        let app = app(create_mock_mint(Default::default()), None, None);
+        let response = app
+            .oneshot(Request::builder().uri("/v1/keysets").body(Body::empty())?)
+            .await?;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let keysets = serde_json::from_slice::<V1Keysets>(&body)?;
+        assert_eq!(1, keysets.keysets.len());
+        Ok(())
     }
 }
