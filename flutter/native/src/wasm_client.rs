@@ -136,11 +136,11 @@ async fn extract_response_data<T: serde::de::DeserializeOwned>(
                         .unwrap();
 
                     // FIXME: use the error code to return a proper error
-                    match data.error.as_str() {
+                    match data.detail.as_str() {
                         "Lightning invoice not paid yet." => {
-                            Err(MokshaWalletError::InvoiceNotPaidYet(data.code, data.error))
+                            Err(MokshaWalletError::InvoiceNotPaidYet(data.code, data.detail))
                         }
-                        _ => Err(MokshaWalletError::MintError(data.error)),
+                        _ => Err(MokshaWalletError::MintError(data.detail)),
                     }
                 }
             }
@@ -152,11 +152,11 @@ async fn extract_response_data<T: serde::de::DeserializeOwned>(
                 .unwrap();
 
             // FIXME: use the error code to return a proper error
-            match data.error.as_str() {
+            match data.detail.as_str() {
                 "Lightning invoice not paid yet." => {
-                    Err(MokshaWalletError::InvoiceNotPaidYet(data.code, data.error))
+                    Err(MokshaWalletError::InvoiceNotPaidYet(data.code, data.detail))
                 }
-                _ => Err(MokshaWalletError::MintError(data.error)),
+                _ => Err(MokshaWalletError::MintError(data.detail)),
             }
         }
     }

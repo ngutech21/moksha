@@ -73,7 +73,7 @@ impl PostSwapResponse {
 #[derive(Deserialize, Debug)]
 pub struct CashuErrorResponse {
     pub code: u64,
-    pub error: String,
+    pub detail: String,
 }
 
 #[skip_serializing_none]

@@ -166,11 +166,11 @@ async fn extract_response_data<T: serde::de::DeserializeOwned>(
                         .unwrap();
 
                     // FIXME: use the error code to return a proper error
-                    match data.error.as_str() {
+                    match data.detail.as_str() {
                         "Lightning invoice not paid yet." => {
-                            Err(MokshaWalletError::InvoiceNotPaidYet(data.code, data.error))
+                            Err(MokshaWalletError::InvoiceNotPaidYet(data.code, data.detail))
                         }
-                        _ => Err(MokshaWalletError::MintError(data.error)),
+                        _ => Err(MokshaWalletError::MintError(data.detail)),
                     }
                 }
             }
@@ -182,11 +182,11 @@ async fn extract_response_data<T: serde::de::DeserializeOwned>(
                 .unwrap();
 
             // FIXME: use the error code to return a proper error
-            match data.error.as_str() {
+            match data.detail.as_str() {
                 "Lightning invoice not paid yet." => {
-                    Err(MokshaWalletError::InvoiceNotPaidYet(data.code, data.error))
+                    Err(MokshaWalletError::InvoiceNotPaidYet(data.code, data.detail))
                 }
-                _ => Err(MokshaWalletError::MintError(data.error)),
+                _ => Err(MokshaWalletError::MintError(data.detail)),
             }
         }
     }
@@ -196,10 +196,10 @@ async fn extract_response_data<T: serde::de::DeserializeOwned>(
 mod tests {
     #[test]
     fn test_deserialize_error() -> anyhow::Result<()> {
-        let input = "{\"code\":0,\"error\":\"Lightning invoice not paid yet.\"}";
+        let input = "{\"code\":0,\"detail\":\"Lightning invoice not paid yet.\"}";
         let data = serde_json::from_str::<super::CashuErrorResponse>(input)?;
         assert_eq!(data.code, 0);
-        assert_eq!(data.error, "Lightning invoice not paid yet.");
+        assert_eq!(data.detail, "Lightning invoice not paid yet.");
         Ok(())
     }
 }

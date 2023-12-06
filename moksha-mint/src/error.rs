@@ -73,7 +73,7 @@ impl IntoResponse for MokshaMintError {
 
         let body = Json(json!({
             "code": 0,
-            "error": self.to_string(),
+            "detail": self.to_string(),
         }));
 
         (status, body).into_response()
