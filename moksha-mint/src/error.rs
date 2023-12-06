@@ -47,13 +47,10 @@ pub enum MokshaMintError {
     ProofAlreadyUsed(String),
 
     #[error("{0}")]
-    SplitAmountMismatch(String),
-
-    #[error("split amount is higher than the total sum.")]
-    SplitAmountTooHigh,
+    SwapAmountMismatch(String),
 
     #[error("duplicate promises.")]
-    SplitHasDuplicatePromises,
+    SwapHasDuplicatePromises,
 
     #[error("Invalid amount")]
     InvalidAmount,

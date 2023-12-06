@@ -5,7 +5,7 @@ use moksha_core::{
     blind::BlindedMessage,
     keyset::Keysets,
     primitives::{
-        CheckFeesResponse, PaymentRequest, PostMeltResponse, PostMintResponse, PostSplitResponse,
+        CheckFeesResponse, PaymentRequest, PostMeltResponse, PostMintResponse, PostSwapResponse,
     },
     proof::Proofs,
 };
@@ -24,7 +24,7 @@ pub trait Client {
         mint_url: &Url,
         proofs: Proofs,
         output: Vec<BlindedMessage>,
-    ) -> Result<PostSplitResponse, MokshaWalletError>;
+    ) -> Result<PostSwapResponse, MokshaWalletError>;
 
     async fn post_mint_payment_request(
         &self,

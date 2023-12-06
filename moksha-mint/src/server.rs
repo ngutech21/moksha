@@ -20,7 +20,7 @@ use moksha_core::primitives::{
     PaymentRequest, PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
     PostMeltQuoteBolt11Response, PostMeltRequest, PostMeltResponse, PostMintBolt11Request,
     PostMintBolt11Response, PostMintQuoteBolt11Request, PostMintQuoteBolt11Response,
-    PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+    PostMintRequest, PostMintResponse, PostSwapRequest, PostSwapResponse,
 };
 use secp256k1::PublicKey;
 
@@ -79,7 +79,7 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .route("/mint", get(get_legacy_mint).post(post_legacy_mint))
         .route("/checkfees", post(post_legacy_check_fees))
         .route("/melt", post(post_legacy_melt))
-        .route("/split", post(post_split))
+        .route("/split", post(post_swap))
         .route("/info", get(get_legacy_info));
 
     let routes = Router::new()
@@ -91,7 +91,7 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .route("/v1/melt/quote/bolt11", post(post_melt_quote_bolt11))
         .route("/v1/melt/quote/bolt11/:quote", get(get_melt_quote_bolt11))
         .route("/v1/melt/bolt11", post(post_melt_bolt11))
-        .route("/v1/swap", post(post_split))
+        .route("/v1/swap", post(post_swap))
         .route("/v1/info", get(get_legacy_info));
 
     let prefix = prefix.unwrap_or_else(|| "".to_owned());
@@ -145,12 +145,12 @@ async fn add_response_headers(
     Ok(res)
 }
 
-async fn post_split(
+async fn post_swap(
     State(mint): State<Mint>,
-    Json(split_request): Json<PostSplitRequest>,
-) -> Result<Json<PostSplitResponse>, MokshaMintError> {
+    Json(swap_request): Json<PostSwapRequest>,
+) -> Result<Json<PostSwapResponse>, MokshaMintError> {
     let response = mint
-        .split(&split_request.proofs, &split_request.outputs)
+        .swap(&swap_request.proofs, &swap_request.outputs)
         .await?;
 
     Ok(Json(response))

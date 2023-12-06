@@ -54,17 +54,17 @@ pub struct PostMeltResponse {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PostSplitRequest {
+pub struct PostSwapRequest {
     pub proofs: Proofs,
     pub outputs: Vec<BlindedMessage>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct PostSplitResponse {
+pub struct PostSwapResponse {
     pub promises: Vec<BlindedSignature>,
 }
 
-impl PostSplitResponse {
+impl PostSwapResponse {
     pub fn with_promises(promises: Vec<BlindedSignature>) -> Self {
         Self { promises }
     }
@@ -181,12 +181,12 @@ pub struct PostMeltBolt11Response {
 mod tests {
     use crate::{
         dhke::public_key_from_hex,
-        primitives::{KeyResponse, MintInfoResponse, Parameter, PostSplitResponse},
+        primitives::{KeyResponse, MintInfoResponse, Parameter, PostSwapResponse},
     };
 
     #[test]
     fn test_serialize_empty_split_response() -> anyhow::Result<()> {
-        let response = PostSplitResponse::default();
+        let response = PostSwapResponse::default();
         let serialized = serde_json::to_string(&response)?;
         assert_eq!(serialized, "{\"promises\":[]}");
         Ok(())

@@ -4,7 +4,7 @@ use moksha_core::{
     blind::{BlindedMessage, BlindedSignature, TotalAmount},
     dhke::Dhke,
     keyset::MintKeyset,
-    primitives::PostSplitResponse,
+    primitives::PostSwapResponse,
     proof::Proofs,
 };
 
@@ -138,15 +138,15 @@ impl Mint {
         !outputs.iter().all(move |x| uniq.insert(x.b_))
     }
 
-    pub async fn split(
+    pub async fn swap(
         &self,
         proofs: &Proofs,
         blinded_messages: &[BlindedMessage],
-    ) -> Result<PostSplitResponse, MokshaMintError> {
+    ) -> Result<PostSwapResponse, MokshaMintError> {
         self.check_used_proofs(proofs)?;
 
         if Self::has_duplicate_pubkeys(blinded_messages) {
-            return Err(MokshaMintError::SplitHasDuplicatePromises);
+            return Err(MokshaMintError::SwapHasDuplicatePromises);
         }
 
         let sum_proofs = proofs.total_amount();
@@ -154,13 +154,13 @@ impl Mint {
         let promises = self.create_blinded_signatures(blinded_messages)?;
         let amount_promises = promises.total_amount();
         if sum_proofs != amount_promises {
-            return Err(MokshaMintError::SplitAmountMismatch(format!(
+            return Err(MokshaMintError::SwapAmountMismatch(format!(
                 "Split amount mismatch: {sum_proofs} != {amount_promises}"
             )));
         }
 
         self.db.add_used_proofs(proofs)?;
-        Ok(PostSplitResponse::with_promises(promises))
+        Ok(PostSwapResponse::with_promises(promises))
     }
 
     pub async fn melt(
@@ -314,7 +314,7 @@ mod tests {
     use crate::{database::MockDatabase, error::MokshaMintError};
     use moksha_core::blind::{BlindedMessage, TotalAmount};
     use moksha_core::dhke;
-    use moksha_core::primitives::PostSplitRequest;
+    use moksha_core::primitives::PostSwapRequest;
     use moksha_core::proof::Proofs;
     use moksha_core::token::TokenV3;
     use std::str::FromStr;
@@ -382,7 +382,7 @@ mod tests {
         let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
 
         let proofs = Proofs::empty();
-        let result = mint.split(&proofs, &blinded_messages).await?;
+        let result = mint.swap(&proofs, &blinded_messages).await?;
 
         assert!(result.promises.is_empty());
         Ok(())
@@ -393,7 +393,7 @@ mod tests {
         let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
 
-        let result = mint.split(&request.proofs, &request.outputs).await?;
+        let result = mint.swap(&request.proofs, &request.outputs).await?;
         assert_eq!(result.promises.total_amount(), 64);
 
         let prv_lst = result.promises.get(result.promises.len() - 2).unwrap();
@@ -410,7 +410,7 @@ mod tests {
         let request =
             create_request_from_fixture("post_split_request_duplicate_key.json".to_string())?;
 
-        let result = mint.split(&request.proofs, &request.outputs).await;
+        let result = mint.swap(&request.proofs, &request.outputs).await;
         assert!(result.is_err());
         Ok(())
     }
@@ -463,10 +463,10 @@ mod tests {
         Ok(raw_token.trim().to_string().try_into()?)
     }
 
-    fn create_request_from_fixture(fixture: String) -> Result<PostSplitRequest, anyhow::Error> {
+    fn create_request_from_fixture(fixture: String) -> Result<PostSwapRequest, anyhow::Error> {
         let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{fixture}"))?;
-        Ok(serde_json::from_str::<PostSplitRequest>(&raw_token)?)
+        Ok(serde_json::from_str::<PostSwapRequest>(&raw_token)?)
     }
 
     fn create_blinded_msgs_from_fixture(

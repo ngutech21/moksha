@@ -6,7 +6,7 @@ use moksha_core::{
     keyset::Keysets,
     primitives::{
         CashuErrorResponse, CheckFeesRequest, CheckFeesResponse, PaymentRequest, PostMeltRequest,
-        PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+        PostMeltResponse, PostMintRequest, PostMintResponse, PostSwapRequest, PostSwapResponse,
     },
     proof::Proofs,
 };
@@ -44,8 +44,8 @@ impl Client for HttpClient {
         mint_url: &Url,
         proofs: Proofs,
         outputs: Vec<BlindedMessage>,
-    ) -> Result<PostSplitResponse, MokshaWalletError> {
-        let body = serde_json::to_string(&PostSplitRequest { proofs, outputs })?;
+    ) -> Result<PostSwapResponse, MokshaWalletError> {
+        let body = serde_json::to_string(&PostSwapRequest { proofs, outputs })?;
 
         let resp = self
             .request_client
@@ -55,7 +55,7 @@ impl Client for HttpClient {
             .send()
             .await?;
 
-        extract_response_data::<PostSplitResponse>(resp).await
+        extract_response_data::<PostSwapResponse>(resp).await
     }
 
     async fn post_melt_tokens(
