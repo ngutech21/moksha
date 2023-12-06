@@ -47,21 +47,6 @@ pub struct CreateInvoiceParams {
     pub internal: Option<bool>,
 }
 
-// #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-// pub struct Quote {
-//     pub quote_id: Uuid,
-//     pub payment_request: String,
-// }
-
-// impl Quote {
-//     pub fn new(quote_id: Uuid, payment_request: String) -> Self {
-//         Self {
-//             quote_id,
-//             payment_request,
-//         }
-//     }
-// }
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Quote {
     Bolt11Mint {

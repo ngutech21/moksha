@@ -108,15 +108,17 @@ pub struct KeyResponse {
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone)]
+#[serde(rename_all = "lowercase")]
 pub enum CurrencyUnit {
-    #[serde(rename = "sat")]
     Sat,
+    Usd,
 }
 
 impl Display for CurrencyUnit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             CurrencyUnit::Sat => write!(f, "sat"),
+            CurrencyUnit::Usd => write!(f, "usd"),
         }
     }
 }
