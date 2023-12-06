@@ -20,7 +20,8 @@ use moksha_core::primitives::{
     PaymentRequest, PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
     PostMeltQuoteBolt11Response, PostMeltRequest, PostMeltResponse, PostMintBolt11Request,
     PostMintBolt11Response, PostMintQuoteBolt11Request, PostMintQuoteBolt11Response,
-    PostMintRequest, PostMintResponse, PostSwapRequest, PostSwapResponse,
+    PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse, PostSwapRequest,
+    PostSwapResponse,
 };
 use secp256k1::PublicKey;
 
@@ -79,11 +80,12 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .route("/mint", get(get_legacy_mint).post(post_legacy_mint))
         .route("/checkfees", post(post_legacy_check_fees))
         .route("/melt", post(post_legacy_melt))
-        .route("/split", post(post_swap))
+        .route("/split", post(post_legacy_split))
         .route("/info", get(get_legacy_info));
 
     let routes = Router::new()
         .route("/v1/keys", get(get_keys))
+        .route("/v1/keys/:id", get(get_keys_by_id))
         .route("/v1/keysets", get(get_keysets))
         .route("/v1/mint/quote/bolt11", post(post_mint_quote_bolt11))
         .route("/v1/mint/quote/bolt11/:quote", get(get_mint_quote_bolt11))
@@ -145,15 +147,19 @@ async fn add_response_headers(
     Ok(res)
 }
 
-async fn post_swap(
+async fn post_legacy_split(
     State(mint): State<Mint>,
-    Json(swap_request): Json<PostSwapRequest>,
-) -> Result<Json<PostSwapResponse>, MokshaMintError> {
+    Json(swap_request): Json<PostSplitRequest>,
+) -> Result<Json<PostSplitResponse>, MokshaMintError> {
     let response = mint
-        .swap(&swap_request.proofs, &swap_request.outputs)
+        .swap(
+            &swap_request.proofs,
+            &swap_request.outputs,
+            &mint.keyset_legacy,
+        )
         .await?;
 
-    Ok(Json(response))
+    Ok(Json(PostSplitResponse::with_promises(response)))
 }
 
 async fn post_legacy_melt(
@@ -161,7 +167,12 @@ async fn post_legacy_melt(
     Json(melt_request): Json<PostMeltRequest>,
 ) -> Result<Json<PostMeltResponse>, MokshaMintError> {
     let (paid, preimage, change) = mint
-        .melt(melt_request.pr, &melt_request.proofs, &melt_request.outputs)
+        .melt(
+            melt_request.pr,
+            &melt_request.proofs,
+            &melt_request.outputs,
+            &mint.keyset_legacy,
+        )
         .await?;
 
     Ok(Json(PostMeltResponse {
@@ -237,7 +248,11 @@ async fn post_legacy_mint(
     );
 
     let promises = mint
-        .mint_tokens(mint_query.hash, &blinded_messages.outputs)
+        .mint_tokens(
+            mint_query.hash,
+            &blinded_messages.outputs,
+            &mint.keyset_legacy,
+        )
         .await?;
     Ok(Json(PostMintResponse { promises }))
 }
@@ -254,7 +269,33 @@ async fn get_legacy_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, M
 
 // ######################################################################################################
 
+async fn post_swap(
+    State(mint): State<Mint>,
+    Json(swap_request): Json<PostSwapRequest>,
+) -> Result<Json<PostSwapResponse>, MokshaMintError> {
+    let response = mint
+        .swap(&swap_request.inputs, &swap_request.outputs, &mint.keyset)
+        .await?;
+
+    Ok(Json(PostSwapResponse {
+        signatures: response,
+    }))
+}
+
 async fn get_keys(State(mint): State<Mint>) -> Result<Json<KeysResponse>, MokshaMintError> {
+    Ok(Json(KeysResponse {
+        keysets: vec![KeyResponse {
+            id: mint.keyset.keyset_id.clone(),
+            unit: CurrencyUnit::Sat,
+            keys: mint.keyset.public_keys.clone(),
+        }],
+    }))
+}
+
+async fn get_keys_by_id(
+    Path(_id): Path<String>,
+    State(mint): State<Mint>,
+) -> Result<Json<KeysResponse>, MokshaMintError> {
     Ok(Json(KeysResponse {
         keysets: vec![KeyResponse {
             id: mint.keyset.keyset_id.clone(),
@@ -309,7 +350,9 @@ async fn post_mint_bolt11(
 
     match quote {
         Quote::Bolt11Mint { .. } => {
-            let signatures = mint.mint_tokens(request.quote, &request.outputs).await?;
+            let signatures = mint
+                .mint_tokens(request.quote, &request.outputs, &mint.keyset)
+                .await?;
             Ok(Json(PostMintBolt11Response { signatures }))
         }
         _ => Err(crate::error::MokshaMintError::InvalidQuote(
@@ -329,7 +372,8 @@ async fn post_melt_quote_bolt11(
     let amount = invoice
         .amount_milli_satoshis()
         .ok_or_else(|| crate::error::MokshaMintError::InvalidAmount)?;
-    let fee_reserve = mint.fee_reserve(amount);
+    let fee_reserve = mint.fee_reserve(amount) / 1_000; // FIXME check if this is correct
+    info!("fee_reserve: {}", fee_reserve);
 
     let amount_sat = amount / 1_000;
     // Store quote in db
@@ -361,7 +405,7 @@ async fn post_melt_bolt11(
     match quote {
         Quote::Bolt11Melt { .. } => {
             let (paid, preimage, change) = mint
-                .melt(melt_request.quote, &melt_request.inputs, &[])
+                .melt(melt_request.quote, &melt_request.inputs, &[], &mint.keyset)
                 .await?;
 
             Ok(Json(PostMeltBolt11Response {

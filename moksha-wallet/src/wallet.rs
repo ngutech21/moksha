@@ -451,7 +451,8 @@ mod tests {
     use moksha_core::fixture::{read_fixture, read_fixture_as};
     use moksha_core::keyset::{Keysets, MintKeyset};
     use moksha_core::primitives::{
-        CheckFeesResponse, PaymentRequest, PostMeltResponse, PostMintResponse, PostSwapResponse,
+        CheckFeesResponse, PaymentRequest, PostMeltResponse, PostMintResponse, PostSplitResponse,
+        PostSwapResponse,
     };
     use moksha_core::proof::Proofs;
     use moksha_core::token::{Token, TokenV3};
@@ -526,14 +527,14 @@ mod tests {
 
     #[derive(Clone, Default)]
     struct MockClient {
-        split_response: PostSwapResponse,
+        split_response: PostSplitResponse,
         post_mint_response: PostMintResponse,
         post_melt_response: PostMeltResponse,
         keyset: MockKeys,
     }
 
     impl MockClient {
-        fn with_split_response(split_response: PostSwapResponse) -> Self {
+        fn with_split_response(split_response: PostSplitResponse) -> Self {
             Self {
                 split_response,
                 ..Default::default()
@@ -550,7 +551,7 @@ mod tests {
         fn with_melt_response(post_melt_response: PostMeltResponse) -> Self {
             Self {
                 post_melt_response,
-                split_response: PostSwapResponse::with_promises(vec![]),
+                split_response: PostSplitResponse::with_promises(vec![]),
                 ..Default::default()
             }
         }
@@ -563,7 +564,7 @@ mod tests {
             _mint_url: &Url,
             _proofs: Proofs,
             _output: Vec<BlindedMessage>,
-        ) -> Result<PostSwapResponse, MokshaWalletError> {
+        ) -> Result<PostSplitResponse, MokshaWalletError> {
             Ok(self.split_response.clone())
         }
 
@@ -642,7 +643,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_split() -> anyhow::Result<()> {
-        let split_response = read_fixture_as::<PostSwapResponse>("post_split_response_24_40.json")?;
+        let split_response =
+            read_fixture_as::<PostSplitResponse>("post_split_response_24_40.json")?;
         let client = MockClient::with_split_response(split_response);
         let localstore = MockLocalStore::default();
 

@@ -89,18 +89,15 @@ impl Mint {
     pub fn create_blinded_signatures(
         &self,
         blinded_messages: &[BlindedMessage],
+        keyset: &MintKeyset, // FIXME refactor keyset management
     ) -> Result<Vec<BlindedSignature>, MokshaMintError> {
         let promises = blinded_messages
             .iter()
             .map(|blinded_msg| {
-                let private_key = self
-                    .keyset_legacy
-                    .private_keys
-                    .get(&blinded_msg.amount)
-                    .unwrap(); // FIXME unwrap
+                let private_key = keyset.private_keys.get(&blinded_msg.amount).unwrap(); // FIXME unwrap
                 let blinded_sig = self.dhke.step2_bob(blinded_msg.b_, private_key).unwrap(); // FIXME unwrap
                 BlindedSignature {
-                    id: Some(self.keyset_legacy.keyset_id.clone()),
+                    id: Some(keyset.keyset_id.clone()),
                     amount: blinded_msg.amount,
                     c_: blinded_sig,
                 }
@@ -124,6 +121,7 @@ impl Mint {
         &self,
         key: String,
         outputs: &[BlindedMessage],
+        keyset: &MintKeyset,
     ) -> Result<Vec<BlindedSignature>, MokshaMintError> {
         let invoice = self.db.get_pending_invoice(key.clone())?;
 
@@ -137,7 +135,7 @@ impl Mint {
         }
 
         self.db.remove_pending_invoice(key)?;
-        self.create_blinded_signatures(outputs)
+        self.create_blinded_signatures(outputs, keyset)
     }
 
     fn has_duplicate_pubkeys(outputs: &[BlindedMessage]) -> bool {
@@ -149,7 +147,8 @@ impl Mint {
         &self,
         proofs: &Proofs,
         blinded_messages: &[BlindedMessage],
-    ) -> Result<PostSwapResponse, MokshaMintError> {
+        keyset: &MintKeyset,
+    ) -> Result<Vec<BlindedSignature>, MokshaMintError> {
         self.check_used_proofs(proofs)?;
 
         if Self::has_duplicate_pubkeys(blinded_messages) {
@@ -158,7 +157,7 @@ impl Mint {
 
         let sum_proofs = proofs.total_amount();
 
-        let promises = self.create_blinded_signatures(blinded_messages)?;
+        let promises = self.create_blinded_signatures(blinded_messages, keyset)?;
         let amount_promises = promises.total_amount();
         if sum_proofs != amount_promises {
             return Err(MokshaMintError::SwapAmountMismatch(format!(
@@ -167,7 +166,7 @@ impl Mint {
         }
 
         self.db.add_used_proofs(proofs)?;
-        Ok(PostSwapResponse::with_promises(promises))
+        Ok(promises)
     }
 
     pub async fn melt(
@@ -175,6 +174,7 @@ impl Mint {
         payment_request: String,
         proofs: &Proofs,
         blinded_messages: &[BlindedMessage],
+        keyset: &MintKeyset,
     ) -> Result<(bool, String, Vec<BlindedSignature>), MokshaMintError> {
         let invoice = self
             .lightning
@@ -206,7 +206,7 @@ impl Mint {
         let _remaining_amount = (amount_msat - (proofs_amount / 1000)) * 1000;
 
         // FIXME check if output amount matches remaining_amount
-        let output = self.create_blinded_signatures(blinded_messages)?;
+        let output = self.create_blinded_signatures(blinded_messages, keyset)?;
 
         Ok((true, result.payment_hash, output))
     }
@@ -321,7 +321,7 @@ mod tests {
     use crate::{database::MockDatabase, error::MokshaMintError};
     use moksha_core::blind::{BlindedMessage, TotalAmount};
     use moksha_core::dhke;
-    use moksha_core::primitives::PostSwapRequest;
+    use moksha_core::primitives::PostSplitRequest;
     use moksha_core::proof::Proofs;
     use moksha_core::token::TokenV3;
     use std::str::FromStr;
@@ -346,7 +346,7 @@ mod tests {
             ),
         }];
 
-        let result = mint.create_blinded_signatures(&blinded_messages)?;
+        let result = mint.create_blinded_signatures(&blinded_messages, &mint.keyset_legacy)?;
 
         assert_eq!(1, result.len());
         assert_eq!(8, result[0].amount);
@@ -366,7 +366,9 @@ mod tests {
         let mint = create_mint_from_mocks(Some(create_mock_mint()), Some(lightning));
 
         let outputs = vec![];
-        let result = mint.mint_tokens("somehash".to_string(), &outputs).await?;
+        let result = mint
+            .mint_tokens("somehash".to_string(), &outputs, &mint.keyset_legacy)
+            .await?;
         assert!(result.is_empty());
         Ok(())
     }
@@ -378,7 +380,9 @@ mod tests {
         let mint = create_mint_from_mocks(Some(create_mock_mint()), Some(lightning));
 
         let outputs = create_blinded_msgs_from_fixture("blinded_messages_40.json".to_string())?;
-        let result = mint.mint_tokens("somehash".to_string(), &outputs).await?;
+        let result = mint
+            .mint_tokens("somehash".to_string(), &outputs, &mint.keyset_legacy)
+            .await?;
         assert_eq!(40, result.total_amount());
         Ok(())
     }
@@ -389,9 +393,11 @@ mod tests {
         let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
 
         let proofs = Proofs::empty();
-        let result = mint.swap(&proofs, &blinded_messages).await?;
+        let result = mint
+            .swap(&proofs, &blinded_messages, &mint.keyset_legacy)
+            .await?;
 
-        assert!(result.promises.is_empty());
+        assert!(result.is_empty());
         Ok(())
     }
 
@@ -400,11 +406,13 @@ mod tests {
         let mint = create_mint_from_mocks(Some(create_mock_db_get_used_proofs()), None);
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
 
-        let result = mint.swap(&request.proofs, &request.outputs).await?;
-        assert_eq!(result.promises.total_amount(), 64);
+        let result = mint
+            .swap(&request.proofs, &request.outputs, &mint.keyset_legacy)
+            .await?;
+        assert_eq!(result.total_amount(), 64);
 
-        let prv_lst = result.promises.get(result.promises.len() - 2).unwrap();
-        let lst = result.promises.last().unwrap();
+        let prv_lst = result.get(result.len() - 2).unwrap();
+        let lst = result.last().unwrap();
 
         assert_eq!(prv_lst.amount, 4);
         assert_eq!(lst.amount, 16);
@@ -417,7 +425,9 @@ mod tests {
         let request =
             create_request_from_fixture("post_split_request_duplicate_key.json".to_string())?;
 
-        let result = mint.swap(&request.proofs, &request.outputs).await;
+        let result = mint
+            .swap(&request.proofs, &request.outputs, &mint.keyset_legacy)
+            .await;
         assert!(result.is_err());
         Ok(())
     }
@@ -456,7 +466,9 @@ mod tests {
         let invoice = "some invoice".to_string();
         let change = create_blinded_msgs_from_fixture("blinded_messages_40.json".to_string())?;
 
-        let (paid, _payment_hash, change) = mint.melt(invoice, &tokens.proofs(), &change).await?;
+        let (paid, _payment_hash, change) = mint
+            .melt(invoice, &tokens.proofs(), &change, &mint.keyset_legacy)
+            .await?;
 
         assert!(paid);
         assert!(change.total_amount() == 40);
@@ -470,10 +482,10 @@ mod tests {
         Ok(raw_token.trim().to_string().try_into()?)
     }
 
-    fn create_request_from_fixture(fixture: String) -> Result<PostSwapRequest, anyhow::Error> {
+    fn create_request_from_fixture(fixture: String) -> Result<PostSplitRequest, anyhow::Error> {
         let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{fixture}"))?;
-        Ok(serde_json::from_str::<PostSwapRequest>(&raw_token)?)
+        Ok(serde_json::from_str::<PostSplitRequest>(&raw_token)?)
     }
 
     fn create_blinded_msgs_from_fixture(

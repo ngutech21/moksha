@@ -5,7 +5,7 @@ use moksha_core::blind::BlindedMessage;
 use moksha_core::fixture::{read_fixture, read_fixture_as};
 use moksha_core::keyset::{Keysets, MintKeyset};
 use moksha_core::primitives::{
-    CheckFeesResponse, PaymentRequest, PostMeltResponse, PostMintResponse, PostSwapResponse,
+    CheckFeesResponse, PaymentRequest, PostMeltResponse, PostMintResponse, PostSplitResponse,
 };
 use moksha_core::proof::Proofs;
 use moksha_core::token::TokenV3;
@@ -18,7 +18,7 @@ use secp256k1::PublicKey;
 
 #[derive(Clone, Default)]
 struct MockClient {
-    split_response: PostSwapResponse,
+    split_response: PostSplitResponse,
     post_mint_response: PostMintResponse,
     post_melt_response: PostMeltResponse,
     mint_keys: HashMap<u64, PublicKey>,
@@ -28,7 +28,7 @@ struct MockClient {
 impl MockClient {
     fn with(
         post_melt_response: PostMeltResponse,
-        post_split_response: PostSwapResponse,
+        post_split_response: PostSplitResponse,
         mint_keys: HashMap<u64, PublicKey>,
         keysets: Keysets,
     ) -> Self {
@@ -49,7 +49,7 @@ impl Client for MockClient {
         _mint_url: &Url,
         _proofs: Proofs,
         _output: Vec<BlindedMessage>,
-    ) -> Result<PostSwapResponse, MokshaWalletError> {
+    ) -> Result<PostSplitResponse, MokshaWalletError> {
         Ok(self.split_response.clone())
     }
 
@@ -121,7 +121,7 @@ async fn test_pay_invoice_can_not_melt() -> anyhow::Result<()> {
     assert_eq!(64, localstore.get_proofs().await?.total_amount());
 
     let melt_response = read_fixture_as::<PostMeltResponse>("post_melt_response_not_paid.json")?;
-    let split_response = read_fixture_as::<PostSwapResponse>("post_split_response_24_40.json")?;
+    let split_response = read_fixture_as::<PostSplitResponse>("post_split_response_24_40.json")?;
     let mint_keyset = MintKeyset::legacy_new("mysecret", "");
     let keysets = Keysets::new(vec![mint_keyset.keyset_id]);
 
