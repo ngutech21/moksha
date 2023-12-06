@@ -452,7 +452,6 @@ mod tests {
     use moksha_core::keyset::{Keysets, MintKeyset};
     use moksha_core::primitives::{
         CheckFeesResponse, PaymentRequest, PostMeltResponse, PostMintResponse, PostSplitResponse,
-        PostSwapResponse,
     };
     use moksha_core::proof::Proofs;
     use moksha_core::token::{Token, TokenV3};

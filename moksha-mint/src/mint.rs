@@ -4,7 +4,6 @@ use moksha_core::{
     blind::{BlindedMessage, BlindedSignature, TotalAmount},
     dhke::Dhke,
     keyset::MintKeyset,
-    primitives::PostSwapResponse,
     proof::Proofs,
 };
 

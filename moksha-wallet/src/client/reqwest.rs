@@ -7,7 +7,6 @@ use moksha_core::{
     primitives::{
         CashuErrorResponse, CheckFeesRequest, CheckFeesResponse, PaymentRequest, PostMeltRequest,
         PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
-        PostSwapResponse,
     },
     proof::Proofs,
 };

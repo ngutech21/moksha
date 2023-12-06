@@ -196,10 +196,10 @@ mod tests {
     };
 
     #[test]
-    fn test_serialize_empty_split_response() -> anyhow::Result<()> {
+    fn test_serialize_empty_swap_response() -> anyhow::Result<()> {
         let response = PostSwapResponse::default();
         let serialized = serde_json::to_string(&response)?;
-        assert_eq!(serialized, "{\"promises\":[]}");
+        assert_eq!(serialized, "{\"signatures\":[]}");
         Ok(())
     }
 
