@@ -54,20 +54,31 @@ pub struct PostMeltResponse {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PostSwapRequest {
+pub struct PostSplitRequest {
     pub proofs: Proofs,
     pub outputs: Vec<BlindedMessage>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct PostSwapResponse {
+pub struct PostSplitResponse {
     pub promises: Vec<BlindedSignature>,
 }
 
-impl PostSwapResponse {
+impl PostSplitResponse {
     pub fn with_promises(promises: Vec<BlindedSignature>) -> Self {
         Self { promises }
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PostSwapRequest {
+    pub inputs: Proofs,
+    pub outputs: Vec<BlindedMessage>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct PostSwapResponse {
+    pub signatures: Vec<BlindedSignature>,
 }
 
 #[derive(Deserialize, Debug)]
