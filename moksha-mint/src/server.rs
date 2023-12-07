@@ -383,6 +383,7 @@ async fn post_melt_quote_bolt11(
         amount: amount_sat,
         fee_reserve,
         expiry: invoice.expiry_time().as_secs(), // FIXME check if this is correct
+        payment_request: melt_request.request.clone(),
     };
     mint.db.add_quote(key.to_string(), quote)?;
 
@@ -403,14 +404,16 @@ async fn post_melt_bolt11(
     let quote = mint.db.get_quote(melt_request.quote.clone())?;
 
     match quote {
-        Quote::Bolt11Melt { .. } => {
-            let (paid, preimage, change) = mint
-                .melt(melt_request.quote, &melt_request.inputs, &[], &mint.keyset)
+        Quote::Bolt11Melt {
+            payment_request, ..
+        } => {
+            let (paid, payment_preimage, change) = mint
+                .melt(payment_request, &melt_request.inputs, &[], &mint.keyset)
                 .await?;
 
             Ok(Json(PostMeltBolt11Response {
                 paid,
-                payment_preimage: preimage,
+                payment_preimage,
                 change,
             }))
         }
@@ -462,6 +465,7 @@ async fn get_melt_quote_bolt11(
             amount,
             fee_reserve,
             expiry,
+            ..
         } => Ok(Json(PostMeltQuoteBolt11Response {
             amount,
             fee_reserve,

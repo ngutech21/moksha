@@ -58,6 +58,7 @@ pub enum Quote {
         quote_id: Uuid,
         amount: u64,
         fee_reserve: u64,
+        payment_request: String,
         expiry: u64,
     },
 }
