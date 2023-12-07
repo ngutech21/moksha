@@ -302,6 +302,7 @@ impl Lightning for StrikeLightning {
 
         Ok(PayInvoiceResult {
             payment_hash: hex::encode(payment_hash),
+            total_fees: 0, // FIXME return fees for strike
         })
     }
 }
@@ -442,7 +443,7 @@ impl Lightning for LndLightning {
             payment_request,
             ..Default::default()
         };
-        let payment = self
+        let payment_response = self
             .client_lock()
             .await
             .expect("failed to lock client") //FIXME map error
@@ -451,8 +452,13 @@ impl Lightning for LndLightning {
             .expect("failed to pay invoice")
             .into_inner();
 
+        let total_fees = payment_response
+            .payment_route
+            .map_or(0, |route| route.total_fees_msat) as u64;
+
         Ok(PayInvoiceResult {
-            payment_hash: hex::encode(payment.payment_hash),
+            payment_hash: hex::encode(payment_response.payment_hash),
+            total_fees,
         })
     }
 }

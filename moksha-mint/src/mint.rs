@@ -191,23 +191,23 @@ impl Mint {
             .amount_milli_satoshis()
             .expect("Invoice amount is missing");
 
-        if amount_msat < (proofs_amount / 1000) {
+        if amount_msat < (proofs_amount / 1_000) {
             return Err(MokshaMintError::InvoiceAmountTooLow(format!(
                 "Invoice amount is too low: {amount_msat}",
             )));
         }
 
-        self.db.add_used_proofs(proofs)?;
         // TODO check invoice
 
         let result = self.lightning.pay_invoice(payment_request).await?;
+        self.db.add_used_proofs(proofs)?;
 
         let _remaining_amount = (amount_msat - (proofs_amount / 1000)) * 1000;
 
         // FIXME check if output amount matches remaining_amount
-        let output = self.create_blinded_signatures(blinded_messages, keyset)?;
+        let change = self.create_blinded_signatures(blinded_messages, keyset)?;
 
-        Ok((true, result.payment_hash, output))
+        Ok((true, result.payment_hash, change))
     }
 
     pub fn check_used_proofs(&self, proofs: &Proofs) -> Result<(), MokshaMintError> {
@@ -447,6 +447,7 @@ mod tests {
         lightning.expect_pay_invoice().returning(|_| {
             Ok(PayInvoiceResult {
                 payment_hash: "hash".to_string(),
+                total_fees: 0,
             })
             .map_err(|_err: LightningError| MokshaMintError::InvoiceNotFound("".to_string()))
         });

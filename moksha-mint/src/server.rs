@@ -408,7 +408,12 @@ async fn post_melt_bolt11(
             payment_request, ..
         } => {
             let (paid, payment_preimage, change) = mint
-                .melt(payment_request, &melt_request.inputs, &[], &mint.keyset)
+                .melt(
+                    payment_request,
+                    &melt_request.inputs,
+                    &melt_request.outputs,
+                    &mint.keyset,
+                )
                 .await?;
 
             Ok(Json(PostMeltBolt11Response {

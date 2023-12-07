@@ -116,6 +116,7 @@ impl AlbyClient {
                 .as_str()
                 .expect("payment_hash is empty")
                 .to_owned(),
+            total_fees: 0, // FIXME return fees for alby
         })
     }
 

@@ -179,6 +179,7 @@ pub struct PostMeltQuoteBolt11Response {
 pub struct PostMeltBolt11Request {
     pub quote: String,
     pub inputs: Proofs,
+    pub outputs: Vec<BlindedMessage>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

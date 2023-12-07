@@ -123,8 +123,14 @@ impl LNBitsClient {
                 &serde_json::to_string(&serde_json::json!({ "out": true, "bolt11": bolt11 }))?,
             )
             .await?;
-
-        Ok(serde_json::from_str(&body)?)
+        let payment_hash = serde_json::from_str::<serde_json::Value>(&body)?["payment_hash"]
+            .as_str()
+            .expect("payment_hash is empty")
+            .to_owned();
+        Ok(PayInvoiceResult {
+            payment_hash,
+            total_fees: 0,
+        })
     }
 
     pub async fn is_invoice_paid(&self, payment_hash: &str) -> Result<bool, LightningError> {
