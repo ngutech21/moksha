@@ -6,8 +6,8 @@ use moksha_core::blind::BlindedMessage;
 use moksha_core::keyset::Keysets;
 use moksha_core::primitives::CashuErrorResponse;
 use moksha_core::primitives::{
-    CheckFeesRequest, CheckFeesResponse, PaymentRequest, PostMeltRequest, PostMeltResponse,
-    PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+    CheckFeesRequest, CheckFeesResponse, MintInfoResponse, PaymentRequest, PostMeltRequest,
+    PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
 };
 use moksha_core::proof::Proofs;
 use moksha_wallet::{client::Client, error::MokshaWalletError};
@@ -119,6 +119,13 @@ impl Client for WasmClient {
             .send()
             .await?;
         extract_response_data::<PostMintResponse>(resp).await
+    }
+
+    async fn get_info(&self, mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError> {
+        let resp = Request::get(mint_url.join(&format!("info"))?.as_str())
+            .send()
+            .await?;
+        extract_response_data::<MintInfoResponse>(resp).await
     }
 }
 

@@ -5,7 +5,8 @@ use moksha_core::blind::BlindedMessage;
 use moksha_core::fixture::{read_fixture, read_fixture_as};
 use moksha_core::keyset::{Keysets, MintKeyset};
 use moksha_core::primitives::{
-    CheckFeesResponse, PaymentRequest, PostMeltResponse, PostMintResponse, PostSplitResponse,
+    CheckFeesResponse, MintInfoResponse, PaymentRequest, PostMeltResponse, PostMintResponse,
+    PostSplitResponse,
 };
 use moksha_core::proof::Proofs;
 use moksha_core::token::TokenV3;
@@ -96,6 +97,10 @@ impl Client for MockClient {
         _mint_url: &Url,
         _amount: u64,
     ) -> Result<PaymentRequest, MokshaWalletError> {
+        unimplemented!()
+    }
+
+    async fn get_info(&self, _mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError> {
         unimplemented!()
     }
 }

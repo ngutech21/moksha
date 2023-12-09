@@ -5,8 +5,9 @@ use moksha_core::{
     blind::BlindedMessage,
     keyset::Keysets,
     primitives::{
-        CashuErrorResponse, CheckFeesRequest, CheckFeesResponse, PaymentRequest, PostMeltRequest,
-        PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+        CashuErrorResponse, CheckFeesRequest, CheckFeesResponse, MintInfoResponse, PaymentRequest,
+        PostMeltRequest, PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest,
+        PostSplitResponse,
     },
     proof::Proofs,
 };
@@ -149,6 +150,15 @@ impl Client for HttpClient {
             .send()
             .await?;
         extract_response_data::<PostMintResponse>(resp).await
+    }
+
+    async fn get_info(&self, mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError> {
+        let resp = self
+            .request_client
+            .get(mint_url.join("info")?)
+            .send()
+            .await?;
+        extract_response_data::<MintInfoResponse>(resp).await
     }
 }
 
