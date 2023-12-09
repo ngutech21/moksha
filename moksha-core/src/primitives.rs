@@ -6,6 +6,8 @@ use std::{collections::HashMap, fmt::Display};
 use secp256k1::PublicKey;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use std::convert::TryFrom;
+use uuid::Uuid;
 
 use crate::{
     blind::{BlindedMessage, BlindedSignature},
@@ -181,6 +183,45 @@ pub struct PostMeltQuoteBolt11Response {
     pub expiry: u64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum Quote {
+    Bolt11Mint {
+        quote_id: Uuid,
+        payment_request: String,
+        expiry: u64,
+    },
+    Bolt11Melt {
+        quote_id: Uuid,
+        amount: u64,
+        fee_reserve: u64,
+        payment_request: String,
+        expiry: u64,
+        paid: bool,
+    },
+}
+impl TryFrom<Quote> for PostMeltQuoteBolt11Response {
+    type Error = &'static str;
+
+    fn try_from(quote: Quote) -> Result<Self, Self::Error> {
+        match quote {
+            Quote::Bolt11Melt {
+                quote_id,
+                amount,
+                fee_reserve,
+                expiry,
+                paid,
+                ..
+            } => Ok(Self {
+                quote: quote_id.to_string(),
+                amount,
+                fee_reserve,
+                paid,
+                expiry,
+            }),
+            _ => Err("Invalid quote variant"),
+        }
+    }
+}
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct PostMeltBolt11Request {
     pub quote: String,
