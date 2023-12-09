@@ -48,19 +48,3 @@ pub struct CreateInvoiceParams {
     pub webhook: Option<String>,
     pub internal: Option<bool>,
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum Quote {
-    Bolt11Mint {
-        quote_id: Uuid,
-        payment_request: String,
-        expiry: u64,
-    },
-    Bolt11Melt {
-        quote_id: Uuid,
-        amount: u64,
-        fee_reserve: u64,
-        payment_request: String,
-        expiry: u64,
-    },
-}

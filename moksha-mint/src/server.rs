@@ -14,14 +14,14 @@ use moksha_core::keyset::{generate_hash, Keysets, V1Keysets};
 use uuid::Uuid;
 
 use crate::mint::Mint;
-use crate::model::{GetMintQuery, PostMintQuery, Quote};
+use crate::model::{GetMintQuery, PostMintQuery};
 use moksha_core::primitives::{
     CheckFeesRequest, CheckFeesResponse, CurrencyUnit, KeyResponse, KeysResponse, MintInfoNut,
     MintInfoResponse, MintLegacyInfoResponse, PaymentMethod, PaymentRequest, PostMeltBolt11Request,
     PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
     PostMeltRequest, PostMeltResponse, PostMintBolt11Request, PostMintBolt11Response,
     PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintRequest, PostMintResponse,
-    PostSplitRequest, PostSplitResponse, PostSwapRequest, PostSwapResponse,
+    PostSplitRequest, PostSplitResponse, PostSwapRequest, PostSwapResponse, Quote,
 };
 use secp256k1::PublicKey;
 
@@ -376,7 +376,6 @@ async fn post_melt_quote_bolt11(
     info!("fee_reserve: {}", fee_reserve);
 
     let amount_sat = amount / 1_000;
-    // Store quote in db
     let key = Uuid::new_v4();
     let quote = Quote::Bolt11Melt {
         quote_id: key,
@@ -384,17 +383,13 @@ async fn post_melt_quote_bolt11(
         fee_reserve,
         expiry: invoice.expiry_time().as_secs(), // FIXME check if this is correct
         payment_request: melt_request.request.clone(),
-    };
-    mint.db.add_quote(key.to_string(), quote)?;
-
-    // TODO implement into for Quote
-    Ok(Json(PostMeltQuoteBolt11Response {
-        amount: amount_sat,
-        fee_reserve,
-        quote: key.to_string(),
         paid: false,
-        expiry: invoice.expiry_time().as_secs(), // FIXME check if this is correct
-    }))
+    };
+    mint.db.add_quote(key.to_string(), quote.clone())?; // FIXME get rid of clone
+
+    Ok(Json(quote.try_into().map_err(|_| {
+        crate::error::MokshaMintError::InvalidQuote("".to_string())
+    })?))
 }
 
 async fn post_melt_bolt11(
@@ -405,16 +400,32 @@ async fn post_melt_bolt11(
 
     match quote {
         Quote::Bolt11Melt {
-            payment_request, ..
+            quote_id,
+            payment_request,
+            amount,
+            expiry,
+            fee_reserve,
+            ..
         } => {
             let (paid, payment_preimage, change) = mint
                 .melt(
-                    payment_request,
+                    payment_request.to_owned(),
                     &melt_request.inputs,
                     &melt_request.outputs,
                     &mint.keyset,
                 )
                 .await?;
+            let updated_quote = Quote::Bolt11Melt {
+                quote_id,
+                amount,
+                fee_reserve,
+                expiry,
+                payment_request,
+                paid,
+            };
+            // FIXME simplify code
+
+            mint.db.add_quote(quote_id.to_string(), updated_quote)?;
 
             Ok(Json(PostMeltBolt11Response {
                 paid,

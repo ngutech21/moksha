@@ -1,13 +1,10 @@
 use std::{collections::HashMap, sync::Arc};
 
-use moksha_core::proof::Proofs;
+use moksha_core::{primitives::Quote, proof::Proofs};
 use rocksdb::DB;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{
-    error::MokshaMintError,
-    model::{Invoice, Quote},
-};
+use crate::{error::MokshaMintError, model::Invoice};
 #[cfg(test)]
 use mockall::automock;
 
@@ -183,14 +180,12 @@ mod tests {
 
     use moksha_core::{
         dhke,
+        primitives::Quote,
         proof::{Proof, Proofs},
     };
     use uuid::Uuid;
 
-    use crate::{
-        database::Database,
-        model::{Invoice, Quote},
-    };
+    use crate::{database::Database, model::Invoice};
 
     #[test]
     fn test_write_proofs() -> anyhow::Result<()> {

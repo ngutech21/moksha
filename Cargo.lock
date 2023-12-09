@@ -2646,6 +2646,7 @@ dependencies = [
  "serde_with",
  "thiserror",
  "url",
+ "uuid",
 ]
 
 [[package]]
