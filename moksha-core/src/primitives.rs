@@ -89,7 +89,7 @@ pub struct CashuErrorResponse {
 
 #[skip_serializing_none]
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
-pub struct MintInfoResponse {
+pub struct MintLegacyInfoResponse {
     pub name: Option<String>,
     pub pubkey: PublicKey,
     pub version: Option<String>,
@@ -132,6 +132,12 @@ impl Display for CurrencyUnit {
             CurrencyUnit::Usd => write!(f, "usd"),
         }
     }
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum PaymentMethod {
+    Bolt11,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -189,11 +195,89 @@ pub struct PostMeltBolt11Response {
     pub change: Vec<BlindedSignature>,
 }
 
+#[skip_serializing_none]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
+pub struct MintInfoResponse {
+    pub name: Option<String>,
+    pub pubkey: PublicKey,
+    pub version: Option<String>,
+    pub description: Option<String>,
+    pub description_long: Option<String>,
+    pub contact: Option<Vec<Vec<String>>>,
+    pub nuts: Vec<MintInfoNut>,
+    pub motd: Option<String>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
+pub enum MintInfoNut {
+    /// Cryptography and Models
+    #[serde(rename = "0")]
+    Nut0 { disabled: bool },
+
+    /// Mint public keys
+    #[serde(rename = "1")]
+    Nut1 { disabled: bool },
+
+    /// Keysets and keyset IDs
+    #[serde(rename = "2")]
+    Nut2 { disabled: bool },
+
+    /// Swapping tokens
+    #[serde(rename = "3")]
+    Nut3 { disabled: bool },
+
+    /// Minting tokens
+    #[serde(rename = "4")]
+    Nut4 {
+        methods: Vec<(PaymentMethod, CurrencyUnit)>,
+        disabled: bool,
+    },
+
+    /// Melting tokens
+    #[serde(rename = "5")]
+    Nut5 {
+        methods: Vec<(PaymentMethod, CurrencyUnit)>,
+        disabled: bool,
+    },
+
+    /// Mint info
+    #[serde(rename = "6")]
+    Nut6 { disabled: bool },
+
+    /// Token state check
+    #[serde(rename = "7")]
+    Nut7 { supported: bool },
+
+    /// Overpaid Lightning fees
+    #[serde(rename = "8")]
+    Nut8 { supported: bool },
+
+    /// Deterministic backup and restore
+    #[serde(rename = "9")]
+    Nut9 { supported: bool },
+
+    /// Spending conditions
+    #[serde(rename = "10")]
+    Nut10 { supported: bool },
+
+    /// Pay-To-Pubkey (P2PK)
+    #[serde(rename = "11")]
+    Nut11 { supported: bool },
+
+    /// DLEQ proofs
+    #[serde(rename = "12")]
+    Nut12 { supported: bool },
+}
+
 #[cfg(test)]
 mod tests {
+
     use crate::{
         dhke::public_key_from_hex,
-        primitives::{KeyResponse, MintInfoResponse, Parameter, PostSwapResponse},
+        primitives::{
+            CurrencyUnit, KeyResponse, MintInfoNut, MintInfoResponse, MintLegacyInfoResponse,
+            Parameter, PaymentMethod, PostSwapResponse,
+        },
     };
 
     #[test]
@@ -217,8 +301,8 @@ mod tests {
     }
 
     #[test]
-    fn test_deserialize_mint_info() -> anyhow::Result<()> {
-        let mint_info = MintInfoResponse {
+    fn test_deserialize_legacy_mint_info() -> anyhow::Result<()> {
+        let mint_info = MintLegacyInfoResponse {
             name: Some("Bob's Cashu mint".to_string()),
             pubkey: public_key_from_hex(
                 "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2",
@@ -244,6 +328,52 @@ mod tests {
         let out = serde_json::to_string_pretty(&mint_info)?;
         println!("{}", out);
         assert!(!out.is_empty());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_deserialize_mint_info() -> anyhow::Result<()> {
+        let mint_info = MintInfoResponse {
+            name: Some("Bob's Cashu mint".to_string()),
+            pubkey: public_key_from_hex(
+                "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2",
+            ),
+            version: Some("Nutshell/0.11.0".to_string()),
+            description: Some("The short mint description".to_string()),
+            description_long: Some("A description that can be a long piece of text.".to_string()),
+            contact: Some(vec![
+                vec!["email".to_string(), "contact@me.com".to_string()],
+                vec!["twitter".to_string(), "@me".to_string()],
+                vec!["nostr".to_string(), "npub...".to_string()],
+            ]),
+            nuts: vec![
+                MintInfoNut::Nut0 { disabled: false },
+                MintInfoNut::Nut1 { disabled: false },
+                MintInfoNut::Nut2 { disabled: false },
+                MintInfoNut::Nut3 { disabled: false },
+                MintInfoNut::Nut4 {
+                    methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
+                    disabled: false,
+                },
+                MintInfoNut::Nut5 {
+                    methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
+                    disabled: false,
+                },
+                MintInfoNut::Nut6 { disabled: false },
+                MintInfoNut::Nut7 { supported: false },
+                MintInfoNut::Nut8 { supported: false },
+                MintInfoNut::Nut9 { supported: false },
+                MintInfoNut::Nut10 { supported: false },
+                MintInfoNut::Nut11 { supported: false },
+                MintInfoNut::Nut12 { supported: false },
+            ],
+            motd: Some("Message to display to users.".to_string()),
+        };
+        let out = serde_json::to_string_pretty(&mint_info)?;
+        println!("{}", out);
+        assert!(!out.is_empty());
+        // FIXME add asserts
 
         Ok(())
     }

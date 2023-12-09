@@ -16,12 +16,12 @@ use uuid::Uuid;
 use crate::mint::Mint;
 use crate::model::{GetMintQuery, PostMintQuery, Quote};
 use moksha_core::primitives::{
-    CheckFeesRequest, CheckFeesResponse, CurrencyUnit, KeyResponse, KeysResponse, MintInfoResponse,
-    PaymentRequest, PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
-    PostMeltQuoteBolt11Response, PostMeltRequest, PostMeltResponse, PostMintBolt11Request,
-    PostMintBolt11Response, PostMintQuoteBolt11Request, PostMintQuoteBolt11Response,
-    PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse, PostSwapRequest,
-    PostSwapResponse,
+    CheckFeesRequest, CheckFeesResponse, CurrencyUnit, KeyResponse, KeysResponse, MintInfoNut,
+    MintInfoResponse, MintLegacyInfoResponse, PaymentMethod, PaymentRequest, PostMeltBolt11Request,
+    PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
+    PostMeltRequest, PostMeltResponse, PostMintBolt11Request, PostMintBolt11Response,
+    PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintRequest, PostMintResponse,
+    PostSplitRequest, PostSplitResponse, PostSwapRequest, PostSwapResponse,
 };
 use secp256k1::PublicKey;
 
@@ -94,7 +94,7 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .route("/v1/melt/quote/bolt11/:quote", get(get_melt_quote_bolt11))
         .route("/v1/melt/bolt11", post(post_melt_bolt11))
         .route("/v1/swap", post(post_swap))
-        .route("/v1/info", get(get_legacy_info));
+        .route("/v1/info", get(get_info));
 
     let prefix = prefix.unwrap_or_else(|| "".to_owned());
 
@@ -199,8 +199,8 @@ async fn post_legacy_check_fees(
 
 async fn get_legacy_info(
     State(mint): State<Mint>,
-) -> Result<Json<MintInfoResponse>, MokshaMintError> {
-    let mint_info = MintInfoResponse {
+) -> Result<Json<MintLegacyInfoResponse>, MokshaMintError> {
+    let mint_info = MintLegacyInfoResponse {
         name: mint.mint_info.name,
         pubkey: mint.keyset_legacy.mint_pubkey,
         version: match mint.mint_info.version {
@@ -482,6 +482,43 @@ async fn get_melt_quote_bolt11(
     }
 }
 
+async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, MokshaMintError> {
+    let mint_info = MintInfoResponse {
+        name: mint.mint_info.name,
+        pubkey: mint.keyset_legacy.mint_pubkey,
+        version: match mint.mint_info.version {
+            true => Some(env!("CARGO_PKG_VERSION").to_owned()),
+            _ => None,
+        },
+        description: mint.mint_info.description,
+        description_long: mint.mint_info.description_long,
+        contact: mint.mint_info.contact,
+        nuts: vec![
+            MintInfoNut::Nut0 { disabled: false },
+            MintInfoNut::Nut1 { disabled: false },
+            MintInfoNut::Nut2 { disabled: false },
+            MintInfoNut::Nut3 { disabled: false },
+            MintInfoNut::Nut4 {
+                methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
+                disabled: false,
+            },
+            MintInfoNut::Nut5 {
+                methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
+                disabled: false,
+            },
+            MintInfoNut::Nut6 { disabled: false },
+            MintInfoNut::Nut7 { supported: false },
+            MintInfoNut::Nut8 { supported: false },
+            MintInfoNut::Nut9 { supported: false },
+            MintInfoNut::Nut10 { supported: true },
+            MintInfoNut::Nut11 { supported: true },
+            MintInfoNut::Nut12 { supported: true },
+        ],
+        motd: mint.mint_info.motd,
+    };
+    Ok(Json(mint_info))
+}
+
 #[cfg(test)]
 mod tests {
     use std::{collections::HashMap, sync::Arc};
@@ -494,7 +531,7 @@ mod tests {
     use http_body_util::BodyExt;
     use moksha_core::{
         keyset::{Keysets, V1Keysets},
-        primitives::{CurrencyUnit, KeysResponse, MintInfoResponse},
+        primitives::{CurrencyUnit, KeysResponse, MintLegacyInfoResponse},
     };
     use secp256k1::PublicKey;
     use tower::ServiceExt;
@@ -550,7 +587,7 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::OK);
         let body = response.into_body().collect().await.unwrap().to_bytes();
-        let info = serde_json::from_slice::<MintInfoResponse>(&body)?;
+        let info = serde_json::from_slice::<MintLegacyInfoResponse>(&body)?;
         assert!(!info.parameter.peg_out_only);
         assert_eq!(info.nuts.len(), 9);
         assert_eq!(info.name, Some("Bob's Cashu mint".to_string()));
