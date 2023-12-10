@@ -85,10 +85,11 @@ pub async fn run_server(
         get_keys,
         get_keys_by_id,
         get_keysets,
-        post_mint_bolt11,
         post_mint_quote_bolt11,
         get_mint_quote_bolt11,
         post_melt_bolt11,
+        post_mint_bolt11,
+        post_swap,
         get_info,
     ),
     components(schemas(
@@ -111,6 +112,8 @@ pub async fn run_server(
         PostMeltBolt11Response,
         PostMintBolt11Request,
         PostMintBolt11Response,
+        PostSwapRequest,
+        PostSwapResponse,
     ))
 )]
 struct ApiDoc;
@@ -312,6 +315,14 @@ async fn get_legacy_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, M
 
 // ######################################################################################################
 
+#[utoipa::path(
+        post,
+        path = "/v1/swap",
+        request_body = PostSwapRequest,
+        responses(
+            (status = 200, description = "post swap", body = [PostSwapResponse])
+        ),
+    )]
 async fn post_swap(
     State(mint): State<Mint>,
     Json(swap_request): Json<PostSwapRequest>,

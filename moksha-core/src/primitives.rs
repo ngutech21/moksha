@@ -73,13 +73,13 @@ impl PostSplitResponse {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct PostSwapRequest {
     pub inputs: Proofs,
     pub outputs: Vec<BlindedMessage>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default, ToSchema)]
 pub struct PostSwapResponse {
     pub signatures: Vec<BlindedSignature>,
 }
