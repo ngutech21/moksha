@@ -264,6 +264,7 @@ mod tests {
             quote_id: key,
             payment_request: "12345678".to_owned(),
             expiry: 12345678,
+            paid: false,
         };
 
         db.add_quote(key.to_string(), quote.clone())?;

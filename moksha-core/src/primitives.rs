@@ -151,9 +151,30 @@ pub struct PostMintQuoteBolt11Request {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct PostMintQuoteBolt11Response {
     pub quote: String,
-    pub request: String,
+    #[serde(rename = "request")]
+    pub payment_request: String,
     pub paid: bool,
     pub expiry: u64,
+}
+impl TryFrom<Quote> for PostMintQuoteBolt11Response {
+    type Error = &'static str;
+
+    fn try_from(quote: Quote) -> Result<Self, Self::Error> {
+        match quote {
+            Quote::Bolt11Mint {
+                quote_id,
+                payment_request,
+                expiry,
+                paid,
+            } => Ok(Self {
+                quote: quote_id.to_string(),
+                payment_request,
+                expiry,
+                paid,
+            }),
+            _ => Err("Invalid quote variant"),
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -189,6 +210,7 @@ pub enum Quote {
         quote_id: Uuid,
         payment_request: String,
         expiry: u64,
+        paid: bool,
     },
     Bolt11Melt {
         quote_id: Uuid,
@@ -222,6 +244,7 @@ impl TryFrom<Quote> for PostMeltQuoteBolt11Response {
         }
     }
 }
+
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct PostMeltBolt11Request {
     pub quote: String,

@@ -327,13 +327,14 @@ async fn post_mint_quote_bolt11(
         quote_id: key,
         payment_request: pr.clone(),
         expiry, // FIXME check if this is correct
+        paid: false,
     };
 
     mint.db.add_quote(key.to_string(), quote)?;
 
     Ok(Json(PostMintQuoteBolt11Response {
         quote: key.to_string(),
-        request: pr,
+        payment_request: pr,
         paid: false,
         expiry,
     }))
@@ -446,25 +447,27 @@ async fn get_mint_quote_bolt11(
     info!("get_quote: {}", quote_id);
     let quote = mint.db.get_quote(quote_id.clone())?;
 
-    match quote {
-        Quote::Bolt11Mint {
-            quote_id,
-            payment_request,
-            expiry,
-        } => {
-            let paid = mint
-                .lightning
-                .is_invoice_paid(payment_request.clone())
-                .await?;
+    if let Quote::Bolt11Mint {
+        quote_id,
+        payment_request,
+        expiry,
+        ..
+    } = quote
+    {
+        let paid = mint
+            .lightning
+            .is_invoice_paid(payment_request.clone())
+            .await?;
 
-            Ok(Json(PostMintQuoteBolt11Response {
-                quote: quote_id.to_string(),
-                request: payment_request,
-                paid,
-                expiry,
-            }))
-        }
-        _ => Err(crate::error::MokshaMintError::InvalidQuote(quote_id)),
+        //FIXME
+        Ok(Json(PostMintQuoteBolt11Response {
+            quote: quote_id.to_string(),
+            payment_request,
+            paid,
+            expiry,
+        }))
+    } else {
+        Err(crate::error::MokshaMintError::InvalidQuote(quote_id))
     }
 }
 
