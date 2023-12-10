@@ -45,6 +45,9 @@ envy = "0.4.2"
 fedimint-tonic-lnd = { version = "0.1.3", features = ["lightningrpc"] }
 uuid = { version = "1.6.1", features = ["serde", "v4"] }
 
+utoipa = { version = "4.1.0", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "5.0.0", features = ["axum"] }
+
 [dev-dependencies]
 tempfile = "3.8.1"
 tower = { version = "0.4", features = ["util"] }

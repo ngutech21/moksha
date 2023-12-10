@@ -7,6 +7,7 @@ use secp256k1::PublicKey;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::convert::TryFrom;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::{
@@ -120,7 +121,7 @@ pub struct KeyResponse {
     pub keys: HashMap<u64, PublicKey>,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum CurrencyUnit {
     Sat,
@@ -136,7 +137,7 @@ impl Display for CurrencyUnit {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum PaymentMethod {
     Bolt11,
@@ -260,19 +261,20 @@ pub struct PostMeltBolt11Response {
 }
 
 #[skip_serializing_none]
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
 pub struct MintInfoResponse {
     pub name: Option<String>,
+    #[schema(value_type = String)]
     pub pubkey: PublicKey,
     pub version: Option<String>,
     pub description: Option<String>,
     pub description_long: Option<String>,
     pub contact: Option<Vec<Vec<String>>>,
-    pub nuts: Vec<MintInfoNut>,
     pub motd: Option<String>,
+    pub nuts: Vec<MintInfoNut>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub enum MintInfoNut {
     /// Cryptography and Models
     #[serde(rename = "0")]

@@ -11,6 +11,7 @@ use axum::routing::{get_service, post};
 use axum::{middleware, Router};
 use axum::{routing::get, Json};
 use moksha_core::keyset::{generate_hash, Keysets, V1Keysets};
+use utoipa_swagger_ui::SwaggerUi;
 use uuid::Uuid;
 
 use crate::mint::Mint;
@@ -35,6 +36,8 @@ use tracing::{event, info, Level};
 
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+
+use utoipa::OpenApi;
 
 pub async fn run_server(
     mint: Mint,
@@ -73,6 +76,13 @@ pub async fn run_server(
     Ok(())
 }
 
+#[derive(OpenApi)]
+#[openapi(
+    paths(get_info,),
+    components(schemas(MintInfoResponse, MintInfoNut, CurrencyUnit, PaymentMethod))
+)]
+struct ApiDoc;
+
 fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -> Router {
     let legacy_routes = Router::new()
         .route("/keys", get(get_legacy_keys))
@@ -84,6 +94,7 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .route("/info", get(get_legacy_info));
 
     let routes = Router::new()
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .route("/v1/keys", get(get_keys))
         .route("/v1/keys/:id", get(get_keys_by_id))
         .route("/v1/keysets", get(get_keysets))
@@ -496,6 +507,13 @@ async fn get_melt_quote_bolt11(
     }
 }
 
+#[utoipa::path(
+        get,
+        path = "/v1/info",
+        responses(
+            (status = 200, description = "get mint info", body = [MintInfoResponse])
+        )
+    )]
 async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, MokshaMintError> {
     let mint_info = MintInfoResponse {
         name: mint.mint_info.name,
