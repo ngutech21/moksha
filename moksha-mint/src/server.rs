@@ -10,7 +10,7 @@ use axum::response::IntoResponse;
 use axum::routing::{get_service, post};
 use axum::{middleware, Router};
 use axum::{routing::get, Json};
-use moksha_core::keyset::{generate_hash, Keysets, V1Keysets};
+use moksha_core::keyset::{generate_hash, Keysets, V1Keyset, V1Keysets};
 use utoipa_swagger_ui::SwaggerUi;
 use uuid::Uuid;
 
@@ -78,8 +78,17 @@ pub async fn run_server(
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(get_info,),
-    components(schemas(MintInfoResponse, MintInfoNut, CurrencyUnit, PaymentMethod))
+    paths(get_info, get_keys, get_keys_by_id, get_keysets),
+    components(schemas(
+        MintInfoResponse,
+        MintInfoNut,
+        CurrencyUnit,
+        PaymentMethod,
+        KeysResponse,
+        KeyResponse,
+        V1Keysets,
+        V1Keyset
+    ))
 )]
 struct ApiDoc;
 
@@ -293,6 +302,13 @@ async fn post_swap(
     }))
 }
 
+#[utoipa::path(
+        get,
+        path = "/v1/keys",
+        responses(
+            (status = 200, description = "get keys", body = [KeysResponse])
+        )
+    )]
 async fn get_keys(State(mint): State<Mint>) -> Result<Json<KeysResponse>, MokshaMintError> {
     Ok(Json(KeysResponse {
         keysets: vec![KeyResponse {
@@ -303,10 +319,21 @@ async fn get_keys(State(mint): State<Mint>) -> Result<Json<KeysResponse>, Moksha
     }))
 }
 
+#[utoipa::path(
+        get,
+        path = "/v1/keys/{id}",
+        responses(
+            (status = 200, description = "get keys by id", body = [KeysResponse])
+        ),
+        params(
+            ("id" = String, Path, description = "keyset id"),
+        )
+    )]
 async fn get_keys_by_id(
     Path(_id): Path<String>,
     State(mint): State<Mint>,
 ) -> Result<Json<KeysResponse>, MokshaMintError> {
+    // FIXME check if id is valid
     Ok(Json(KeysResponse {
         keysets: vec![KeyResponse {
             id: mint.keyset.keyset_id.clone(),
@@ -316,6 +343,13 @@ async fn get_keys_by_id(
     }))
 }
 
+#[utoipa::path(
+        get,
+        path = "/v1/keysets",
+        responses(
+            (status = 200, description = "get keysets", body = [V1Keysets])
+        ),
+    )]
 async fn get_keysets(State(mint): State<Mint>) -> Result<Json<V1Keysets>, MokshaMintError> {
     Ok(Json(V1Keysets::new(
         mint.keyset.keyset_id,

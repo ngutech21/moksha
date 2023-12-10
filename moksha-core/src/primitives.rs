@@ -109,15 +109,16 @@ pub struct Parameter {
     pub peg_out_only: bool,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
 pub struct KeysResponse {
     pub keysets: Vec<KeyResponse>,
 }
 
-#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq)]
+#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
 pub struct KeyResponse {
     pub id: String,
     pub unit: CurrencyUnit,
+    #[schema(value_type = HashMap<u64, String>)]
     pub keys: HashMap<u64, PublicKey>,
 }
 

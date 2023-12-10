@@ -13,6 +13,7 @@
 use hex::ToHex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use utoipa::ToSchema;
 
 use base64::{engine::general_purpose, Engine as _};
 use bitcoin_hashes::{sha256, Hash};
@@ -87,12 +88,12 @@ impl Keysets {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default, ToSchema)]
 pub struct V1Keysets {
     pub keysets: Vec<V1Keyset>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct V1Keyset {
     pub id: String,
     pub unit: CurrencyUnit,
