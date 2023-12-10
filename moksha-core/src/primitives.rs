@@ -144,13 +144,13 @@ pub enum PaymentMethod {
     Bolt11,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMintQuoteBolt11Request {
     pub amount: u64,
     pub unit: CurrencyUnit,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMintQuoteBolt11Response {
     pub quote: String,
     #[serde(rename = "request")]
@@ -179,25 +179,25 @@ impl TryFrom<Quote> for PostMintQuoteBolt11Response {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMintBolt11Request {
     pub quote: String,
     pub outputs: Vec<BlindedMessage>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMintBolt11Response {
     pub signatures: Vec<BlindedSignature>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMeltQuoteBolt11Request {
     /// payment request
     pub request: String,
     pub unit: CurrencyUnit,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMeltQuoteBolt11Response {
     pub quote: String,
     pub amount: u64,
@@ -247,14 +247,14 @@ impl TryFrom<Quote> for PostMeltQuoteBolt11Response {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMeltBolt11Request {
     pub quote: String,
     pub inputs: Proofs,
     pub outputs: Vec<BlindedMessage>,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMeltBolt11Response {
     pub paid: bool,
     pub payment_preimage: String,

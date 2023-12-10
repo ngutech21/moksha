@@ -11,11 +11,14 @@ use axum::routing::{get_service, post};
 use axum::{middleware, Router};
 use axum::{routing::get, Json};
 use moksha_core::keyset::{generate_hash, Keysets, V1Keyset, V1Keysets};
+use moksha_core::proof::Proofs;
 use utoipa_swagger_ui::SwaggerUi;
 use uuid::Uuid;
 
 use crate::mint::Mint;
 use crate::model::{GetMintQuery, PostMintQuery};
+use moksha_core::blind::BlindedMessage;
+use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
     CheckFeesRequest, CheckFeesResponse, CurrencyUnit, KeyResponse, KeysResponse, MintInfoNut,
     MintInfoResponse, MintLegacyInfoResponse, PaymentMethod, PaymentRequest, PostMeltBolt11Request,
@@ -78,7 +81,16 @@ pub async fn run_server(
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(get_info, get_keys, get_keys_by_id, get_keysets),
+    paths(
+        get_keys,
+        get_keys_by_id,
+        get_keysets,
+        post_mint_bolt11,
+        post_mint_quote_bolt11,
+        get_mint_quote_bolt11,
+        post_melt_bolt11,
+        get_info,
+    ),
     components(schemas(
         MintInfoResponse,
         MintInfoNut,
@@ -87,7 +99,18 @@ pub async fn run_server(
         KeysResponse,
         KeyResponse,
         V1Keysets,
-        V1Keyset
+        V1Keyset,
+        BlindedMessage,
+        BlindedSignature,
+        Proofs,
+        PostMintQuoteBolt11Request,
+        PostMintQuoteBolt11Response,
+        PostMeltQuoteBolt11Request,
+        PostMeltQuoteBolt11Response,
+        PostMeltBolt11Request,
+        PostMeltBolt11Response,
+        PostMintBolt11Request,
+        PostMintBolt11Response,
     ))
 )]
 struct ApiDoc;
@@ -358,6 +381,14 @@ async fn get_keysets(State(mint): State<Mint>) -> Result<Json<V1Keysets>, Moksha
     )))
 }
 
+#[utoipa::path(
+        post,
+        path = "/v1/mint/quote/bolt11",
+        request_body = PostMintQuoteBolt11Request,
+        responses(
+            (status = 200, description = "post mint quote", body = [PostMintQuoteBolt11Response])
+        ),
+    )]
 async fn post_mint_quote_bolt11(
     State(mint): State<Mint>,
     Json(request): Json<PostMintQuoteBolt11Request>,
@@ -385,6 +416,17 @@ async fn post_mint_quote_bolt11(
     }))
 }
 
+#[utoipa::path(
+        post,
+        path = "/v1/mint/bolt11/{quote_id}",
+        request_body = PostMintBolt11Request,
+        responses(
+            (status = 200, description = "post mint quote", body = [PostMintBolt11Response])
+        ),
+        params(
+            ("quote_id" = String, Path, description = "quote id"),
+        )
+    )]
 async fn post_mint_bolt11(
     State(mint): State<Mint>,
     Json(request): Json<PostMintBolt11Request>,
@@ -407,6 +449,14 @@ async fn post_mint_bolt11(
     }
 }
 
+#[utoipa::path(
+        post,
+        path = "/v1/melt/quote/bolt11/{quote}",
+        request_body = PostMeltQuoteBolt11Request,
+        responses(
+            (status = 200, description = "post mint quote", body = [PostMeltQuoteBolt11Response])
+        ),
+    )]
 async fn post_melt_quote_bolt11(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltQuoteBolt11Request>,
@@ -438,6 +488,17 @@ async fn post_melt_quote_bolt11(
     })?))
 }
 
+#[utoipa::path(
+        post,
+        path = "/v1/melt/bolt11/{quote_id}",
+        request_body = PostMeltBolt11Request,
+        responses(
+            (status = 200, description = "post melt", body = [PostMeltBolt11Response])
+        ),
+        params(
+            ("quote_id" = String, Path, description = "quote id"),
+        )
+    )]
 async fn post_melt_bolt11(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltBolt11Request>,
@@ -485,6 +546,16 @@ async fn post_melt_bolt11(
     }
 }
 
+#[utoipa::path(
+        get,
+        path = "/v1/mint/quote/bolt11/{quote_id}",
+        responses(
+            (status = 200, description = "get mint quote by id", body = [PostMintQuoteBolt11Response])
+        ),
+        params(
+            ("quote_id" = String, Path, description = "quote id"),
+        )
+    )]
 async fn get_mint_quote_bolt11(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,

@@ -10,6 +10,7 @@
 
 use secp256k1::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{
     amount::{generate_random_string, Amount},
@@ -17,18 +18,20 @@ use crate::{
     error::MokshaCoreError,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct BlindedSignature {
     pub amount: u64,
     #[serde(rename = "C_")]
+    #[schema(value_type=String)]
     pub c_: PublicKey,
     pub id: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct BlindedMessage {
     pub amount: u64,
     #[serde(rename = "B_")]
+    #[schema(value_type=String)]
     pub b_: PublicKey,
 }
 

@@ -13,15 +13,17 @@
 use secp256k1::PublicKey;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use utoipa::ToSchema;
 
 use crate::error::MokshaCoreError;
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ToSchema)]
 pub struct Proof {
     pub amount: u64,
     pub secret: String,
     #[serde(rename = "C")]
+    #[schema(value_type=String)]
     pub c: PublicKey,
     pub id: String, // FIXME use keysetID as specific type / consider making this non optional and brake backwards compatibility
     pub script: Option<P2SHScript>,
@@ -42,7 +44,7 @@ impl Proof {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct P2SHScript;
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
 pub struct Proofs(pub(super) Vec<Proof>);
 
 impl Proofs {
