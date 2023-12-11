@@ -15,8 +15,6 @@ pub struct MemoryLocalStore {
 
 #[async_trait(?Send)]
 impl LocalStore for MemoryLocalStore {
-    async fn migrate(&self) {}
-
     async fn add_proofs(&self, proofs: &Proofs) -> Result<(), MokshaWalletError> {
         for proof in proofs.proofs() {
             self.proofs.lock().await.push(proof.clone());

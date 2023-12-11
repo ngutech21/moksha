@@ -25,6 +25,4 @@ pub trait LocalStore {
 
     async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError>;
     async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), MokshaWalletError>;
-
-    async fn migrate(&self);
 }

@@ -46,7 +46,7 @@ enum Command {
 #[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    use moksha_wallet::localstore::{sqlite::SqliteLocalStore, LocalStore};
+    use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 
     let cli = Opts::parse();
 
@@ -60,7 +60,6 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let localstore = SqliteLocalStore::with_path(db_path.clone()).await?;
-    localstore.migrate().await;
 
     let client = moksha_wallet::client::reqwest::HttpClient::new();
 

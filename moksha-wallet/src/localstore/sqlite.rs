@@ -4,7 +4,7 @@ use moksha_core::proof::{Proof, Proofs};
 use crate::error::MokshaWalletError;
 use crate::localstore::{LocalStore, WalletKeyset};
 
-use sqlx::{sqlite::SqliteError, SqlitePool};
+use sqlx::sqlite::SqliteError;
 
 use sqlx::Row;
 
@@ -15,13 +15,6 @@ pub struct SqliteLocalStore {
 
 #[async_trait(?Send)]
 impl LocalStore for SqliteLocalStore {
-    async fn migrate(&self) {
-        sqlx::migrate!("./migrations")
-            .run(&self.pool)
-            .await
-            .expect("Could not run migrations");
-    }
-
     async fn delete_proofs(&self, proofs: &Proofs) -> Result<(), MokshaWalletError> {
         let proof_secrets = proofs
             .proofs()
@@ -109,14 +102,19 @@ impl LocalStore for SqliteLocalStore {
 }
 
 impl SqliteLocalStore {
-    pub fn new(pool: SqlitePool) -> Self {
-        Self { pool }
-    }
-
     pub async fn with_path(absolute_path: String) -> Result<Self, MokshaWalletError> {
         let pool = sqlx::SqlitePool::connect(format!("sqlite://{absolute_path}?mode=rwc").as_str())
             .await?;
-        Ok(Self { pool })
+        let store = Self { pool };
+        store.migrate().await;
+        Ok(store)
+    }
+
+    async fn migrate(&self) {
+        sqlx::migrate!("./migrations")
+            .run(&self.pool)
+            .await
+            .expect("Could not run migrations");
     }
 
     pub async fn start_transaction(
@@ -171,7 +169,6 @@ mod tests {
 
         let localstore: Arc<dyn LocalStore> =
             Arc::new(SqliteLocalStore::with_path(format!("{tmp_dir}/test_wallet.db")).await?);
-        localstore.migrate().await;
 
         let tokens: TokenV3 = read_fixture("token_60.cashu")?
             .trim()

@@ -484,8 +484,6 @@ mod tests {
 
     #[async_trait(?Send)]
     impl LocalStore for MockLocalStore {
-        async fn migrate(&self) {}
-
         async fn add_proofs(&self, _: &Proofs) -> Result<(), crate::error::MokshaWalletError> {
             Ok(())
         }

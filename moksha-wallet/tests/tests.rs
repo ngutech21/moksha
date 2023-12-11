@@ -120,7 +120,6 @@ async fn test_pay_invoice_can_not_melt() -> anyhow::Result<()> {
     let localstore = SqliteLocalStore::with_path(format!("{tmp_dir}/test_wallet.db"))
         .await
         .expect("Could not create localstore");
-    localstore.migrate().await;
 
     localstore.add_proofs(&tokens.proofs()).await?;
     assert_eq!(64, localstore.get_proofs().await?.total_amount());

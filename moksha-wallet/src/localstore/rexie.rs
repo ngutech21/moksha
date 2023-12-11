@@ -37,8 +37,6 @@ impl RexieLocalStore {
 
 #[async_trait(?Send)]
 impl LocalStore for RexieLocalStore {
-    async fn migrate(&self) {}
-
     async fn add_proofs(&self, proofs: &Proofs) -> std::result::Result<(), MokshaWalletError> {
         let db = Self::get_rexie().await;
 

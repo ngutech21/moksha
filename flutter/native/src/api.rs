@@ -65,12 +65,11 @@ pub fn init_cashu() -> anyhow::Result<String> {
             // FIXME
 
             let db_path = moksha_wallet::config_path::db_path();
-            let new_localstore =
+            let _new_localstore =
                 moksha_wallet::localstore::sqlite::SqliteLocalStore::with_path(db_path.clone())
                     .await
                     .map_err(anyhow::Error::from)
                     .unwrap();
-            new_localstore.migrate().await;
             db_path
         });
         drop(rt);
