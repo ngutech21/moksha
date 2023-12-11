@@ -11,6 +11,7 @@ use axum::routing::{get_service, post};
 use axum::{middleware, Router};
 use axum::{routing::get, Json};
 use moksha_core::keyset::{generate_hash, Keysets, V1Keyset, V1Keysets};
+use moksha_core::proof::Proof;
 use moksha_core::proof::Proofs;
 use utoipa_swagger_ui::SwaggerUi;
 use uuid::Uuid;
@@ -113,6 +114,7 @@ pub async fn run_server(
         V1Keyset,
         BlindedMessage,
         BlindedSignature,
+        Proof,
         Proofs,
         PostMintQuoteBolt11Request,
         PostMintQuoteBolt11Response,

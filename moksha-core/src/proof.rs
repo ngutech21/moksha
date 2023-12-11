@@ -23,9 +23,9 @@ pub struct Proof {
     pub amount: u64,
     pub secret: String,
     #[serde(rename = "C")]
-    #[schema(value_type=String)]
+    #[schema(value_type = String)]
     pub c: PublicKey,
-    pub id: String, // FIXME use keysetID as specific type / consider making this non optional and brake backwards compatibility
+    pub id: String, // FIXME use keysetID as specific type
     pub script: Option<P2SHScript>,
 }
 
