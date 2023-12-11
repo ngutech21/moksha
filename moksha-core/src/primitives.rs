@@ -122,7 +122,7 @@ pub struct KeyResponse {
     pub keys: HashMap<u64, PublicKey>,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone, ToSchema, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum CurrencyUnit {
     Sat,
@@ -138,7 +138,7 @@ impl Display for CurrencyUnit {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone, ToSchema, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum PaymentMethod {
     Bolt11,
@@ -272,68 +272,138 @@ pub struct MintInfoResponse {
     pub description_long: Option<String>,
     pub contact: Option<Vec<Vec<String>>>,
     pub motd: Option<String>,
-    pub nuts: Vec<MintInfoNut>,
+    pub nuts: Nuts,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
-pub enum MintInfoNut {
-    /// Cryptography and Models
-    #[serde(rename = "0")]
-    Nut0 { disabled: bool },
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
+pub struct Nuts {
+    // /// Cryptography and Models
+    // #[serde(rename = "0")]
+    // pub nut0: bool,
 
-    /// Mint public keys
-    #[serde(rename = "1")]
-    Nut1 { disabled: bool },
+    // /// Mint public keys
+    // #[serde(rename = "1")]
+    // pub nut1: bool,
 
-    /// Keysets and keyset IDs
-    #[serde(rename = "2")]
-    Nut2 { disabled: bool },
+    // /// Keysets and keyset IDs
+    // #[serde(rename = "2")]
+    // pub nut2: bool,
 
-    /// Swapping tokens
-    #[serde(rename = "3")]
-    Nut3 { disabled: bool },
-
+    // /// Swapping tokens
+    // #[serde(rename = "3")]
+    // pub nut3: bool,
     /// Minting tokens
     #[serde(rename = "4")]
-    Nut4 {
-        methods: Vec<(PaymentMethod, CurrencyUnit)>,
-        disabled: bool,
-    },
+    pub nut4: Nut4,
 
     /// Melting tokens
     #[serde(rename = "5")]
-    Nut5 {
-        methods: Vec<(PaymentMethod, CurrencyUnit)>,
-        disabled: bool,
-    },
+    pub nut5: Nut5,
 
     /// Mint info
     #[serde(rename = "6")]
-    Nut6 { disabled: bool },
+    pub nut6: Nut6,
 
     /// Token state check
     #[serde(rename = "7")]
-    Nut7 { supported: bool },
+    pub nut7: Nut7,
 
     /// Overpaid Lightning fees
     #[serde(rename = "8")]
-    Nut8 { supported: bool },
+    pub nut8: Nut8,
 
     /// Deterministic backup and restore
     #[serde(rename = "9")]
-    Nut9 { supported: bool },
+    pub nut9: Nut9,
 
     /// Spending conditions
     #[serde(rename = "10")]
-    Nut10 { supported: bool },
+    pub nut10: Nut10,
 
     /// Pay-To-Pubkey (P2PK)
     #[serde(rename = "11")]
-    Nut11 { supported: bool },
+    pub nut11: Nut11,
 
-    /// DLEQ proofs
     #[serde(rename = "12")]
-    Nut12 { supported: bool },
+    /// DLEQ proofs
+    pub nut12: Nut12,
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+pub struct Nut4 {
+    pub methods: Vec<(PaymentMethod, CurrencyUnit)>,
+    pub disabled: bool,
+}
+
+impl Default for Nut4 {
+    fn default() -> Self {
+        Self {
+            methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
+            disabled: false,
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+pub struct Nut5 {
+    pub methods: Vec<(PaymentMethod, CurrencyUnit)>,
+    pub disabled: bool,
+}
+
+impl Default for Nut5 {
+    fn default() -> Self {
+        Self {
+            methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
+            disabled: false,
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+pub struct Nut6 {
+    pub supported: bool,
+}
+
+impl Default for Nut6 {
+    fn default() -> Self {
+        Self { supported: true }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
+pub struct Nut7 {
+    pub supported: bool,
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+pub struct Nut8 {
+    pub supported: bool,
+}
+
+impl Default for Nut8 {
+    fn default() -> Self {
+        Self { supported: true }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
+pub struct Nut9 {
+    pub supported: bool,
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
+pub struct Nut10 {
+    pub supported: bool,
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
+pub struct Nut11 {
+    pub supported: bool,
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
+pub struct Nut12 {
+    pub supported: bool,
 }
 
 #[cfg(test)]
@@ -342,8 +412,8 @@ mod tests {
     use crate::{
         dhke::public_key_from_hex,
         primitives::{
-            CurrencyUnit, KeyResponse, MintInfoNut, MintInfoResponse, MintLegacyInfoResponse,
-            Parameter, PaymentMethod, PostSwapResponse,
+            KeyResponse, MintInfoResponse, MintLegacyInfoResponse, Nuts, Parameter,
+            PostSwapResponse,
         },
     };
 
@@ -414,27 +484,7 @@ mod tests {
                 vec!["twitter".to_string(), "@me".to_string()],
                 vec!["nostr".to_string(), "npub...".to_string()],
             ]),
-            nuts: vec![
-                MintInfoNut::Nut0 { disabled: false },
-                MintInfoNut::Nut1 { disabled: false },
-                MintInfoNut::Nut2 { disabled: false },
-                MintInfoNut::Nut3 { disabled: false },
-                MintInfoNut::Nut4 {
-                    methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
-                    disabled: false,
-                },
-                MintInfoNut::Nut5 {
-                    methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
-                    disabled: false,
-                },
-                MintInfoNut::Nut6 { disabled: false },
-                MintInfoNut::Nut7 { supported: false },
-                MintInfoNut::Nut8 { supported: false },
-                MintInfoNut::Nut9 { supported: false },
-                MintInfoNut::Nut10 { supported: false },
-                MintInfoNut::Nut11 { supported: false },
-                MintInfoNut::Nut12 { supported: false },
-            ],
+            nuts: Nuts::default(),
             motd: Some("Message to display to users.".to_string()),
         };
         let out = serde_json::to_string_pretty(&mint_info)?;

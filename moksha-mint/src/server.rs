@@ -20,12 +20,13 @@ use crate::model::{GetMintQuery, PostMintQuery};
 use moksha_core::blind::BlindedMessage;
 use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
-    CheckFeesRequest, CheckFeesResponse, CurrencyUnit, KeyResponse, KeysResponse, MintInfoNut,
-    MintInfoResponse, MintLegacyInfoResponse, PaymentMethod, PaymentRequest, PostMeltBolt11Request,
-    PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
-    PostMeltRequest, PostMeltResponse, PostMintBolt11Request, PostMintBolt11Response,
-    PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintRequest, PostMintResponse,
-    PostSplitRequest, PostSplitResponse, PostSwapRequest, PostSwapResponse, Quote,
+    CheckFeesRequest, CheckFeesResponse, CurrencyUnit, KeyResponse, KeysResponse, MintInfoResponse,
+    MintLegacyInfoResponse, Nut10, Nut11, Nut12, Nut4, Nut5, Nut6, Nut7, Nut8, Nut9, Nuts,
+    PaymentMethod, PaymentRequest, PostMeltBolt11Request, PostMeltBolt11Response,
+    PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response, PostMeltRequest, PostMeltResponse,
+    PostMintBolt11Request, PostMintBolt11Response, PostMintQuoteBolt11Request,
+    PostMintQuoteBolt11Response, PostMintRequest, PostMintResponse, PostSplitRequest,
+    PostSplitResponse, PostSwapRequest, PostSwapResponse, Quote,
 };
 use secp256k1::PublicKey;
 
@@ -94,7 +95,16 @@ pub async fn run_server(
     ),
     components(schemas(
         MintInfoResponse,
-        MintInfoNut,
+        Nuts,
+        Nut4,
+        Nut5,
+        Nut6,
+        Nut7,
+        Nut8,
+        Nut9,
+        Nut10,
+        Nut11,
+        Nut12,
         CurrencyUnit,
         PaymentMethod,
         KeysResponse,
@@ -641,27 +651,7 @@ async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, Mo
         description: mint.mint_info.description,
         description_long: mint.mint_info.description_long,
         contact: mint.mint_info.contact,
-        nuts: vec![
-            MintInfoNut::Nut0 { disabled: false },
-            MintInfoNut::Nut1 { disabled: false },
-            MintInfoNut::Nut2 { disabled: false },
-            MintInfoNut::Nut3 { disabled: false },
-            MintInfoNut::Nut4 {
-                methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
-                disabled: false,
-            },
-            MintInfoNut::Nut5 {
-                methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
-                disabled: false,
-            },
-            MintInfoNut::Nut6 { disabled: false },
-            MintInfoNut::Nut7 { supported: false },
-            MintInfoNut::Nut8 { supported: false },
-            MintInfoNut::Nut9 { supported: false },
-            MintInfoNut::Nut10 { supported: true },
-            MintInfoNut::Nut11 { supported: true },
-            MintInfoNut::Nut12 { supported: true },
-        ],
+        nuts: Nuts::default(),
         motd: mint.mint_info.motd,
     };
     Ok(Json(mint_info))
