@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO bolt11_mint_quotes (id, payment_request, expiry, paid) VALUES ($1, $2, $3, $4)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int8",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bbb5353af44cc7ef7e5d91a10a5bd0422c6a2f0e52a079dd41f012994cf3b4ea"
+}

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use crate::error::MokshaMintError;
 use axum::extract::{Path, Query, Request, State};
@@ -21,13 +22,13 @@ use crate::model::{GetMintQuery, PostMintQuery};
 use moksha_core::blind::BlindedMessage;
 use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
-    CheckFeesRequest, CheckFeesResponse, CurrencyUnit, KeyResponse, KeysResponse, MintInfoResponse,
-    MintLegacyInfoResponse, Nut10, Nut11, Nut12, Nut4, Nut5, Nut6, Nut7, Nut8, Nut9, Nuts,
-    PaymentMethod, PaymentRequest, PostMeltBolt11Request, PostMeltBolt11Response,
-    PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response, PostMeltRequest, PostMeltResponse,
-    PostMintBolt11Request, PostMintBolt11Response, PostMintQuoteBolt11Request,
-    PostMintQuoteBolt11Response, PostMintRequest, PostMintResponse, PostSplitRequest,
-    PostSplitResponse, PostSwapRequest, PostSwapResponse, Quote,
+    Bolt11MeltQuote, Bolt11MintQuote, CheckFeesRequest, CheckFeesResponse, CurrencyUnit,
+    KeyResponse, KeysResponse, MintInfoResponse, MintLegacyInfoResponse, Nut10, Nut11, Nut12, Nut4,
+    Nut5, Nut6, Nut7, Nut8, Nut9, Nuts, PaymentMethod, PaymentRequest, PostMeltBolt11Request,
+    PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
+    PostMeltRequest, PostMeltResponse, PostMintBolt11Request, PostMintBolt11Response,
+    PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintRequest, PostMintResponse,
+    PostSplitRequest, PostSplitResponse, PostSwapRequest, PostSwapResponse,
 };
 use secp256k1::PublicKey;
 
@@ -422,14 +423,14 @@ async fn post_mint_quote_bolt11(
     let invoice = mint.lightning.decode_invoice(pr.clone()).await?;
 
     let expiry = invoice.expiry_time().as_secs();
-    let quote = Quote::Bolt11Mint {
+    let quote = Bolt11MintQuote {
         quote_id: key,
         payment_request: pr.clone(),
         expiry, // FIXME check if this is correct
         paid: false,
     };
 
-    mint.db.add_quote(key.to_string(), quote)?;
+    mint.db.add_bolt11_mint_quote(&quote).await?;
 
     Ok(Json(PostMintQuoteBolt11Response {
         quote: key.to_string(),
@@ -454,22 +455,22 @@ async fn post_mint_bolt11(
     State(mint): State<Mint>,
     Json(request): Json<PostMintBolt11Request>,
 ) -> Result<Json<PostMintBolt11Response>, MokshaMintError> {
-    let quotes = &mint.db.get_quotes()?;
-    let quote = quotes
-        .get(request.quote.as_str())
-        .ok_or_else(|| crate::error::MokshaMintError::InvalidQuote(request.quote.clone()))?;
+    let signatures = mint
+        .mint_tokens(request.quote.clone(), &request.outputs, &mint.keyset)
+        .await?;
 
-    match quote {
-        Quote::Bolt11Mint { .. } => {
-            let signatures = mint
-                .mint_tokens(request.quote, &request.outputs, &mint.keyset)
-                .await?;
-            Ok(Json(PostMintBolt11Response { signatures }))
-        }
-        _ => Err(crate::error::MokshaMintError::InvalidQuote(
-            request.quote.clone(),
-        )),
-    }
+    let old_quote = &mint
+        .db
+        .get_bolt11_mint_quote(&Uuid::from_str(request.quote.as_str()).unwrap())
+        .await?;
+
+    mint.db
+        .update_bolt11_mint_quote(&Bolt11MintQuote {
+            paid: true,
+            ..old_quote.clone()
+        })
+        .await?;
+    Ok(Json(PostMintBolt11Response { signatures }))
 }
 
 #[utoipa::path(
@@ -496,7 +497,7 @@ async fn post_melt_quote_bolt11(
 
     let amount_sat = amount / 1_000;
     let key = Uuid::new_v4();
-    let quote = Quote::Bolt11Melt {
+    let quote = Bolt11MeltQuote {
         quote_id: key,
         amount: amount_sat,
         fee_reserve,
@@ -504,7 +505,7 @@ async fn post_melt_quote_bolt11(
         payment_request: melt_request.request.clone(),
         paid: false,
     };
-    mint.db.add_quote(key.to_string(), quote.clone())?; // FIXME get rid of clone
+    mint.db.add_bolt11_melt_quote(&quote).await?;
 
     Ok(Json(quote.try_into().map_err(|_| {
         crate::error::MokshaMintError::InvalidQuote("".to_string())
@@ -526,47 +527,28 @@ async fn post_melt_bolt11(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltBolt11Request>,
 ) -> Result<Json<PostMeltBolt11Response>, MokshaMintError> {
-    let quote = mint.db.get_quote(melt_request.quote.clone())?;
+    let quote = mint
+        .db
+        .get_bolt11_melt_quote(&Uuid::from_str(&melt_request.quote).unwrap()) // FIXME remove unwrap
+        .await?;
 
-    match quote {
-        Quote::Bolt11Melt {
-            quote_id,
-            payment_request,
-            amount,
-            expiry,
-            fee_reserve,
-            ..
-        } => {
-            let (paid, payment_preimage, change) = mint
-                .melt(
-                    payment_request.to_owned(),
-                    &melt_request.inputs,
-                    &melt_request.outputs,
-                    &mint.keyset,
-                )
-                .await?;
-            let updated_quote = Quote::Bolt11Melt {
-                quote_id,
-                amount,
-                fee_reserve,
-                expiry,
-                payment_request,
-                paid,
-            };
-            // FIXME simplify code
+    let (paid, payment_preimage, change) = mint
+        .melt(
+            quote.payment_request.to_owned(),
+            &melt_request.inputs,
+            &melt_request.outputs,
+            &mint.keyset,
+        )
+        .await?;
+    mint.db
+        .update_bolt11_melt_quote(&Bolt11MeltQuote { paid, ..quote })
+        .await?;
 
-            mint.db.add_quote(quote_id.to_string(), updated_quote)?;
-
-            Ok(Json(PostMeltBolt11Response {
-                paid,
-                payment_preimage,
-                change,
-            }))
-        }
-        _ => Err(crate::error::MokshaMintError::InvalidQuote(
-            melt_request.quote.clone(),
-        )),
-    }
+    Ok(Json(PostMeltBolt11Response {
+        paid,
+        payment_preimage,
+        change,
+    }))
 }
 
 #[utoipa::path(
@@ -584,30 +566,17 @@ async fn get_mint_quote_bolt11(
     State(mint): State<Mint>,
 ) -> Result<Json<PostMintQuoteBolt11Response>, MokshaMintError> {
     info!("get_quote: {}", quote_id);
-    let quote = mint.db.get_quote(quote_id.clone())?;
+    let quote = mint
+        .db
+        .get_bolt11_mint_quote(&Uuid::from_str(&quote_id).unwrap()) // FIXME
+        .await?;
 
-    if let Quote::Bolt11Mint {
-        quote_id,
-        payment_request,
-        expiry,
-        ..
-    } = quote
-    {
-        let paid = mint
-            .lightning
-            .is_invoice_paid(payment_request.clone())
-            .await?;
+    let paid = mint
+        .lightning
+        .is_invoice_paid(quote.payment_request.clone())
+        .await?;
 
-        //FIXME
-        Ok(Json(PostMintQuoteBolt11Response {
-            quote: quote_id.to_string(),
-            payment_request,
-            paid,
-            expiry,
-        }))
-    } else {
-        Err(crate::error::MokshaMintError::InvalidQuote(quote_id))
-    }
+    Ok(Json(Bolt11MintQuote { paid, ..quote }.into()))
 }
 
 async fn get_melt_quote_bolt11(
@@ -615,24 +584,13 @@ async fn get_melt_quote_bolt11(
     State(mint): State<Mint>,
 ) -> Result<Json<PostMeltQuoteBolt11Response>, MokshaMintError> {
     info!("get_melt_quote: {}", quote_id);
-    let quote = mint.db.get_quote(quote_id.clone())?;
+    let quote = mint
+        .db
+        .get_bolt11_melt_quote(&Uuid::from_str(&quote_id).unwrap()) // FIXME
+        .await?;
 
-    match quote {
-        Quote::Bolt11Melt {
-            quote_id,
-            amount,
-            fee_reserve,
-            expiry,
-            ..
-        } => Ok(Json(PostMeltQuoteBolt11Response {
-            amount,
-            fee_reserve,
-            quote: quote_id.to_string(),
-            paid: false, // FIXME check if paid
-            expiry,
-        })),
-        _ => Err(crate::error::MokshaMintError::InvalidQuote(quote_id)),
-    }
+    // FIXME check for paid?
+    Ok(Json(quote.into()))
 }
 
 #[utoipa::path(

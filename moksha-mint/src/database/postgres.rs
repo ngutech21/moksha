@@ -1,0 +1,245 @@
+use async_trait::async_trait;
+use moksha_core::{
+    dhke,
+    primitives::{Bolt11MeltQuote, Bolt11MintQuote},
+    proof::{Proof, Proofs},
+};
+
+use sqlx::postgres::PgPoolOptions;
+use uuid::Uuid;
+
+use crate::{error::MokshaMintError, model::Invoice};
+
+use super::Database;
+
+pub struct PostgresDB {
+    pool: sqlx::Pool<sqlx::Postgres>,
+}
+
+impl PostgresDB {
+    pub async fn new() -> Result<PostgresDB, sqlx::Error> {
+        Ok(PostgresDB {
+            pool: PgPoolOptions::new()
+                .max_connections(5)
+                .connect(
+                    &dotenvy::var("MINT_DB_URL")
+                        .expect("environment variable MINT_DB_URL is not set"),
+                )
+                .await?,
+        })
+    }
+
+    pub async fn migrate(&self) {
+        sqlx::migrate!("./migrations")
+            .run(&self.pool)
+            .await
+            .expect("Could not run migrations");
+    }
+
+    pub async fn start_transaction(
+        &self,
+    ) -> Result<sqlx::Transaction<'_, sqlx::Postgres>, sqlx::Error> {
+        self.pool.begin().await
+    }
+
+    pub async fn commit_transaction(
+        &self,
+        transaction: sqlx::Transaction<'_, sqlx::Postgres>,
+    ) -> Result<(), sqlx::Error> {
+        transaction.commit().await
+    }
+}
+
+#[async_trait]
+impl Database for PostgresDB {
+    async fn get_used_proofs(&self) -> Result<Proofs, MokshaMintError> {
+        let proofs = sqlx::query!("SELECT * FROM used_proofs")
+            .fetch_all(&self.pool)
+            .await?
+            .into_iter()
+            .map(|row| Proof {
+                amount: row.amount as u64,
+                secret: row.secret,
+                c: dhke::public_key_from_hex(&row.c).to_owned(),
+                keyset_id: row.keyset_id.to_owned(),
+                script: None,
+            })
+            .collect::<Vec<Proof>>();
+
+        Ok(Proofs::new(proofs))
+    }
+
+    async fn add_used_proofs(&self, proofs: &Proofs) -> Result<(), MokshaMintError> {
+        for proof in proofs.proofs() {
+            sqlx::query!(
+                "INSERT INTO used_proofs (amount, secret, c, keyset_id) VALUES ($1, $2, $3, $4)",
+                proof.amount as i64,
+                proof.secret,
+                proof.c.to_string(),
+                proof.keyset_id.to_string()
+            )
+            .execute(&self.pool)
+            .await?;
+        }
+        Ok(())
+    }
+
+    async fn get_pending_invoice(
+        &self,
+        payment_request: String,
+    ) -> Result<Invoice, MokshaMintError> {
+        let invoice: Invoice = sqlx::query!(
+            "SELECT amount, payment_request FROM pending_invoices WHERE payment_request = $1",
+            payment_request
+        )
+        .map(|row| Invoice {
+            amount: row.amount as u64,
+            payment_request: row.payment_request,
+        })
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(invoice)
+    }
+
+    async fn add_pending_invoice(&self, invoice: &Invoice) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "INSERT INTO pending_invoices (amount, payment_request) VALUES ($1, $2)",
+            invoice.amount as i64,
+            invoice.payment_request
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn delete_pending_invoice(&self, payment_request: String) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "DELETE FROM pending_invoices WHERE payment_request = $1",
+            payment_request
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_bolt11_mint_quote(&self, id: &Uuid) -> Result<Bolt11MintQuote, MokshaMintError> {
+        let quote: Bolt11MintQuote = sqlx::query!(
+            "SELECT id, payment_request, expiry, paid FROM bolt11_mint_quotes WHERE id = $1",
+            id
+        )
+        .map(|row| Bolt11MintQuote {
+            quote_id: row.id,
+            payment_request: row.payment_request,
+            expiry: row.expiry as u64,
+            paid: row.paid,
+        })
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(quote)
+    }
+
+    async fn add_bolt11_mint_quote(&self, quote: &Bolt11MintQuote) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "INSERT INTO bolt11_mint_quotes (id, payment_request, expiry, paid) VALUES ($1, $2, $3, $4)",
+            quote.quote_id,
+            quote.payment_request,
+            quote.expiry as i64,
+            quote.paid
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn update_bolt11_mint_quote(
+        &self,
+        quote: &Bolt11MintQuote,
+    ) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "UPDATE bolt11_mint_quotes SET paid = $1 WHERE id = $2",
+            quote.paid,
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn delete_bolt11_mint_quote(
+        &self,
+        quote: &Bolt11MintQuote,
+    ) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "DELETE FROM bolt11_mint_quotes WHERE id = $1",
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_bolt11_melt_quote(&self, key: &Uuid) -> Result<Bolt11MeltQuote, MokshaMintError> {
+        let quote: Bolt11MeltQuote = sqlx::query!(
+            "SELECT id, payment_request, expiry, paid, amount, fee_reserve FROM bolt11_melt_quotes WHERE id = $1",
+            key
+        )
+        .map(|row| Bolt11MeltQuote {
+            quote_id: row.id,
+            payment_request: row.payment_request,
+            expiry: row.expiry as u64,
+            paid: row.paid,
+            amount: row.amount as u64,
+            fee_reserve: row.fee_reserve as u64,
+        })
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(quote)
+    }
+
+    async fn add_bolt11_melt_quote(&self, quote: &Bolt11MeltQuote) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "INSERT INTO bolt11_melt_quotes (id, payment_request, expiry, paid, amount, fee_reserve) VALUES ($1, $2, $3, $4, $5, $6)",
+            quote.quote_id,
+            quote.payment_request,
+            quote.expiry as i64,
+            quote.paid,
+            quote.amount as i64,
+            quote.fee_reserve as i64
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn update_bolt11_melt_quote(
+        &self,
+        quote: &Bolt11MeltQuote,
+    ) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "UPDATE bolt11_melt_quotes SET paid = $1 WHERE id = $2",
+            quote.paid,
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    async fn delete_bolt11_melt_quote(
+        &self,
+        quote: &Bolt11MeltQuote,
+    ) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "DELETE FROM bolt11_melt_quotes WHERE id = $1",
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+}

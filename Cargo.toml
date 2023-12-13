@@ -65,3 +65,4 @@ bls12_381 = { opt-level = 3 }
 subtle = { opt-level = 3 }
 ring = { opt-level = 3 }
 fedimint-threshold-crypto = { opt-level = 3 }
+sqlx-macros = { opt-level = 3 }

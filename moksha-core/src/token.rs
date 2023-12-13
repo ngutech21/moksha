@@ -196,7 +196,7 @@ mod tests {
                 c: dhke::public_key_from_hex(
                     "02c020067db727d586bc3183aecf97fcb800c3f4cc4759f69c626c9db5d8f5b5d4",
                 ),
-                id: "someid".to_string(),
+                keyset_id: "someid".to_string(),
                 script: None,
             }
             .into(),

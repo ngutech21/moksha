@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, payment_request, expiry, paid, amount, fee_reserve FROM bolt11_melt_quotes WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "payment_request",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "expiry",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "paid",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "amount",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "fee_reserve",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "9deb32cf2da6eb3d4b099556891f4ef979dde0f4c3ae901c7617d2e3c602a691"
+}

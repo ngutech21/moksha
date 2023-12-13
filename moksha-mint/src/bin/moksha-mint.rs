@@ -68,7 +68,7 @@ pub async fn main() -> anyhow::Result<()> {
     let mint = MintBuilder::new()
         .with_mint_info(mint_info_settings)
         .with_private_key(get_env("MINT_PRIVATE_KEY"))
-        .with_db(get_env("MINT_DB_PATH"))
+        .with_db(get_env("MINT_DB_URL"))
         .with_lightning(ln_type)
         .with_fee(
             get_env("LIGHTNING_FEE_PERCENT").parse()?,

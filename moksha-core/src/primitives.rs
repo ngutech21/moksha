@@ -6,7 +6,6 @@ use std::{collections::HashMap, fmt::Display};
 use secp256k1::PublicKey;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::convert::TryFrom;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -158,23 +157,14 @@ pub struct PostMintQuoteBolt11Response {
     pub paid: bool,
     pub expiry: u64,
 }
-impl TryFrom<Quote> for PostMintQuoteBolt11Response {
-    type Error = &'static str;
 
-    fn try_from(quote: Quote) -> Result<Self, Self::Error> {
-        match quote {
-            Quote::Bolt11Mint {
-                quote_id,
-                payment_request,
-                expiry,
-                paid,
-            } => Ok(Self {
-                quote: quote_id.to_string(),
-                payment_request,
-                expiry,
-                paid,
-            }),
-            _ => Err("Invalid quote variant"),
+impl From<Bolt11MintQuote> for PostMintQuoteBolt11Response {
+    fn from(quote: Bolt11MintQuote) -> Self {
+        Self {
+            quote: quote.quote_id.to_string(),
+            payment_request: quote.payment_request,
+            paid: quote.paid,
+            expiry: quote.expiry,
         }
     }
 }
@@ -207,42 +197,31 @@ pub struct PostMeltQuoteBolt11Response {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum Quote {
-    Bolt11Mint {
-        quote_id: Uuid,
-        payment_request: String,
-        expiry: u64,
-        paid: bool,
-    },
-    Bolt11Melt {
-        quote_id: Uuid,
-        amount: u64,
-        fee_reserve: u64,
-        payment_request: String,
-        expiry: u64,
-        paid: bool,
-    },
+pub struct Bolt11MintQuote {
+    pub quote_id: Uuid,
+    pub payment_request: String,
+    pub expiry: u64,
+    pub paid: bool,
 }
-impl TryFrom<Quote> for PostMeltQuoteBolt11Response {
-    type Error = &'static str;
 
-    fn try_from(quote: Quote) -> Result<Self, Self::Error> {
-        match quote {
-            Quote::Bolt11Melt {
-                quote_id,
-                amount,
-                fee_reserve,
-                expiry,
-                paid,
-                ..
-            } => Ok(Self {
-                quote: quote_id.to_string(),
-                amount,
-                fee_reserve,
-                paid,
-                expiry,
-            }),
-            _ => Err("Invalid quote variant"),
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Bolt11MeltQuote {
+    pub quote_id: Uuid,
+    pub amount: u64,
+    pub fee_reserve: u64,
+    pub payment_request: String,
+    pub expiry: u64,
+    pub paid: bool,
+}
+
+impl From<Bolt11MeltQuote> for PostMeltQuoteBolt11Response {
+    fn from(quote: Bolt11MeltQuote) -> Self {
+        Self {
+            quote: quote.quote_id.to_string(),
+            amount: quote.amount,
+            fee_reserve: quote.fee_reserve,
+            expiry: quote.expiry,
+            paid: quote.paid,
         }
     }
 }
