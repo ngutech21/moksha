@@ -26,10 +26,7 @@ pub enum MokshaMintError {
     PayInvoice(String, LightningError),
 
     #[error("DB Error {0}")]
-    Db(#[from] rocksdb::Error),
-
-    #[error("DB Error {0}")]
-    PostgresDB(#[from] sqlx::Error),
+    Db(#[from] sqlx::Error),
 
     #[error("Utf8 Error {0}")]
     Utf8(#[from] FromUtf8Error),

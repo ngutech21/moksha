@@ -2718,7 +2718,6 @@ dependencies = [
  "mockall",
  "moksha-core",
  "reqwest",
- "rocksdb",
  "secp256k1 0.28.0",
  "serde",
  "serde_derive",

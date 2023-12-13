@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use sqlx::prelude::FromRow;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GetMintQuery {

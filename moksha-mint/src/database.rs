@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 use moksha_core::{
+    dhke,
     primitives::{Bolt11MeltQuote, Bolt11MintQuote},
-    proof::Proofs,
+    proof::{Proof, Proofs},
 };
 
 use sqlx::postgres::PgPoolOptions;
@@ -52,17 +53,20 @@ impl PostgresDB {
 #[async_trait]
 impl Database for PostgresDB {
     async fn get_used_proofs(&self) -> Result<Proofs, MokshaMintError> {
-        // let proofs = sqlx::query!("SELECT * FROM used_proofs")
-        //     .fetch_all(&self.pool)
-        //     .await?
-        //     .into_iter()
-        //     .map(|mut row| {
-        //         proof.c = dhke::public_key_from_hex(&row.get).to_owned();
-        //         Ok(proof)
-        //     })
-        //     .collect::<Result<Vec<Proof>, _>>()?;
-        // FIXME
-        Ok(Proofs::empty())
+        let proofs = sqlx::query!("SELECT * FROM used_proofs")
+            .fetch_all(&self.pool)
+            .await?
+            .into_iter()
+            .map(|row| Proof {
+                amount: row.amount as u64,
+                secret: row.secret,
+                c: dhke::public_key_from_hex(&row.c).to_owned(),
+                keyset_id: row.keyset_id.to_owned(),
+                script: None,
+            })
+            .collect::<Vec<Proof>>();
+
+        Ok(Proofs::new(proofs))
     }
 
     async fn add_used_proofs(&self, proofs: &Proofs) -> Result<(), MokshaMintError> {
@@ -99,6 +103,13 @@ impl Database for PostgresDB {
     }
 
     async fn add_pending_invoice(&self, invoice: &Invoice) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "INSERT INTO pending_invoices (amount, payment_request) VALUES ($1, $2)",
+            invoice.amount as i64,
+            invoice.payment_request
+        )
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
@@ -130,7 +141,15 @@ impl Database for PostgresDB {
     }
 
     async fn add_bolt11_mint_quote(&self, quote: &Bolt11MintQuote) -> Result<(), MokshaMintError> {
-        // Implement the method here
+        sqlx::query!(
+            "INSERT INTO bolt11_mint_quotes (id, payment_request, expiry, paid) VALUES ($1, $2, $3, $4)",
+            quote.quote_id,
+            quote.payment_request,
+            quote.expiry as i64,
+            quote.paid
+        )
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
@@ -138,7 +157,13 @@ impl Database for PostgresDB {
         &self,
         quote: &Bolt11MintQuote,
     ) -> Result<(), MokshaMintError> {
-        // Implement the method here
+        sqlx::query!(
+            "UPDATE bolt11_mint_quotes SET paid = $1 WHERE id = $2",
+            quote.paid,
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
@@ -175,6 +200,17 @@ impl Database for PostgresDB {
     }
 
     async fn add_bolt11_melt_quote(&self, quote: &Bolt11MeltQuote) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "INSERT INTO bolt11_melt_quotes (id, payment_request, expiry, paid, amount, fee_reserve) VALUES ($1, $2, $3, $4, $5, $6)",
+            quote.quote_id,
+            quote.payment_request,
+            quote.expiry as i64,
+            quote.paid,
+            quote.amount as i64,
+            quote.fee_reserve as i64
+        )
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
@@ -182,6 +218,14 @@ impl Database for PostgresDB {
         &self,
         quote: &Bolt11MeltQuote,
     ) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "UPDATE bolt11_melt_quotes SET paid = $1 WHERE id = $2",
+            quote.paid,
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
+
         Ok(())
     }
 
@@ -238,16 +282,17 @@ pub trait Database {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    // use std::sync::Arc;
 
-    use moksha_core::{
-        dhke,
-        proof::{Proof, Proofs},
-    };
-    use uuid::Uuid;
+    // use moksha_core::{
+    //     dhke,
+    //     proof::{Proof, Proofs},
+    // };
+    // use uuid::Uuid;
 
-    use crate::{database::Database, model::Invoice};
+    // use crate::{database::Database, model::Invoice};
 
+    // FIXME update tests
     // #[test]
     // fn test_write_proofs() -> anyhow::Result<()> {
     //     let tmp = tempfile::tempdir()?;

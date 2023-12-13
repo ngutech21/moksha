@@ -25,6 +25,7 @@ pub struct Proof {
     #[serde(rename = "C")]
     #[schema(value_type = String)]
     pub c: PublicKey,
+    #[serde(rename = "id")]
     pub keyset_id: String, // FIXME use keysetID as specific type
     pub script: Option<P2SHScript>,
 }
