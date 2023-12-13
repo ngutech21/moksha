@@ -25,7 +25,7 @@ pub struct Proof {
     #[serde(rename = "C")]
     #[schema(value_type = String)]
     pub c: PublicKey,
-    pub id: String, // FIXME use keysetID as specific type
+    pub keyset_id: String, // FIXME use keysetID as specific type
     pub script: Option<P2SHScript>,
 }
 
@@ -35,7 +35,7 @@ impl Proof {
             amount,
             secret,
             c,
-            id,
+            keyset_id: id,
             script: None,
         }
     }
@@ -162,7 +162,7 @@ mod tests {
 
         let proof = serde_json::from_value::<Proof>(js)?;
         assert_eq!(proof.amount, 2);
-        assert_eq!(proof.id, "DSAl9nvvyfva".to_string());
+        assert_eq!(proof.keyset_id, "DSAl9nvvyfva".to_string());
         assert_eq!(proof.secret, "EhpennC9qB3iFlW8FZ_pZw".to_string());
         assert_eq!(
             proof.c.to_string(),

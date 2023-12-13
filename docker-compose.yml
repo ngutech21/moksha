@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  database:
+    image: "postgres:14.10"
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: moksha-mint
+  # app:
+  #   image: "registry.fly.io/moksha-mint:latest"
+  #   ports:
+  #     - 3338:3338
+  #   environment:
+  #     - DATABASE_URL=postgres://postgres:postgres@database/moksha-mint
+  #   profiles:
+  #     - app

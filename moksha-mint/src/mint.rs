@@ -112,7 +112,8 @@ impl Mint {
     ) -> Result<(String, String), MokshaMintError> {
         let pr = self.lightning.create_invoice(amount).await?.payment_request;
         self.db
-            .add_pending_invoice(key.clone(), Invoice::new(amount, pr.clone()))?;
+            .add_pending_invoice(&Invoice::new(amount, pr.clone()))
+            .await?;
         Ok((pr, key))
     }
 
@@ -122,7 +123,7 @@ impl Mint {
         outputs: &[BlindedMessage],
         keyset: &MintKeyset,
     ) -> Result<Vec<BlindedSignature>, MokshaMintError> {
-        let invoice = self.db.get_pending_invoice(key.clone())?;
+        let invoice = self.db.get_pending_invoice(key.clone()).await?;
 
         let is_paid = self
             .lightning
@@ -133,7 +134,7 @@ impl Mint {
             return Err(MokshaMintError::InvoiceNotPaidYet);
         }
 
-        self.db.remove_pending_invoice(key)?;
+        self.db.delete_pending_invoice(key).await?;
         self.create_blinded_signatures(outputs, keyset)
     }
 
@@ -148,7 +149,7 @@ impl Mint {
         blinded_messages: &[BlindedMessage],
         keyset: &MintKeyset,
     ) -> Result<Vec<BlindedSignature>, MokshaMintError> {
-        self.check_used_proofs(proofs)?;
+        self.check_used_proofs(proofs).await?;
 
         if Self::has_duplicate_pubkeys(blinded_messages) {
             return Err(MokshaMintError::SwapHasDuplicatePromises);
@@ -164,7 +165,7 @@ impl Mint {
             )));
         }
 
-        self.db.add_used_proofs(proofs)?;
+        self.db.add_used_proofs(proofs).await?;
         Ok(promises)
     }
 
@@ -184,7 +185,7 @@ impl Mint {
 
         // TODO verify proofs
 
-        self.check_used_proofs(proofs)?;
+        self.check_used_proofs(proofs).await?;
 
         // TODO check for fees
         let amount_msat = invoice
@@ -200,7 +201,7 @@ impl Mint {
         // TODO check invoice
 
         let result = self.lightning.pay_invoice(payment_request).await?;
-        self.db.add_used_proofs(proofs)?;
+        self.db.add_used_proofs(proofs).await?;
 
         let _remaining_amount = (amount_msat - (proofs_amount / 1000)) * 1000;
 
@@ -210,8 +211,8 @@ impl Mint {
         Ok((true, result.payment_hash, change))
     }
 
-    pub fn check_used_proofs(&self, proofs: &Proofs) -> Result<(), MokshaMintError> {
-        let used_proofs = self.db.get_used_proofs()?.proofs();
+    pub async fn check_used_proofs(&self, proofs: &Proofs) -> Result<(), MokshaMintError> {
+        let used_proofs = self.db.get_used_proofs().await?.proofs();
         for used_proof in used_proofs {
             if proofs.proofs().contains(&used_proof) {
                 return Err(MokshaMintError::ProofAlreadyUsed(format!("{used_proof:?}")));
@@ -225,7 +226,7 @@ impl Mint {
 pub struct MintBuilder {
     private_key: Option<String>,
     lightning_type: Option<LightningType>,
-    db_path: Option<String>,
+    db_url: Option<String>,
     fee_percent: Option<f32>,
     fee_reserve_min: Option<u64>,
     mint_info_settings: Option<MintInfoSettings>,
@@ -246,8 +247,8 @@ impl MintBuilder {
         self
     }
 
-    pub fn with_db(mut self, db_path: String) -> MintBuilder {
-        self.db_path = Some(db_path);
+    pub fn with_db(mut self, db_url: String) -> MintBuilder {
+        self.db_url = Some(db_url);
         self
     }
 
@@ -289,9 +290,7 @@ impl MintBuilder {
             None => panic!("Lightning backend not set"),
         };
 
-        let db = Arc::new(crate::database::RocksDB::new(
-            self.db_path.expect("MINT_DB_PATH not set"),
-        ));
+        let db = Arc::new(crate::database::PostgresDB::new().await?);
 
         let fee_config = LightningFeeConfig::new(
             self.fee_percent.expect("LIGHTNING_FEE_PERCENT not set"),
@@ -543,7 +542,7 @@ mod tests {
             .expect_get_used_proofs()
             .returning(|| Ok(Proofs::empty()));
         mock_db
-            .expect_remove_pending_invoice()
+            .expect_delete_pending_invoice()
             .returning(|_| Ok(()));
         mock_db
             .expect_get_pending_invoice()

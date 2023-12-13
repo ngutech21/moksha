@@ -37,7 +37,7 @@ impl LocalStore for SqliteLocalStore {
                 r#"INSERT INTO proofs (keyset_id, amount, C, secret, time_created) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP);
                 "#,
             )
-            .bind(proof.id)
+            .bind(proof.keyset_id)
             .bind(proof.amount as i64) // FIXME use u64
             .bind(proof.c.to_string())
             .bind(proof.secret)
@@ -62,7 +62,7 @@ impl LocalStore for SqliteLocalStore {
                 let secret: String = row.get(3);
                 let _time_created: String = row.get(4); // TODO use time_created
                 Ok(Proof {
-                    id,
+                    keyset_id: id,
                     amount: amount as u64,
                     c: c.parse().unwrap(),
                     secret,
