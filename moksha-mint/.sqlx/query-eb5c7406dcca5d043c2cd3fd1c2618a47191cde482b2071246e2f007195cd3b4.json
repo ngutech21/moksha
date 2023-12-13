@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE bolt11_mint_quotes SET paid = $1 WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Bool",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "eb5c7406dcca5d043c2cd3fd1c2618a47191cde482b2071246e2f007195cd3b4"
+}

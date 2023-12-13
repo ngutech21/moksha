@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, payment_request, expiry, paid FROM bolt11_mint_quotes WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "payment_request",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "expiry",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "paid",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "ce99d546aa2c36df35aa38a29e50e46c5ba5ad037d75315d04fb456c5201a924"
+}

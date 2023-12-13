@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM used_proofs",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "amount",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "secret",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "c",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "keyset_id",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "594c0ed8b964bdf16208ab5909c05bbfe15c245f667646b2450b5bd649cf219c"
+}
