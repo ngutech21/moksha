@@ -123,5 +123,10 @@ db-create:
   cargo sqlx database create --database-url postgres://postgres:postgres@localhost/moksha-mint
 
 
+fly-db-proxy:
+  flyctl proxy 6542:5432 -a moksha-mint-db
 
+db-secrets:
+  flyctl secrets set LND_MACAROON="$(cat data/mutinynet/admin.macaroon)"
+  flyctl secrets set LND_TLS_CERT="$(cat data/mutinynet/tls.cert)"
    
