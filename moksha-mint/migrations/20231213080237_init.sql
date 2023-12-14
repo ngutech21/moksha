@@ -8,7 +8,8 @@ CREATE TABLE used_proofs (
 );
 
 CREATE TABLE pending_invoices (
-    payment_request TEXT NOT NULL PRIMARY KEY,
+    key TEXT NOT NULL PRIMARY KEY,
+    payment_request TEXT NOT NULL,
     amount BIGINT NOT NULL
 );
 

@@ -34,7 +34,7 @@ Mint Features:
   - [x] LNbits
   - [x] Lnd
   - [x] Alby
-  - [x] Strike  
+  - [x] Strike
   - [] core-lightning
 
 Wallet Features:
@@ -95,6 +95,9 @@ vim .env
 To run the mint you need to setup a lightning regtest environment like [Polar](https://lightningpolar.com) and a Lnbits or Lnd instance. In Lnbits create a new wallet and copy the admin key into the .env file and set the url to your Lnbits instance. The mint uses RocksDB for storing used proofs and pending invoices. You can set the path to the database in the .env file.
 
 ```bash
+install docker and docker-compose
+docker compose up -d
+just db-create
 just run-mint
 ```
 

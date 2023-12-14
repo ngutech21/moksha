@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO pending_invoices (key, amount, payment_request) VALUES ($1, $2, $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d8fa5a9f70c2a2d00433b2a9e2ddb1b9e55255e9c5409d9f3c4d33dd9338455e"
+}

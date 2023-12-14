@@ -112,7 +112,7 @@ impl Mint {
     ) -> Result<(String, String), MokshaMintError> {
         let pr = self.lightning.create_invoice(amount).await?.payment_request;
         self.db
-            .add_pending_invoice(&Invoice::new(amount, pr.clone()))
+            .add_pending_invoice(key.clone(), &Invoice::new(amount, pr.clone()))
             .await?;
         Ok((pr, key))
     }

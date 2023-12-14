@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "DELETE FROM pending_invoices WHERE payment_request = $1",
+  "query": "DELETE FROM pending_invoices WHERE key = $1",
   "describe": {
     "columns": [],
     "parameters": {
@@ -10,5 +10,5 @@
     },
     "nullable": []
   },
-  "hash": "8254d820560e00918d59597b7aaaa5f42c17547f8a2fb43682fb6acc2504f900"
+  "hash": "9b7392f6768ac112b9cfd7e4e08ca5c3949884a3f7b8139b61cd7446d4983a05"
 }

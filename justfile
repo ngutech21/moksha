@@ -114,6 +114,14 @@ build-wasm:
    -Z build-std=std,panic_abort
 
 
+db-prepare:
+  cd moksha-mint && \
+  cargo sqlx prepare --database-url postgres://postgres:postgres@127.0.0.1/moksha-mint
+
+db-create:
+  cd moksha-mint && \
+  cargo sqlx database create --database-url postgres://postgres:postgres@localhost/moksha-mint
+
 
 
    

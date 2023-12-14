@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT amount, payment_request FROM pending_invoices WHERE payment_request = $1",
+  "query": "SELECT amount, payment_request FROM pending_invoices WHERE key = $1",
   "describe": {
     "columns": [
       {
@@ -24,5 +24,5 @@
       false
     ]
   },
-  "hash": "1fe95c3d9adc73715654e981236c0a81441a48c0d9be8a8162b424da40df07c8"
+  "hash": "9db8c4f6f5c71b2a0e4476429931112334053812decdbc7869404a7806d33856"
 }

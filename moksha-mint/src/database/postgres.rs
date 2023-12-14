@@ -81,16 +81,14 @@ impl Database for PostgresDB {
             .execute(&self.pool)
             .await?;
         }
+
         Ok(())
     }
 
-    async fn get_pending_invoice(
-        &self,
-        payment_request: String,
-    ) -> Result<Invoice, MokshaMintError> {
+    async fn get_pending_invoice(&self, key: String) -> Result<Invoice, MokshaMintError> {
         let invoice: Invoice = sqlx::query!(
-            "SELECT amount, payment_request FROM pending_invoices WHERE payment_request = $1",
-            payment_request
+            "SELECT amount, payment_request FROM pending_invoices WHERE key = $1",
+            key
         )
         .map(|row| Invoice {
             amount: row.amount as u64,
@@ -102,24 +100,27 @@ impl Database for PostgresDB {
         Ok(invoice)
     }
 
-    async fn add_pending_invoice(&self, invoice: &Invoice) -> Result<(), MokshaMintError> {
+    async fn add_pending_invoice(
+        &self,
+        key: String,
+        invoice: &Invoice,
+    ) -> Result<(), MokshaMintError> {
         sqlx::query!(
-            "INSERT INTO pending_invoices (amount, payment_request) VALUES ($1, $2)",
+            "INSERT INTO pending_invoices (key, amount, payment_request) VALUES ($1, $2, $3)",
+            key,
             invoice.amount as i64,
             invoice.payment_request
         )
         .execute(&self.pool)
         .await?;
+
         Ok(())
     }
 
-    async fn delete_pending_invoice(&self, payment_request: String) -> Result<(), MokshaMintError> {
-        sqlx::query!(
-            "DELETE FROM pending_invoices WHERE payment_request = $1",
-            payment_request
-        )
-        .execute(&self.pool)
-        .await?;
+    async fn delete_pending_invoice(&self, key: String) -> Result<(), MokshaMintError> {
+        sqlx::query!("DELETE FROM pending_invoices WHERE key = $1", key)
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 
@@ -136,7 +137,6 @@ impl Database for PostgresDB {
         })
         .fetch_one(&self.pool)
         .await?;
-
         Ok(quote)
     }
 
@@ -225,7 +225,6 @@ impl Database for PostgresDB {
         )
         .execute(&self.pool)
         .await?;
-
         Ok(())
     }
 
@@ -239,7 +238,6 @@ impl Database for PostgresDB {
         )
         .execute(&self.pool)
         .await?;
-
         Ok(())
     }
 }

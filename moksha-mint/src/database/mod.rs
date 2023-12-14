@@ -18,12 +18,13 @@ pub trait Database {
     async fn get_used_proofs(&self) -> Result<Proofs, MokshaMintError>;
     async fn add_used_proofs(&self, proofs: &Proofs) -> Result<(), MokshaMintError>;
 
-    async fn get_pending_invoice(
+    async fn get_pending_invoice(&self, key: String) -> Result<Invoice, MokshaMintError>;
+    async fn add_pending_invoice(
         &self,
-        payment_request: String,
-    ) -> Result<Invoice, MokshaMintError>;
-    async fn add_pending_invoice(&self, invoice: &Invoice) -> Result<(), MokshaMintError>;
-    async fn delete_pending_invoice(&self, payment_request: String) -> Result<(), MokshaMintError>;
+        key: String,
+        invoice: &Invoice,
+    ) -> Result<(), MokshaMintError>;
+    async fn delete_pending_invoice(&self, key: String) -> Result<(), MokshaMintError>;
 
     async fn get_bolt11_mint_quote(&self, key: &Uuid) -> Result<Bolt11MintQuote, MokshaMintError>;
     async fn add_bolt11_mint_quote(&self, quote: &Bolt11MintQuote) -> Result<(), MokshaMintError>;
