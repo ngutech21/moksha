@@ -11,8 +11,8 @@ use std::{env, fmt, net::SocketAddr, path::PathBuf};
 #[tokio::main]
 pub async fn main() -> anyhow::Result<()> {
     let app_env = match env::var("MINT_APP_ENV") {
-        Ok(v) if v == "prod" => AppEnv::Prod,
-        _ => AppEnv::Dev,
+        Ok(v) if v.trim() == "dev" => AppEnv::Dev,
+        _ => AppEnv::Prod,
     };
 
     println!("Running in {app_env} mode");

@@ -67,7 +67,7 @@ gen-flutter-bridge:
 
 # run the cashu-mint
 run-mint:
-  RUST_BACKTRACE=1 cargo run --bin moksha-mint
+  RUST_BACKTRACE=1 MINT_APP_ENV=dev cargo run --bin moksha-mint
 
 # run cli-wallet with the given args
 run-cli *ARGS:
