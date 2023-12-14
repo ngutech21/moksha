@@ -1,8 +1,6 @@
-
-
 CREATE TABLE used_proofs (
-    amount BIGINT NOT NULL PRIMARY KEY,
-    secret TEXT NOT NULL,
+    amount BIGINT NOT NULL,
+    secret TEXT NOT NULL PRIMARY KEY,
     c TEXT NOT NULL,
     keyset_id TEXT NOT NULL
 );
