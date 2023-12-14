@@ -1,0 +1,35 @@
+# fly.toml app configuration file generated for moksha-mint on 2023-12-13T20:00:51+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "moksha-mint"
+primary_region = "ams"
+
+[build]
+
+[http_service]
+internal_port = 3338
+force_https = true
+auto_stop_machines = true
+auto_start_machines = true
+min_machines_running = 0
+processes = ["app"]
+
+[[vm]]
+cpu_kind = "shared"
+cpus = 1
+memory_mb = 1024
+
+[env]
+SQLX_OFFLINE = "false"
+MINT_APP_ENV = "prod"
+MINT_HOST_PORT = "[::]:3338"
+#MINT_INFO_CONTACT = "[["email", "contact@me.com"]]"
+MINT_INFO_NAME = "moksha-mint"
+MINT_INFO_VERSION = "true"
+MINT_INFO_DESCRIPTION = "fly.io mint"
+MINT_INFO_DESCRIPTION_LONG = "mint description long"
+MINT_INFO_MOTD = "some message of the day"
+LIGHTNING_FEE_PERCENT = "0"
+LIGHTNING_RESERVE_FEE_MIN = "0"
