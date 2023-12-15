@@ -821,4 +821,22 @@ mod tests {
         );
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_get_v1_keysets() -> anyhow::Result<()> {
+        let app = app(create_mock_mint(Default::default()), None, None);
+        let response = app
+            .oneshot(Request::builder().uri("/v1/keysets").body(Body::empty())?)
+            .await?;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let keys: V1Keysets = serde_json::from_slice(&body)?;
+        assert_eq!(1, keys.keysets.len());
+        let keyset = keys.keysets.get(0).expect("keyset not found");
+        assert!(keyset.active);
+        assert_eq!(CurrencyUnit::Sat, keyset.unit);
+        assert_eq!("00e777893f6faa27", keyset.id);
+        Ok(())
+    }
 }
