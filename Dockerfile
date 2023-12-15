@@ -10,5 +10,9 @@ RUN cargo build --package moksha-mint --release
 FROM debian:bullseye-slim
 COPY --from=rust-builder /rust-app/target/release/moksha-mint /
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+
 WORKDIR /
 CMD ["./moksha-mint"]
