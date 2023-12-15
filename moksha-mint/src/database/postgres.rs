@@ -61,12 +61,12 @@ impl Database for PostgresDB {
                 amount: row.amount as u64,
                 secret: row.secret,
                 c: dhke::public_key_from_hex(&row.c).to_owned(),
-                keyset_id: row.keyset_id.to_owned(),
+                keyset_id: row.keyset_id,
                 script: None,
             })
             .collect::<Vec<Proof>>();
 
-        Ok(Proofs::new(proofs))
+        Ok(proofs.into())
     }
 
     async fn add_used_proofs(&self, proofs: &Proofs) -> Result<(), MokshaMintError> {
