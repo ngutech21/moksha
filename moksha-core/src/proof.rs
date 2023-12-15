@@ -42,7 +42,7 @@ impl Proof {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ToSchema)]
 pub struct P2SHScript;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]

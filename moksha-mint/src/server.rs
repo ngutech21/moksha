@@ -12,8 +12,8 @@ use axum::routing::{get_service, post};
 use axum::{middleware, Router};
 use axum::{routing::get, Json};
 use moksha_core::keyset::{generate_hash, Keysets, V1Keyset, V1Keysets};
-use moksha_core::proof::Proof;
 use moksha_core::proof::Proofs;
+use moksha_core::proof::{P2SHScript, Proof};
 use utoipa_swagger_ui::SwaggerUi;
 use uuid::Uuid;
 
@@ -88,10 +88,12 @@ pub async fn run_server(
         get_keys,
         get_keys_by_id,
         get_keysets,
+        post_mint_bolt11,
         post_mint_quote_bolt11,
         get_mint_quote_bolt11,
         post_melt_bolt11,
-        post_mint_bolt11,
+        post_melt_quote_bolt11,
+        get_melt_quote_bolt11,
         post_swap,
         get_info,
     ),
@@ -127,6 +129,7 @@ pub async fn run_server(
         PostMintBolt11Response,
         PostSwapRequest,
         PostSwapResponse,
+        P2SHScript
     ))
 )]
 struct ApiDoc;
@@ -475,7 +478,7 @@ async fn post_mint_bolt11(
 
 #[utoipa::path(
         post,
-        path = "/v1/melt/quote/bolt11/{quote}",
+        path = "/v1/melt/quote/bolt11",
         request_body = PostMeltQuoteBolt11Request,
         responses(
             (status = 200, description = "post mint quote", body = [PostMeltQuoteBolt11Response])
@@ -514,14 +517,11 @@ async fn post_melt_quote_bolt11(
 
 #[utoipa::path(
         post,
-        path = "/v1/melt/bolt11/{quote_id}",
+        path = "/v1/melt/bolt11",
         request_body = PostMeltBolt11Request,
         responses(
             (status = 200, description = "post melt", body = [PostMeltBolt11Response])
         ),
-        params(
-            ("quote_id" = String, Path, description = "quote id"),
-        )
     )]
 async fn post_melt_bolt11(
     State(mint): State<Mint>,
@@ -579,6 +579,16 @@ async fn get_mint_quote_bolt11(
     Ok(Json(Bolt11MintQuote { paid, ..quote }.into()))
 }
 
+#[utoipa::path(
+        get,
+        path = "/v1/melt/quote/bolt11/{quote_id}",
+        responses(
+            (status = 200, description = "post mint quote", body = [PostMeltQuoteBolt11Response])
+        ),
+        params(
+            ("quote_id" = String, Path, description = "quote id"),
+        )
+    )]
 async fn get_melt_quote_bolt11(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
