@@ -380,10 +380,13 @@ async fn get_keys(State(mint): State<Mint>) -> Result<Json<KeysResponse>, Moksha
         )
     )]
 async fn get_keys_by_id(
-    Path(_id): Path<String>,
+    Path(id): Path<String>,
     State(mint): State<Mint>,
 ) -> Result<Json<KeysResponse>, MokshaMintError> {
-    // FIXME check if id is valid
+    if id != mint.keyset.keyset_id {
+        return Err(MokshaMintError::KeysetNotFound(id));
+    }
+
     Ok(Json(KeysResponse {
         keysets: vec![KeyResponse {
             id: mint.keyset.keyset_id.clone(),
@@ -754,6 +757,68 @@ mod tests {
         let keysets = serde_json::from_slice::<V1Keysets>(&body)?;
         assert_eq!(1, keysets.keysets.len());
         assert_eq!(16, keysets.keysets[0].id.len());
+        Ok(())
+    }
+
+    // ### v1 api tests
+
+    #[tokio::test]
+    async fn test_get_v1_keys() -> anyhow::Result<()> {
+        let app = app(create_mock_mint(Default::default()), None, None);
+        let response = app
+            .oneshot(Request::builder().uri("/v1/keys").body(Body::empty())?)
+            .await?;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let keys: KeysResponse = serde_json::from_slice(&body)?;
+        assert_eq!(1, keys.keysets.len());
+        assert_eq!(
+            64,
+            keys.keysets.get(0).expect("keyset not found").keys.len()
+        );
+        println!("{:#?}", keys.keysets.get(0).unwrap().id);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_v1_keys_id_invalid() -> anyhow::Result<()> {
+        let app = app(create_mock_mint(Default::default()), None, None);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/v1/keys/unknownkeyset")
+                    .body(Body::empty())?,
+            )
+            .await?;
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_v1_keys_id() -> anyhow::Result<()> {
+        let app = app(create_mock_mint(Default::default()), None, None);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/v1/keys/00e777893f6faa27")
+                    .body(Body::empty())?,
+            )
+            .await?;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let keys: KeysResponse = serde_json::from_slice(&body)?;
+        assert_eq!(1, keys.keysets.len());
+        assert_eq!(
+            64,
+            keys.keysets.get(0).expect("keyset not found").keys.len()
+        );
+        assert_eq!(
+            "00e777893f6faa27",
+            keys.keysets.get(0).expect("keyset not found").id
+        );
         Ok(())
     }
 }

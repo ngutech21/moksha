@@ -60,6 +60,9 @@ pub enum MokshaMintError {
 
     #[error("Invalid quote {0}")]
     InvalidQuote(String),
+
+    #[error("Keyset not found {0}")]
+    KeysetNotFound(String),
 }
 
 impl IntoResponse for MokshaMintError {
