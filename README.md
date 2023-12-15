@@ -92,7 +92,7 @@ vim .env
 
 ### Run mint (cashu-server)
 
-To run the mint you need to setup a lightning regtest environment like [Polar](https://lightningpolar.com) and a Lnbits or Lnd instance. In Lnbits create a new wallet and copy the admin key into the .env file and set the url to your Lnbits instance. The mint uses RocksDB for storing used proofs and pending invoices. You can set the path to the database in the .env file.
+To run the mint you need to setup a lightning regtest environment like [Polar](https://lightningpolar.com) and a Lnbits or Lnd instance. In Lnbits create a new wallet and copy the admin key into the .env file and set the url to your Lnbits instance. The mint uses PostgreSQL for storing used proofs and pending invoices. The database URL can be configured in the .env file.
 
 ```bash
 install docker and docker-compose
