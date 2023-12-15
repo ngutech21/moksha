@@ -24,3 +24,5 @@ jobs:
           context: .
           push: true
           tags: ${{ github.repository_owner }}/moksha-mint:latest
+          secrets: |
+            GIT_AUTH_TOKEN=${{ secrets.GHCR_RW }}
