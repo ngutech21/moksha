@@ -97,6 +97,7 @@ pub async fn run_server(
         get_melt_quote_bolt11,
         post_swap,
         get_info,
+        get_health,
     ),
     components(schemas(
         MintInfoResponse,
@@ -159,11 +160,14 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .route("/v1/swap", post(post_swap))
         .route("/v1/info", get(get_info));
 
+    let general_routes = Router::new().route("/health", get(get_health));
+
     let prefix = prefix.unwrap_or_else(|| "".to_owned());
 
     let router = Router::new()
         .nest(&prefix, legacy_routes)
         .nest(&prefix, routes)
+        .nest("", general_routes)
         .with_state(mint)
         .layer(TraceLayer::new_for_http());
 
@@ -328,6 +332,17 @@ async fn get_legacy_keys(
 
 async fn get_legacy_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, MokshaMintError> {
     Ok(Json(Keysets::new(vec![mint.keyset_legacy.keyset_id])))
+}
+
+#[utoipa::path(
+        get,
+        path = "/health",
+        responses(
+            (status = 200, description = "health check")
+        ),
+    )]
+async fn get_health() -> impl IntoResponse {
+    StatusCode::OK
 }
 
 // ######################################################################################################
@@ -836,6 +851,17 @@ mod tests {
         assert!(keyset.active);
         assert_eq!(CurrencyUnit::Sat, keyset.unit);
         assert_eq!("00e777893f6faa27", keyset.id);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_health() -> anyhow::Result<()> {
+        let app = app(create_mock_mint(Default::default()), None, None);
+        let response = app
+            .oneshot(Request::builder().uri("/health").body(Body::empty())?)
+            .await?;
+
+        assert_eq!(response.status(), StatusCode::OK);
         Ok(())
     }
 }
