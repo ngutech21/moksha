@@ -11,6 +11,7 @@ use axum::response::IntoResponse;
 use axum::routing::{get_service, post};
 use axum::{middleware, Router};
 use axum::{routing::get, Json};
+use chrono::{Duration, Utc};
 use moksha_core::keyset::{generate_hash, Keysets, V1Keyset, V1Keysets};
 use moksha_core::proof::Proofs;
 use moksha_core::proof::{P2SHScript, Proof};
@@ -426,24 +427,16 @@ async fn post_mint_quote_bolt11(
     // FIXME check currency unit
     let key = Uuid::new_v4();
     let (pr, _hash) = mint.create_invoice(key.to_string(), request.amount).await?;
-    let invoice = mint.lightning.decode_invoice(pr.clone()).await?;
 
-    let expiry = invoice.expiry_time().as_secs();
     let quote = Bolt11MintQuote {
         quote_id: key,
         payment_request: pr.clone(),
-        expiry, // FIXME check if this is correct
+        expiry: quote_expiry(), // FIXME use timestamp type in DB
         paid: false,
     };
 
     mint.db.add_bolt11_mint_quote(&quote).await?;
-
-    Ok(Json(PostMintQuoteBolt11Response {
-        quote: key.to_string(),
-        payment_request: pr,
-        paid: false,
-        expiry,
-    }))
+    Ok(Json(quote.into()))
 }
 
 #[utoipa::path(
@@ -507,7 +500,7 @@ async fn post_melt_quote_bolt11(
         quote_id: key,
         amount: amount_sat,
         fee_reserve,
-        expiry: invoice.expiry_time().as_secs(), // FIXME check if this is correct
+        expiry: quote_expiry(),
         payment_request: melt_request.request.clone(),
         paid: false,
     };
@@ -516,6 +509,12 @@ async fn post_melt_quote_bolt11(
     Ok(Json(quote.try_into().map_err(|_| {
         crate::error::MokshaMintError::InvalidQuote("".to_string())
     })?))
+}
+
+fn quote_expiry() -> u64 {
+    // FIXME add config option for expiry
+    let now = Utc::now() + Duration::minutes(30);
+    now.timestamp() as u64
 }
 
 #[utoipa::path(
