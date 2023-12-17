@@ -127,4 +127,6 @@ pub trait Client {
     ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError>;
 
     async fn get_info(&self, mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError>;
+
+    async fn is_v1_supported(&self, mint_url: &Url) -> Result<bool, MokshaWalletError>;
 }

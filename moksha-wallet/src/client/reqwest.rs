@@ -330,6 +330,15 @@ impl Client for HttpClient {
             .await?;
         extract_response_data::<MintInfoResponse>(resp).await
     }
+
+    async fn is_v1_supported(&self, mint_url: &Url) -> Result<bool, MokshaWalletError> {
+        let resp = self
+            .request_client
+            .get(mint_url.join("v1/info")?)
+            .send()
+            .await?;
+        Ok(resp.status() == StatusCode::OK)
+    }
 }
 
 async fn extract_response_data<T: serde::de::DeserializeOwned>(
