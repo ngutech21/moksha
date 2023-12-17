@@ -5,7 +5,7 @@ use moksha_core::blind::BlindedMessage;
 use moksha_core::fixture::{read_fixture, read_fixture_as};
 use moksha_core::keyset::{Keysets, MintKeyset};
 use moksha_core::primitives::{
-    CheckFeesResponse, MintInfoResponse, PaymentRequest, PostMeltResponse, PostMintResponse,
+    CheckFeesResponse, MintLegacyInfoResponse, PaymentRequest, PostMeltResponse, PostMintResponse,
     PostSplitResponse,
 };
 use moksha_core::proof::Proofs;
@@ -13,7 +13,7 @@ use moksha_core::token::TokenV3;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::localstore::LocalStore;
 use moksha_wallet::wallet::WalletBuilder;
-use moksha_wallet::{client::Client, error::MokshaWalletError};
+use moksha_wallet::{client::LegacyClient, error::MokshaWalletError};
 use reqwest::Url;
 use secp256k1::PublicKey;
 
@@ -44,7 +44,7 @@ impl MockClient {
 }
 
 #[async_trait(?Send)]
-impl Client for MockClient {
+impl LegacyClient for MockClient {
     async fn post_split_tokens(
         &self,
         _mint_url: &Url,
@@ -100,7 +100,7 @@ impl Client for MockClient {
         unimplemented!()
     }
 
-    async fn get_info(&self, _mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError> {
+    async fn get_info(&self, _mint_url: &Url) -> Result<MintLegacyInfoResponse, MokshaWalletError> {
         unimplemented!()
     }
 }

@@ -14,7 +14,7 @@ use secp256k1::{PublicKey, SecretKey};
 use url::Url;
 
 use crate::{
-    client::Client,
+    client::LegacyClient,
     error::MokshaWalletError,
     localstore::{LocalStore, WalletKeyset},
 };
@@ -22,7 +22,7 @@ use lightning_invoice::Bolt11Invoice as LNInvoice;
 use std::str::FromStr;
 
 #[derive(Clone)]
-pub struct Wallet<C: Client, L: LocalStore> {
+pub struct Wallet<C: LegacyClient, L: LocalStore> {
     client: C,
     mint_keys: HashMap<u64, PublicKey>, // FIXME use specific type
     keysets: Keysets,
@@ -31,13 +31,13 @@ pub struct Wallet<C: Client, L: LocalStore> {
     mint_url: Url,
 }
 
-pub struct WalletBuilder<C: Client, L: LocalStore> {
+pub struct WalletBuilder<C: LegacyClient, L: LocalStore> {
     client: Option<C>,
     localstore: Option<L>,
     mint_url: Option<Url>,
 }
 
-impl<C: Client, L: LocalStore> WalletBuilder<C, L> {
+impl<C: LegacyClient, L: LocalStore> WalletBuilder<C, L> {
     fn new() -> Self {
         Self {
             client: None,
@@ -96,13 +96,13 @@ impl<C: Client, L: LocalStore> WalletBuilder<C, L> {
     }
 }
 
-impl<C: Client, L: LocalStore> Default for WalletBuilder<C, L> {
+impl<C: LegacyClient, L: LocalStore> Default for WalletBuilder<C, L> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<C: Client, L: LocalStore> Wallet<C, L> {
+impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
     fn new(
         client: C,
         mint_keys: HashMap<u64, PublicKey>,
@@ -442,7 +442,7 @@ fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, SecretKey)>) -> Vec<Bl
 mod tests {
     use crate::wallet::WalletBuilder;
     use crate::{
-        client::Client,
+        client::LegacyClient,
         error::MokshaWalletError,
         localstore::{LocalStore, WalletKeyset},
     };
@@ -451,8 +451,8 @@ mod tests {
     use moksha_core::fixture::{read_fixture, read_fixture_as};
     use moksha_core::keyset::{Keysets, MintKeyset};
     use moksha_core::primitives::{
-        CheckFeesResponse, MintInfoResponse, PaymentRequest, PostMeltResponse, PostMintResponse,
-        PostSplitResponse,
+        CheckFeesResponse, MintLegacyInfoResponse, PaymentRequest, PostMeltResponse,
+        PostMintResponse, PostSplitResponse,
     };
     use moksha_core::proof::Proofs;
     use moksha_core::token::{Token, TokenV3};
@@ -556,7 +556,7 @@ mod tests {
     }
 
     #[async_trait(?Send)]
-    impl Client for MockClient {
+    impl LegacyClient for MockClient {
         async fn post_split_tokens(
             &self,
             _mint_url: &Url,
@@ -616,7 +616,10 @@ mod tests {
             unimplemented!()
         }
 
-        async fn get_info(&self, _mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError> {
+        async fn get_info(
+            &self,
+            _mint_url: &Url,
+        ) -> Result<MintLegacyInfoResponse, MokshaWalletError> {
             unimplemented!()
         }
     }

@@ -6,11 +6,11 @@ use moksha_core::blind::BlindedMessage;
 use moksha_core::keyset::Keysets;
 use moksha_core::primitives::CashuErrorResponse;
 use moksha_core::primitives::{
-    CheckFeesRequest, CheckFeesResponse, MintInfoResponse, PaymentRequest, PostMeltRequest,
+    CheckFeesRequest, CheckFeesResponse, MintLegacyInfoResponse, PaymentRequest, PostMeltRequest,
     PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
 };
 use moksha_core::proof::Proofs;
-use moksha_wallet::{client::Client, error::MokshaWalletError};
+use moksha_wallet::{client::LegacyClient, error::MokshaWalletError};
 use secp256k1::PublicKey;
 use url::Url;
 
@@ -24,7 +24,7 @@ impl WasmClient {
 }
 
 #[async_trait(?Send)]
-impl Client for WasmClient {
+impl LegacyClient for WasmClient {
     async fn post_split_tokens(
         &self,
         mint_url: &Url,
@@ -121,11 +121,11 @@ impl Client for WasmClient {
         extract_response_data::<PostMintResponse>(resp).await
     }
 
-    async fn get_info(&self, mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError> {
+    async fn get_info(&self, mint_url: &Url) -> Result<MintLegacyInfoResponse, MokshaWalletError> {
         let resp = Request::get(mint_url.join(&format!("info"))?.as_str())
             .send()
             .await?;
-        extract_response_data::<MintInfoResponse>(resp).await
+        extract_response_data::<MintLegacyInfoResponse>(resp).await
     }
 }
 

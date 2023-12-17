@@ -1,5 +1,5 @@
 use moksha_wallet::client::reqwest::HttpClient;
-use moksha_wallet::client::Client;
+use moksha_wallet::client::LegacyClient;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::wallet::WalletBuilder;
 use mokshamint::lightning::{LightningType, LnbitsLightningSettings};

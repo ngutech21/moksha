@@ -5,7 +5,7 @@ use moksha_fedimint::FedimintWallet;
 use moksha_wallet::localstore::LocalStore;
 use std::future::Future;
 
-use moksha_wallet::client::Client;
+use moksha_wallet::client::LegacyClient;
 use moksha_wallet::wallet::{Wallet, WalletBuilder};
 use std::str::FromStr;
 use tracing::info;
@@ -103,7 +103,7 @@ pub fn get_cashu_balance(sink: StreamSink<u64>) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn local_wallet() -> anyhow::Result<&'static Wallet<impl Client, impl LocalStore>> {
+async fn local_wallet() -> anyhow::Result<&'static Wallet<impl LegacyClient, impl LocalStore>> {
     let mint_url = "https://mint.mutinynet.moksha.cash:3338";
     //let mint_url = "http://127.0.0.1:3338";
 
