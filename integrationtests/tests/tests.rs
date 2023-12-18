@@ -1,3 +1,4 @@
+#![allow(unused_imports)]
 use moksha_wallet::client::reqwest::HttpClient;
 use moksha_wallet::client::LegacyClient;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
@@ -10,9 +11,8 @@ use std::time::Duration;
 use tokio::runtime::Runtime;
 use tokio::time::{sleep_until, Instant};
 
-// FIXME integration-test don't work anymore, because postgres is not available
 #[test]
-#[ignore]
+#[cfg(feature = "integration-tests")]
 pub fn test_integration() -> anyhow::Result<()> {
     // start lnbits
     let _lnbits_thread = thread::spawn(|| {
@@ -26,12 +26,9 @@ pub fn test_integration() -> anyhow::Result<()> {
     let _server_thread = thread::spawn(|| {
         let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
         rt.block_on(async {
-            let tmp = tempfile::tempdir().expect("Could not create tmp dir");
-            let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
-
             let mint = Mint::builder()
                 .with_private_key("my_private_key".to_string())
-                .with_db(tmp_dir.to_string()) // FIXME use in-memory db?
+                .with_db("postgres://postgres:postgres@127.0.0.1/moksha-mint".to_owned())
                 .with_lightning(LightningType::Lnbits(LnbitsLightningSettings::new(
                     "my_admin_key",
                     "http://127.0.0.1:6100",
@@ -46,7 +43,6 @@ pub fn test_integration() -> anyhow::Result<()> {
                 None,
             )
             .await;
-            drop(tmp);
             assert!(result.is_ok());
         });
     });
@@ -128,6 +124,7 @@ pub fn test_integration() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[cfg(feature = "integration-tests")]
 fn read_fixture(name: &str) -> anyhow::Result<String> {
     let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
     let raw_token = std::fs::read_to_string(format!("{base_dir}/tests/fixtures/{name}"))?;
