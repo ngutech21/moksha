@@ -2042,6 +2042,7 @@ dependencies = [
  "itoa",
  "pin-project-lite",
  "tokio",
+ "want",
 ]
 
 [[package]]
@@ -2743,7 +2744,7 @@ dependencies = [
  "anyhow",
  "axum 0.6.20",
  "bitcoin_hashes 0.11.0",
- "hyper 0.14.27",
+ "hyper 1.0.1",
  "lightning 0.0.116",
  "lightning-invoice 0.24.0",
  "moksha-core",
@@ -2775,7 +2776,7 @@ dependencies = [
  "fedimint-tonic-lnd",
  "hex",
  "http-body-util",
- "hyper 0.14.27",
+ "hyper 1.0.1",
  "lightning-invoice 0.26.0",
  "mockall",
  "moksha-core",
