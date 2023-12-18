@@ -6,14 +6,21 @@ use moksha_wallet::wallet::WalletBuilder;
 use mokshamint::lightning::{LightningType, LnbitsLightningSettings};
 use mokshamint::mint::Mint;
 use reqwest::Url;
+use std::collections::HashMap;
 use std::thread;
 use std::time::Duration;
+use testcontainers::core::WaitFor;
+use testcontainers::{clients, Image};
 use tokio::runtime::Runtime;
 use tokio::time::{sleep_until, Instant};
 
 #[test]
 #[cfg(feature = "integration-tests")]
 pub fn test_integration() -> anyhow::Result<()> {
+    let docker = clients::Cli::default();
+    let node = docker.run(Postgres::default());
+    let host_port = node.get_host_port_ipv4(5432);
+
     // start lnbits
     let _lnbits_thread = thread::spawn(|| {
         let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
@@ -23,12 +30,18 @@ pub fn test_integration() -> anyhow::Result<()> {
     });
 
     // Create a channel to signal when the server has started
-    let _server_thread = thread::spawn(|| {
+    let _server_thread = thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
         rt.block_on(async {
             let mint = Mint::builder()
                 .with_private_key("my_private_key".to_string())
-                .with_db("postgres://postgres:postgres@127.0.0.1/moksha-mint".to_owned())
+                .with_db(
+                    format!(
+                        "postgres://postgres:postgres@127.0.0.1:{}/moksha-mint",
+                        host_port
+                    )
+                    .to_owned(),
+                )
                 .with_lightning(LightningType::Lnbits(LnbitsLightningSettings::new(
                     "my_admin_key",
                     "http://127.0.0.1:6100",
@@ -129,4 +142,42 @@ fn read_fixture(name: &str) -> anyhow::Result<String> {
     let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
     let raw_token = std::fs::read_to_string(format!("{base_dir}/tests/fixtures/{name}"))?;
     Ok(raw_token.trim().to_string())
+}
+
+#[derive(Debug)]
+pub struct Postgres {
+    env_vars: HashMap<String, String>,
+}
+
+impl Default for Postgres {
+    fn default() -> Self {
+        let mut env_vars = HashMap::new();
+        env_vars.insert("POSTGRES_DB".to_owned(), "postgres".to_owned());
+        env_vars.insert("POSTGRES_HOST_AUTH_METHOD".into(), "trust".into());
+        env_vars.insert("POSTGRES_DB".into(), "moksha-mint".into());
+
+        Self { env_vars }
+    }
+}
+
+impl Image for Postgres {
+    type Args = ();
+
+    fn name(&self) -> String {
+        "postgres".to_owned()
+    }
+
+    fn tag(&self) -> String {
+        "15.3".to_owned()
+    }
+
+    fn ready_conditions(&self) -> Vec<WaitFor> {
+        vec![WaitFor::message_on_stderr(
+            "database system is ready to accept connections",
+        )]
+    }
+
+    fn env_vars(&self) -> Box<dyn Iterator<Item = (&String, &String)> + '_> {
+        Box::new(self.env_vars.iter())
+    }
 }
