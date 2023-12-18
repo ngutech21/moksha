@@ -17,15 +17,9 @@ pub struct PostgresDB {
 }
 
 impl PostgresDB {
-    pub async fn new() -> Result<PostgresDB, sqlx::Error> {
+    pub async fn new(url: &str) -> Result<PostgresDB, sqlx::Error> {
         Ok(PostgresDB {
-            pool: PgPoolOptions::new()
-                .max_connections(5)
-                .connect(
-                    &dotenvy::var("MINT_DB_URL")
-                        .expect("environment variable MINT_DB_URL is not set"),
-                )
-                .await?,
+            pool: PgPoolOptions::new().max_connections(5).connect(url).await?,
         })
     }
 

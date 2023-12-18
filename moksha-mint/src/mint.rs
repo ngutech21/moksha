@@ -290,7 +290,12 @@ impl MintBuilder {
             None => panic!("Lightning backend not set"),
         };
 
-        let db = Arc::new(crate::database::postgres::PostgresDB::new().await?);
+        let db = Arc::new(
+            crate::database::postgres::PostgresDB::new(
+                self.db_url.expect("MINT_DB_URL not set").as_str(),
+            )
+            .await?,
+        );
         db.migrate().await;
 
         let fee_config = LightningFeeConfig::new(
