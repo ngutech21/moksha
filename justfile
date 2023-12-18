@@ -84,6 +84,11 @@ run-web:
     cd flutter && \
     dart run flutter_rust_bridge:serve 
 
+# run integrationtests
+run-itests:
+    cd integrationtests && \
+    cargo test --features integration-tests
+
 
 # build flutter desktop-app
 build-desktop:
