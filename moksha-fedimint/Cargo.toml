@@ -12,6 +12,9 @@ description = "A fedimint client for moksha"
 name = "moksha_fedimint"
 path = "src/lib.rs"
 
+[package.metadata.docs.rs]
+rustc-args = ["--cfg", "tokio_unstable"]
+
 [dependencies]
 dotenvy = "0.15.7"
 base64 = "0.21.5"
@@ -26,7 +29,7 @@ fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", tag = "
 futures = "0.3.29"
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
-tokio = { version = "1.35.0", features = ["rt"] }
+tokio = { version = "1.35.0", features = ["rt", "tracing"] }
 fedimint-rocksdb = { git = "https://github.com/fedimint/fedimint", tag = "v0.1.5" }
 
 [target.'cfg(target_family = "wasm")'.dependencies]

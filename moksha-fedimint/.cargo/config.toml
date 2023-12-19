@@ -1,0 +1,3 @@
+# this is needed by fedimint since v 0.2.0
+[build]
+rustflags = ["--cfg", "tokio_unstable"]
