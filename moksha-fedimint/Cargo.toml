@@ -25,7 +25,7 @@ fedimint-client = { git = "https://github.com/fedimint/fedimint", tag = "v0.1.5"
 fedimint-core = { git = "https://github.com/fedimint/fedimint", tag = "v0.1.5" }
 fedimint-mint-client = { git = "https://github.com/fedimint/fedimint", tag = "v0.1.5" }
 fedimint-ln-client = { git = "https://github.com/fedimint/fedimint", tag = "v0.1.5" }
-fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", tag = "v0.1.5" }
+fedimint-wallet-client = { git = "https://github.com/fedimint/fedimint", tag = "v0.2.0" }
 futures = "0.3.29"
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
