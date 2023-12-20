@@ -236,7 +236,7 @@ pub struct PostMeltBolt11Request {
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMeltBolt11Response {
     pub paid: bool,
-    pub payment_preimage: String,
+    pub payment_preimage: Option<String>,
     pub change: Vec<BlindedSignature>,
 }
 
