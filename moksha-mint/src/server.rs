@@ -475,7 +475,7 @@ async fn post_mint_bolt11(
 
     let old_quote = &mint
         .db
-        .get_bolt11_mint_quote(&Uuid::from_str(request.quote.as_str()).unwrap())
+        .get_bolt11_mint_quote(&Uuid::from_str(request.quote.as_str())?)
         .await?;
 
     mint.db
@@ -546,7 +546,7 @@ async fn post_melt_bolt11(
 ) -> Result<Json<PostMeltBolt11Response>, MokshaMintError> {
     let quote = mint
         .db
-        .get_bolt11_melt_quote(&Uuid::from_str(&melt_request.quote).unwrap()) // FIXME remove unwrap
+        .get_bolt11_melt_quote(&Uuid::from_str(melt_request.quote.as_str())?)
         .await?;
 
     let (paid, payment_preimage, change) = mint
@@ -583,9 +583,10 @@ async fn get_mint_quote_bolt11(
     State(mint): State<Mint>,
 ) -> Result<Json<PostMintQuoteBolt11Response>, MokshaMintError> {
     info!("get_quote: {}", quote_id);
+
     let quote = mint
         .db
-        .get_bolt11_mint_quote(&Uuid::from_str(&quote_id).unwrap()) // FIXME
+        .get_bolt11_mint_quote(&Uuid::from_str(quote_id.as_str())?)
         .await?;
 
     let paid = mint
@@ -613,7 +614,7 @@ async fn get_melt_quote_bolt11(
     info!("get_melt_quote: {}", quote_id);
     let quote = mint
         .db
-        .get_bolt11_melt_quote(&Uuid::from_str(&quote_id).unwrap()) // FIXME
+        .get_bolt11_melt_quote(&Uuid::from_str(quote_id.as_str())?)
         .await?;
 
     // FIXME check for paid?

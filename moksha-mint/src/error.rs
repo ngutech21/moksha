@@ -61,6 +61,9 @@ pub enum MokshaMintError {
     #[error("Invalid quote {0}")]
     InvalidQuote(String),
 
+    #[error("Invalid quote uuid {0}")]
+    InvalidUuid(#[from] uuid::Error),
+
     #[error("Keyset not found {0}")]
     KeysetNotFound(String),
 }
