@@ -1,5 +1,5 @@
 # build backend
-FROM rust:1.71.0-slim-bullseye as rust-builder
+FROM rust:1.74.1-slim-bookworm as rust-builder
 RUN apt update && apt install -y make clang pkg-config libssl-dev protobuf-compiler
 
 WORKDIR /rust-app
@@ -7,7 +7,7 @@ COPY . /rust-app
 RUN cargo build --package moksha-mint --release
 
 
-FROM debian:bullseye-slim
+FROM alpine:3.19.0
 COPY --from=rust-builder /rust-app/target/release/moksha-mint /
 
 COPY entrypoint.sh /entrypoint.sh
