@@ -17,10 +17,17 @@ jobs:
           registry: docker.io
           username: ${{ secrets.DOCKER_NAME }}
           password: ${{ secrets.DOCKER_PAT }}
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date -u '+%F-%T')"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
+          build-args: |
+            COMMITHASH=${{ github.sha }}
+            BUILDTIME=${{ steps.date.outputs.date }}
+
           tags: docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:latest
