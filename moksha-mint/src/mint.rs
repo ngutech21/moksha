@@ -25,7 +25,7 @@ pub struct Mint {
     pub db: Arc<dyn Database + Send + Sync>,
     pub dhke: Dhke,
     pub lightning_fee_config: LightningFeeConfig,
-    pub mint_info: MintInfoSettings,
+    pub mint_info: MintInfoSettings, // FIXME use new mint info instead of legacy
 }
 
 #[derive(Clone, Debug)]

@@ -57,17 +57,17 @@ pub async fn run_server(
         .init();
 
     if let Ok(buildtime) = std::env::var("BUILDTIME") {
-        info!("Build time: {}", buildtime);
+        info!("build time: {}", buildtime);
     }
     if let Ok(commithash) = std::env::var("COMMITHASH") {
-        info!("Commit hash: {}", commithash);
+        info!("git commit-hash: {}", commithash);
     }
     if let Some(ref serve_wallet_path) = serve_wallet_path {
         info!("serving wallet from path: {:?}", serve_wallet_path);
     }
     info!("listening on: {}", addr);
-    info!("mint_info: {:?}", mint.mint_info);
-    info!("lightning_backend: {}", mint.lightning_type);
+    info!("mint-info (legacy): {:?}", mint.mint_info);
+    info!("lightning-backend: {}", mint.lightning_type);
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
 

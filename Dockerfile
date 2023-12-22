@@ -14,11 +14,11 @@ COPY --chmod=755 ./entrypoint.sh /app/entrypoint.sh
 
 USER 1000
 WORKDIR /app
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 ARG BUILDTIME
 ARG COMMITHASH
 ENV BUILDTIME ${BUILDTIME}
 ENV COMMITHASH ${COMMITHASH}
 
-CMD ["./moksha-mint"]
+CMD ["/app/moksha-mint"]
