@@ -4,7 +4,7 @@ use mokshamint::{
         AlbyLightningSettings, LightningType, LnbitsLightningSettings, LndLightningSettings,
         StrikeLightningSettings,
     },
-    mint::MintBuilder,
+    mint::{LightningFeeConfig, MintBuilder},
 };
 use std::{env, fmt, net::SocketAddr, path::PathBuf};
 
@@ -65,15 +65,22 @@ pub async fn main() -> anyhow::Result<()> {
         .from_env::<MintInfoSettings>()
         .expect("Please provide mint info");
 
+    let fee_config_default = LightningFeeConfig::default();
+
+    let fee_config = LightningFeeConfig {
+        fee_percent: env_or_default("LIGHTNING_FEE_PERCENT", fee_config_default.fee_percent),
+        fee_reserve_min: env_or_default(
+            "LIGHTNING_RESERVE_FEE_MIN",
+            fee_config_default.fee_reserve_min,
+        ),
+    };
+
     let mint = MintBuilder::new()
         .with_mint_info(mint_info_settings)
         .with_private_key(get_env("MINT_PRIVATE_KEY"))
         .with_db(get_env("MINT_DB_URL"))
         .with_lightning(ln_type)
-        .with_fee(
-            get_env("LIGHTNING_FEE_PERCENT").parse()?,
-            get_env("LIGHTNING_RESERVE_FEE_MIN").parse()?,
-        )
+        .with_fee(fee_config)
         .build()
         .await;
 
@@ -84,6 +91,13 @@ pub async fn main() -> anyhow::Result<()> {
     };
 
     mokshamint::server::run_server(mint?, host_port, serve_wallet_path, api_prefix).await
+}
+
+fn env_or_default<T: std::str::FromStr>(key: &str, default: T) -> T {
+    env::var(key)
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(default)
 }
 
 #[derive(Debug, PartialEq)]

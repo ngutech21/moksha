@@ -10,23 +10,19 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: moksha-mint
   app:
-    #image: "docker.io/ngutech21/moksha-mint:latest"
-    image: "moksha-mint:latest"
+    image: "docker.io/ngutech21/moksha-mint:latest"
+    #image: "moksha-mint:latest"
     ports:
       - 3338:3338
     volumes:
-      - /Users/steffen/projects/moksha/data/mutinynet/admin.macaroon:/app/admin.macaroon
-      - /Users/steffen/projects/moksha/data/mutinynet/tls.cert:/app/tls.cert
+      - ./data/mutinynet/admin.macaroon:/app/admin.macaroon
+      - ./data/mutinynet/tls.cert:/app/tls.cert
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@database/moksha-mint
-      - MINT_APP_ENV=prod
+      - MINT_DB_URL=postgres://postgres:postgres@database/moksha-mint
       - MINT_LIGHTNING_BACKEND=Lnd
       - LND_MACAROON_PATH=/app/admin.macaroon
       - LND_TLS_CERT_PATH=/app/tls.cert
       - LND_GRPC_HOST=https://mutinynet.moksha.cash:10009
-      - MINT_PRIVATE_KEY=ajszwuelakszetdh
-      - MINT_DB_URL=postgres://postgres:postgres@database/moksha-mint
-      - LIGHTNING_FEE_PERCENT=0.01
-      - LIGHTNING_RESERVE_FEE_MIN=10
+      - MINT_PRIVATE_KEY=supersecretkey
     profiles:
       - app

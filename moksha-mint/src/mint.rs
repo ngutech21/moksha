@@ -227,8 +227,7 @@ pub struct MintBuilder {
     private_key: Option<String>,
     lightning_type: Option<LightningType>,
     db_url: Option<String>,
-    fee_percent: Option<f32>,
-    fee_reserve_min: Option<u64>,
+    fee_config: Option<LightningFeeConfig>,
     mint_info_settings: Option<MintInfoSettings>,
 }
 
@@ -257,9 +256,8 @@ impl MintBuilder {
         self
     }
 
-    pub fn with_fee(mut self, fee_percent: f32, fee_reserve_min: u64) -> MintBuilder {
-        self.fee_percent = Some(fee_percent);
-        self.fee_reserve_min = Some(fee_reserve_min);
+    pub fn with_fee(mut self, fee_config: LightningFeeConfig) -> MintBuilder {
+        self.fee_config = Some(fee_config);
         self
     }
 
@@ -298,19 +296,13 @@ impl MintBuilder {
         );
         db.migrate().await;
 
-        let fee_config = LightningFeeConfig::new(
-            self.fee_percent.expect("LIGHTNING_FEE_PERCENT not set"),
-            self.fee_reserve_min
-                .expect("LIGHTNING_RESERVE_FEE_MIN not set"),
-        );
-
         Ok(Mint::new(
             self.private_key.expect("MINT_PRIVATE_KEY not set"),
             "".to_string(),
             ln,
             self.lightning_type.expect("Lightning backend not set"),
             db,
-            fee_config,
+            self.fee_config.expect("fee-config not set"),
             self.mint_info_settings.unwrap_or_default(),
         ))
     }

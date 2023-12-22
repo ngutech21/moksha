@@ -67,6 +67,7 @@ pub async fn run_server(
     }
     info!("listening on: {}", addr);
     info!("mint-info (legacy): {:?}", mint.mint_info);
+    info!("lightning fee-reserve: {:?}", mint.lightning_fee_config);
     info!("lightning-backend: {}", mint.lightning_type);
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
