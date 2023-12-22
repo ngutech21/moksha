@@ -15,8 +15,9 @@ members = [
 split-debuginfo = "packed"
 
 [profile.release]
-strip = true # Automatically strip symbols from the binary.
-lto = true   # Enable link-time optimization.
+strip = true      # Automatically strip symbols from the binary.
+lto = true        # Enable link-time optimization.
+codegen-units = 1 # Reduce the number of object files to speed up compilation.
 
 # The profile that 'cargo dist' will build with
 [profile.dist]

@@ -99,7 +99,7 @@ build-desktop:
 
 # build the mint docker-image
 build-docker:
-    docker build -t moksha:latest .
+    docker build --build-arg COMMITHASH=$(git rev-parse HEAD) --build-arg BUILDTIME=$(date -u '+%F-%T') -t moksha-mint:latest .
 
 
 # build flutter web-app in flutter/build/web

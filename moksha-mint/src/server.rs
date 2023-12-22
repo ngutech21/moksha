@@ -55,15 +55,19 @@ pub async fn run_server(
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .init();
+
+    if let Ok(buildtime) = std::env::var("BUILDTIME") {
+        info!("Build time: {}", buildtime);
+    }
+    if let Ok(commithash) = std::env::var("COMMITHASH") {
+        info!("Commit hash: {}", commithash);
+    }
+    if let Some(ref serve_wallet_path) = serve_wallet_path {
+        info!("serving wallet from path: {:?}", serve_wallet_path);
+    }
     info!("listening on: {}", addr);
     info!("mint_info: {:?}", mint.mint_info);
     info!("lightning_backend: {}", mint.lightning_type);
-    if serve_wallet_path.is_some() {
-        info!(
-            "serving wallet from path: {:?}",
-            serve_wallet_path.clone().unwrap()
-        );
-    }
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
 

@@ -10,7 +10,8 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: moksha-mint
   app:
-    image: "docker.io/ngutech21/moksha-mint:latest"
+    #image: "docker.io/ngutech21/moksha-mint:latest"
+    image: "moksha-mint:latest"
     ports:
       - 3338:3338
     volumes:
