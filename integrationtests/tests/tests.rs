@@ -17,6 +17,8 @@ use tokio::time::{sleep_until, Instant};
 #[test]
 #[cfg(feature = "integration-tests")]
 pub fn test_integration() -> anyhow::Result<()> {
+    use mokshamint::config::LightningFeeConfig;
+
     let docker = clients::Cli::default();
     let node = docker.run(Postgres::default());
     let host_port = node.get_host_port_ipv4(5432);
@@ -46,7 +48,7 @@ pub fn test_integration() -> anyhow::Result<()> {
                     "my_admin_key",
                     "http://127.0.0.1:6100",
                 )))
-                .with_fee(0.0, 0)
+                .with_fee(LightningFeeConfig::new(0.0, 0))
                 .build();
 
             let result = mokshamint::server::run_server(
