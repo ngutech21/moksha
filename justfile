@@ -40,7 +40,7 @@ final-check:
   just build-wasm
 
 #run coverage
-coverage:
+run-coverage:
   #!/usr/bin/env bash
   mkdir -p target/coverage
   CARGO_INCREMENTAL=0 RUSTFLAGS='-Cinstrument-coverage' LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw' cargo test
@@ -120,18 +120,21 @@ build-wasm:
    -Z build-std=std,panic_abort
 
 
+# runs sqlx prepare
 db-prepare:
   cd moksha-mint && \
   cargo sqlx prepare --database-url postgres://postgres:postgres@127.0.0.1/moksha-mint
 
+# creates the postgres database
 db-create:
   cd moksha-mint && \
   cargo sqlx database create --database-url postgres://postgres:postgres@localhost/moksha-mint
 
-
-fly-db-proxy:
+# starts the fly.io database proxy
+start-fly-proxy:
   flyctl proxy 6542:5432 -a moksha-mint-db
 
+# creates the fly.io secrets used for LND
 db-secrets:
   flyctl secrets set LND_MACAROON="$(cat data/mutinynet/admin.macaroon)"
   flyctl secrets set LND_TLS_CERT="$(cat data/mutinynet/tls.cert)"

@@ -73,6 +73,34 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 
 ## Usage
 
+### Deploy mint
+
+#### Railway
+
+The easiest way to deploy the mint is to use [Railway](https://railway.app/). Railway is a platform that allows you to deploy your apps to the cloud with just a few clicks. You can use the following template to setup a mint that uses LNbits as backend:
+
+(coming soon)
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/7UYgl2)
+
+#### Docker-compose
+
+docker-compose simplifies the process of running multi-container Docker applications. Here's how you can use it to run the moksha -mint:
+
+1. First, you need to have Docker Compose installed on your machine. If it's not installed, you can download it from the [official Docker website](https://docs.docker.com/compose/install/).
+
+2. Copy the tls.cert and admin.macaroon files from your LND instance into the `./data/mutinynet/` directory.
+
+3. Configure the `LND_GRPC_HOST` environment variable in the `docker-compose.yml` file to point to your LND instance.
+
+4. Run the following command in the same directory as your `docker-compose.yml` file to start the mint and a postgres database:
+
+```bash
+docker-compose up -d app database
+```
+
+## Development
+
 ### Setup rust
 
 ```bash
@@ -173,14 +201,20 @@ Available recipes:
     build-wasm         # compile all rust crates, that are relevant for the client, to wasm
     build-web          # build flutter web-app in flutter/build/web
     clean              # clean cargo and flutter
-    coverage           # run coverage
+    db-create          # creates the postgres database
+    db-prepare         # runs sqlx prepare
+    db-secrets         # creates the fly.io secrets used for LND
     default            # list all tasks
+    deps               # install all dependencies
     final-check        # format code, check typos and run tests
     gen-flutter-bridge # generate flutter-rust bridge
     run-cli *ARGS      # run cli-wallet with the given args
+    run-coverage       # run coverage
     run-desktop        # run flutter desktop-app
+    run-itests         # run integrationtests
     run-mint           # run the cashu-mint
     run-web            # run flutter web-app
+    start-fly-proxy    # starts the fly.io database proxy
     typos              # check code for typos
     typos-fix-all      # fix all typos
 ```
