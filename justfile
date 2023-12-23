@@ -36,6 +36,7 @@ final-check:
   cargo fmt --all
   just typos
   cargo test
+  just run-itests
   just build-wasm
 
 #run coverage
