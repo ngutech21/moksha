@@ -73,6 +73,15 @@ impl LightningFeeConfig {
     }
 }
 
+impl From<(f32, u64)> for LightningFeeConfig {
+    fn from(tuple: (f32, u64)) -> Self {
+        Self {
+            fee_percent: tuple.0,
+            fee_reserve_min: tuple.1,
+        }
+    }
+}
+
 fn env_or_default<T: std::str::FromStr>(key: &str, default: T) -> T {
     env::var(key)
         .ok()

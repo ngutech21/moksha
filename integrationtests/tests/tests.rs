@@ -48,7 +48,7 @@ pub fn test_integration() -> anyhow::Result<()> {
                     "my_admin_key",
                     "http://127.0.0.1:6100",
                 )))
-                .with_fee(LightningFeeConfig::new(0.0, 0))
+                .with_fee((0.0, 0).into())
                 .build();
 
             let result = mokshamint::server::run_server(
