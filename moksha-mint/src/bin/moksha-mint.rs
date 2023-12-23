@@ -1,10 +1,10 @@
 use mokshamint::{
-    info::MintInfoSettings,
+    config::{LightningFeeConfig, MintInfoConfig},
     lightning::{
         AlbyLightningSettings, LightningType, LnbitsLightningSettings, LndLightningSettings,
         StrikeLightningSettings,
     },
-    mint::{LightningFeeConfig, MintBuilder},
+    mint::MintBuilder,
 };
 use std::{env, fmt, net::SocketAddr, path::PathBuf};
 
@@ -62,18 +62,10 @@ pub async fn main() -> anyhow::Result<()> {
     };
 
     let mint_info_settings = envy::prefixed("MINT_INFO_")
-        .from_env::<MintInfoSettings>()
+        .from_env::<MintInfoConfig>()
         .expect("Please provide mint info");
 
-    let fee_config_default = LightningFeeConfig::default();
-
-    let fee_config = LightningFeeConfig {
-        fee_percent: env_or_default("LIGHTNING_FEE_PERCENT", fee_config_default.fee_percent),
-        fee_reserve_min: env_or_default(
-            "LIGHTNING_RESERVE_FEE_MIN",
-            fee_config_default.fee_reserve_min,
-        ),
-    };
+    let fee_config = LightningFeeConfig::from_env();
 
     let mint = MintBuilder::new()
         .with_mint_info(mint_info_settings)
@@ -91,13 +83,6 @@ pub async fn main() -> anyhow::Result<()> {
     };
 
     mokshamint::server::run_server(mint?, host_port, serve_wallet_path, api_prefix).await
-}
-
-fn env_or_default<T: std::str::FromStr>(key: &str, default: T) -> T {
-    env::var(key)
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(default)
 }
 
 #[derive(Debug, PartialEq)]

@@ -8,9 +8,9 @@ use moksha_core::{
 };
 
 use crate::{
+    config::{BuildConfig, LightningFeeConfig, MintInfoConfig},
     database::Database,
     error::MokshaMintError,
-    info::MintInfoSettings,
     lightning::{AlbyLightning, Lightning, LightningType, LnbitsLightning, StrikeLightning},
     model::Invoice,
 };
@@ -25,35 +25,12 @@ pub struct Mint {
     pub db: Arc<dyn Database + Send + Sync>,
     pub dhke: Dhke,
     pub lightning_fee_config: LightningFeeConfig,
-    pub mint_info: MintInfoSettings, // FIXME use new mint info instead of legacy
-}
-
-#[derive(Clone, Debug)]
-pub struct LightningFeeConfig {
-    pub fee_percent: f32,
-    pub fee_reserve_min: u64,
-    // TODO check if fee_percent is in range
-}
-
-impl LightningFeeConfig {
-    pub fn new(fee_percent: f32, fee_reserve_min: u64) -> Self {
-        Self {
-            fee_percent,
-            fee_reserve_min,
-        }
-    }
-}
-
-impl Default for LightningFeeConfig {
-    fn default() -> Self {
-        Self {
-            fee_percent: 1.0,
-            fee_reserve_min: 4000,
-        }
-    }
+    pub mint_info_config: MintInfoConfig,
+    pub build_config: BuildConfig,
 }
 
 impl Mint {
+    // FIXME create a new struct for all config-settings
     pub fn new(
         secret: String,
         derivation_path: String,
@@ -61,7 +38,8 @@ impl Mint {
         lightning_type: LightningType,
         db: Arc<dyn Database + Send + Sync>,
         lightning_fee_config: LightningFeeConfig,
-        mint_info: MintInfoSettings,
+        mint_info_config: MintInfoConfig,
+        build_config: BuildConfig,
     ) -> Self {
         Self {
             lightning,
@@ -71,7 +49,8 @@ impl Mint {
             keyset: MintKeyset::new(&secret, &derivation_path),
             db,
             dhke: Dhke::new(),
-            mint_info,
+            mint_info_config,
+            build_config,
         }
     }
 
@@ -228,7 +207,7 @@ pub struct MintBuilder {
     lightning_type: Option<LightningType>,
     db_url: Option<String>,
     fee_config: Option<LightningFeeConfig>,
-    mint_info_settings: Option<MintInfoSettings>,
+    mint_info_settings: Option<MintInfoConfig>,
 }
 
 impl MintBuilder {
@@ -236,7 +215,7 @@ impl MintBuilder {
         Self::default()
     }
 
-    pub fn with_mint_info(mut self, mint_info: MintInfoSettings) -> MintBuilder {
+    pub fn with_mint_info(mut self, mint_info: MintInfoConfig) -> MintBuilder {
         self.mint_info_settings = Some(mint_info);
         self
     }
@@ -304,6 +283,7 @@ impl MintBuilder {
             db,
             self.fee_config.expect("fee-config not set"),
             self.mint_info_settings.unwrap_or_default(),
+            BuildConfig::from_env(),
         ))
     }
 }
@@ -457,6 +437,7 @@ mod tests {
             Arc::new(create_mock_db_get_used_proofs()),
             Default::default(),
             Default::default(),
+            Default::default(),
         );
 
         let tokens = create_token_from_fixture("token_60.cashu".to_string())?;
@@ -514,6 +495,7 @@ mod tests {
             lightning,
             LightningType::Lnbits(Default::default()),
             db,
+            Default::default(),
             Default::default(),
             Default::default(),
         )

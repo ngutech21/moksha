@@ -56,17 +56,17 @@ pub async fn run_server(
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    if let Ok(buildtime) = std::env::var("BUILDTIME") {
+    if let Some(ref buildtime) = mint.build_config.build_time {
         info!("build time: {}", buildtime);
     }
-    if let Ok(commithash) = std::env::var("COMMITHASH") {
+    if let Some(ref commithash) = mint.build_config.commit_hash {
         info!("git commit-hash: {}", commithash);
     }
     if let Some(ref serve_wallet_path) = serve_wallet_path {
         info!("serving wallet from path: {:?}", serve_wallet_path);
     }
     info!("listening on: {}", addr);
-    info!("mint-info (legacy): {:?}", mint.mint_info);
+    info!("mint-info (legacy): {:?}", mint.mint_info_config);
     info!("lightning fee-reserve: {:?}", mint.lightning_fee_config);
     info!("lightning-backend: {}", mint.lightning_type);
 
@@ -273,15 +273,15 @@ async fn get_legacy_info(
     State(mint): State<Mint>,
 ) -> Result<Json<MintLegacyInfoResponse>, MokshaMintError> {
     let mint_info = MintLegacyInfoResponse {
-        name: mint.mint_info.name,
+        name: mint.mint_info_config.name,
         pubkey: mint.keyset_legacy.mint_pubkey,
-        version: match mint.mint_info.version {
-            true => Some(env!("CARGO_PKG_VERSION").to_owned()),
+        version: match mint.mint_info_config.version {
+            true => Some(mint.build_config.full_version()),
             _ => None,
         },
-        description: mint.mint_info.description,
-        description_long: mint.mint_info.description_long,
-        contact: mint.mint_info.contact,
+        description: mint.mint_info_config.description,
+        description_long: mint.mint_info_config.description_long,
+        contact: mint.mint_info_config.contact,
         nuts: vec![
             "NUT-00".to_string(),
             "NUT-01".to_string(),
@@ -293,7 +293,7 @@ async fn get_legacy_info(
             "NUT-08".to_string(),
             "NUT-09".to_string(),
         ],
-        motd: mint.mint_info.motd,
+        motd: mint.mint_info_config.motd,
         parameter: Default::default(),
     };
     Ok(Json(mint_info))
@@ -635,17 +635,17 @@ async fn get_melt_quote_bolt11(
     )]
 async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, MokshaMintError> {
     let mint_info = MintInfoResponse {
-        name: mint.mint_info.name,
+        name: mint.mint_info_config.name,
         pubkey: mint.keyset_legacy.mint_pubkey,
-        version: match mint.mint_info.version {
-            true => Some(env!("CARGO_PKG_VERSION").to_owned()),
+        version: match mint.mint_info_config.version {
+            true => Some(mint.build_config.full_version()),
             _ => None,
         },
-        description: mint.mint_info.description,
-        description_long: mint.mint_info.description_long,
-        contact: mint.mint_info.contact,
+        description: mint.mint_info_config.description,
+        description_long: mint.mint_info_config.description_long,
+        contact: mint.mint_info_config.contact,
         nuts: Nuts::default(),
-        motd: mint.mint_info.motd,
+        motd: mint.mint_info_config.motd,
     };
     Ok(Json(mint_info))
 }
@@ -654,7 +654,10 @@ async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, Mo
 mod tests {
     use std::{collections::HashMap, sync::Arc};
 
-    use crate::server::app;
+    use crate::{
+        config::{BuildConfig, LightningFeeConfig},
+        server::app,
+    };
     use axum::{
         body::Body,
         http::{Request, StatusCode},
@@ -668,10 +671,10 @@ mod tests {
     use tower::ServiceExt;
 
     use crate::{
+        config::MintInfoConfig,
         database::MockDatabase,
-        info::MintInfoSettings,
         lightning::{LightningType, MockLightning},
-        mint::{LightningFeeConfig, Mint},
+        mint::Mint,
     };
 
     #[tokio::test]
@@ -704,7 +707,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_info() -> anyhow::Result<()> {
-        let mint_info_settings = MintInfoSettings {
+        let mint_info_settings = MintInfoConfig {
             name: Some("Bob's Cashu mint".to_string()),
             version: true,
             description: Some("A mint for testing".to_string()),
@@ -730,7 +733,7 @@ mod tests {
         Ok(())
     }
 
-    fn create_mock_mint(mint_info: MintInfoSettings) -> Mint {
+    fn create_mock_mint(mint_info: MintInfoConfig) -> Mint {
         let db = Arc::new(MockDatabase::new());
         let lightning = Arc::new(MockLightning::new());
 
@@ -742,6 +745,7 @@ mod tests {
             db,
             LightningFeeConfig::default(),
             mint_info,
+            BuildConfig::default(),
         )
     }
 

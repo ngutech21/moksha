@@ -11,7 +11,7 @@ services:
       POSTGRES_DB: moksha-mint
   app:
     image: "docker.io/ngutech21/moksha-mint:latest"
-    #image: "moksha-mint:latest"
+    #image: "moksha-mint:latest" # for local testing
     ports:
       - 3338:3338
     volumes:
