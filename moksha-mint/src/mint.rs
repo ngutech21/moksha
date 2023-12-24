@@ -8,7 +8,7 @@ use moksha_core::{
 };
 
 use crate::{
-    config::{BuildConfig, LightningFeeConfig, MintInfoConfig},
+    config::{BuildConfig, LightningFeeConfig, MintConfig, MintInfoConfig},
     database::Database,
     error::MokshaMintError,
     lightning::{AlbyLightning, Lightning, LightningType, LnbitsLightning, StrikeLightning},
@@ -24,9 +24,7 @@ pub struct Mint {
     pub keyset: MintKeyset,
     pub db: Arc<dyn Database + Send + Sync>,
     pub dhke: Dhke,
-    pub lightning_fee_config: LightningFeeConfig,
-    pub mint_info_config: MintInfoConfig,
-    pub build_config: BuildConfig,
+    pub config: MintConfig,
 }
 
 impl Mint {
@@ -37,20 +35,16 @@ impl Mint {
         lightning: Arc<dyn Lightning + Send + Sync>,
         lightning_type: LightningType,
         db: Arc<dyn Database + Send + Sync>,
-        lightning_fee_config: LightningFeeConfig,
-        mint_info_config: MintInfoConfig,
-        build_config: BuildConfig,
+        config: MintConfig,
     ) -> Self {
         Self {
             lightning,
             lightning_type,
-            lightning_fee_config,
             keyset_legacy: MintKeyset::legacy_new(&secret, &derivation_path),
             keyset: MintKeyset::new(&secret, &derivation_path),
             db,
             dhke: Dhke::new(),
-            mint_info_config,
-            build_config,
+            config,
         }
     }
 
@@ -59,9 +53,9 @@ impl Mint {
     }
 
     pub fn fee_reserve(&self, amount_msat: u64) -> u64 {
-        let fee_percent = self.lightning_fee_config.fee_percent as f64 / 100.0;
+        let fee_percent = self.config.lightning_fee.fee_percent as f64 / 100.0;
         let fee_reserve = (amount_msat as f64 * fee_percent) as u64;
-        std::cmp::max(fee_reserve, self.lightning_fee_config.fee_reserve_min)
+        std::cmp::max(fee_reserve, self.config.lightning_fee.fee_reserve_min)
     }
 
     pub fn create_blinded_signatures(
@@ -281,9 +275,11 @@ impl MintBuilder {
             ln,
             self.lightning_type.expect("Lightning backend not set"),
             db,
-            self.fee_config.expect("fee-config not set"),
-            self.mint_info_settings.unwrap_or_default(),
-            BuildConfig::from_env(),
+            MintConfig::new(
+                self.mint_info_settings.unwrap_or_default(),
+                BuildConfig::from_env(),
+                self.fee_config.expect("fee-config not set"),
+            ),
         ))
     }
 }
@@ -436,8 +432,6 @@ mod tests {
             LightningType::Lnbits(Default::default()),
             Arc::new(create_mock_db_get_used_proofs()),
             Default::default(),
-            Default::default(),
-            Default::default(),
         );
 
         let tokens = create_token_from_fixture("token_60.cashu".to_string())?;
@@ -495,8 +489,6 @@ mod tests {
             lightning,
             LightningType::Lnbits(Default::default()),
             db,
-            Default::default(),
-            Default::default(),
             Default::default(),
         )
     }

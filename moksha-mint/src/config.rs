@@ -3,6 +3,27 @@ use std::env;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
+pub struct MintConfig {
+    pub info: MintInfoConfig,
+    pub build: BuildConfig,
+    pub lightning_fee: LightningFeeConfig,
+}
+
+impl MintConfig {
+    pub fn new(
+        info: MintInfoConfig,
+        build: BuildConfig,
+        lightning_fee: LightningFeeConfig,
+    ) -> Self {
+        Self {
+            info,
+            build,
+            lightning_fee,
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct MintInfoConfig {
     pub name: Option<String>,
     #[serde(default = "default_version")]
@@ -45,7 +66,7 @@ impl BuildConfig {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct LightningFeeConfig {
     pub fee_percent: f32,
     pub fee_reserve_min: u64,

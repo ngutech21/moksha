@@ -56,18 +56,18 @@ pub async fn run_server(
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    if let Some(ref buildtime) = mint.build_config.build_time {
+    if let Some(ref buildtime) = mint.config.build.build_time {
         info!("build time: {}", buildtime);
     }
-    if let Some(ref commithash) = mint.build_config.commit_hash {
+    if let Some(ref commithash) = mint.config.build.commit_hash {
         info!("git commit-hash: {}", commithash);
     }
     if let Some(ref serve_wallet_path) = serve_wallet_path {
         info!("serving wallet from path: {:?}", serve_wallet_path);
     }
     info!("listening on: {}", addr);
-    info!("mint-info (legacy): {:?}", mint.mint_info_config);
-    info!("lightning fee-reserve: {:?}", mint.lightning_fee_config);
+    info!("mint-info: {:?}", mint.config.info);
+    info!("lightning fee-reserve: {:?}", mint.config.lightning_fee);
     info!("lightning-backend: {}", mint.lightning_type);
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
@@ -273,15 +273,15 @@ async fn get_legacy_info(
     State(mint): State<Mint>,
 ) -> Result<Json<MintLegacyInfoResponse>, MokshaMintError> {
     let mint_info = MintLegacyInfoResponse {
-        name: mint.mint_info_config.name,
+        name: mint.config.info.name,
         pubkey: mint.keyset_legacy.mint_pubkey,
-        version: match mint.mint_info_config.version {
-            true => Some(mint.build_config.full_version()),
+        version: match mint.config.info.version {
+            true => Some(mint.config.build.full_version()),
             _ => None,
         },
-        description: mint.mint_info_config.description,
-        description_long: mint.mint_info_config.description_long,
-        contact: mint.mint_info_config.contact,
+        description: mint.config.info.description,
+        description_long: mint.config.info.description_long,
+        contact: mint.config.info.contact,
         nuts: vec![
             "NUT-00".to_string(),
             "NUT-01".to_string(),
@@ -293,7 +293,7 @@ async fn get_legacy_info(
             "NUT-08".to_string(),
             "NUT-09".to_string(),
         ],
-        motd: mint.mint_info_config.motd,
+        motd: mint.config.info.motd,
         parameter: Default::default(),
     };
     Ok(Json(mint_info))
@@ -634,18 +634,19 @@ async fn get_melt_quote_bolt11(
         )
     )]
 async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, MokshaMintError> {
+    // TODO implement From-trait
     let mint_info = MintInfoResponse {
-        name: mint.mint_info_config.name,
-        pubkey: mint.keyset_legacy.mint_pubkey,
-        version: match mint.mint_info_config.version {
-            true => Some(mint.build_config.full_version()),
+        name: mint.config.info.name,
+        pubkey: mint.keyset.mint_pubkey,
+        version: match mint.config.info.version {
+            true => Some(mint.config.build.full_version()),
             _ => None,
         },
-        description: mint.mint_info_config.description,
-        description_long: mint.mint_info_config.description_long,
-        contact: mint.mint_info_config.contact,
+        description: mint.config.info.description,
+        description_long: mint.config.info.description_long,
+        contact: mint.config.info.contact,
         nuts: Nuts::default(),
-        motd: mint.mint_info_config.motd,
+        motd: mint.config.info.motd,
     };
     Ok(Json(mint_info))
 }
@@ -654,10 +655,7 @@ async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, Mo
 mod tests {
     use std::{collections::HashMap, sync::Arc};
 
-    use crate::{
-        config::{BuildConfig, LightningFeeConfig},
-        server::app,
-    };
+    use crate::{config::MintConfig, server::app};
     use axum::{
         body::Body,
         http::{Request, StatusCode},
@@ -733,7 +731,7 @@ mod tests {
         Ok(())
     }
 
-    fn create_mock_mint(mint_info: MintInfoConfig) -> Mint {
+    fn create_mock_mint(info: MintInfoConfig) -> Mint {
         let db = Arc::new(MockDatabase::new());
         let lightning = Arc::new(MockLightning::new());
 
@@ -743,9 +741,10 @@ mod tests {
             lightning,
             LightningType::Lnbits(Default::default()),
             db,
-            LightningFeeConfig::default(),
-            mint_info,
-            BuildConfig::default(),
+            MintConfig {
+                info,
+                ..Default::default()
+            },
         )
     }
 
