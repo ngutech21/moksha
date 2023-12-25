@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, net::SocketAddr, path::PathBuf};
 
 use serde_derive::{Deserialize, Serialize};
 
@@ -7,6 +7,7 @@ pub struct MintConfig {
     pub info: MintInfoConfig,
     pub build: BuildConfig,
     pub lightning_fee: LightningFeeConfig,
+    pub server: ServerConfig,
 }
 
 impl MintConfig {
@@ -14,11 +15,42 @@ impl MintConfig {
         info: MintInfoConfig,
         build: BuildConfig,
         lightning_fee: LightningFeeConfig,
+        server: ServerConfig,
     ) -> Self {
         Self {
             info,
             build,
             lightning_fee,
+            server,
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct ServerConfig {
+    pub host_port: SocketAddr,
+    pub serve_wallet_path: Option<PathBuf>,
+    pub api_prefix: Option<String>,
+}
+
+impl Default for ServerConfig {
+    fn default() -> Self {
+        Self {
+            host_port: "[::]:3338".to_string().parse().expect("invalid host port"),
+            serve_wallet_path: None,
+            api_prefix: None,
+        }
+    }
+}
+
+impl ServerConfig {
+    pub fn from_env() -> Self {
+        let server_config_default = ServerConfig::default();
+
+        ServerConfig {
+            host_port: env_or_default("MINT_HOST_PORT", server_config_default.host_port),
+            serve_wallet_path: env::var("MINT_SERVE_WALLET_PATH").ok().map(PathBuf::from),
+            api_prefix: env::var("MINT_API_PREFIX").ok(),
         }
     }
 }

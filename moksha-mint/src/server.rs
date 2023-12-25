@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::net::SocketAddr;
-use std::path::PathBuf;
 use std::str::FromStr;
 
 use crate::error::MokshaMintError;
@@ -46,12 +44,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 
 use utoipa::OpenApi;
 
-pub async fn run_server(
-    mint: Mint,
-    addr: SocketAddr,
-    serve_wallet_path: Option<PathBuf>,
-    api_prefix: Option<String>,
-) -> anyhow::Result<()> {
+pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -62,19 +55,21 @@ pub async fn run_server(
     if let Some(ref commithash) = mint.config.build.commit_hash {
         info!("git commit-hash: {}", commithash);
     }
-    if let Some(ref serve_wallet_path) = serve_wallet_path {
+    if let Some(ref serve_wallet_path) = mint.config.server.serve_wallet_path {
         info!("serving wallet from path: {:?}", serve_wallet_path);
     }
-    info!("listening on: {}", addr);
+    info!("listening on: {}", &mint.config.server.host_port);
     info!("mint-info: {:?}", mint.config.info);
     info!("lightning fee-reserve: {:?}", mint.config.lightning_fee);
     info!("lightning-backend: {}", mint.lightning_type);
 
-    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(&mint.config.server.host_port)
+        .await
+        .unwrap();
 
     axum::serve(
         listener,
-        app(mint, serve_wallet_path, api_prefix)
+        app(mint)
             .layer(
                 CorsLayer::new()
                     .allow_origin(Any)
@@ -141,7 +136,7 @@ pub async fn run_server(
 )]
 struct ApiDoc;
 
-fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -> Router {
+fn app(mint: Mint) -> Router {
     let legacy_routes = Router::new()
         .route("/keys", get(get_legacy_keys))
         .route("/keysets", get(get_legacy_keysets))
@@ -167,7 +162,8 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
 
     let general_routes = Router::new().route("/health", get(get_health));
 
-    let prefix = prefix.unwrap_or_else(|| "".to_owned());
+    let server_config = mint.config.server.clone();
+    let prefix = server_config.api_prefix.unwrap_or_else(|| "".to_owned());
 
     let router = Router::new()
         .nest(&prefix, legacy_routes)
@@ -176,7 +172,7 @@ fn app(mint: Mint, serve_wallet_path: Option<PathBuf>, prefix: Option<String>) -
         .with_state(mint)
         .layer(TraceLayer::new_for_http());
 
-    if let Some(serve_wallet_path) = serve_wallet_path {
+    if let Some(ref serve_wallet_path) = server_config.serve_wallet_path {
         return router.nest_service(
             "/",
             get_service(ServeDir::new(serve_wallet_path))
@@ -677,7 +673,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keys() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()), None, None);
+        let app = app(create_mock_mint(Default::default()));
         let response = app
             .oneshot(Request::builder().uri("/keys").body(Body::empty())?)
             .await?;
@@ -691,7 +687,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keysets() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()), None, None);
+        let app = app(create_mock_mint(Default::default()));
         let response = app
             .oneshot(Request::builder().uri("/keysets").body(Body::empty())?)
             .await?;
@@ -712,7 +708,7 @@ mod tests {
             description_long: Some("A mint for testing long".to_string()),
             ..Default::default()
         };
-        let app = app(create_mock_mint(mint_info_settings), None, None);
+        let app = app(create_mock_mint(mint_info_settings));
         let response = app
             .oneshot(Request::builder().uri("/info").body(Body::empty())?)
             .await?;
@@ -752,7 +748,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keys_v1() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()), None, None);
+        let app = app(create_mock_mint(Default::default()));
         let response = app
             .oneshot(Request::builder().uri("/v1/keys").body(Body::empty())?)
             .await?;
@@ -770,7 +766,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keysets_v1() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()), None, None);
+        let app = app(create_mock_mint(Default::default()));
         let response = app
             .oneshot(Request::builder().uri("/v1/keysets").body(Body::empty())?)
             .await?;
@@ -787,7 +783,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_v1_keys() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()), None, None);
+        let app = app(create_mock_mint(Default::default()));
         let response = app
             .oneshot(Request::builder().uri("/v1/keys").body(Body::empty())?)
             .await?;
@@ -806,7 +802,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_v1_keys_id_invalid() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()), None, None);
+        let app = app(create_mock_mint(Default::default()));
         let response = app
             .oneshot(
                 Request::builder()
@@ -821,7 +817,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_v1_keys_id() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()), None, None);
+        let app = app(create_mock_mint(Default::default()));
         let response = app
             .oneshot(
                 Request::builder()
@@ -847,7 +843,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_v1_keysets() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()), None, None);
+        let app = app(create_mock_mint(Default::default()));
         let response = app
             .oneshot(Request::builder().uri("/v1/keysets").body(Body::empty())?)
             .await?;
@@ -865,7 +861,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_health() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()), None, None);
+        let app = app(create_mock_mint(Default::default()));
         let response = app
             .oneshot(Request::builder().uri("/health").body(Body::empty())?)
             .await?;

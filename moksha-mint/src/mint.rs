@@ -8,7 +8,7 @@ use moksha_core::{
 };
 
 use crate::{
-    config::{BuildConfig, LightningFeeConfig, MintConfig, MintInfoConfig},
+    config::{BuildConfig, LightningFeeConfig, MintConfig, MintInfoConfig, ServerConfig},
     database::Database,
     error::MokshaMintError,
     lightning::{AlbyLightning, Lightning, LightningType, LnbitsLightning, StrikeLightning},
@@ -202,6 +202,7 @@ pub struct MintBuilder {
     db_url: Option<String>,
     fee_config: Option<LightningFeeConfig>,
     mint_info_settings: Option<MintInfoConfig>,
+    server_config: Option<ServerConfig>,
 }
 
 impl MintBuilder {
@@ -211,6 +212,11 @@ impl MintBuilder {
 
     pub fn with_mint_info(mut self, mint_info: MintInfoConfig) -> MintBuilder {
         self.mint_info_settings = Some(mint_info);
+        self
+    }
+
+    pub fn with_server(mut self, server_config: ServerConfig) -> MintBuilder {
+        self.server_config = Some(server_config);
         self
     }
 
@@ -275,10 +281,12 @@ impl MintBuilder {
             ln,
             self.lightning_type.expect("Lightning backend not set"),
             db,
+            // FIXME simplify config creation
             MintConfig::new(
                 self.mint_info_settings.unwrap_or_default(),
                 BuildConfig::from_env(),
                 self.fee_config.expect("fee-config not set"),
+                self.server_config.unwrap_or_default(),
             ),
         ))
     }
