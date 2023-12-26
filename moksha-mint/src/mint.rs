@@ -8,7 +8,9 @@ use moksha_core::{
 };
 
 use crate::{
-    config::{BuildConfig, LightningFeeConfig, MintConfig, MintInfoConfig, ServerConfig},
+    config::{
+        BuildConfig, DatabaseConfig, LightningFeeConfig, MintConfig, MintInfoConfig, ServerConfig,
+    },
     database::Database,
     error::MokshaMintError,
     lightning::{AlbyLightning, Lightning, LightningType, LnbitsLightning, StrikeLightning},
@@ -199,7 +201,7 @@ impl Mint {
 pub struct MintBuilder {
     private_key: Option<String>,
     lightning_type: Option<LightningType>,
-    db_url: Option<String>,
+    db_config: Option<DatabaseConfig>,
     fee_config: Option<LightningFeeConfig>,
     mint_info_settings: Option<MintInfoConfig>,
     server_config: Option<ServerConfig>,
@@ -225,8 +227,8 @@ impl MintBuilder {
         self
     }
 
-    pub fn with_db(mut self, db_url: String) -> MintBuilder {
-        self.db_url = Some(db_url);
+    pub fn with_db(mut self, db_config: DatabaseConfig) -> MintBuilder {
+        self.db_config = Some(db_config);
         self
     }
 
@@ -267,12 +269,9 @@ impl MintBuilder {
             None => panic!("Lightning backend not set"),
         };
 
-        let db = Arc::new(
-            crate::database::postgres::PostgresDB::new(
-                self.db_url.expect("MINT_DB_URL not set").as_str(),
-            )
-            .await?,
-        );
+        let db_config = self.db_config.expect("Database config not set");
+
+        let db = Arc::new(crate::database::postgres::PostgresDB::new(&db_config).await?);
         db.migrate().await;
 
         Ok(Mint::new(
@@ -287,6 +286,7 @@ impl MintBuilder {
                 BuildConfig::from_env(),
                 self.fee_config.expect("fee-config not set"),
                 self.server_config.unwrap_or_default(),
+                db_config,
             ),
         ))
     }

@@ -17,7 +17,7 @@ use tokio::time::{sleep_until, Instant};
 #[test]
 #[cfg(feature = "integration-tests")]
 pub fn test_integration() -> anyhow::Result<()> {
-    use mokshamint::config::{LightningFeeConfig, ServerConfig};
+    use mokshamint::config::{DatabaseConfig, LightningFeeConfig, ServerConfig};
 
     let docker = clients::Cli::default();
     let node = docker.run(Postgres::default());
@@ -41,13 +41,12 @@ pub fn test_integration() -> anyhow::Result<()> {
                     host_port: "127.0.0.1:8686".parse().expect("invalid address"),
                     ..Default::default()
                 })
-                .with_db(
-                    format!(
-                        "postgres://postgres:postgres@127.0.0.1:{}/moksha-mint",
+                .with_db(DatabaseConfig {
+                    url: Some(format!(
+                        "postgres://postgres:postgres@localhost:{}/moksha-mint",
                         host_port
-                    )
-                    .to_owned(),
-                )
+                    )),
+                })
                 .with_lightning(LightningType::Lnbits(LnbitsLightningSettings::new(
                     "my_admin_key",
                     "http://127.0.0.1:6100",

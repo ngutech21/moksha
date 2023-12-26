@@ -8,7 +8,7 @@ use moksha_core::{
 use sqlx::postgres::PgPoolOptions;
 use uuid::Uuid;
 
-use crate::{error::MokshaMintError, model::Invoice};
+use crate::{config::DatabaseConfig, error::MokshaMintError, model::Invoice};
 
 use super::Database;
 
@@ -17,9 +17,12 @@ pub struct PostgresDB {
 }
 
 impl PostgresDB {
-    pub async fn new(url: &str) -> Result<PostgresDB, sqlx::Error> {
+    pub async fn new(config: &DatabaseConfig) -> Result<PostgresDB, sqlx::Error> {
         Ok(PostgresDB {
-            pool: PgPoolOptions::new().max_connections(5).connect(url).await?,
+            pool: PgPoolOptions::new()
+                .max_connections(5) // FIXME make max connections configurable
+                .connect(config.url.as_ref().expect("Database-url not set"))
+                .await?,
         })
     }
 

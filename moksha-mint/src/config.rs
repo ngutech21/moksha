@@ -8,6 +8,7 @@ pub struct MintConfig {
     pub build: BuildConfig,
     pub lightning_fee: LightningFeeConfig,
     pub server: ServerConfig,
+    pub database: DatabaseConfig,
 }
 
 impl MintConfig {
@@ -16,12 +17,27 @@ impl MintConfig {
         build: BuildConfig,
         lightning_fee: LightningFeeConfig,
         server: ServerConfig,
+        database: DatabaseConfig,
     ) -> Self {
         Self {
             info,
             build,
             lightning_fee,
             server,
+            database,
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+pub struct DatabaseConfig {
+    pub url: Option<String>,
+}
+
+impl DatabaseConfig {
+    pub fn from_env() -> Self {
+        DatabaseConfig {
+            url: env::var("MINT_DB_URL").ok(),
         }
     }
 }

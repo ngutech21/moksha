@@ -1,5 +1,5 @@
 use mokshamint::{
-    config::{LightningFeeConfig, MintInfoConfig, ServerConfig},
+    config::{DatabaseConfig, LightningFeeConfig, MintInfoConfig, ServerConfig},
     lightning::{
         AlbyLightningSettings, LightningType, LnbitsLightningSettings, LndLightningSettings,
         StrikeLightningSettings,
@@ -24,6 +24,7 @@ pub async fn main() -> anyhow::Result<()> {
         };
     }
 
+    // TODO move to config module
     let ln_backend = get_env("MINT_LIGHTNING_BACKEND");
     let ln_type = match ln_backend.as_str() {
         "Lnbits" => {
@@ -61,12 +62,13 @@ pub async fn main() -> anyhow::Result<()> {
 
     let fee_config = LightningFeeConfig::from_env();
     let server_config = ServerConfig::from_env();
+    let db_config = DatabaseConfig::from_env();
 
     let mint = MintBuilder::new()
         .with_mint_info(mint_info_settings)
         .with_server(server_config)
         .with_private_key(get_env("MINT_PRIVATE_KEY"))
-        .with_db(get_env("MINT_DB_URL"))
+        .with_db(db_config)
         .with_lightning(ln_type)
         .with_fee(fee_config)
         .build()
