@@ -82,6 +82,7 @@ async fn get_payment(
     Ok(Json(PaymentStatus { paid: true }))
 }
 
+// TODO upgrade to axum 0.7.3
 pub async fn run_server(port: u16) -> anyhow::Result<()> {
     let private_key = SecretKey::new(&mut rand::thread_rng());
     let app = Router::new()
