@@ -21,7 +21,7 @@ tracing = "0.1.40"
 anyhow = { version = "1.0.75", features = ["backtrace"] }
 thiserror = "1.0.50"
 flutter_rust_bridge = "1.82.4"
-lightning-invoice = "0.24.0"
+lightning-invoice = "0.27.0"
 async-trait = "0.1.74"
 url = "2.4.1"
 secp256k1 = { version = "0.28.1", features = ["rand", "serde"] }
