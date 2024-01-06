@@ -1,7 +1,7 @@
 use axum::extract::State;
+use axum::http::StatusCode;
 use axum::Json;
 use axum::{response::IntoResponse, routing::get, routing::post, Router};
-use hyper::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 
@@ -89,9 +89,9 @@ pub async fn run_server(port: u16) -> anyhow::Result<()> {
         .route("/api/v1/payments/:payment_hash", get(get_payment))
         .route("/api/v1/payments", post(post_invoice))
         .with_state(private_key);
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
+
+    let listener = tokio::net::TcpListener::bind(&SocketAddr::from(([127, 0, 0, 1], port))).await?;
+    axum::serve(listener, app.into_make_service()).await?;
+
     Ok(())
 }
