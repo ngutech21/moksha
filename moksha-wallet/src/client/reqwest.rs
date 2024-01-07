@@ -36,6 +36,29 @@ impl HttpClient {
             request_client: reqwest::Client::new(),
         }
     }
+
+    async fn do_get<T: serde::de::DeserializeOwned>(
+        &self,
+        url: &Url,
+    ) -> Result<T, MokshaWalletError> {
+        let resp = self.request_client.get(url.clone()).send().await?;
+        extract_response_data::<T>(resp).await
+    }
+
+    async fn do_post<T: serde::de::DeserializeOwned, B: serde::Serialize>(
+        &self,
+        url: &Url,
+        body: &B,
+    ) -> Result<T, MokshaWalletError> {
+        let resp = self
+            .request_client
+            .post(url.clone())
+            .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
+            .body(serde_json::to_string(body)?)
+            .send()
+            .await?;
+        extract_response_data::<T>(resp).await
+    }
 }
 impl Default for HttpClient {
     fn default() -> Self {
@@ -170,12 +193,7 @@ impl LegacyClient for HttpClient {
 #[async_trait(?Send)]
 impl Client for HttpClient {
     async fn get_keys(&self, mint_url: &Url) -> Result<KeysResponse, MokshaWalletError> {
-        let resp = self
-            .request_client
-            .get(mint_url.join("v1/keys")?)
-            .send()
-            .await?;
-        extract_response_data::<KeysResponse>(resp).await
+        self.do_get(&mint_url.join("v1/keys")?).await
     }
 
     async fn get_keys_by_id(
@@ -183,18 +201,12 @@ impl Client for HttpClient {
         mint_url: &Url,
         keyset_id: String,
     ) -> Result<KeysResponse, MokshaWalletError> {
-        let url = mint_url.join(&format!("v1/keys/{}", keyset_id))?;
-        let resp = self.request_client.get(url).send().await?;
-        extract_response_data::<KeysResponse>(resp).await
+        self.do_get(&mint_url.join(&format!("v1/keys/{}", keyset_id))?)
+            .await
     }
 
     async fn get_keysets(&self, mint_url: &Url) -> Result<V1Keysets, MokshaWalletError> {
-        let resp = self
-            .request_client
-            .get(mint_url.join("v1/keysets")?)
-            .send()
-            .await?;
-        extract_response_data::<V1Keysets>(resp).await
+        self.do_get(&mint_url.join("v1/keysets")?).await
     }
 
     async fn post_swap(
@@ -203,20 +215,12 @@ impl Client for HttpClient {
         proofs: Proofs,
         output: Vec<BlindedMessage>,
     ) -> Result<PostSwapResponse, MokshaWalletError> {
-        let body = serde_json::to_string(&PostSplitRequest {
+        let body = PostSplitRequest {
             proofs,
             outputs: output,
-        })?;
+        };
 
-        let resp = self
-            .request_client
-            .post(mint_url.join("v1/swap")?)
-            .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
-            .body(body)
-            .send()
-            .await?;
-
-        extract_response_data::<PostSwapResponse>(resp).await
+        self.do_post(&mint_url.join("v1/swap")?, &body).await
     }
 
     async fn post_melt_bolt11(
@@ -226,20 +230,13 @@ impl Client for HttpClient {
         quote: String,
         outputs: Vec<BlindedMessage>,
     ) -> Result<PostMeltBolt11Response, MokshaWalletError> {
-        let body = serde_json::to_string(&PostMeltRequest {
+        let body = PostMeltRequest {
             pr: quote,
             proofs,
             outputs,
-        })?;
+        };
 
-        let resp = self
-            .request_client
-            .post(mint_url.join("v1/melt/bolt11")?)
-            .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
-            .body(body)
-            .send()
-            .await?;
-        extract_response_data::<PostMeltBolt11Response>(resp).await
+        self.do_post(&mint_url.join("v1/melt/bolt11")?, &body).await
     }
 
     async fn post_melt_quote_bolt11(
@@ -248,19 +245,13 @@ impl Client for HttpClient {
         payment_request: String,
         unit: CurrencyUnit,
     ) -> Result<PostMeltQuoteBolt11Response, MokshaWalletError> {
-        let body = serde_json::to_string(&PostMeltQuoteBolt11Request {
+        let body = PostMeltQuoteBolt11Request {
             request: payment_request,
             unit,
-        })?;
+        };
 
-        let resp = self
-            .request_client
-            .post(mint_url.join("v1/melt/quote/bolt11")?)
-            .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
-            .body(body)
-            .send()
-            .await?;
-        extract_response_data::<PostMeltQuoteBolt11Response>(resp).await
+        self.do_post(&mint_url.join("v1/melt/quote/bolt11")?, &body)
+            .await
     }
 
     async fn get_melt_quote_bolt11(
@@ -269,8 +260,7 @@ impl Client for HttpClient {
         quote: String,
     ) -> Result<PostMeltQuoteBolt11Response, MokshaWalletError> {
         let url = mint_url.join(&format!("v1/melt/quote/bolt11/{}", quote))?;
-        let resp = self.request_client.get(url).send().await?;
-        extract_response_data::<PostMeltQuoteBolt11Response>(resp).await
+        self.do_get(&url).await
     }
 
     async fn post_mint_bolt11(
@@ -279,19 +269,11 @@ impl Client for HttpClient {
         quote: String,
         blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMintBolt11Response, MokshaWalletError> {
-        let body = serde_json::to_string(&PostMintBolt11Request {
+        let body = PostMintBolt11Request {
             quote,
             outputs: blinded_messages,
-        })?;
-
-        let resp = self
-            .request_client
-            .post(mint_url.join("v1/mint/bolt11")?)
-            .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
-            .body(body)
-            .send()
-            .await?;
-        extract_response_data::<PostMintBolt11Response>(resp).await
+        };
+        self.do_post(&mint_url.join("v1/mint/bolt11")?, &body).await
     }
 
     async fn post_mint_quote_bolt11(
@@ -300,16 +282,9 @@ impl Client for HttpClient {
         amount: u64,
         unit: CurrencyUnit,
     ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError> {
-        let body = serde_json::to_string(&PostMintQuoteBolt11Request { amount, unit })?;
-
-        let resp = self
-            .request_client
-            .post(mint_url.join("v1/mint/quote/bolt11")?)
-            .header(CONTENT_TYPE, HeaderValue::from_str("application/json")?)
-            .body(body)
-            .send()
-            .await?;
-        extract_response_data::<PostMintQuoteBolt11Response>(resp).await
+        let body = PostMintQuoteBolt11Request { amount, unit };
+        self.do_post(&mint_url.join("v1/mint/quote/bolt11")?, &body)
+            .await
     }
 
     async fn get_mint_quote_bolt11(
@@ -317,18 +292,12 @@ impl Client for HttpClient {
         mint_url: &Url,
         quote: String,
     ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError> {
-        let url = mint_url.join(&format!("v1/mint/quote/bolt11/{}", quote))?;
-        let resp = self.request_client.get(url).send().await?;
-        extract_response_data::<PostMintQuoteBolt11Response>(resp).await
+        self.do_get(&mint_url.join(&format!("v1/mint/quote/bolt11/{}", quote))?)
+            .await
     }
 
     async fn get_info(&self, mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError> {
-        let resp = self
-            .request_client
-            .get(mint_url.join("v1/info")?)
-            .send()
-            .await?;
-        extract_response_data::<MintInfoResponse>(resp).await
+        self.do_get(&mint_url.join("v1/info")?).await
     }
 
     async fn is_v1_supported(&self, mint_url: &Url) -> Result<bool, MokshaWalletError> {
