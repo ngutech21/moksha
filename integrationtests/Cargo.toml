@@ -20,10 +20,10 @@ path = "src/lnbitsmock.rs"
 [dependencies]
 rand = "0.8.5"
 axum = "0.7.3"
-anyhow = { version = "1.0.75", features = ["backtrace"] }
-serde = { version = "1.0.193", features = ["derive"] }
-serde_derive = "1.0.171"
-serde_json = "1.0.108"
+anyhow = { version = "1.0.79", features = ["backtrace"] }
+serde = { version = "1.0.195", features = ["derive"] }
+serde_derive = "1.0.195"
+serde_json = "1.0.111"
 lightning-invoice = "0.27.0"
 lightning = "0.0.119"
 bitcoin_hashes = { version = "0.12.0", default-features = false }
@@ -32,13 +32,13 @@ tracing = "0.1.40"
 testcontainers = "0.15.0"
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
-tokio = { version = "1.35.0", features = ["sync", "rt"] }
+tokio = { version = "1.35.1", features = ["sync", "rt"] }
 
 [dev-dependencies]
-anyhow = { version = "1.0.75", features = ["backtrace"] }
-tokio = { version = "1.34.0", features = ["full"] }
-reqwest = { version = "0.11.22", default-features = false }
+anyhow = { version = "1.0.79", features = ["backtrace"] }
+tokio = { version = "1.35.1", features = ["full"] }
+reqwest = { version = "0.11.23", default-features = false }
 moksha-mint = { path = "../moksha-mint" }
 moksha-wallet = { path = "../moksha-wallet" }
 moksha-core = { path = "../moksha-core" }
-tempfile = "3.8.1"
+tempfile = "3.9.0"
