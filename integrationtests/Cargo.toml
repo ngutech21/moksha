@@ -17,9 +17,6 @@ path = "tests/tests.rs"
 name = "lnbitsmock"
 path = "src/lnbitsmock.rs"
 
-[features]
-integration-tests = []
-
 [dependencies]
 rand = "0.8.5"
 axum = "0.7.3"

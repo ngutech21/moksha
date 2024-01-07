@@ -15,7 +15,7 @@ use tokio::runtime::Runtime;
 use tokio::time::{sleep_until, Instant};
 
 #[test]
-#[cfg(feature = "integration-tests")]
+#[ignore]
 pub fn test_integration() -> anyhow::Result<()> {
     use mokshamint::config::{DatabaseConfig, LightningFeeConfig, ServerConfig};
 
@@ -139,7 +139,6 @@ pub fn test_integration() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(feature = "integration-tests")]
 fn read_fixture(name: &str) -> anyhow::Result<String> {
     let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
     let raw_token = std::fs::read_to_string(format!("{base_dir}/tests/fixtures/{name}"))?;

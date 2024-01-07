@@ -88,7 +88,7 @@ run-web:
 # run integrationtests
 run-itests:
     cd integrationtests && \
-    cargo test --features integration-tests
+    cargo test -- --ignored
 
 
 # build flutter desktop-app
