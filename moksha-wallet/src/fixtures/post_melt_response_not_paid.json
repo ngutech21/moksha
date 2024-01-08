@@ -1,5 +1,5 @@
 {
   "paid": false,
-  "preimage": "",
+  "payment_preimage": "",
   "change": []
 }

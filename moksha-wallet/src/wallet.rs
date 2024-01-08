@@ -1,20 +1,18 @@
-use std::collections::HashMap;
-
 use moksha_core::{
     amount::Amount,
     blind::{BlindedMessage, BlindedSignature, TotalAmount},
     dhke::Dhke,
-    keyset::Keysets,
-    primitives::{PaymentRequest, PostMeltResponse},
+    keyset::V1Keyset,
+    primitives::{CurrencyUnit, KeyResponse, PostMeltBolt11Response, PostMintQuoteBolt11Response},
     proof::{Proof, Proofs},
     token::TokenV3,
 };
 
-use secp256k1::{PublicKey, SecretKey};
+use secp256k1::SecretKey;
 use url::Url;
 
 use crate::{
-    client::LegacyClient,
+    client::Client,
     error::MokshaWalletError,
     localstore::{LocalStore, WalletKeyset},
 };
@@ -22,22 +20,22 @@ use lightning_invoice::Bolt11Invoice as LNInvoice;
 use std::str::FromStr;
 
 #[derive(Clone)]
-pub struct Wallet<C: LegacyClient, L: LocalStore> {
+pub struct Wallet<C: Client, L: LocalStore> {
     client: C,
-    mint_keys: HashMap<u64, PublicKey>, // FIXME use specific type
-    keysets: Keysets,
+    keyset_id: V1Keyset,
+    keyset: KeyResponse,
     dhke: Dhke,
     localstore: L,
     mint_url: Url,
 }
 
-pub struct WalletBuilder<C: LegacyClient, L: LocalStore> {
+pub struct WalletBuilder<C: Client, L: LocalStore> {
     client: Option<C>,
     localstore: Option<L>,
     mint_url: Option<Url>,
 }
 
-impl<C: LegacyClient, L: LocalStore> WalletBuilder<C, L> {
+impl<C: Client, L: LocalStore> WalletBuilder<C, L> {
     fn new() -> Self {
         Self {
             client: None,
@@ -68,13 +66,13 @@ impl<C: LegacyClient, L: LocalStore> WalletBuilder<C, L> {
 
         let load_keysets = localstore.get_keysets().await?;
 
-        let mint_keysets = client.get_mint_keysets(&mint_url).await?;
+        let mint_keysets = client.get_keysets(&mint_url).await?;
         if load_keysets.is_empty() {
             let wallet_keysets = mint_keysets
                 .keysets
                 .iter()
                 .map(|m| WalletKeyset {
-                    id: m.to_owned(),
+                    id: m.clone().id,
                     mint_url: mint_url.to_string(),
                 })
                 .collect::<Vec<WalletKeyset>>();
@@ -84,48 +82,51 @@ impl<C: LegacyClient, L: LocalStore> WalletBuilder<C, L> {
             }
         }
 
-        let keys = client.get_mint_keys(&mint_url).await?;
+        // FIXME store all keysets
+        let keys = client.get_keys(&mint_url).await?;
+        let key_response = keys.keysets.get(0).expect("keyset is empty");
+        let mks = mint_keysets.keysets.get(0).expect("mint keyset is empty");
 
         Ok(Wallet::new(
             client as C,
-            keys,
-            mint_keysets,
+            mks.clone(),
+            key_response.clone(),
             localstore,
             mint_url,
         ))
     }
 }
 
-impl<C: LegacyClient, L: LocalStore> Default for WalletBuilder<C, L> {
+impl<C: Client, L: LocalStore> Default for WalletBuilder<C, L> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
+impl<C: Client, L: LocalStore> Wallet<C, L> {
     fn new(
         client: C,
-        mint_keys: HashMap<u64, PublicKey>,
-        keysets: Keysets,
+        mint_keys: V1Keyset,
+        key_response: KeyResponse,
         localstore: L,
         mint_url: Url,
     ) -> Self {
         Self {
             client,
-            mint_keys,
-            keysets,
+            keyset_id: mint_keys,
+            keyset: key_response,
             dhke: Dhke::new(),
             localstore,
             mint_url,
         }
     }
 
-    pub async fn get_mint_payment_request(
+    pub async fn create_quote(
         &self,
         amount: u64,
-    ) -> Result<PaymentRequest, MokshaWalletError> {
+    ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError> {
         self.client
-            .get_mint_payment_request(&self.mint_url, amount)
+            .post_mint_quote_bolt11(&self.mint_url, amount, CurrencyUnit::Sat)
             .await
     }
 
@@ -166,15 +167,15 @@ impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
     pub async fn pay_invoice(
         &self,
         invoice: String,
-    ) -> Result<PostMeltResponse, MokshaWalletError> {
+    ) -> Result<PostMeltBolt11Response, MokshaWalletError> {
         let all_proofs = self.localstore.get_proofs().await?;
 
-        let fees = self
+        let melt_quote = self
             .client
-            .post_checkfees(&self.mint_url, invoice.clone())
+            .post_melt_quote_bolt11(&self.mint_url, invoice.clone(), CurrencyUnit::Sat)
             .await?;
 
-        let ln_amount = Self::get_invoice_amount(&invoice)? + fees.fee;
+        let ln_amount = Self::get_invoice_amount(&invoice)? + melt_quote.fee_reserve;
 
         if ln_amount > all_proofs.total_amount() {
             return Err(MokshaWalletError::NotEnoughTokens);
@@ -194,7 +195,7 @@ impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
             split_result.1.proofs()
         };
 
-        let fee_blind = BlindedMessage::blank(fees.fee.into())?;
+        let fee_blind = BlindedMessage::blank(melt_quote.fee_reserve.into())?;
 
         let msgs = fee_blind
             .iter()
@@ -212,7 +213,7 @@ impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
             .collect::<Vec<(BlindedMessage, SecretKey)>>();
 
         match self
-            .melt_token(invoice, ln_amount, &total_proofs, msgs)
+            .melt_token(melt_quote.quote, ln_amount, &total_proofs, msgs)
             .await
         {
             Ok(response) => {
@@ -261,10 +262,10 @@ impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
 
         let split_result = self
             .client
-            .post_split_tokens(&self.mint_url, tokens.proofs(), total_outputs)
+            .post_swap(&self.mint_url, tokens.proofs(), total_outputs)
             .await?;
 
-        if split_result.promises.is_empty() {
+        if split_result.signatures.is_empty() {
             return Ok((TokenV3::empty(), TokenV3::empty()));
         }
 
@@ -273,7 +274,7 @@ impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
         let outputs = [first_outputs, second_outputs].concat();
 
         let proofs = self
-            .create_proofs_from_blinded_signatures(split_result.promises, secrets, outputs)?
+            .create_proofs_from_blinded_signatures(split_result.signatures, secrets, outputs)?
             .proofs();
 
         let first_tokens = (
@@ -292,14 +293,19 @@ impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
 
     async fn melt_token(
         &self,
-        pr: String,
+        quote_id: String,
         _invoice_amount: u64,
         proofs: &Proofs,
         fee_blinded_messages: Vec<BlindedMessage>,
-    ) -> Result<PostMeltResponse, MokshaWalletError> {
+    ) -> Result<PostMeltBolt11Response, MokshaWalletError> {
         let melt_response = self
             .client
-            .post_melt_tokens(&self.mint_url, proofs.clone(), pr, fee_blinded_messages)
+            .post_melt_bolt11(
+                &self.mint_url,
+                proofs.clone(),
+                quote_id,
+                fee_blinded_messages,
+            )
             .await?;
 
         if melt_response.paid {
@@ -324,7 +330,7 @@ impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
     pub async fn mint_tokens(
         &self,
         amount: Amount,
-        hash: String,
+        quote_id: String,
     ) -> Result<TokenV3, MokshaWalletError> {
         let split_amount = amount.split();
         let secrets = split_amount.create_secrets();
@@ -340,9 +346,9 @@ impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
 
         let post_mint_resp = self
             .client
-            .post_mint_payment_request(
+            .post_mint_bolt11(
                 &self.mint_url,
-                hash,
+                quote_id,
                 blinded_messages
                     .clone()
                     .into_iter()
@@ -352,7 +358,7 @@ impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
             .await?;
 
         // step 3: unblind signatures
-        let current_keyset = self.keysets.current_keyset(&self.mint_keys)?;
+        let current_keyset_id = self.keyset_id.clone().id; // FIXME
 
         let private_keys = blinded_messages
             .clone()
@@ -361,17 +367,18 @@ impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
             .collect::<Vec<SecretKey>>();
 
         let proofs = post_mint_resp
-            .promises
+            .signatures
             .iter()
             .zip(private_keys)
             .zip(secrets)
             .map(|((p, priv_key), secret)| {
                 let key = self
-                    .mint_keys
+                    .keyset
+                    .keys
                     .get(&p.amount)
                     .expect("msg amount not found in mint keys");
                 let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
-                Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
+                Proof::new(p.amount, secret, pub_alice, current_keyset_id.clone())
             })
             .collect::<Vec<Proof>>()
             .into();
@@ -406,7 +413,7 @@ impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
         secrets: Vec<String>,
         outputs: Vec<(BlindedMessage, SecretKey)>,
     ) -> Result<Proofs, MokshaWalletError> {
-        let current_keyset = self.keysets.current_keyset(&self.mint_keys)?;
+        let current_keyset_id = self.keyset_id.clone().id; // FIXME
 
         let private_keys = outputs
             .into_iter()
@@ -419,11 +426,12 @@ impl<C: LegacyClient, L: LocalStore> Wallet<C, L> {
             .zip(secrets)
             .map(|((p, priv_key), secret)| {
                 let key = self
-                    .mint_keys
+                    .keyset
+                    .keys
                     .get(&p.amount)
                     .expect("msg amount not found in mint keys");
                 let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
-                Proof::new(p.amount, secret, pub_alice, current_keyset.clone())
+                Proof::new(p.amount, secret, pub_alice, current_keyset_id.clone())
             })
             .collect::<Vec<Proof>>()
             .into())
@@ -440,24 +448,22 @@ fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, SecretKey)>) -> Vec<Bl
 
 #[cfg(test)]
 mod tests {
+    use crate::client::MockClient;
     use crate::wallet::WalletBuilder;
     use crate::{
-        client::LegacyClient,
         error::MokshaWalletError,
         localstore::{LocalStore, WalletKeyset},
     };
     use async_trait::async_trait;
-    use moksha_core::blind::BlindedMessage;
+
     use moksha_core::fixture::{read_fixture, read_fixture_as};
-    use moksha_core::keyset::{Keysets, MintKeyset};
+    use moksha_core::keyset::{MintKeyset, V1Keysets};
     use moksha_core::primitives::{
-        CheckFeesResponse, MintLegacyInfoResponse, PaymentRequest, PostMeltResponse,
-        PostMintResponse, PostSplitResponse,
+        CurrencyUnit, KeyResponse, KeysResponse, PostMeltBolt11Response,
+        PostMeltQuoteBolt11Response, PostMintBolt11Response, PostSwapResponse,
     };
     use moksha_core::proof::Proofs;
     use moksha_core::token::{Token, TokenV3};
-    use secp256k1::PublicKey;
-    use std::collections::HashMap;
     use url::Url;
 
     #[derive(Clone)]
@@ -510,124 +516,36 @@ mod tests {
         }
     }
 
-    #[derive(Clone)]
-    struct MockKeys {
-        mint_keyset: MintKeyset,
-    }
+    fn create_mock() -> MockClient {
+        let keys = MintKeyset::new("mykey", "");
+        let key_response = KeyResponse {
+            keys: keys.public_keys.clone(),
+            id: keys.keyset_id.clone(),
+            unit: CurrencyUnit::Sat,
+        };
+        let keys_response = KeysResponse::new(key_response);
+        let keysets = V1Keysets::new(keys.keyset_id.clone(), CurrencyUnit::Sat, true);
 
-    impl Default for MockKeys {
-        fn default() -> Self {
-            Self {
-                mint_keyset: MintKeyset::legacy_new("mysecret", ""),
-            }
-        }
-    }
-
-    #[derive(Clone, Default)]
-    struct MockClient {
-        split_response: PostSplitResponse,
-        post_mint_response: PostMintResponse,
-        post_melt_response: PostMeltResponse,
-        keyset: MockKeys,
-    }
-
-    impl MockClient {
-        fn with_split_response(split_response: PostSplitResponse) -> Self {
-            Self {
-                split_response,
-                ..Default::default()
-            }
-        }
-
-        fn with_mint_response(post_mint_response: PostMintResponse) -> Self {
-            Self {
-                post_mint_response,
-                ..Default::default()
-            }
-        }
-
-        fn with_melt_response(post_melt_response: PostMeltResponse) -> Self {
-            Self {
-                post_melt_response,
-                split_response: PostSplitResponse::with_promises(vec![]),
-                ..Default::default()
-            }
-        }
-    }
-
-    #[async_trait(?Send)]
-    impl LegacyClient for MockClient {
-        async fn post_split_tokens(
-            &self,
-            _mint_url: &Url,
-            _proofs: Proofs,
-            _output: Vec<BlindedMessage>,
-        ) -> Result<PostSplitResponse, MokshaWalletError> {
-            Ok(self.split_response.clone())
-        }
-
-        async fn post_mint_payment_request(
-            &self,
-            _mint_url: &Url,
-            _hash: String,
-            _blinded_messages: Vec<BlindedMessage>,
-        ) -> Result<PostMintResponse, MokshaWalletError> {
-            Ok(self.post_mint_response.clone())
-        }
-
-        async fn post_melt_tokens(
-            &self,
-            _mint_url: &Url,
-            _proofs: Proofs,
-            _pr: String,
-            _outputs: Vec<BlindedMessage>,
-        ) -> Result<PostMeltResponse, MokshaWalletError> {
-            Ok(self.post_melt_response.clone())
-        }
-
-        async fn post_checkfees(
-            &self,
-            _mint_url: &Url,
-            _pr: String,
-        ) -> Result<CheckFeesResponse, MokshaWalletError> {
-            Ok(CheckFeesResponse { fee: 0 })
-        }
-
-        async fn get_mint_keys(
-            &self,
-            _mint_url: &Url,
-        ) -> Result<HashMap<u64, PublicKey>, MokshaWalletError> {
-            Ok(self.keyset.mint_keyset.public_keys.clone())
-        }
-
-        async fn get_mint_keysets(&self, _mint_url: &Url) -> Result<Keysets, MokshaWalletError> {
-            Ok(Keysets::new(vec![self
-                .keyset
-                .mint_keyset
-                .keyset_id
-                .clone()]))
-        }
-
-        async fn get_mint_payment_request(
-            &self,
-            _mint_url: &Url,
-            _amount: u64,
-        ) -> Result<PaymentRequest, MokshaWalletError> {
-            unimplemented!()
-        }
-
-        async fn get_info(
-            &self,
-            _mint_url: &Url,
-        ) -> Result<MintLegacyInfoResponse, MokshaWalletError> {
-            unimplemented!()
-        }
+        let mut client = MockClient::default();
+        client
+            .expect_get_keys()
+            .returning(move |_| Ok(keys_response.clone()));
+        client
+            .expect_get_keysets()
+            .returning(move |_| Ok(keysets.clone()));
+        client
     }
 
     #[tokio::test]
     async fn test_mint_tokens() -> anyhow::Result<()> {
-        let mint_response = read_fixture_as::<PostMintResponse>("post_mint_response_20.json")?;
-        let client = MockClient::with_mint_response(mint_response);
+        let mint_response =
+            read_fixture_as::<PostMintBolt11Response>("post_mint_response_20.json")?;
+
+        let mut client = create_mock();
+        client
+            .expect_post_mint_bolt11()
+            .returning(move |_, _, _| Ok(mint_response.clone()));
+
         let localstore = MockLocalStore::default();
         let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
 
@@ -648,9 +566,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_split() -> anyhow::Result<()> {
-        let split_response =
-            read_fixture_as::<PostSplitResponse>("post_split_response_24_40.json")?;
-        let client = MockClient::with_split_response(split_response);
+        let split_response = read_fixture_as::<PostSwapResponse>("post_split_response_24_40.json")?;
+        let mut client = create_mock();
+        client
+            .expect_post_swap()
+            .returning(move |_, _, _| Ok(split_response.clone()));
         let localstore = MockLocalStore::default();
 
         let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
@@ -675,7 +595,7 @@ mod tests {
 
         let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
         let wallet = WalletBuilder::new()
-            .with_client(MockClient::default())
+            .with_client(create_mock())
             .with_localstore(local_store)
             .with_mint_url(mint_url)
             .build()
@@ -691,8 +611,23 @@ mod tests {
         let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
         let local_store = MockLocalStore::with_tokens(fixture.try_into()?);
 
-        let melt_response = read_fixture_as::<PostMeltResponse>("post_melt_response_21.json")?; // 60 tokens (4,8,16,32)
-        let mock_client = MockClient::with_melt_response(melt_response);
+        let melt_response =
+            read_fixture_as::<PostMeltBolt11Response>("post_melt_response_21.json")?; // 60 tokens (4,8,16,32)
+        let mut mock_client = create_mock();
+        mock_client
+            .expect_post_melt_bolt11()
+            .returning(move |_, _, _, _| Ok(melt_response.clone()));
+
+        let quote_response =
+            read_fixture_as::<PostMeltQuoteBolt11Response>("post_melt_quote_response.json")?;
+        mock_client
+            .expect_post_melt_quote_bolt11()
+            .returning(move |_, _, _| Ok(quote_response.clone()));
+
+        let swap_response = read_fixture_as::<PostSwapResponse>("post_split_response_24_40.json")?;
+        mock_client
+            .expect_post_swap()
+            .returning(move |_, _, _| Ok(swap_response.clone()));
 
         let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
         let wallet = WalletBuilder::new()

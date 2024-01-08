@@ -6,11 +6,11 @@ use moksha_core::{
     keyset::{Keysets, V1Keysets},
     primitives::{
         CashuErrorResponse, CheckFeesRequest, CheckFeesResponse, CurrencyUnit, KeysResponse,
-        MintInfoResponse, MintLegacyInfoResponse, PaymentRequest, PostMeltBolt11Response,
-        PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response, PostMeltRequest, PostMeltResponse,
-        PostMintBolt11Request, PostMintBolt11Response, PostMintQuoteBolt11Request,
-        PostMintQuoteBolt11Response, PostMintRequest, PostMintResponse, PostSplitRequest,
-        PostSplitResponse, PostSwapResponse,
+        MintInfoResponse, MintLegacyInfoResponse, PaymentRequest, PostMeltBolt11Request,
+        PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
+        PostMeltRequest, PostMeltResponse, PostMintBolt11Request, PostMintBolt11Response,
+        PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintRequest, PostMintResponse,
+        PostSplitRequest, PostSplitResponse, PostSwapRequest, PostSwapResponse,
     },
     proof::Proofs,
 };
@@ -212,13 +212,10 @@ impl Client for HttpClient {
     async fn post_swap(
         &self,
         mint_url: &Url,
-        proofs: Proofs,
-        output: Vec<BlindedMessage>,
+        inputs: Proofs,
+        outputs: Vec<BlindedMessage>,
     ) -> Result<PostSwapResponse, MokshaWalletError> {
-        let body = PostSplitRequest {
-            proofs,
-            outputs: output,
-        };
+        let body = PostSwapRequest { inputs, outputs };
 
         self.do_post(&mint_url.join("v1/swap")?, &body).await
     }
@@ -226,13 +223,13 @@ impl Client for HttpClient {
     async fn post_melt_bolt11(
         &self,
         mint_url: &Url,
-        proofs: Proofs,
+        inputs: Proofs,
         quote: String,
         outputs: Vec<BlindedMessage>,
     ) -> Result<PostMeltBolt11Response, MokshaWalletError> {
-        let body = PostMeltRequest {
-            pr: quote,
-            proofs,
+        let body = PostMeltBolt11Request {
+            quote,
+            inputs,
             outputs,
         };
 

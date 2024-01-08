@@ -100,8 +100,8 @@ pub fn test_integration() -> anyhow::Result<()> {
 
         // mint some tokens
         let mint_amount = 6_000;
-        let payment_request = wallet.get_mint_payment_request(mint_amount).await.unwrap();
-        let hash = payment_request.clone().hash;
+        let mint_quote = wallet.create_quote(mint_amount).await.unwrap();
+        let hash = mint_quote.clone().quote;
 
         sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
         let mint_result = wallet
@@ -116,6 +116,9 @@ pub fn test_integration() -> anyhow::Result<()> {
         // pay ln-invoice
         let invoice_1000 = read_fixture("invoice_1000.txt").unwrap();
         let result_pay_invoice = wallet.pay_invoice(invoice_1000).await;
+        if result_pay_invoice.is_err() {
+            println!("error in pay_invoice{:?}", result_pay_invoice);
+        }
         assert!(result_pay_invoice.is_ok());
         let balance = wallet.get_balance().await.expect("Could not get balance");
         assert_eq!(5_000, balance);

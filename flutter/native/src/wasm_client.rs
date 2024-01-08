@@ -1,17 +1,19 @@
-use std::collections::HashMap;
-
 use async_trait::async_trait;
 use gloo_net::http::{Request, Response};
-use moksha_core::blind::BlindedMessage;
-use moksha_core::keyset::Keysets;
-use moksha_core::primitives::CashuErrorResponse;
-use moksha_core::primitives::{
-    CheckFeesRequest, CheckFeesResponse, MintLegacyInfoResponse, PaymentRequest, PostMeltRequest,
-    PostMeltResponse, PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse,
+
+use moksha_core::{
+    blind::BlindedMessage,
+    keyset::V1Keysets,
+    primitives::{
+        CashuErrorResponse, CurrencyUnit, KeysResponse, MintInfoResponse, PostMeltBolt11Request,
+        PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
+        PostMintBolt11Request, PostMintBolt11Response, PostMintQuoteBolt11Request,
+        PostMintQuoteBolt11Response, PostSwapRequest, PostSwapResponse,
+    },
+    proof::Proofs,
 };
-use moksha_core::proof::Proofs;
-use moksha_wallet::{client::LegacyClient, error::MokshaWalletError};
-use secp256k1::PublicKey;
+
+use moksha_wallet::{client::Client, error::MokshaWalletError};
 use url::Url;
 
 #[derive(Debug, Clone)]
@@ -24,109 +26,132 @@ impl WasmClient {
 }
 
 #[async_trait(?Send)]
-impl LegacyClient for WasmClient {
-    async fn post_split_tokens(
-        &self,
-        mint_url: &Url,
-        proofs: Proofs,
-        outputs: Vec<BlindedMessage>,
-    ) -> Result<PostSplitResponse, MokshaWalletError> {
-        let body = &PostSplitRequest { proofs, outputs };
-
-        let resp = Request::post(mint_url.join("split")?.as_str())
-            .header("content-type", "application/json")
-            .json(body)?
-            .send()
-            .await?;
-
-        extract_response_data::<PostSplitResponse>(resp).await
+impl Client for WasmClient {
+    async fn get_keys(&self, mint_url: &Url) -> Result<KeysResponse, MokshaWalletError> {
+        do_get(&mint_url.join("v1/keys")?).await
     }
 
-    async fn post_melt_tokens(
+    async fn get_keys_by_id(
         &self,
         mint_url: &Url,
-        proofs: Proofs,
-        pr: String,
+        keyset_id: String,
+    ) -> Result<KeysResponse, MokshaWalletError> {
+        do_get(&mint_url.join(&format!("v1/keys/{}", keyset_id))?).await
+    }
+
+    async fn get_keysets(&self, mint_url: &Url) -> Result<V1Keysets, MokshaWalletError> {
+        do_get(&mint_url.join("v1/keysets")?).await
+    }
+
+    async fn post_swap(
+        &self,
+        mint_url: &Url,
+        inputs: Proofs,
         outputs: Vec<BlindedMessage>,
-    ) -> Result<PostMeltResponse, MokshaWalletError> {
-        let body = &PostMeltRequest {
-            pr,
-            proofs,
+    ) -> Result<PostSwapResponse, MokshaWalletError> {
+        let body = PostSwapRequest { inputs, outputs };
+
+        do_post(&mint_url.join("v1/swap")?, &body).await
+    }
+
+    async fn post_melt_bolt11(
+        &self,
+        mint_url: &Url,
+        inputs: Proofs,
+        quote: String,
+        outputs: Vec<BlindedMessage>,
+    ) -> Result<PostMeltBolt11Response, MokshaWalletError> {
+        let body = PostMeltBolt11Request {
+            quote,
+            inputs,
             outputs,
         };
 
-        let resp = Request::post(mint_url.join("melt")?.as_str())
-            .header("content-type", "application/json")
-            .json(body)?
-            .send()
-            .await?;
-        extract_response_data::<PostMeltResponse>(resp).await
+        do_post(&mint_url.join("v1/melt/bolt11")?, &body).await
     }
 
-    async fn post_checkfees(
+    async fn post_melt_quote_bolt11(
         &self,
         mint_url: &Url,
-        pr: String,
-    ) -> Result<CheckFeesResponse, MokshaWalletError> {
-        let resp = Request::post(mint_url.join("checkfees")?.as_str())
-            .header("content-type", "application/json")
-            .json(&CheckFeesRequest { pr })?
-            .send()
-            .await?;
+        payment_request: String,
+        unit: CurrencyUnit,
+    ) -> Result<PostMeltQuoteBolt11Response, MokshaWalletError> {
+        let body = PostMeltQuoteBolt11Request {
+            request: payment_request,
+            unit,
+        };
 
-        extract_response_data::<CheckFeesResponse>(resp).await
+        do_post(&mint_url.join("v1/melt/quote/bolt11")?, &body).await
     }
 
-    async fn get_mint_keys(
+    async fn get_melt_quote_bolt11(
         &self,
         mint_url: &Url,
-    ) -> Result<HashMap<u64, PublicKey>, MokshaWalletError> {
-        let resp = Request::get(mint_url.join("keys")?.as_str()).send().await?;
-        extract_response_data::<HashMap<u64, PublicKey>>(resp).await
+        quote: String,
+    ) -> Result<PostMeltQuoteBolt11Response, MokshaWalletError> {
+        let url = mint_url.join(&format!("v1/melt/quote/bolt11/{}", quote))?;
+        do_get(&url).await
     }
 
-    async fn get_mint_keysets(&self, mint_url: &Url) -> Result<Keysets, MokshaWalletError> {
-        let resp = Request::get(mint_url.join("keysets")?.as_str())
-            .send()
-            .await?;
-        extract_response_data::<Keysets>(resp).await
+    async fn post_mint_bolt11(
+        &self,
+        mint_url: &Url,
+        quote: String,
+        blinded_messages: Vec<BlindedMessage>,
+    ) -> Result<PostMintBolt11Response, MokshaWalletError> {
+        let body = PostMintBolt11Request {
+            quote,
+            outputs: blinded_messages,
+        };
+        do_post(&mint_url.join("v1/mint/bolt11")?, &body).await
     }
 
-    async fn get_mint_payment_request(
+    async fn post_mint_quote_bolt11(
         &self,
         mint_url: &Url,
         amount: u64,
-    ) -> Result<PaymentRequest, MokshaWalletError> {
-        let resp = Request::get(mint_url.join(&format!("mint?amount={}", amount))?.as_str())
-            .send()
-            .await?;
-        extract_response_data::<PaymentRequest>(resp).await
+        unit: CurrencyUnit,
+    ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError> {
+        let body = PostMintQuoteBolt11Request { amount, unit };
+        do_post(&mint_url.join("v1/mint/quote/bolt11")?, &body).await
     }
 
-    async fn post_mint_payment_request(
+    async fn get_mint_quote_bolt11(
         &self,
         mint_url: &Url,
-        hash: String,
-        blinded_messages: Vec<BlindedMessage>,
-    ) -> Result<PostMintResponse, MokshaWalletError> {
-        let body = &PostMintRequest {
-            outputs: blinded_messages,
-        };
-
-        let resp = Request::post(mint_url.join(&format!("mint?hash={}", hash))?.as_str())
-            .header("content-type", "application/json")
-            .json(body)?
-            .send()
-            .await?;
-        extract_response_data::<PostMintResponse>(resp).await
+        quote: String,
+    ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError> {
+        do_get(&mint_url.join(&format!("v1/mint/quote/bolt11/{}", quote))?).await
     }
 
-    async fn get_info(&self, mint_url: &Url) -> Result<MintLegacyInfoResponse, MokshaWalletError> {
-        let resp = Request::get(mint_url.join(&format!("info"))?.as_str())
+    async fn get_info(&self, mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError> {
+        do_get(&mint_url.join("v1/info")?).await
+    }
+
+    async fn is_v1_supported(&self, mint_url: &Url) -> Result<bool, MokshaWalletError> {
+        let resp = Request::get(mint_url.join("v1/info")?.as_str())
             .send()
             .await?;
-        extract_response_data::<MintLegacyInfoResponse>(resp).await
+
+        Ok(resp.status() == 200)
     }
+}
+
+async fn do_get<T: serde::de::DeserializeOwned>(url: &Url) -> Result<T, MokshaWalletError> {
+    let resp = Request::get(url.as_str()).send().await?;
+    extract_response_data::<T>(resp).await
+}
+
+async fn do_post<T: serde::de::DeserializeOwned, B: serde::Serialize>(
+    url: &Url,
+    body: &B,
+) -> Result<T, MokshaWalletError> {
+    let resp = Request::post(url.as_str())
+        .header("content-type", "application/json")
+        .json(body)?
+        .send()
+        .await?;
+    extract_response_data::<T>(resp).await
 }
 
 async fn extract_response_data<T: serde::de::DeserializeOwned>(

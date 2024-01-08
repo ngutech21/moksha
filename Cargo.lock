@@ -2678,9 +2678,9 @@ dependencies = [
 
 [[package]]
 name = "mockall"
-version = "0.12.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a978c8292954bcb9347a4e28772c0a0621166a1598fc1be28ac0076a4bb810e"
+checksum = "43766c2b5203b10de348ffe19f7e54564b64f3d6018ff7648d1e2d6d3a0f0a48"
 dependencies = [
  "cfg-if",
  "downcast",
@@ -2693,9 +2693,9 @@ dependencies = [
 
 [[package]]
 name = "mockall_derive"
-version = "0.12.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad2765371d0978ba4ace4ebef047baa62fc068b431e468444b5610dd441c639b"
+checksum = "af7cbce79ec385a1d4f54baa90a76401eb15d9cab93685f62e7e9f942aa00ae2"
 dependencies = [
  "cfg-if",
  "proc-macro2",
@@ -2709,6 +2709,7 @@ version = "0.1.2"
 dependencies = [
  "anyhow",
  "clap",
+ "moksha-core",
  "moksha-wallet",
  "tokio",
  "url",
@@ -2827,6 +2828,7 @@ dependencies = [
  "dirs",
  "gloo-net 0.4.0",
  "lightning-invoice 0.27.0",
+ "mockall",
  "moksha-core",
  "rand",
  "reqwest",

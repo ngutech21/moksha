@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use moksha_core::primitives::PostMintQuoteBolt11Response;
 use std::path::PathBuf;
 use url::Url;
 
@@ -112,18 +113,20 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Command::Mint { amount } => {
-            let payment_request = wallet.get_mint_payment_request(amount).await?;
-            let hash = payment_request.clone().hash;
-            let invoice = payment_request.clone().pr;
+            let PostMintQuoteBolt11Response {
+                payment_request,
+                quote,
+                ..
+            } = wallet.create_quote(amount).await?;
 
-            println!("Pay invoice to mint tokens:\n\n{invoice}");
+            println!("Pay invoice to mint tokens:\n\n{payment_request}");
 
             loop {
                 tokio::time::sleep_until(
                     tokio::time::Instant::now() + std::time::Duration::from_millis(1_000),
                 )
                 .await;
-                let mint_result = wallet.mint_tokens(amount.into(), hash.clone()).await;
+                let mint_result = wallet.mint_tokens(amount.into(), quote.clone()).await;
 
                 match mint_result {
                     Ok(_) => {

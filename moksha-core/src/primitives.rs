@@ -108,12 +108,20 @@ pub struct Parameter {
     pub peg_out_only: bool,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
 pub struct KeysResponse {
     pub keysets: Vec<KeyResponse>,
 }
 
-#[derive(serde::Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+impl KeysResponse {
+    pub fn new(keyset: KeyResponse) -> Self {
+        Self {
+            keysets: vec![keyset],
+        }
+    }
+}
+
+#[derive(serde::Deserialize, Serialize, Clone, Debug, PartialEq, Eq, ToSchema)]
 pub struct KeyResponse {
     pub id: String,
     pub unit: CurrencyUnit,

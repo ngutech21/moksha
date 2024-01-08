@@ -66,6 +66,10 @@ pub trait LegacyClient {
     async fn get_info(&self, mint_url: &Url) -> Result<MintLegacyInfoResponse, MokshaWalletError>;
 }
 
+#[cfg(test)]
+use mockall::automock;
+
+#[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait Client {
     async fn get_keys(&self, mint_url: &Url) -> Result<KeysResponse, MokshaWalletError>;

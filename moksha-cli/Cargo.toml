@@ -14,6 +14,7 @@ name = "moksha-cli"
 
 [dependencies]
 moksha-wallet = { version = "0.1.2", path = "../moksha-wallet" }
+moksha-core = { version = "0.1.2", path = "../moksha-core" }
 clap = { version = "4.4.8", features = ["derive"] }
 tokio = { version = "1.34.0", features = ["rt", "rt-multi-thread", "macros"] }
 url = "2.4.1"
