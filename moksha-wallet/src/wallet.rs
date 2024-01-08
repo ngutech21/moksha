@@ -164,6 +164,16 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
         Ok(())
     }
 
+    pub async fn get_mint_quote(
+        &self,
+        amount: Amount,
+        currency: CurrencyUnit,
+    ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError> {
+        self.client
+            .post_mint_quote_bolt11(&self.mint_url, amount.0, currency)
+            .await
+    }
+
     pub async fn pay_invoice(
         &self,
         invoice: String,

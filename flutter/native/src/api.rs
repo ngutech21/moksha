@@ -1,6 +1,6 @@
 use flutter_rust_bridge::{StreamSink, SyncReturn};
 use lightning_invoice::Bolt11Invoice;
-use moksha_core::primitives::PaymentRequest;
+use moksha_core::primitives::{CurrencyUnit, PaymentRequest, PostMintQuoteBolt11Response};
 use moksha_fedimint::FedimintWallet;
 use moksha_wallet::localstore::LocalStore;
 use std::future::Future;
@@ -209,14 +209,13 @@ pub fn get_cashu_mint_payment_request(
 
     block_on(async move {
         let wallet = local_wallet().await.unwrap();
-        // FIXME add missing method to wallet
-        // sink.add(
-        //     wallet
-        //         .get_mint_payment_request(amount)
-        //         .await
-        //         .unwrap()
-        //         .into(),
-        // );
+        sink.add(
+            wallet
+                .get_mint_quote(amount.into(), CurrencyUnit::Sat)
+                .await
+                .unwrap()
+                .into(),
+        );
         sink.close();
     });
     Ok(())
@@ -256,7 +255,7 @@ pub struct FedimintPaymentRequest {
 #[derive(Debug, Clone)]
 pub struct FlutterPaymentRequest {
     pub pr: String,
-    pub hash: String,
+    pub hash: String, // FIXME use quote instead of hash
 }
 
 impl From<PaymentRequest> for FlutterPaymentRequest {
@@ -264,6 +263,15 @@ impl From<PaymentRequest> for FlutterPaymentRequest {
         Self {
             pr: value.pr,
             hash: value.hash,
+        }
+    }
+}
+
+impl From<PostMintQuoteBolt11Response> for FlutterPaymentRequest {
+    fn from(value: PostMintQuoteBolt11Response) -> Self {
+        Self {
+            pr: value.payment_request,
+            hash: value.quote,
         }
     }
 }
