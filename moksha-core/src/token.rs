@@ -7,7 +7,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::skip_serializing_none;
 use url::Url;
 
-use crate::{error::MokshaCoreError, proof::Proofs};
+use crate::{error::MokshaCoreError, primitives::CurrencyUnit, proof::Proofs};
 
 const TOKEN_PREFIX_V3: &str = "cashuA";
 
@@ -52,6 +52,7 @@ pub struct TokenV3 {
     #[serde(rename = "token")]
     pub tokens: Vec<Token>,
     pub memo: Option<String>,
+    pub unit: Option<CurrencyUnit>,
 }
 
 impl TokenV3 {
@@ -59,6 +60,7 @@ impl TokenV3 {
         Self {
             tokens: vec![token],
             memo: None,
+            unit: None,
         }
     }
 
@@ -66,6 +68,7 @@ impl TokenV3 {
         Self {
             tokens: vec![],
             memo: None,
+            unit: None,
         }
     }
 
@@ -143,6 +146,7 @@ impl From<(Url, Proofs)> for TokenV3 {
                 proofs: from.1,
             }],
             memo: None,
+            unit: None,
         }
     }
 }
@@ -204,6 +208,7 @@ mod tests {
         let tokens = super::TokenV3 {
             tokens: vec![token],
             memo: Some("my memo".to_string()),
+            unit: None,
         };
 
         let serialized: String = tokens.try_into()?;
