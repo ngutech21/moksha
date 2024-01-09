@@ -123,6 +123,7 @@ mod tests {
         proof::{Proof, Proofs},
         token::TokenV3,
     };
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_proofs_for_amount_empty() -> anyhow::Result<()> {

@@ -202,11 +202,10 @@ pub fn derive_pubkey(seed: &str) -> Result<PublicKey, MokshaCoreError> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
-    use secp256k1::PublicKey;
-
     use crate::keyset::{derive_pubkey, generate_hash};
+    use pretty_assertions::assert_eq;
+    use secp256k1::PublicKey;
+    use std::collections::HashMap;
 
     fn public_key_from_hex(hex: &str) -> secp256k1::PublicKey {
         use hex::FromHex;

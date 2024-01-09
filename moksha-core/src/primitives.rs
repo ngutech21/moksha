@@ -393,6 +393,7 @@ pub struct Nut12 {
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
 
     use crate::{
         dhke::public_key_from_hex,

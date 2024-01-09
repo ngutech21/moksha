@@ -75,6 +75,7 @@ pub fn generate_random_string() -> String {
 #[cfg(test)]
 mod tests {
     use crate::amount::SplitAmount;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_split_amount() -> anyhow::Result<()> {

@@ -146,6 +146,7 @@ pub fn public_key_from_hex(hex: &str) -> secp256k1::PublicKey {
 mod tests {
     use crate::dhke::{public_key_from_hex, Dhke};
     use anyhow::Ok;
+    use pretty_assertions::assert_eq;
 
     fn hex_to_string(hex: &str) -> String {
         use hex::FromHex;
