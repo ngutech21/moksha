@@ -140,6 +140,14 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             .await
     }
 
+    pub async fn is_quote_paid(&self, quote: String) -> Result<bool, MokshaWalletError> {
+        Ok(self
+            .client
+            .get_mint_quote_bolt11(&self.mint_url, quote)
+            .await?
+            .paid)
+    }
+
     pub async fn get_balance(&self) -> Result<u64, MokshaWalletError> {
         Ok(self.localstore.get_proofs().await?.total_amount())
     }

@@ -119,6 +119,7 @@ async fn main() -> anyhow::Result<()> {
                 ..
             } = wallet.create_quote(amount).await?;
 
+            println!("Quote:{:#?}", &quote);
             println!("Pay invoice to mint tokens:\n\n{payment_request}");
 
             loop {
@@ -126,6 +127,11 @@ async fn main() -> anyhow::Result<()> {
                     tokio::time::Instant::now() + std::time::Duration::from_millis(1_000),
                 )
                 .await;
+
+                if !wallet.is_quote_paid(quote.clone()).await? {
+                    continue;
+                }
+
                 let mint_result = wallet.mint_tokens(amount.into(), quote.clone()).await;
 
                 match mint_result {
