@@ -1,10 +1,12 @@
 [
   {
     "amount": 8,
-    "B_": "031a392b384f8e2184ff77d0560e416b07f0cfe45c6e15273ddcbe84e6f87c4727"
+    "B_": "031a392b384f8e2184ff77d0560e416b07f0cfe45c6e15273ddcbe84e6f87c4727",
+    "id": "00ffd48b8f5ecf80"
   },
   {
     "amount": 32,
-    "B_": "03d763081ef9afdf11fe9d6114f4c494d53c28a78e9471faa1814ad336a6c234de"
+    "B_": "03d763081ef9afdf11fe9d6114f4c494d53c28a78e9471faa1814ad336a6c234de",
+    "id": "00ffd48b8f5ecf80"
   }
 ]
