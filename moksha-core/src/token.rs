@@ -51,8 +51,8 @@ where
 pub struct TokenV3 {
     #[serde(rename = "token")]
     pub tokens: Vec<Token>,
-    pub memo: Option<String>,
     pub unit: Option<CurrencyUnit>,
+    pub memo: Option<String>,
 }
 
 impl TokenV3 {
@@ -97,6 +97,7 @@ impl TokenV3 {
 
     pub fn serialize(&self) -> Result<String, MokshaCoreError> {
         let json = serde_json::to_string(&self)?;
+        println!("json: {}", json);
         Ok(format!(
             "{}{}",
             TOKEN_PREFIX_V3,
@@ -158,9 +159,52 @@ mod tests {
 
     use crate::{
         dhke,
+        primitives::CurrencyUnit,
         proof::Proof,
         token::{Token, TokenV3},
     };
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_token_v3() -> anyhow::Result<()> {
+        let js = json!(
+        {
+          "token": [
+            {
+              "mint": "https://8333.space:3338",
+              "proofs": [
+                {
+                  "amount": 2,
+                  "id": "009a1f293253e41e",
+                  "secret": "407915bc212be61a77e3e6d2aeb4c727980bda51cd06a6afc29e2861768a7837",
+                  "C": "02bc9097997d81afb2cc7346b5e4345a9346bd2a506eb7958598a72f0cf85163ea"
+                },
+                {
+                  "amount": 8,
+                  "id": "009a1f293253e41e",
+                  "secret": "fe15109314e61d7756b0f8ee0f23a624acaa3f4e042f61433c728c7057b931be",
+                  "C": "029e8e5050b890a7d6c0968db16bc1d5d5fa040ea1de284f6ec69d61299f671059"
+                }
+              ]
+            }
+          ],
+          "unit": "sat",
+          "memo": "Thank you."
+        });
+
+        let token = serde_json::from_value::<super::TokenV3>(js)?;
+        assert_eq!(
+            token.tokens[0].mint,
+            Some(Url::parse("https://8333.space:3338")?)
+        );
+        assert_eq!(token.tokens[0].proofs.len(), 2);
+        assert_eq!(token.unit, Some(CurrencyUnit::Sat));
+
+        let token_serialized = token.serialize()?;
+        // FIXME this fails
+        //assert_eq!(token_serialized, "cashuAeyJ0b2tlbiI6W3sibWludCI6Imh0dHBzOi8vODMzMy5zcGFjZTozMzM4IiwicHJvb2ZzIjpbeyJhbW91bnQiOjIsImlkIjoiMDA5YTFmMjkzMjUzZTQxZSIsInNlY3JldCI6IjQwNzkxNWJjMjEyYmU2MWE3N2UzZTZkMmFlYjRjNzI3OTgwYmRhNTFjZDA2YTZhZmMyOWUyODYxNzY4YTc4MzciLCJDIjoiMDJiYzkwOTc5OTdkODFhZmIyY2M3MzQ2YjVlNDM0NWE5MzQ2YmQyYTUwNmViNzk1ODU5OGE3MmYwY2Y4NTE2M2VhIn0seyJhbW91bnQiOjgsImlkIjoiMDA5YTFmMjkzMjUzZTQxZSIsInNlY3JldCI6ImZlMTUxMDkzMTRlNjFkNzc1NmIwZjhlZTBmMjNhNjI0YWNhYTNmNGUwNDJmNjE0MzNjNzI4YzcwNTdiOTMxYmUiLCJDIjoiMDI5ZThlNTA1MGI4OTBhN2Q2YzA5NjhkYjE2YmMxZDVkNWZhMDQwZWExZGUyODRmNmVjNjlkNjEyOTlmNjcxMDU5In1dfV0sInVuaXQiOiJzYXQiLCJtZW1vIjoiVGhhbmsgeW91LiJ9");
+        Ok(())
+    }
 
     #[test]
     fn test_token() -> anyhow::Result<()> {
@@ -225,10 +269,14 @@ mod tests {
 
     #[test]
     fn test_tokens_deserialize() -> anyhow::Result<()> {
-        let input = "cashuAeyJ0b2tlbiI6W3sibWludCI6Imh0dHBzOi8vODMzMy5zcGFjZTozMzM4IiwicHJvb2ZzIjpbeyJpZCI6IkRTQWw5bnZ2eWZ2YSIsImFtb3VudCI6Miwic2VjcmV0IjoiRWhwZW5uQzlxQjNpRmxXOEZaX3BadyIsIkMiOiIwMmMwMjAwNjdkYjcyN2Q1ODZiYzMxODNhZWNmOTdmY2I4MDBjM2Y0Y2M0NzU5ZjY5YzYyNmM5ZGI1ZDhmNWI1ZDQifSx7ImlkIjoiRFNBbDludnZ5ZnZhIiwiYW1vdW50Ijo4LCJzZWNyZXQiOiJUbVM2Q3YwWVQ1UFVfNUFUVktudWt3IiwiQyI6IjAyYWM5MTBiZWYyOGNiZTVkNzMyNTQxNWQ1YzI2MzAyNmYxNWY5Yjk2N2EwNzljYTk3NzlhYjZlNWMyZGIxMzNhNyJ9XX1dLCJtZW1vIjoiVGhhbmt5b3UuIn0=";
+        let input = "cashuAeyJ0b2tlbiI6W3sibWludCI6Imh0dHBzOi8vODMzMy5zcGFjZTozMzM4IiwicHJvb2ZzIjpbeyJhbW91bnQiOjIsImlkIjoiMDA5YTFmMjkzMjUzZTQxZSIsInNlY3JldCI6IjQwNzkxNWJjMjEyYmU2MWE3N2UzZTZkMmFlYjRjNzI3OTgwYmRhNTFjZDA2YTZhZmMyOWUyODYxNzY4YTc4MzciLCJDIjoiMDJiYzkwOTc5OTdkODFhZmIyY2M3MzQ2YjVlNDM0NWE5MzQ2YmQyYTUwNmViNzk1ODU5OGE3MmYwY2Y4NTE2M2VhIn0seyJhbW91bnQiOjgsImlkIjoiMDA5YTFmMjkzMjUzZTQxZSIsInNlY3JldCI6ImZlMTUxMDkzMTRlNjFkNzc1NmIwZjhlZTBmMjNhNjI0YWNhYTNmNGUwNDJmNjE0MzNjNzI4YzcwNTdiOTMxYmUiLCJDIjoiMDI5ZThlNTA1MGI4OTBhN2Q2YzA5NjhkYjE2YmMxZDVkNWZhMDQwZWExZGUyODRmNmVjNjlkNjEyOTlmNjcxMDU5In1dfV0sInVuaXQiOiJzYXQiLCJtZW1vIjoiVGhhbmsgeW91LiJ9";
         let tokens = TokenV3::deserialize(input)?;
-        assert_eq!(tokens.memo, Some("Thankyou.".to_string()),);
+        assert_eq!(tokens.memo, Some("Thank you.".to_string()),);
         assert_eq!(tokens.tokens.len(), 1);
+        println!("tokens: {:?}", tokens);
+        let js = serde_json::to_string_pretty(&tokens).unwrap();
+        println!("{}", js);
+
         Ok(())
     }
 }

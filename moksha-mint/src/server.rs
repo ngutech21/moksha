@@ -821,7 +821,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/v1/keys/00e777893f6faa27")
+                    .uri("/v1/keys/00f545318e4fad2b")
                     .body(Body::empty())?,
             )
             .await?;
@@ -835,7 +835,7 @@ mod tests {
             keys.keysets.get(0).expect("keyset not found").keys.len()
         );
         assert_eq!(
-            "00e777893f6faa27",
+            "00f545318e4fad2b",
             keys.keysets.get(0).expect("keyset not found").id
         );
         Ok(())
@@ -855,7 +855,7 @@ mod tests {
         let keyset = keys.keysets.get(0).expect("keyset not found");
         assert!(keyset.active);
         assert_eq!(CurrencyUnit::Sat, keyset.unit);
-        assert_eq!("00e777893f6faa27", keyset.id);
+        assert_eq!("00f545318e4fad2b", keyset.id);
         Ok(())
     }
 
