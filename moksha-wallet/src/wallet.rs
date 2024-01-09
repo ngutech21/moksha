@@ -3,7 +3,10 @@ use moksha_core::{
     blind::{BlindedMessage, BlindedSignature, TotalAmount},
     dhke::Dhke,
     keyset::V1Keyset,
-    primitives::{CurrencyUnit, KeyResponse, PostMeltBolt11Response, PostMintQuoteBolt11Response},
+    primitives::{
+        CurrencyUnit, KeyResponse, MintInfoResponse, PostMeltBolt11Response,
+        PostMintQuoteBolt11Response,
+    },
     proof::{Proof, Proofs},
     token::TokenV3,
 };
@@ -318,6 +321,10 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             .into();
 
         Ok((first_tokens, second_tokens))
+    }
+
+    pub async fn get_mint_info(&self) -> Result<MintInfoResponse, MokshaWalletError> {
+        self.client.get_info(&self.mint_url).await
     }
 
     async fn melt_token(

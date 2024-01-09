@@ -136,6 +136,13 @@ pub fn test_integration() -> anyhow::Result<()> {
         assert_eq!(10, result_send.unwrap().total_amount());
         let balance = wallet.get_balance().await.expect("Could not get balance");
         assert_eq!(5_000, balance);
+
+        // get info
+        let info = wallet
+            .get_mint_info()
+            .await
+            .expect("Could not get mint info");
+        assert!(!info.nuts.nut4.disabled);
     });
 
     Ok(())
