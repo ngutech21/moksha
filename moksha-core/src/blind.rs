@@ -55,7 +55,7 @@ impl BlindedMessage {
                 let (b_, alice_secret_key) = dhke.step1_alice(secret.clone(), None).unwrap(); // FIXME
                 (
                     BlindedMessage {
-                        amount: 0,
+                        amount: 1,
                         b_,
                         id: keyset_id.clone(),
                     },
