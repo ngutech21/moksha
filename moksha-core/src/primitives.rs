@@ -123,7 +123,7 @@ impl KeysResponse {
 
 #[derive(serde::Deserialize, Serialize, Clone, Debug, PartialEq, Eq, ToSchema)]
 pub struct KeyResponse {
-    pub id: String,
+    pub id: String, // TODO use new type for keyset_id
     pub unit: CurrencyUnit,
     #[schema(value_type = HashMap<u64, String>)]
     pub keys: HashMap<u64, PublicKey>,

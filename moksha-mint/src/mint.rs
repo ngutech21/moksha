@@ -324,6 +324,7 @@ mod tests {
             b_: dhke::public_key_from_hex(
                 "02634a2c2b34bec9e8a4aba4361f6bf202d7fa2365379b0840afe249a7a9d71239",
             ),
+            id: "00ffd48b8f5ecf80".to_owned(),
         }];
 
         let result = mint.create_blinded_signatures(&blinded_messages, &mint.keyset_legacy)?;

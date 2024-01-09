@@ -84,8 +84,18 @@ impl<C: Client, L: LocalStore> WalletBuilder<C, L> {
 
         // FIXME store all keysets
         let keys = client.get_keys(&mint_url).await?;
-        let key_response = keys.keysets.get(0).expect("keyset is empty");
-        let mks = mint_keysets.keysets.get(0).expect("mint keyset is empty");
+
+        let key_response = keys
+            .keysets
+            .iter()
+            .find(|k| k.id.starts_with("00"))
+            .expect("no valid keyset found");
+
+        let mks = mint_keysets
+            .keysets
+            .iter()
+            .find(|k| k.id.starts_with("00"))
+            .expect("no valid keyset found");
 
         Ok(Wallet::new(
             client as C,
@@ -205,7 +215,8 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             split_result.1.proofs()
         };
 
-        let fee_blind = BlindedMessage::blank(melt_quote.fee_reserve.into())?;
+        let fee_blind =
+            BlindedMessage::blank(melt_quote.fee_reserve.into(), self.keyset_id.clone().id)?;
 
         let msgs = fee_blind
             .iter()
@@ -350,7 +361,14 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             .zip(secrets.clone())
             .map(|(amount, secret)| {
                 let (b_, alice_secret_key) = self.dhke.step1_alice(secret, None).unwrap(); // FIXME
-                (BlindedMessage { amount, b_ }, alice_secret_key)
+                (
+                    BlindedMessage {
+                        amount,
+                        b_,
+                        id: self.keyset_id.clone().id,
+                    },
+                    alice_secret_key,
+                )
             })
             .collect::<Vec<(BlindedMessage, SecretKey)>>();
 
@@ -412,7 +430,14 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             .zip(secrets)
             .map(|(amount, secret)| {
                 let (b_, alice_secret_key) = self.dhke.step1_alice(secret, None).unwrap(); // FIXME
-                (BlindedMessage { amount, b_ }, alice_secret_key)
+                (
+                    BlindedMessage {
+                        amount,
+                        b_,
+                        id: self.keyset_id.clone().id,
+                    },
+                    alice_secret_key,
+                )
             })
             .collect::<Vec<(BlindedMessage, SecretKey)>>())
     }

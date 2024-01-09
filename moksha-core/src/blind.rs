@@ -33,11 +33,13 @@ pub struct BlindedMessage {
     #[serde(rename = "B_")]
     #[schema(value_type=String)]
     pub b_: PublicKey,
+    pub id: String,
 }
 
 impl BlindedMessage {
     pub fn blank(
         fee_reserve: Amount,
+        keyset_id: String,
     ) -> Result<Vec<(BlindedMessage, SecretKey, String)>, MokshaCoreError> {
         if fee_reserve.0 == 0 {
             return Ok(vec![]);
@@ -51,7 +53,15 @@ impl BlindedMessage {
             .map(|_| {
                 let secret = generate_random_string();
                 let (b_, alice_secret_key) = dhke.step1_alice(secret.clone(), None).unwrap(); // FIXME
-                (BlindedMessage { amount: 0, b_ }, alice_secret_key, secret)
+                (
+                    BlindedMessage {
+                        amount: 0,
+                        b_,
+                        id: keyset_id.clone(),
+                    },
+                    alice_secret_key,
+                    secret,
+                )
             })
             .collect::<Vec<(BlindedMessage, SecretKey, String)>>();
 
@@ -81,7 +91,7 @@ mod tests {
 
     #[test]
     fn test_1000_sats() {
-        let result = BlindedMessage::blank(1000.into());
+        let result = BlindedMessage::blank(1000.into(), "00ffd48b8f5ecf80".to_owned());
         println!("{:?}", result);
         assert!(result.is_ok());
         let result = result.unwrap();
@@ -91,7 +101,7 @@ mod tests {
 
     #[test]
     fn test_zero_sats() {
-        let result = BlindedMessage::blank(0.into());
+        let result = BlindedMessage::blank(0.into(), "00ffd48b8f5ecf80".to_owned());
         println!("{:?}", result);
         assert!(result.is_ok());
         assert!(result.unwrap().is_empty());
