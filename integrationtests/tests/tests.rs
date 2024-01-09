@@ -15,7 +15,6 @@ use tokio::runtime::Runtime;
 use tokio::time::{sleep_until, Instant};
 
 #[test]
-#[ignore]
 pub fn test_integration() -> anyhow::Result<()> {
     use mokshamint::config::{DatabaseConfig, LightningFeeConfig, ServerConfig};
 
