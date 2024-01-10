@@ -32,6 +32,14 @@ impl SplitAmount {
             .map(|_| generate_random_string())
             .collect::<Vec<String>>()
     }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 impl From<u64> for Amount {

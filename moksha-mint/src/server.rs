@@ -13,6 +13,7 @@ use chrono::{Duration, Utc};
 use moksha_core::keyset::{generate_hash, Keysets, V1Keyset, V1Keysets};
 use moksha_core::proof::Proofs;
 use moksha_core::proof::{P2SHScript, Proof};
+use tracing_subscriber::EnvFilter;
 use utoipa_swagger_ui::SwaggerUi;
 use uuid::Uuid;
 
@@ -47,6 +48,7 @@ use utoipa::OpenApi;
 pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
+        .with(EnvFilter::from_default_env())
         .init();
 
     if let Some(ref buildtime) = mint.config.build.build_time {
@@ -237,6 +239,7 @@ async fn post_legacy_melt(
     let (paid, preimage, change) = mint
         .melt(
             melt_request.pr,
+            0, // FIXME set correct fee reserve for legacy api
             &melt_request.proofs,
             &melt_request.outputs,
             &mint.keyset_legacy,
@@ -550,9 +553,15 @@ async fn post_melt_bolt11(
         .get_bolt11_melt_quote(&Uuid::from_str(melt_request.quote.as_str())?)
         .await?;
 
+    println!(
+        "post_melt_bolt11 fee_reserve >>>>>>>>>>>>>> : {:#?}",
+        &quote
+    );
+
     let (paid, payment_preimage, change) = mint
         .melt(
             quote.payment_request.to_owned(),
+            quote.fee_reserve,
             &melt_request.inputs,
             &melt_request.outputs,
             &mint.keyset,

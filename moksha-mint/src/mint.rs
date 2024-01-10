@@ -1,6 +1,7 @@
-use std::{collections::HashSet, sync::Arc};
+use std::{collections::HashSet, sync::Arc, vec};
 
 use moksha_core::{
+    amount::Amount,
     blind::{BlindedMessage, BlindedSignature, TotalAmount},
     dhke::Dhke,
     keyset::MintKeyset,
@@ -147,6 +148,7 @@ impl Mint {
     pub async fn melt(
         &self,
         payment_request: String,
+        fee_reserve: u64,
         proofs: &Proofs,
         blinded_messages: &[BlindedMessage],
         keyset: &MintKeyset,
@@ -178,10 +180,22 @@ impl Mint {
         let result = self.lightning.pay_invoice(payment_request).await?;
         self.db.add_used_proofs(proofs).await?;
 
-        let _remaining_amount = (amount_msat - (proofs_amount / 1000)) * 1000;
+        let change = if fee_reserve > 0 {
+            let return_fees = Amount(fee_reserve - result.total_fees).split();
 
-        // FIXME check if output amount matches remaining_amount
-        let change = self.create_blinded_signatures(blinded_messages, keyset)?;
+            let out: Vec<_> = blinded_messages[0..return_fees.len()]
+                .iter()
+                .zip(return_fees.into_iter())
+                .map(|(message, fee)| BlindedMessage {
+                    amount: fee,
+                    ..message.clone()
+                })
+                .collect();
+
+            self.create_blinded_signatures(&out, keyset)?
+        } else {
+            vec![]
+        };
 
         Ok((true, result.payment_hash, change))
     }
@@ -429,7 +443,7 @@ mod tests {
         lightning.expect_pay_invoice().returning(|_| {
             Ok(PayInvoiceResult {
                 payment_hash: "hash".to_string(),
-                total_fees: 0,
+                total_fees: 2,
             })
             .map_err(|_err: LightningError| MokshaMintError::InvoiceNotFound("".to_string()))
         });
@@ -445,14 +459,15 @@ mod tests {
 
         let tokens = create_token_from_fixture("token_60.cashu".to_string())?;
         let invoice = "some invoice".to_string();
-        let change = create_blinded_msgs_from_fixture("blinded_messages_40.json".to_string())?;
+        let change =
+            create_blinded_msgs_from_fixture("blinded_messages_blank_4000.json".to_string())?;
 
         let (paid, _payment_hash, change) = mint
-            .melt(invoice, &tokens.proofs(), &change, &mint.keyset_legacy)
+            .melt(invoice, 4, &tokens.proofs(), &change, &mint.keyset_legacy)
             .await?;
 
         assert!(paid);
-        assert!(change.total_amount() == 40);
+        assert!(change.total_amount() == 2);
         Ok(())
     }
 

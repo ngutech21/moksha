@@ -106,4 +106,14 @@ mod tests {
         assert!(result.is_ok());
         assert!(result.unwrap().is_empty());
     }
+
+    #[test]
+    fn test_serialize() -> anyhow::Result<()> {
+        let result = BlindedMessage::blank(4000.into(), "00ffd48b8f5ecf80".to_owned())?;
+        for (blinded_message, _, _) in result {
+            let out = serde_json::to_string(&blinded_message)?;
+            assert!(!out.is_empty());
+        }
+        Ok(())
+    }
 }

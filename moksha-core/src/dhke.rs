@@ -44,7 +44,7 @@ use crate::error::MokshaCoreError;
 use bitcoin_hashes::{sha256, Hash};
 use secp256k1::{All, PublicKey, Scalar, Secp256k1, SecretKey};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Dhke {
     secp: Secp256k1<All>,
 }
