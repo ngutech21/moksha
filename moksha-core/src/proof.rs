@@ -21,12 +21,12 @@ use crate::error::MokshaCoreError;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ToSchema)]
 pub struct Proof {
     pub amount: u64,
+    #[serde(rename = "id")]
+    pub keyset_id: String, // FIXME use keysetID as specific type
     pub secret: String,
     #[serde(rename = "C")]
     #[schema(value_type = String)]
     pub c: PublicKey,
-    #[serde(rename = "id")]
-    pub keyset_id: String, // FIXME use keysetID as specific type
     pub script: Option<P2SHScript>,
 }
 

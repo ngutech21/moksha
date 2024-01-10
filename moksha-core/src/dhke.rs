@@ -144,6 +144,8 @@ pub fn public_key_from_hex(hex: &str) -> secp256k1::PublicKey {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use crate::dhke::{public_key_from_hex, Dhke};
     use anyhow::Ok;
     use pretty_assertions::assert_eq;
@@ -154,10 +156,8 @@ mod tests {
         String::from_utf8(input_vec).expect("Invalid UTF-8 String")
     }
 
-    fn private_key_from_hex(hex: &str) -> secp256k1::SecretKey {
-        use hex::FromHex;
-        let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
-        secp256k1::SecretKey::from_slice(&input_vec).expect("Invalid SecretKey")
+    fn pk_from_hex(hex: &str) -> secp256k1::SecretKey {
+        secp256k1::SecretKey::from_str(hex).expect("Invalid SecretKey")
     }
 
     #[test]
@@ -221,9 +221,7 @@ mod tests {
             hex_to_string("0000000000000000000000000000000000000000000000000000000000000001");
         let (pub_key, _) = dhke.step1_alice("test_message", Some(blinding_factor.as_bytes()))?;
 
-        let a = private_key_from_hex(
-            "0000000000000000000000000000000000000000000000000000000000000001",
-        );
+        let a = pk_from_hex("0000000000000000000000000000000000000000000000000000000000000001");
 
         let c = dhke.step2_bob(pub_key, &a)?;
         let c_str = c.to_string();
@@ -242,9 +240,7 @@ mod tests {
             "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2",
         );
 
-        let r = private_key_from_hex(
-            "0000000000000000000000000000000000000000000000000000000000000001",
-        );
+        let r = pk_from_hex("0000000000000000000000000000000000000000000000000000000000000001");
 
         let a = public_key_from_hex(
             "020000000000000000000000000000000000000000000000000000000000000001",
@@ -275,9 +271,7 @@ mod tests {
         let dhke = Dhke::new();
 
         // Generate Alice's private key and public key
-        let a = private_key_from_hex(
-            "0000000000000000000000000000000000000000000000000000000000000001",
-        );
+        let a = pk_from_hex("0000000000000000000000000000000000000000000000000000000000000001");
         let A = a.public_key(&dhke.secp);
 
         let blinding_factor =
