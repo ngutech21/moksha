@@ -660,7 +660,7 @@ async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, Mo
 mod tests {
     use std::{collections::HashMap, sync::Arc};
 
-    use crate::{config::MintConfig, server::app};
+    use crate::{config::MintConfig, onchain::MockOnchain, server::app};
     use axum::{
         body::Body,
         http::{Request, StatusCode},
@@ -750,6 +750,7 @@ mod tests {
                 info,
                 ..Default::default()
             },
+            Arc::new(MockOnchain::default()),
         )
     }
 

@@ -465,6 +465,15 @@ impl Lightning for LndLightning {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+    use std::path::PathBuf;
+
+    use axum::http::Request;
+    use fedimint_tonic_lnd::lnrpc::AddressType;
+    use fedimint_tonic_lnd::lnrpc::EstimateFeeRequest;
+    use fedimint_tonic_lnd::lnrpc::NewAddressRequest;
+    use fedimint_tonic_lnd::lnrpc::SendCoinsRequest;
+
     use crate::lightning::Lightning;
     use crate::lightning::LnbitsLightning;
 
@@ -494,6 +503,59 @@ mod tests {
 
         let decoded_invoice = lightning.decode_invoice(invoice).await;
         assert!(decoded_invoice.is_err());
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_lnd_connect() -> anyhow::Result<()> {
+        //let invoice = "lnbcrt55550n1pjga689pp5ac8ja6n5hn90huztyxp746w48vtj8ys5uvze6749dvcsd5j5sdvsdqqcqzzsxqyz5vqsp5kzzq0ycxspxjygsxkfkexkkejjr5ggeyl56mwa7s0ygk2q8z92ns9qyyssqt7myq7sryffasx8v47al053ut4vqts32e9hvedvs7eml5h9vdrtj3k5m72yex5jv355jpuzk2xjjn5468cz87nhp50jyr2al2a5zjvgq2xs5uw".to_string();
+
+        let mut client =
+            fedimint_tonic_lnd::connect(
+            "https://localhost:10001".to_owned(),
+            &PathBuf::from("/Users/steffen/.polar/networks/1/volumes/lnd/alice/tls.cert"),
+            &PathBuf::from("/Users/steffen/.polar/networks/1/volumes/lnd/alice/data/chain/bitcoin/regtest/admin.macaroon"),
+        ).await?;
+
+        // new address
+        // let adr = client
+        //     .lightning()
+        //     .new_address(NewAddressRequest {
+        //         r#type: AddressType::WitnessPubkeyHash as i32,
+        //         ..Default::default()
+        //     })
+        //     .await?;
+        // println!("adr: {:?}", adr.into_inner().address);
+
+        // send coins
+        // client
+        //     .lightning()
+        //     .send_coins(SendCoinsRequest {
+        //         addr: "bcrt1qjlf3hw34wcr3dsvrsnzfhh0e2hqwt0azny9rs8".to_owned(),
+        //         amount: 1000,
+        //         sat_per_vbyte: 1,
+        //         ..Default::default()
+        //     })
+        //     .await?;
+
+        let fee_report = client
+            .lightning()
+            .estimate_fee(EstimateFeeRequest {
+                addr_to_amount: [(
+                    "bcrt1qr7v4qqpaslu0xh478mfjg6tr627697wwjp9jd0".to_owned(),
+                    1000,
+                )]
+                .iter()
+                .cloned()
+                .collect::<HashMap<_, _>>(),
+                target_conf: 1,
+                ..Default::default()
+            })
+            .await?;
+
+        println!("fee_report: {:?}", fee_report.into_inner());
+
         Ok(())
     }
 }

@@ -1,4 +1,4 @@
-use std::{collections::HashSet, sync::Arc, vec};
+use std::{collections::HashSet, path::PathBuf, sync::Arc, vec};
 
 use moksha_core::{
     amount::Amount,
@@ -7,6 +7,7 @@ use moksha_core::{
     keyset::MintKeyset,
     proof::Proofs,
 };
+use url::Url;
 
 use crate::{
     config::{
@@ -16,6 +17,7 @@ use crate::{
     error::MokshaMintError,
     lightning::{AlbyLightning, Lightning, LightningType, LnbitsLightning, StrikeLightning},
     model::Invoice,
+    onchain::{LndOnchain, Onchain},
 };
 
 #[derive(Clone)]
@@ -27,6 +29,7 @@ pub struct Mint {
     pub keyset: MintKeyset,
     pub db: Arc<dyn Database + Send + Sync>,
     pub dhke: Dhke,
+    pub onchain: Arc<dyn Onchain + Send + Sync>,
     pub config: MintConfig,
 }
 
@@ -39,6 +42,7 @@ impl Mint {
         lightning_type: LightningType,
         db: Arc<dyn Database + Send + Sync>,
         config: MintConfig,
+        onchain: Arc<dyn Onchain + Send + Sync>,
     ) -> Self {
         Self {
             lightning,
@@ -48,6 +52,7 @@ impl Mint {
             db,
             dhke: Dhke::new(),
             config,
+            onchain,
         }
     }
 
@@ -288,6 +293,15 @@ impl MintBuilder {
         let db = Arc::new(crate::database::postgres::PostgresDB::new(&db_config).await?);
         db.migrate().await;
 
+        let lnd_onchain = Arc::new(
+            LndOnchain::new(
+                Url::parse("https://localhost:10009").unwrap(), // FIXME set correct values
+                &PathBuf::from("cert"),
+                &PathBuf::from("macaroon_file"),
+            )
+            .await?,
+        );
+
         Ok(Mint::new(
             self.private_key.expect("MINT_PRIVATE_KEY not set"),
             "".to_string(),
@@ -302,6 +316,7 @@ impl MintBuilder {
                 self.server_config.unwrap_or_default(),
                 db_config,
             ),
+            lnd_onchain,
         ))
     }
 }
@@ -312,6 +327,7 @@ mod tests {
     use crate::lightning::{LightningType, MockLightning};
     use crate::mint::Mint;
     use crate::model::{Invoice, PayInvoiceResult};
+    use crate::onchain::MockOnchain;
     use crate::{database::MockDatabase, error::MokshaMintError};
     use moksha_core::blind::{BlindedMessage, TotalAmount};
     use moksha_core::dhke;
@@ -455,6 +471,7 @@ mod tests {
             LightningType::Lnbits(Default::default()),
             Arc::new(create_mock_db_get_used_proofs()),
             Default::default(),
+            Arc::new(MockOnchain::default()),
         );
 
         let tokens = create_token_from_fixture("token_60.cashu".to_string())?;
@@ -514,6 +531,7 @@ mod tests {
             LightningType::Lnbits(Default::default()),
             db,
             Default::default(),
+            Arc::new(MockOnchain::default()),
         )
     }
 
