@@ -149,6 +149,7 @@ impl Display for CurrencyUnit {
 #[serde(rename_all = "lowercase")]
 pub enum PaymentMethod {
     Bolt11,
+    Onchain,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
@@ -368,6 +369,10 @@ pub struct Nuts {
     #[serde(rename = "12")]
     /// DLEQ proofs
     pub nut12: Nut12,
+
+    #[serde(rename = "13")]
+    /// onchain minting and melting
+    pub nut13: Nut13,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
@@ -443,6 +448,24 @@ pub struct Nut11 {
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
 pub struct Nut12 {
     pub supported: bool,
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+pub struct Nut13 {
+    pub supported: bool,
+    pub minting_methods: Vec<(PaymentMethod, CurrencyUnit)>,
+    pub melting_methods: Vec<(PaymentMethod, CurrencyUnit)>,
+    //TODO add min / max amounts
+}
+
+impl Default for Nut13 {
+    fn default() -> Self {
+        Self {
+            supported: true,
+            minting_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            melting_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+        }
+    }
 }
 
 #[cfg(test)]

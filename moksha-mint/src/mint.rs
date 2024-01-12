@@ -1,4 +1,4 @@
-use std::{collections::HashSet, path::PathBuf, sync::Arc, vec};
+use std::{collections::HashSet, env, path::PathBuf, sync::Arc, vec};
 
 use moksha_core::{
     amount::Amount,
@@ -293,14 +293,17 @@ impl MintBuilder {
         let db = Arc::new(crate::database::postgres::PostgresDB::new(&db_config).await?);
         db.migrate().await;
 
-        let lnd_onchain = Arc::new(
-            LndOnchain::new(
-                Url::parse("https://localhost:10009").unwrap(), // FIXME set correct values
-                &PathBuf::from("cert"),
-                &PathBuf::from("macaroon_file"),
-            )
-            .await?,
-        );
+        // FIXME use specific config for onchain
+        let lnd_host =
+            Url::parse(&env::var("LND_GRPC_HOST").expect("LND_GRPC_HOST not set")).unwrap();
+
+        let tls_path =
+            PathBuf::from(&env::var("LND_TLS_CERT_PATH").expect("LND_TLS_CERT_PATH not set"));
+
+        let mac_path =
+            PathBuf::from(&env::var("LND_MACAROON_PATH").expect("LND_MACAROON_PATH not set"));
+
+        let lnd_onchain = Arc::new(LndOnchain::new(lnd_host, &tls_path, &mac_path).await?);
 
         Ok(Mint::new(
             self.private_key.expect("MINT_PRIVATE_KEY not set"),
