@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use moksha_core::{
-    primitives::{Bolt11MeltQuote, Bolt11MintQuote},
+    primitives::{Bolt11MeltQuote, Bolt11MintQuote, OnchainMeltQuote, OnchainMintQuote},
     proof::Proofs,
 };
 use uuid::Uuid;
@@ -46,5 +46,31 @@ pub trait Database {
     async fn delete_bolt11_melt_quote(
         &self,
         quote: &Bolt11MeltQuote,
+    ) -> Result<(), MokshaMintError>;
+
+    async fn get_onchain_mint_quote(&self, key: &Uuid)
+        -> Result<OnchainMintQuote, MokshaMintError>;
+    async fn add_onchain_mint_quote(&self, quote: &OnchainMintQuote)
+        -> Result<(), MokshaMintError>;
+    async fn update_onchain_mint_quote(
+        &self,
+        quote: &OnchainMintQuote,
+    ) -> Result<(), MokshaMintError>;
+    async fn delete_onchain_mint_quote(
+        &self,
+        quote: &OnchainMintQuote,
+    ) -> Result<(), MokshaMintError>;
+
+    async fn get_onchain_melt_quote(&self, key: &Uuid)
+        -> Result<OnchainMeltQuote, MokshaMintError>;
+    async fn add_onchain_melt_quote(&self, quote: &OnchainMeltQuote)
+        -> Result<(), MokshaMintError>;
+    async fn update_onchain_melt_quote(
+        &self,
+        quote: &OnchainMeltQuote,
+    ) -> Result<(), MokshaMintError>;
+    async fn delete_onchain_melt_quote(
+        &self,
+        quote: &OnchainMeltQuote,
     ) -> Result<(), MokshaMintError>;
 }

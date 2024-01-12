@@ -24,11 +24,13 @@ use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
     Bolt11MeltQuote, Bolt11MintQuote, CheckFeesRequest, CheckFeesResponse, CurrencyUnit,
     KeyResponse, KeysResponse, MintInfoResponse, MintLegacyInfoResponse, Nut10, Nut11, Nut12, Nut4,
-    Nut5, Nut6, Nut7, Nut8, Nut9, Nuts, PaymentMethod, PaymentRequest, PostMeltBolt11Request,
-    PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
-    PostMeltRequest, PostMeltResponse, PostMintBolt11Request, PostMintBolt11Response,
-    PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintRequest, PostMintResponse,
-    PostSplitRequest, PostSplitResponse, PostSwapRequest, PostSwapResponse,
+    Nut5, Nut6, Nut7, Nut8, Nut9, Nuts, OnchainMintQuote, PaymentMethod, PaymentRequest,
+    PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
+    PostMeltQuoteBolt11Response, PostMeltRequest, PostMeltResponse, PostMintBolt11Request,
+    PostMintBolt11Response, PostMintOnchainRequest, PostMintOnchainResponse,
+    PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintQuoteOnchainRequest,
+    PostMintQuoteOnchainResponse, PostMintRequest, PostMintResponse, PostSplitRequest,
+    PostSplitResponse, PostSwapRequest, PostSwapResponse,
 };
 use secp256k1::PublicKey;
 
@@ -100,6 +102,9 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         post_swap,
         get_info,
         get_health,
+        post_mint_quote_onchain,
+        get_mint_quote_onchain,
+        post_mint_onchain
     ),
     components(schemas(
         MintInfoResponse,
@@ -133,7 +138,9 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         PostMintBolt11Response,
         PostSwapRequest,
         PostSwapResponse,
-        P2SHScript
+        P2SHScript,
+        PostMintQuoteOnchainRequest,
+        PostMintQuoteOnchainResponse
     ))
 )]
 struct ApiDoc;
@@ -162,6 +169,11 @@ fn app(mint: Mint) -> Router {
         .route("/v1/swap", post(post_swap))
         .route("/v1/info", get(get_info));
 
+    let onchain_routes = Router::new()
+        .route("/v1/mint/quote/onchain", post(post_mint_quote_onchain))
+        .route("/v1/mint/quote/onchain/:quote", get(get_mint_quote_onchain))
+        .route("/v1/mint/onchain", post(post_mint_onchain));
+
     let general_routes = Router::new().route("/health", get(get_health));
 
     let server_config = mint.config.server.clone();
@@ -170,6 +182,7 @@ fn app(mint: Mint) -> Router {
     let router = Router::new()
         .nest(&prefix, legacy_routes)
         .nest(&prefix, routes)
+        .nest(&prefix, onchain_routes)
         .nest("", general_routes)
         .with_state(mint)
         .layer(TraceLayer::new_for_http());
@@ -654,6 +667,94 @@ async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, Mo
         motd: mint.config.info.motd,
     };
     Ok(Json(mint_info))
+}
+
+#[utoipa::path(
+        post,
+        path = "/v1/mint/quote/onchain",
+        request_body = PostMintQuoteOnchainRequest,
+        responses(
+            (status = 200, description = "post mint quote", body = [PostMintQuoteOnchainResponse])
+        ),
+    )]
+async fn post_mint_quote_onchain(
+    State(mint): State<Mint>,
+    Json(request): Json<PostMintQuoteOnchainRequest>,
+) -> Result<Json<PostMintQuoteOnchainResponse>, MokshaMintError> {
+    let quote_id = Uuid::new_v4();
+    let address = mint.onchain.new_address().await?;
+    // TODO check amount and unit
+
+    let quote = OnchainMintQuote {
+        quote_id,
+        address,
+        unit: request.unit,
+        amount: request.amount,
+        expiry: quote_expiry(),
+        paid: false,
+    };
+
+    mint.db.add_onchain_mint_quote(&quote).await?;
+    Ok(Json(quote.into()))
+}
+
+#[utoipa::path(
+        get,
+        path = "/v1/mint/quote/onchain/{quote_id}",
+        responses(
+            (status = 200, description = "get mint quote by id", body = [PostMintQuoteOnchainResponse])
+        ),
+        params(
+            ("quote_id" = String, Path, description = "quote id"),
+        )
+    )]
+async fn get_mint_quote_onchain(
+    Path(quote_id): Path<String>,
+    State(mint): State<Mint>,
+) -> Result<Json<PostMintQuoteOnchainResponse>, MokshaMintError> {
+    info!("get_quote: {}", quote_id);
+
+    let quote = mint
+        .db
+        .get_onchain_mint_quote(&Uuid::from_str(quote_id.as_str())?)
+        .await?;
+
+    let paid = mint.onchain.is_paid(&quote.address, quote.amount).await?;
+
+    Ok(Json(OnchainMintQuote { paid, ..quote }.into()))
+}
+
+#[utoipa::path(
+        post,
+        path = "/v1/mint/onchain/{quote_id}",
+        request_body = PostMintOnchainRequest,
+        responses(
+            (status = 200, description = "post mint quote", body = [PostMintOnchainResponse])
+        ),
+        params(
+            ("quote_id" = String, Path, description = "quote id"),
+        )
+    )]
+async fn post_mint_onchain(
+    State(mint): State<Mint>,
+    Json(request): Json<PostMintOnchainRequest>,
+) -> Result<Json<PostMintOnchainResponse>, MokshaMintError> {
+    let signatures = mint
+        .mint_tokens(request.quote.clone(), &request.outputs, &mint.keyset)
+        .await?;
+
+    let old_quote = &mint
+        .db
+        .get_onchain_mint_quote(&Uuid::from_str(request.quote.as_str())?)
+        .await?;
+
+    mint.db
+        .update_onchain_mint_quote(&OnchainMintQuote {
+            paid: true,
+            ..old_quote.clone()
+        })
+        .await?;
+    Ok(Json(PostMintOnchainResponse { signatures }))
 }
 
 #[cfg(test)]

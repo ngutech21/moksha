@@ -19,16 +19,18 @@ pub trait Onchain: Send + Sync {
     async fn new_address(&self) -> Result<String, MokshaMintError>;
     async fn send_coins(
         &self,
-        address: String,
+        address: &str,
         amount: u64,
         sat_per_vbyte: u32,
     ) -> Result<SendCoinsResult, MokshaMintError>;
 
     async fn estimate_fee(
         &self,
-        address: String,
+        address: &str,
         amount: u64,
     ) -> Result<EstimateFeeResult, MokshaMintError>;
+
+    async fn is_paid(&self, address: &str, amount: u64) -> Result<bool, MokshaMintError>;
 }
 
 #[derive(Debug, Clone)]
@@ -67,6 +69,10 @@ impl LndOnchain {
 
 #[async_trait]
 impl Onchain for LndOnchain {
+    async fn is_paid(&self, address: &str, amount: u64) -> Result<bool, MokshaMintError> {
+        Ok(false)
+    }
+
     async fn new_address(&self) -> Result<String, MokshaMintError> {
         let mut client = self.client_lock().await.expect("failed to lock client");
         let response = client.new_address(NewAddressRequest {
@@ -82,14 +88,14 @@ impl Onchain for LndOnchain {
 
     async fn send_coins(
         &self,
-        address: String,
+        address: &str,
         amount: u64,
         sat_per_vbyte: u32,
     ) -> Result<SendCoinsResult, MokshaMintError> {
         let mut client = self.client_lock().await.expect("failed to local client");
         let response = client
             .send_coins(SendCoinsRequest {
-                addr: address,
+                addr: address.to_owned(),
                 amount: amount as i64,
                 sat_per_vbyte: sat_per_vbyte as u64,
                 ..Default::default()
@@ -104,13 +110,13 @@ impl Onchain for LndOnchain {
 
     async fn estimate_fee(
         &self,
-        address: String,
+        address: &str,
         amount: u64,
     ) -> Result<EstimateFeeResult, MokshaMintError> {
         let mut client = self.client_lock().await.expect("failed to local client");
         let response = client
             .estimate_fee(EstimateFeeRequest {
-                addr_to_amount: [(address, amount as i64)]
+                addr_to_amount: [(address.to_owned(), amount as i64)]
                     .iter()
                     .cloned()
                     .collect::<HashMap<_, _>>(),

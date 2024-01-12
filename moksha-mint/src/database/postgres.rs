@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use moksha_core::{
     dhke,
-    primitives::{Bolt11MeltQuote, Bolt11MintQuote},
+    primitives::{Bolt11MeltQuote, Bolt11MintQuote, OnchainMeltQuote, OnchainMintQuote},
     proof::{Proof, Proofs},
 };
 
@@ -236,5 +236,57 @@ impl Database for PostgresDB {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    async fn get_onchain_mint_quote(
+        &self,
+        key: &Uuid,
+    ) -> Result<OnchainMintQuote, MokshaMintError> {
+        todo!();
+    }
+    async fn add_onchain_mint_quote(
+        &self,
+        quote: &OnchainMintQuote,
+    ) -> Result<(), MokshaMintError> {
+        todo!();
+    }
+
+    async fn update_onchain_mint_quote(
+        &self,
+        quote: &OnchainMintQuote,
+    ) -> Result<(), MokshaMintError> {
+        todo!();
+    }
+
+    async fn delete_onchain_mint_quote(
+        &self,
+        quote: &OnchainMintQuote,
+    ) -> Result<(), MokshaMintError> {
+        todo!();
+    }
+
+    async fn get_onchain_melt_quote(
+        &self,
+        key: &Uuid,
+    ) -> Result<OnchainMeltQuote, MokshaMintError> {
+        todo!();
+    }
+    async fn add_onchain_melt_quote(
+        &self,
+        quote: &OnchainMeltQuote,
+    ) -> Result<(), MokshaMintError> {
+        todo!();
+    }
+    async fn update_onchain_melt_quote(
+        &self,
+        quote: &OnchainMeltQuote,
+    ) -> Result<(), MokshaMintError> {
+        todo!();
+    }
+    async fn delete_onchain_melt_quote(
+        &self,
+        quote: &OnchainMeltQuote,
+    ) -> Result<(), MokshaMintError> {
+        todo!();
     }
 }

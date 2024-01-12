@@ -262,6 +262,60 @@ pub struct MintInfoResponse {
     pub nuts: Nuts,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct OnchainMintQuote {
+    pub quote_id: Uuid,
+    pub address: String,
+    pub unit: CurrencyUnit,
+    pub amount: u64,
+    pub expiry: u64,
+    pub paid: bool,
+}
+
+impl From<OnchainMintQuote> for PostMintQuoteOnchainResponse {
+    fn from(quote: OnchainMintQuote) -> Self {
+        Self {
+            quote: quote.quote_id.to_string(),
+            address: quote.address,
+            paid: quote.paid,
+            expiry: quote.expiry,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct OnchainMeltQuote {
+    pub quote_id: Uuid,
+    pub amount: u64,
+    pub expiry: u64,
+    pub paid: bool,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMintQuoteOnchainRequest {
+    pub amount: u64,
+    pub unit: CurrencyUnit,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMintQuoteOnchainResponse {
+    pub quote: String,
+    pub address: String,
+    pub paid: bool,
+    pub expiry: u64,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMintOnchainRequest {
+    pub quote: String,
+    pub outputs: Vec<BlindedMessage>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMintOnchainResponse {
+    pub signatures: Vec<BlindedSignature>,
+}
+
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
 pub struct Nuts {
     // /// Cryptography and Models
