@@ -327,6 +327,49 @@ pub struct PostMintOnchainResponse {
     pub signatures: Vec<BlindedSignature>,
 }
 
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMeltQuoteOnchainRequest {
+    /// onchain addrress
+    pub amount: u64,
+    pub address: String,
+    pub unit: CurrencyUnit,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMeltQuoteOnchainResponse {
+    pub quote: String,
+    pub amount: u64,
+    pub fee: u64,
+    pub paid: bool,
+    pub expiry: u64,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMeltOnchainRequest {
+    pub quote: String,
+    pub inputs: Proofs,
+    pub outputs: Vec<BlindedMessage>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMeltOnchainResponse {
+    pub paid: bool,
+    pub txid: Option<String>,
+    pub change: Vec<BlindedSignature>,
+}
+
+impl From<OnchainMeltQuote> for PostMeltQuoteOnchainResponse {
+    fn from(quote: OnchainMeltQuote) -> Self {
+        Self {
+            quote: quote.quote_id.to_string(),
+            amount: quote.amount,
+            fee: quote.fee,
+            expiry: quote.expiry,
+            paid: quote.paid,
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
 pub struct Nuts {
     // /// Cryptography and Models

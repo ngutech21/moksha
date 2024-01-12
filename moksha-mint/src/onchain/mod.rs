@@ -36,7 +36,7 @@ pub trait Onchain: Send + Sync {
 
 #[derive(Debug, Clone)]
 pub struct EstimateFeeResult {
-    pub sat_per_vbyte: u64,
+    pub fee_in_sat: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -152,7 +152,7 @@ impl Onchain for LndOnchain {
             .expect("failed to estimate fee");
 
         Ok(EstimateFeeResult {
-            sat_per_vbyte: response.into_inner().sat_per_vbyte,
+            fee_in_sat: response.into_inner().fee_sat as u64,
         })
     }
 }

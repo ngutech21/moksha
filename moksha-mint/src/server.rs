@@ -24,13 +24,15 @@ use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
     Bolt11MeltQuote, Bolt11MintQuote, CheckFeesRequest, CheckFeesResponse, CurrencyUnit,
     KeyResponse, KeysResponse, MintInfoResponse, MintLegacyInfoResponse, Nut10, Nut11, Nut12,
-    Nut13, Nut4, Nut5, Nut6, Nut7, Nut8, Nut9, Nuts, OnchainMintQuote, PaymentMethod,
-    PaymentRequest, PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
-    PostMeltQuoteBolt11Response, PostMeltRequest, PostMeltResponse, PostMintBolt11Request,
-    PostMintBolt11Response, PostMintOnchainRequest, PostMintOnchainResponse,
-    PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintQuoteOnchainRequest,
-    PostMintQuoteOnchainResponse, PostMintRequest, PostMintResponse, PostSplitRequest,
-    PostSplitResponse, PostSwapRequest, PostSwapResponse,
+    Nut13, Nut4, Nut5, Nut6, Nut7, Nut8, Nut9, Nuts, OnchainMeltQuote, OnchainMintQuote,
+    PaymentMethod, PaymentRequest, PostMeltBolt11Request, PostMeltBolt11Response,
+    PostMeltOnchainRequest, PostMeltOnchainResponse, PostMeltQuoteBolt11Request,
+    PostMeltQuoteBolt11Response, PostMeltQuoteOnchainRequest, PostMeltQuoteOnchainResponse,
+    PostMeltRequest, PostMeltResponse, PostMintBolt11Request, PostMintBolt11Response,
+    PostMintOnchainRequest, PostMintOnchainResponse, PostMintQuoteBolt11Request,
+    PostMintQuoteBolt11Response, PostMintQuoteOnchainRequest, PostMintQuoteOnchainResponse,
+    PostMintRequest, PostMintResponse, PostSplitRequest, PostSplitResponse, PostSwapRequest,
+    PostSwapResponse,
 };
 use secp256k1::PublicKey;
 
@@ -40,7 +42,7 @@ use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
-use tracing::{debug, event, info, Level};
+use tracing::{event, info, Level};
 
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -104,7 +106,10 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         get_health,
         post_mint_quote_onchain,
         get_mint_quote_onchain,
-        post_mint_onchain
+        post_mint_onchain,
+        post_melt_quote_onchain,
+        get_melt_quote_onchain,
+        post_melt_onchain
     ),
     components(schemas(
         MintInfoResponse,
@@ -139,9 +144,11 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         PostSwapRequest,
         PostSwapResponse,
         P2SHScript,
+        Nut13,
         PostMintQuoteOnchainRequest,
         PostMintQuoteOnchainResponse,
-        Nut13
+        PostMeltQuoteOnchainRequest,
+        PostMeltQuoteOnchainResponse,
     ))
 )]
 struct ApiDoc;
@@ -173,7 +180,10 @@ fn app(mint: Mint) -> Router {
     let onchain_routes = Router::new()
         .route("/v1/mint/quote/onchain", post(post_mint_quote_onchain))
         .route("/v1/mint/quote/onchain/:quote", get(get_mint_quote_onchain))
-        .route("/v1/mint/onchain", post(post_mint_onchain));
+        .route("/v1/mint/onchain", post(post_mint_onchain))
+        .route("/v1/melt/quote/onchain", post(post_melt_quote_onchain))
+        .route("/v1/melt/quote/onchain/:quote", get(get_melt_quote_onchain))
+        .route("/v1/melt/onchain", post(post_melt_onchain));
 
     let general_routes = Router::new().route("/health", get(get_health));
 
@@ -764,6 +774,107 @@ async fn post_mint_onchain(
         })
         .await?;
     Ok(Json(PostMintOnchainResponse { signatures }))
+}
+
+#[utoipa::path(
+        post,
+        path = "/v1/melt/quote/onchain",
+        request_body = PostMeltQuoteOnchainRequest,
+        responses(
+            (status = 200, description = "post mint quote", body = [PostMeltQuoteOnchainResponse])
+        ),
+    )]
+async fn post_melt_quote_onchain(
+    State(mint): State<Mint>,
+    Json(melt_request): Json<PostMeltQuoteOnchainRequest>,
+) -> Result<Json<PostMeltQuoteOnchainResponse>, MokshaMintError> {
+    let PostMeltQuoteOnchainRequest {
+        address,
+        amount,
+        unit,
+    } = melt_request;
+
+    // FIXME check currency unit
+    let fee_response = mint.onchain.estimate_fee(&address, amount).await?;
+
+    let key = Uuid::new_v4();
+    let quote = OnchainMeltQuote {
+        quote_id: key,
+        amount,
+        fee: fee_response.fee_in_sat,
+        expiry: quote_expiry(), // set specific onchain expiry
+        paid: false,
+    };
+    mint.db.add_onchain_melt_quote(&quote).await?;
+
+    Ok(Json(quote.try_into().map_err(|_| {
+        crate::error::MokshaMintError::InvalidQuote("".to_string())
+    })?))
+}
+
+#[utoipa::path(
+        get,
+        path = "/v1/melt/quote/onchain/{quote_id}",
+        responses(
+            (status = 200, description = "post mint quote", body = [PostMeltQuoteOnchainResponse])
+        ),
+        params(
+            ("quote_id" = String, Path, description = "quote id"),
+        )
+    )]
+async fn get_melt_quote_onchain(
+    Path(quote_id): Path<String>,
+    State(mint): State<Mint>,
+) -> Result<Json<PostMeltQuoteOnchainResponse>, MokshaMintError> {
+    info!("get_melt_quote onchain: {}", quote_id);
+    let quote = mint
+        .db
+        .get_onchain_melt_quote(&Uuid::from_str(quote_id.as_str())?)
+        .await?;
+
+    // FIXME check for paid?
+    Ok(Json(quote.into()))
+}
+
+#[utoipa::path(
+        post,
+        path = "/v1/melt/onchain",
+        request_body = PostMeltOnchainRequest,
+        responses(
+            (status = 200, description = "post melt", body = [PostMeltOnchainResponse])
+        ),
+    )]
+async fn post_melt_onchain(
+    State(mint): State<Mint>,
+    Json(melt_request): Json<PostMeltOnchainRequest>,
+) -> Result<Json<PostMeltOnchainResponse>, MokshaMintError> {
+    let quote = mint
+        .db
+        .get_onchain_melt_quote(&Uuid::from_str(melt_request.quote.as_str())?)
+        .await?;
+
+    // let (paid, payment_preimage, change) = mint
+    //     .melt(
+    //         quote.payment_request.to_owned(),
+    //         quote.fee_reserve,
+    //         &melt_request.inputs,
+    //         &melt_request.outputs,
+    //         &mint.keyset,
+    //     )
+    //     .await?;
+    // mint.db
+    //     .update_bolt11_melt_quote(&Bolt11MeltQuote { paid, ..quote })
+    //     .await?;
+
+    // FIXME
+    let paid = false;
+    let change = vec![];
+
+    Ok(Json(PostMeltOnchainResponse {
+        paid,
+        txid: None,
+        change,
+    }))
 }
 
 #[cfg(test)]
