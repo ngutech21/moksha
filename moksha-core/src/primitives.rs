@@ -152,6 +152,15 @@ pub enum PaymentMethod {
     Onchain,
 }
 
+impl Display for PaymentMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PaymentMethod::Bolt11 => write!(f, "Lightning"),
+            PaymentMethod::Onchain => write!(f, "Onchain"),
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMintQuoteBolt11Request {
     pub amount: u64,

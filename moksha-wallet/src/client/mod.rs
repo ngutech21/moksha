@@ -7,8 +7,8 @@ use moksha_core::{
     primitives::{
         CheckFeesResponse, CurrencyUnit, KeysResponse, MintInfoResponse, MintLegacyInfoResponse,
         PaymentRequest, PostMeltBolt11Response, PostMeltQuoteBolt11Response, PostMeltResponse,
-        PostMintBolt11Response, PostMintQuoteBolt11Response, PostMintResponse, PostSplitResponse,
-        PostSwapResponse,
+        PostMintBolt11Response, PostMintOnchainResponse, PostMintQuoteBolt11Response,
+        PostMintQuoteOnchainResponse, PostMintResponse, PostSplitResponse, PostSwapResponse,
     },
     proof::Proofs,
 };
@@ -133,4 +133,24 @@ pub trait Client {
     async fn get_info(&self, mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError>;
 
     async fn is_v1_supported(&self, mint_url: &Url) -> Result<bool, MokshaWalletError>;
+
+    async fn post_mint_onchain(
+        &self,
+        mint_url: &Url,
+        quote: String,
+        blinded_messages: Vec<BlindedMessage>,
+    ) -> Result<PostMintOnchainResponse, MokshaWalletError>;
+
+    async fn post_mint_quote_onchain(
+        &self,
+        mint_url: &Url,
+        amount: u64,
+        unit: CurrencyUnit,
+    ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError>;
+
+    async fn get_mint_quote_onchain(
+        &self,
+        mint_url: &Url,
+        quote: String,
+    ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError>;
 }

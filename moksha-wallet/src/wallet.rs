@@ -4,8 +4,8 @@ use moksha_core::{
     dhke::Dhke,
     keyset::V1Keyset,
     primitives::{
-        CurrencyUnit, KeyResponse, MintInfoResponse, PostMeltBolt11Response,
-        PostMintQuoteBolt11Response,
+        CurrencyUnit, KeyResponse, MintInfoResponse, PaymentMethod, PostMeltBolt11Response,
+        PostMintQuoteBolt11Response, PostMintQuoteOnchainResponse,
     },
     proof::{Proof, Proofs},
     token::TokenV3,
@@ -134,12 +134,21 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
         }
     }
 
-    pub async fn create_quote(
+    pub async fn create_quote_bolt11(
         &self,
         amount: u64,
     ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError> {
         self.client
             .post_mint_quote_bolt11(&self.mint_url, amount, CurrencyUnit::Sat)
+            .await
+    }
+
+    pub async fn create_quote_onchain(
+        &self,
+        amount: u64,
+    ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError> {
+        self.client
+            .post_mint_quote_onchain(&self.mint_url, amount, CurrencyUnit::Sat)
             .await
     }
 
@@ -365,6 +374,7 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
 
     pub async fn mint_tokens(
         &self,
+        payment_method: &PaymentMethod,
         amount: Amount,
         quote_id: String,
     ) -> Result<TokenV3, MokshaWalletError> {
@@ -387,18 +397,38 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             })
             .collect::<Vec<(BlindedMessage, SecretKey)>>();
 
-        let post_mint_resp = self
-            .client
-            .post_mint_bolt11(
-                &self.mint_url,
-                quote_id,
-                blinded_messages
-                    .clone()
-                    .into_iter()
-                    .map(|(msg, _)| msg)
-                    .collect::<Vec<BlindedMessage>>(),
-            )
-            .await?;
+        let signatures = match payment_method {
+            PaymentMethod::Bolt11 => {
+                let post_mint_resp = self
+                    .client
+                    .post_mint_bolt11(
+                        &self.mint_url,
+                        quote_id,
+                        blinded_messages
+                            .clone()
+                            .into_iter()
+                            .map(|(msg, _)| msg)
+                            .collect::<Vec<BlindedMessage>>(),
+                    )
+                    .await?;
+                post_mint_resp.signatures
+            }
+            PaymentMethod::Onchain => {
+                let post_mint_resp = self
+                    .client
+                    .post_mint_onchain(
+                        &self.mint_url,
+                        quote_id,
+                        blinded_messages
+                            .clone()
+                            .into_iter()
+                            .map(|(msg, _)| msg)
+                            .collect::<Vec<BlindedMessage>>(),
+                    )
+                    .await?;
+                post_mint_resp.signatures
+            }
+        };
 
         // step 3: unblind signatures
         let current_keyset_id = self.keyset_id.clone().id; // FIXME
@@ -409,8 +439,7 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             .map(|(_, secret)| secret)
             .collect::<Vec<SecretKey>>();
 
-        let proofs = post_mint_resp
-            .signatures
+        let proofs = signatures
             .iter()
             .zip(private_keys)
             .zip(secrets)
@@ -510,7 +539,7 @@ mod tests {
     use moksha_core::fixture::{read_fixture, read_fixture_as};
     use moksha_core::keyset::{MintKeyset, V1Keysets};
     use moksha_core::primitives::{
-        CurrencyUnit, KeyResponse, KeysResponse, PostMeltBolt11Response,
+        CurrencyUnit, KeyResponse, KeysResponse, PaymentMethod, PostMeltBolt11Response,
         PostMeltQuoteBolt11Response, PostMintBolt11Response, PostSwapResponse,
     };
     use moksha_core::proof::Proofs;
@@ -607,7 +636,9 @@ mod tests {
             .build()
             .await?;
 
-        let result = wallet.mint_tokens(20.into(), "hash".to_string()).await?;
+        let result = wallet
+            .mint_tokens(&PaymentMethod::Bolt11, 20.into(), "hash".to_string())
+            .await?;
         assert_eq!(20, result.total_amount());
         result.tokens.into_iter().for_each(|t| {
             assert_eq!(mint_url, t.mint.expect("mint is empty"));

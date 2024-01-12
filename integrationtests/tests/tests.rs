@@ -1,4 +1,5 @@
 #![allow(unused_imports)]
+use moksha_core::primitives::PaymentMethod;
 use moksha_wallet::client::reqwest::HttpClient;
 use moksha_wallet::client::LegacyClient;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
@@ -99,12 +100,12 @@ pub fn test_integration() -> anyhow::Result<()> {
 
         // mint some tokens
         let mint_amount = 6_000;
-        let mint_quote = wallet.create_quote(mint_amount).await.unwrap();
+        let mint_quote = wallet.create_quote_bolt11(mint_amount).await.unwrap();
         let hash = mint_quote.clone().quote;
 
         sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
         let mint_result = wallet
-            .mint_tokens(mint_amount.into(), hash.clone())
+            .mint_tokens(&PaymentMethod::Bolt11, mint_amount.into(), hash.clone())
             .await
             .unwrap();
         assert_eq!(6_000, mint_result.total_amount());

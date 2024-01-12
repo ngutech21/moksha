@@ -1,5 +1,8 @@
 use clap::{Parser, Subcommand};
-use moksha_core::primitives::PostMintQuoteBolt11Response;
+use dialoguer::{theme::ColorfulTheme, Select};
+use moksha_core::primitives::{
+    PaymentMethod, PostMintQuoteBolt11Response, PostMintQuoteOnchainResponse,
+};
 use std::path::PathBuf;
 use url::Url;
 
@@ -113,14 +116,34 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Command::Mint { amount } => {
-            let PostMintQuoteBolt11Response {
-                payment_request,
-                quote,
-                ..
-            } = wallet.create_quote(amount).await?;
+            let selections = &[PaymentMethod::Onchain, PaymentMethod::Bolt11];
 
-            println!("Quote:{:#?}", &quote);
-            println!("Pay invoice to mint tokens:\n\n{payment_request}");
+            let selection = Select::with_theme(&ColorfulTheme::default())
+                .with_prompt("Choose a payment method:")
+                .default(0)
+                .items(&selections[..])
+                .interact()
+                .unwrap();
+            println!("Selection: {}", selection);
+            let payment_method = selections[selection].clone();
+
+            let quote = match payment_method {
+                PaymentMethod::Onchain => {
+                    let PostMintQuoteOnchainResponse { address, quote, .. } =
+                        wallet.create_quote_onchain(amount).await?;
+                    println!("Pay onchain to mint tokens:\n\n{address}");
+                    quote
+                }
+                PaymentMethod::Bolt11 => {
+                    let PostMintQuoteBolt11Response {
+                        payment_request,
+                        quote,
+                        ..
+                    } = wallet.create_quote_bolt11(amount).await?;
+                    println!("Pay invoice to mint tokens:\n\n{payment_request}");
+                    quote
+                }
+            };
 
             loop {
                 tokio::time::sleep_until(
@@ -132,7 +155,9 @@ async fn main() -> anyhow::Result<()> {
                     continue;
                 }
 
-                let mint_result = wallet.mint_tokens(amount.into(), quote.clone()).await;
+                let mint_result = wallet
+                    .mint_tokens(&payment_method, amount.into(), quote.clone())
+                    .await;
 
                 match mint_result {
                     Ok(_) => {
