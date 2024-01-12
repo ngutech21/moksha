@@ -5,6 +5,7 @@ use moksha_core::{
     blind::{BlindedMessage, BlindedSignature, TotalAmount},
     dhke::Dhke,
     keyset::MintKeyset,
+    primitives::PaymentMethod,
     proof::Proofs,
 };
 use url::Url;
@@ -100,22 +101,26 @@ impl Mint {
 
     pub async fn mint_tokens(
         &self,
+        payment_method: PaymentMethod,
         key: String,
         outputs: &[BlindedMessage],
         keyset: &MintKeyset,
     ) -> Result<Vec<BlindedSignature>, MokshaMintError> {
-        let invoice = self.db.get_pending_invoice(key.clone()).await?;
+        // FIXME refactor
+        if payment_method == PaymentMethod::Bolt11 {
+            let invoice = self.db.get_pending_invoice(key.clone()).await?;
 
-        let is_paid = self
-            .lightning
-            .is_invoice_paid(invoice.payment_request.clone())
-            .await?;
+            let is_paid = self
+                .lightning
+                .is_invoice_paid(invoice.payment_request.clone())
+                .await?;
 
-        if !is_paid {
-            return Err(MokshaMintError::InvoiceNotPaidYet);
+            if !is_paid {
+                return Err(MokshaMintError::InvoiceNotPaidYet);
+            }
+
+            self.db.delete_pending_invoice(key).await?;
         }
-
-        self.db.delete_pending_invoice(key).await?;
         self.create_blinded_signatures(outputs, keyset)
     }
 
@@ -381,7 +386,12 @@ mod tests {
 
         let outputs = vec![];
         let result = mint
-            .mint_tokens("somehash".to_string(), &outputs, &mint.keyset_legacy)
+            .mint_tokens(
+                moksha_core::primitives::PaymentMethod::Bolt11,
+                "somehash".to_string(),
+                &outputs,
+                &mint.keyset_legacy,
+            )
             .await?;
         assert!(result.is_empty());
         Ok(())
@@ -395,7 +405,12 @@ mod tests {
 
         let outputs = create_blinded_msgs_from_fixture("blinded_messages_40.json".to_string())?;
         let result = mint
-            .mint_tokens("somehash".to_string(), &outputs, &mint.keyset_legacy)
+            .mint_tokens(
+                moksha_core::primitives::PaymentMethod::Bolt11,
+                "somehash".to_string(),
+                &outputs,
+                &mint.keyset_legacy,
+            )
             .await?;
         assert_eq!(40, result.total_amount());
         Ok(())

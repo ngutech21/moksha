@@ -3,6 +3,7 @@ use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use async_trait::async_trait;
 use fedimint_tonic_lnd::{
     lnrpc::{AddressType, EstimateFeeRequest, NewAddressRequest, SendCoinsRequest},
+    walletrpc::ListUnspentRequest,
     Client,
 };
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
@@ -65,13 +66,36 @@ impl LndOnchain {
         let guard = self.0.lock().await;
         Ok(MutexGuard::map(guard, |client| client.lightning()))
     }
+
+    pub async fn wallet_lock(
+        &self,
+    ) -> anyhow::Result<MappedMutexGuard<'_, fedimint_tonic_lnd::WalletKitClient>> {
+        let guard = self.0.lock().await;
+        Ok(MutexGuard::map(guard, |client| client.wallet()))
+    }
 }
 
 #[async_trait]
 impl Onchain for LndOnchain {
     async fn is_paid(&self, address: &str, amount: u64) -> Result<bool, MokshaMintError> {
-        // TODO implement
-        Ok(true)
+        let mut wal = self.wallet_lock().await.expect("failed to lock wallet");
+
+        let request = ListUnspentRequest {
+            min_confs: 0,
+            max_confs: i32::MAX,
+            ..Default::default()
+        };
+
+        let response = wal
+            .list_unspent(request)
+            .await
+            .expect("failed to get response");
+
+        Ok(response
+            .get_ref()
+            .utxos
+            .iter()
+            .any(|utxo| utxo.address == address && utxo.amount_sat >= amount as i64))
     }
 
     async fn new_address(&self) -> Result<String, MokshaMintError> {

@@ -40,7 +40,7 @@ use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
-use tracing::{event, info, Level};
+use tracing::{debug, event, info, Level};
 
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -334,6 +334,7 @@ async fn post_legacy_mint(
 
     let promises = mint
         .mint_tokens(
+            PaymentMethod::Bolt11,
             mint_query.hash,
             &blinded_messages.outputs,
             &mint.keyset_legacy,
@@ -488,7 +489,12 @@ async fn post_mint_bolt11(
     Json(request): Json<PostMintBolt11Request>,
 ) -> Result<Json<PostMintBolt11Response>, MokshaMintError> {
     let signatures = mint
-        .mint_tokens(request.quote.clone(), &request.outputs, &mint.keyset)
+        .mint_tokens(
+            PaymentMethod::Bolt11,
+            request.quote.clone(),
+            &request.outputs,
+            &mint.keyset,
+        )
         .await?;
 
     let old_quote = &mint
@@ -713,7 +719,7 @@ async fn get_mint_quote_onchain(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
 ) -> Result<Json<PostMintQuoteOnchainResponse>, MokshaMintError> {
-    info!("get_quote: {}", quote_id);
+    info!("get_quote onchain: {}", quote_id);
 
     let quote = mint
         .db
@@ -727,21 +733,23 @@ async fn get_mint_quote_onchain(
 
 #[utoipa::path(
         post,
-        path = "/v1/mint/onchain/{quote_id}",
+        path = "/v1/mint/onchain",
         request_body = PostMintOnchainRequest,
         responses(
-            (status = 200, description = "post mint quote", body = [PostMintOnchainResponse])
+            (status = 200, description = "post mint", body = [PostMintOnchainResponse])
         ),
-        params(
-            ("quote_id" = String, Path, description = "quote id"),
-        )
     )]
 async fn post_mint_onchain(
     State(mint): State<Mint>,
     Json(request): Json<PostMintOnchainRequest>,
 ) -> Result<Json<PostMintOnchainResponse>, MokshaMintError> {
     let signatures = mint
-        .mint_tokens(request.quote.clone(), &request.outputs, &mint.keyset)
+        .mint_tokens(
+            PaymentMethod::Onchain,
+            request.quote.clone(),
+            &request.outputs,
+            &mint.keyset,
+        )
         .await?;
 
     let old_quote = &mint
