@@ -1,7 +1,9 @@
 use async_trait::async_trait;
 use moksha_core::{
     dhke,
-    primitives::{Bolt11MeltQuote, Bolt11MintQuote, OnchainMeltQuote, OnchainMintQuote},
+    primitives::{
+        Bolt11MeltQuote, Bolt11MintQuote, CurrencyUnit, OnchainMeltQuote, OnchainMintQuote,
+    },
     proof::{Proof, Proofs},
 };
 
@@ -242,51 +244,126 @@ impl Database for PostgresDB {
         &self,
         key: &Uuid,
     ) -> Result<OnchainMintQuote, MokshaMintError> {
-        todo!();
+        let quote: OnchainMintQuote = sqlx::query!(
+            "SELECT id, address, amount, expiry, paid  FROM onchain_mint_quotes WHERE id = $1",
+            key
+        )
+        .map(|row| OnchainMintQuote {
+            quote_id: row.id,
+            address: row.address,
+            expiry: row.expiry as u64,
+            paid: row.paid,
+            amount: row.amount as u64,
+            unit: CurrencyUnit::Sat,
+        })
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(quote)
     }
     async fn add_onchain_mint_quote(
         &self,
         quote: &OnchainMintQuote,
     ) -> Result<(), MokshaMintError> {
-        todo!();
+        sqlx::query!(
+            "INSERT INTO onchain_mint_quotes (id, address, amount, expiry, paid) VALUES ($1, $2, $3, $4, $5)",
+            quote.quote_id,
+            quote.address,
+            quote.amount as i64,
+            quote.expiry as i64,
+            quote.paid,
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
 
     async fn update_onchain_mint_quote(
         &self,
         quote: &OnchainMintQuote,
     ) -> Result<(), MokshaMintError> {
-        todo!();
+        sqlx::query!(
+            "UPDATE onchain_mint_quotes SET paid = $1 WHERE id = $2",
+            quote.paid,
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
 
     async fn delete_onchain_mint_quote(
         &self,
         quote: &OnchainMintQuote,
     ) -> Result<(), MokshaMintError> {
-        todo!();
+        sqlx::query!(
+            "DELETE FROM onchain_mint_quotes WHERE id = $1",
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
 
     async fn get_onchain_melt_quote(
         &self,
         key: &Uuid,
     ) -> Result<OnchainMeltQuote, MokshaMintError> {
-        todo!();
+        let quote: OnchainMeltQuote = sqlx::query!(
+            "SELECT id, amount, fee, expiry, paid  FROM onchain_melt_quotes WHERE id = $1",
+            key
+        )
+        .map(|row| OnchainMeltQuote {
+            quote_id: row.id,
+            amount: row.amount as u64,
+            fee: row.fee as u64,
+            expiry: row.expiry as u64,
+            paid: row.paid,
+        })
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(quote)
     }
     async fn add_onchain_melt_quote(
         &self,
         quote: &OnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
-        todo!();
+        sqlx::query!(
+            "INSERT INTO onchain_melt_quotes (id, amount,fee, expiry, paid) VALUES ($1, $2, $3, $4, $5)",
+            quote.quote_id,
+            quote.amount as i64,
+            quote.fee as i64,
+            quote.expiry as i64,
+            quote.paid,
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
     async fn update_onchain_melt_quote(
         &self,
         quote: &OnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
-        todo!();
+        sqlx::query!(
+            "UPDATE onchain_melt_quotes SET paid = $1 WHERE id = $2",
+            quote.paid,
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
     async fn delete_onchain_melt_quote(
         &self,
         quote: &OnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
-        todo!();
+        sqlx::query!(
+            "DELETE FROM onchain_melt_quotes WHERE id = $1",
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
 }

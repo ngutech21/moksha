@@ -70,7 +70,8 @@ impl LndOnchain {
 #[async_trait]
 impl Onchain for LndOnchain {
     async fn is_paid(&self, address: &str, amount: u64) -> Result<bool, MokshaMintError> {
-        Ok(false)
+        // TODO implement
+        Ok(true)
     }
 
     async fn new_address(&self) -> Result<String, MokshaMintError> {

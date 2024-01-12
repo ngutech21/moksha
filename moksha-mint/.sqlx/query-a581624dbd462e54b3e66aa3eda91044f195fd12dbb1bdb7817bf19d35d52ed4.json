@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, amount, fee, expiry, paid  FROM onchain_melt_quotes WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "amount",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "fee",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "expiry",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "paid",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "a581624dbd462e54b3e66aa3eda91044f195fd12dbb1bdb7817bf19d35d52ed4"
+}

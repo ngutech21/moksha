@@ -151,7 +151,7 @@ async fn main() -> anyhow::Result<()> {
                 )
                 .await;
 
-                if !wallet.is_quote_paid(quote.clone()).await? {
+                if !wallet.is_quote_paid(&payment_method, quote.clone()).await? {
                     continue;
                 }
 

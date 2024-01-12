@@ -297,6 +297,7 @@ impl From<OnchainMintQuote> for PostMintQuoteOnchainResponse {
 pub struct OnchainMeltQuote {
     pub quote_id: Uuid,
     pub amount: u64,
+    pub fee: u64,
     pub expiry: u64,
     pub paid: bool,
 }

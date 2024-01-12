@@ -152,12 +152,26 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             .await
     }
 
-    pub async fn is_quote_paid(&self, quote: String) -> Result<bool, MokshaWalletError> {
-        Ok(self
-            .client
-            .get_mint_quote_bolt11(&self.mint_url, quote)
-            .await?
-            .paid)
+    pub async fn is_quote_paid(
+        &self,
+        payment_method: &PaymentMethod,
+        quote: String,
+    ) -> Result<bool, MokshaWalletError> {
+        Ok(match payment_method {
+            PaymentMethod::Bolt11 => {
+                self.client
+                    .get_mint_quote_bolt11(&self.mint_url, quote)
+                    .await?
+                    .paid
+            }
+
+            PaymentMethod::Onchain => {
+                self.client
+                    .get_mint_quote_onchain(&self.mint_url, quote)
+                    .await?
+                    .paid
+            }
+        })
     }
 
     pub async fn get_balance(&self) -> Result<u64, MokshaWalletError> {
