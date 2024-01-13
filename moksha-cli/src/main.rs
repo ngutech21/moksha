@@ -123,11 +123,10 @@ async fn main() -> anyhow::Result<()> {
         Command::PayOnchain { address, amount } => {
             let response = wallet.pay_onchain(address, amount).await?;
 
-            // FIXME handle not enough tokens error
-
             if response.paid {
                 println!(
-                    "\nTokens melted successfully\nNew balance: {:?} sats",
+                    "\nTokens melted successfully\nTransaction-id {}\nNew balance: {:?} sats",
+                    response.txid,
                     wallet.get_balance().await?
                 );
             } else {

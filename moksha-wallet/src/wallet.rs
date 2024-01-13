@@ -5,7 +5,7 @@ use moksha_core::{
     keyset::V1Keyset,
     primitives::{
         CurrencyUnit, KeyResponse, MintInfoResponse, PaymentMethod, PostMeltBolt11Response,
-        PostMintQuoteBolt11Response, PostMintQuoteOnchainResponse,
+        PostMeltOnchainResponse, PostMintQuoteBolt11Response, PostMintQuoteOnchainResponse,
     },
     proof::{Proof, Proofs},
     token::TokenV3,
@@ -295,7 +295,7 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
         &self,
         address: String,
         amount: u64,
-    ) -> Result<PostMeltBolt11Response, MokshaWalletError> {
+    ) -> Result<PostMeltOnchainResponse, MokshaWalletError> {
         let all_proofs = self.localstore.get_proofs().await?;
 
         let melt_quote = self
@@ -323,7 +323,15 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             split_result.1.proofs()
         };
 
-        todo!()
+        let melt_response = self
+            .client
+            .post_melt_onchain(&self.mint_url, total_proofs.clone(), melt_quote.quote)
+            .await?;
+
+        if melt_response.paid {
+            self.localstore.delete_proofs(&total_proofs).await?;
+        }
+        Ok(melt_response)
 
         // match self
         //     .melt_token(melt_quote.quote, ln_amount, &total_proofs, msgs)

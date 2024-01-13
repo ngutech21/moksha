@@ -364,9 +364,9 @@ impl Client for HttpClient {
         let body = PostMeltQuoteOnchainRequest {
             address,
             amount,
-            unit: CurrencyUnit::Sat,
+            unit,
         };
-        self.do_post(&mint_url.join("v1/melt/onchain")?, &body)
+        self.do_post(&mint_url.join("v1/melt/quote/onchain")?, &body)
             .await
     }
 
