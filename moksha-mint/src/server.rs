@@ -261,7 +261,7 @@ async fn post_legacy_melt(
     Json(melt_request): Json<PostMeltRequest>,
 ) -> Result<Json<PostMeltResponse>, MokshaMintError> {
     let (paid, preimage, change) = mint
-        .melt(
+        .melt_bolt11(
             melt_request.pr,
             0, // FIXME set correct fee reserve for legacy api
             &melt_request.proofs,
@@ -589,7 +589,7 @@ async fn post_melt_bolt11(
     );
 
     let (paid, payment_preimage, change) = mint
-        .melt(
+        .melt_bolt11(
             quote.payment_request.to_owned(),
             quote.fee_reserve,
             &melt_request.inputs,
@@ -800,6 +800,7 @@ async fn post_melt_quote_onchain(
     let key = Uuid::new_v4();
     let quote = OnchainMeltQuote {
         quote_id: key,
+        address,
         amount,
         fee: fee_response.fee_in_sat,
         expiry: quote_expiry(), // set specific onchain expiry
@@ -853,28 +854,20 @@ async fn post_melt_onchain(
         .get_onchain_melt_quote(&Uuid::from_str(melt_request.quote.as_str())?)
         .await?;
 
-    // let (paid, payment_preimage, change) = mint
-    //     .melt(
-    //         quote.payment_request.to_owned(),
-    //         quote.fee_reserve,
-    //         &melt_request.inputs,
-    //         &melt_request.outputs,
-    //         &mint.keyset,
-    //     )
-    //     .await?;
-    // mint.db
-    //     .update_bolt11_melt_quote(&Bolt11MeltQuote { paid, ..quote })
-    //     .await?;
+    let txid = mint
+        .melt_onchain(&quote, &melt_request.inputs, &mint.keyset)
+        .await?;
+    mint.db
+        .update_onchain_melt_quote(&OnchainMeltQuote {
+            paid: true, // FIXME check if paid
+            ..quote
+        })
+        .await?;
 
     // FIXME
-    let paid = false;
-    let change = vec![];
+    let paid = true;
 
-    Ok(Json(PostMeltOnchainResponse {
-        paid,
-        txid: None,
-        change,
-    }))
+    Ok(Json(PostMeltOnchainResponse { paid, txid }))
 }
 
 #[cfg(test)]

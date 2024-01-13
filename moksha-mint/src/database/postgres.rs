@@ -310,11 +310,12 @@ impl Database for PostgresDB {
         key: &Uuid,
     ) -> Result<OnchainMeltQuote, MokshaMintError> {
         let quote: OnchainMeltQuote = sqlx::query!(
-            "SELECT id, amount, fee, expiry, paid  FROM onchain_melt_quotes WHERE id = $1",
+            "SELECT id, amount,address, fee, expiry, paid  FROM onchain_melt_quotes WHERE id = $1",
             key
         )
         .map(|row| OnchainMeltQuote {
             quote_id: row.id,
+            address: row.address,
             amount: row.amount as u64,
             fee: row.fee as u64,
             expiry: row.expiry as u64,
@@ -330,9 +331,10 @@ impl Database for PostgresDB {
         quote: &OnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
-            "INSERT INTO onchain_melt_quotes (id, amount,fee, expiry, paid) VALUES ($1, $2, $3, $4, $5)",
+            "INSERT INTO onchain_melt_quotes (id, amount,address,fee, expiry, paid) VALUES ($1, $2, $3, $4, $5, $6)",
             quote.quote_id,
             quote.amount as i64,
+            quote.address,
             quote.fee as i64,
             quote.expiry as i64,
             quote.paid,

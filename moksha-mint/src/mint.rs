@@ -5,7 +5,7 @@ use moksha_core::{
     blind::{BlindedMessage, BlindedSignature, TotalAmount},
     dhke::Dhke,
     keyset::MintKeyset,
-    primitives::PaymentMethod,
+    primitives::{OnchainMeltQuote, PaymentMethod},
     proof::Proofs,
 };
 use url::Url;
@@ -155,7 +155,7 @@ impl Mint {
         Ok(promises)
     }
 
-    pub async fn melt(
+    pub async fn melt_bolt11(
         &self,
         payment_request: String,
         fee_reserve: u64,
@@ -218,6 +218,27 @@ impl Mint {
             }
         }
         Ok(())
+    }
+    pub async fn melt_onchain(
+        &self,
+        quote: &OnchainMeltQuote,
+        proofs: &Proofs,
+        keyset: &MintKeyset,
+    ) -> Result<String, MokshaMintError> {
+        let proofs_amount = proofs.total_amount();
+
+        // TODO check proofs against quote
+
+        self.check_used_proofs(proofs).await?;
+
+        let send_response = self
+            .onchain
+            .send_coins(&quote.address, quote.amount, 50)
+            .await?; // FIXME set correct sat_per_vbyte
+
+        self.db.add_used_proofs(proofs).await?;
+
+        Ok(send_response.txid)
     }
 }
 
@@ -498,7 +519,7 @@ mod tests {
             create_blinded_msgs_from_fixture("blinded_messages_blank_4000.json".to_string())?;
 
         let (paid, _payment_hash, change) = mint
-            .melt(invoice, 4, &tokens.proofs(), &change, &mint.keyset_legacy)
+            .melt_bolt11(invoice, 4, &tokens.proofs(), &change, &mint.keyset_legacy)
             .await?;
 
         assert!(paid);

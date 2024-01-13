@@ -297,6 +297,7 @@ impl From<OnchainMintQuote> for PostMintQuoteOnchainResponse {
 pub struct OnchainMeltQuote {
     pub quote_id: Uuid,
     pub amount: u64,
+    pub address: String,
     pub fee: u64,
     pub expiry: u64,
     pub paid: bool,
@@ -348,14 +349,12 @@ pub struct PostMeltQuoteOnchainResponse {
 pub struct PostMeltOnchainRequest {
     pub quote: String,
     pub inputs: Proofs,
-    pub outputs: Vec<BlindedMessage>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMeltOnchainResponse {
     pub paid: bool,
-    pub txid: Option<String>,
-    pub change: Vec<BlindedSignature>,
+    pub txid: String,
 }
 
 impl From<OnchainMeltQuote> for PostMeltQuoteOnchainResponse {

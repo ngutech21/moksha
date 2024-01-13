@@ -1,12 +1,13 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO onchain_melt_quotes (id, amount,fee, expiry, paid) VALUES ($1, $2, $3, $4, $5)",
+  "query": "INSERT INTO onchain_melt_quotes (id, amount,address,fee, expiry, paid) VALUES ($1, $2, $3, $4, $5, $6)",
   "describe": {
     "columns": [],
     "parameters": {
       "Left": [
         "Uuid",
         "Int8",
+        "Text",
         "Int8",
         "Int8",
         "Bool"
@@ -14,5 +15,5 @@
     },
     "nullable": []
   },
-  "hash": "d3fc701442992114fdd7bfef1a81424ec2018e55e1212786452602f5d904d3ac"
+  "hash": "ce785ab12a0699bc01836250b21a7f9df04ef551ad3dd377de027a40d6cbac9c"
 }
