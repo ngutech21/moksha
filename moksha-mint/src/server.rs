@@ -24,7 +24,7 @@ use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
     Bolt11MeltQuote, Bolt11MintQuote, CheckFeesRequest, CheckFeesResponse, CurrencyUnit,
     KeyResponse, KeysResponse, MintInfoResponse, MintLegacyInfoResponse, Nut10, Nut11, Nut12,
-    Nut13, Nut4, Nut5, Nut6, Nut7, Nut8, Nut9, Nuts, OnchainMeltQuote, OnchainMintQuote,
+    Nut14, Nut15, Nut4, Nut5, Nut6, Nut7, Nut8, Nut9, Nuts, OnchainMeltQuote, OnchainMintQuote,
     PaymentMethod, PaymentRequest, PostMeltBolt11Request, PostMeltBolt11Response,
     PostMeltOnchainRequest, PostMeltOnchainResponse, PostMeltQuoteBolt11Request,
     PostMeltQuoteBolt11Response, PostMeltQuoteOnchainRequest, PostMeltQuoteOnchainResponse,
@@ -144,7 +144,8 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         PostSwapRequest,
         PostSwapResponse,
         P2SHScript,
-        Nut13,
+        Nut14,
+        Nut15,
         PostMintQuoteOnchainRequest,
         PostMintQuoteOnchainResponse,
         PostMeltQuoteOnchainRequest,

@@ -422,9 +422,13 @@ pub struct Nuts {
     /// DLEQ proofs
     pub nut12: Nut12,
 
-    #[serde(rename = "13")]
-    /// onchain minting and melting
-    pub nut13: Nut13,
+    #[serde(rename = "14")]
+    /// minting tokens onchain
+    pub nut14: Nut14,
+
+    #[serde(rename = "15")]
+    /// melting tokens onchain
+    pub nut15: Nut15,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
@@ -503,19 +507,33 @@ pub struct Nut12 {
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
-pub struct Nut13 {
+pub struct Nut14 {
     pub supported: bool,
-    pub minting_methods: Vec<(PaymentMethod, CurrencyUnit)>,
-    pub melting_methods: Vec<(PaymentMethod, CurrencyUnit)>,
+    pub payment_methods: Vec<(PaymentMethod, CurrencyUnit)>,
     //TODO add min / max amounts
 }
 
-impl Default for Nut13 {
+impl Default for Nut14 {
     fn default() -> Self {
         Self {
             supported: true,
-            minting_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
-            melting_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+pub struct Nut15 {
+    pub supported: bool,
+    pub payment_methods: Vec<(PaymentMethod, CurrencyUnit)>,
+    //TODO add min / max amounts
+}
+
+impl Default for Nut15 {
+    fn default() -> Self {
+        Self {
+            supported: true,
+            payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
         }
     }
 }
