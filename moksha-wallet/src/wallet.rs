@@ -291,6 +291,64 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
         }
     }
 
+    pub async fn pay_onchain(
+        &self,
+        address: String,
+        amount: u64,
+    ) -> Result<PostMeltBolt11Response, MokshaWalletError> {
+        let all_proofs = self.localstore.get_proofs().await?;
+
+        let melt_quote = self
+            .client
+            .post_melt_quote_onchain(&self.mint_url, address, amount, CurrencyUnit::Sat)
+            .await?;
+
+        let ln_amount = amount + melt_quote.fee;
+
+        if ln_amount > all_proofs.total_amount() {
+            return Err(MokshaWalletError::NotEnoughTokens);
+        }
+        let selected_proofs = all_proofs.proofs_for_amount(ln_amount)?;
+
+        let total_proofs = {
+            let selected_tokens = (self.mint_url.to_owned(), selected_proofs.clone()).into();
+            let split_result = self
+                .split_tokens(&selected_tokens, ln_amount.into())
+                .await?;
+
+            // FIXME create transaction
+            self.localstore.delete_proofs(&selected_proofs).await?;
+            self.localstore.add_proofs(&split_result.0.proofs()).await?;
+
+            split_result.1.proofs()
+        };
+
+        todo!()
+
+        // match self
+        //     .melt_token(melt_quote.quote, ln_amount, &total_proofs, msgs)
+        //     .await
+        // {
+        //     Ok(response) => {
+        //         if !response.paid {
+        //             self.localstore.add_proofs(&total_proofs).await?;
+        //         }
+        //         let change_proofs = self.create_proofs_from_blinded_signatures(
+        //             response.clone().change,
+        //             secrets,
+        //             outputs,
+        //         )?;
+        //         self.localstore.add_proofs(&change_proofs).await?;
+
+        //         Ok(response)
+        //     }
+        //     Err(e) => {
+        //         self.localstore.add_proofs(&total_proofs).await?;
+        //         Err(e)
+        //     }
+        // }
+    }
+
     pub async fn split_tokens(
         &self,
         tokens: &TokenV3,

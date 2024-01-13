@@ -125,6 +125,11 @@ db-prepare:
   cd moksha-mint && \
   cargo sqlx prepare --database-url postgres://postgres:postgres@127.0.0.1/moksha-mint
 
+# runs sqlx prepare
+db-migrate:
+  cd moksha-mint && \
+  cargo sqlx migrate --database-url postgres://postgres:postgres@127.0.0.1/moksha-mint
+
 # creates the postgres database
 db-create:
   cd moksha-mint && \

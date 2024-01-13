@@ -6,7 +6,8 @@ use moksha_core::{
     keyset::{Keysets, V1Keysets},
     primitives::{
         CheckFeesResponse, CurrencyUnit, KeysResponse, MintInfoResponse, MintLegacyInfoResponse,
-        PaymentRequest, PostMeltBolt11Response, PostMeltQuoteBolt11Response, PostMeltResponse,
+        PaymentRequest, PostMeltBolt11Response, PostMeltOnchainResponse,
+        PostMeltQuoteBolt11Response, PostMeltQuoteOnchainResponse, PostMeltResponse,
         PostMintBolt11Response, PostMintOnchainResponse, PostMintQuoteBolt11Response,
         PostMintQuoteOnchainResponse, PostMintResponse, PostSplitResponse, PostSwapResponse,
     },
@@ -153,4 +154,25 @@ pub trait Client {
         mint_url: &Url,
         quote: String,
     ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError>;
+
+    async fn post_melt_onchain(
+        &self,
+        mint_url: &Url,
+        proofs: Proofs,
+        quote: String,
+    ) -> Result<PostMeltOnchainResponse, MokshaWalletError>;
+
+    async fn post_melt_quote_onchain(
+        &self,
+        mint_url: &Url,
+        address: String,
+        amount: u64,
+        unit: CurrencyUnit,
+    ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError>;
+
+    async fn get_melt_quote_onchain(
+        &self,
+        mint_url: &Url,
+        quote: String,
+    ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError>;
 }

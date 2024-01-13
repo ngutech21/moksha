@@ -31,6 +31,12 @@ enum Command {
         invoice: String,
     },
 
+    /// Pay bitcoin onchain
+    PayOnchain {
+        address: String,
+        amount: u64,
+    },
+
     /// Send tokens
     Send {
         amount: u64,
@@ -110,7 +116,20 @@ async fn main() -> anyhow::Result<()> {
                     "\nInvoice has been paid: Tokens melted successfully\nNew balance: {:?} sats",
                     wallet.get_balance().await?
                 );
-                // TODO NUT-08 create tokens from change
+            } else {
+                println!("Error: Tokens not melted");
+            }
+        }
+        Command::PayOnchain { address, amount } => {
+            let response = wallet.pay_onchain(address, amount).await?;
+
+            // FIXME handle not enough tokens error
+
+            if response.paid {
+                println!(
+                    "\nTokens melted successfully\nNew balance: {:?} sats",
+                    wallet.get_balance().await?
+                );
             } else {
                 println!("Error: Tokens not melted");
             }
