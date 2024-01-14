@@ -330,7 +330,7 @@ pub struct PostMintOnchainResponse {
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMeltQuoteOnchainRequest {
-    /// onchain addrress
+    /// onchain address
     pub amount: u64,
     pub address: String,
     pub unit: CurrencyUnit,
