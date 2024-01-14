@@ -1,6 +1,6 @@
 use std::{env, net::SocketAddr, path::PathBuf};
 
-use crate::{ lightning::LndLightningSettings};
+use crate::lightning::LndLightningSettings;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
