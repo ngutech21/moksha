@@ -91,11 +91,9 @@ impl Onchain for LndOnchain {
             .await
             .expect("failed to get response");
 
-        Ok(response
-            .get_ref()
-            .utxos
-            .iter()
-            .any(|utxo| utxo.address == address && utxo.amount_sat >= amount as i64))
+        Ok(response.get_ref().utxos.iter().any(|utxo| {
+            utxo.address == address && utxo.amount_sat >= amount as i64 && utxo.confirmations > 0
+        }))
     }
 
     async fn new_address(&self) -> Result<String, MokshaMintError> {
