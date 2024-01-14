@@ -1,5 +1,6 @@
 use std::{env, net::SocketAddr, path::PathBuf};
 
+use crate::{ lightning::LndLightningSettings};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
@@ -9,6 +10,7 @@ pub struct MintConfig {
     pub lightning_fee: LightningFeeConfig,
     pub server: ServerConfig,
     pub database: DatabaseConfig,
+    pub onchain: Option<OnchainType>,
 }
 
 impl MintConfig {
@@ -18,6 +20,7 @@ impl MintConfig {
         lightning_fee: LightningFeeConfig,
         server: ServerConfig,
         database: DatabaseConfig,
+        onchain: Option<OnchainType>,
     ) -> Self {
         Self {
             info,
@@ -25,6 +28,31 @@ impl MintConfig {
             lightning_fee,
             server,
             database,
+            onchain,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum OnchainType {
+    Lnd(LndLightningSettings),
+}
+
+impl OnchainType {
+    pub fn from_env() -> Option<Self> {
+        let onchain_type = env::var("MINT_ONCHAIN_BACKEND").ok();
+
+        match onchain_type.as_deref() {
+            None => None,
+            Some("Lnd") => {
+                let lnd_settings = envy::prefixed("LND_")
+                    .from_env::<LndLightningSettings>()
+                    .expect("Please provide lnd info");
+                Some(OnchainType::Lnd(lnd_settings))
+            }
+            _ => {
+                panic!("env MINT_ONCHAIN_BACKEND not found or invalid values. Valid values are Lnd")
+            }
         }
     }
 }

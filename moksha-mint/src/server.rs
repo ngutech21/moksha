@@ -178,13 +178,17 @@ fn app(mint: Mint) -> Router {
         .route("/v1/swap", post(post_swap))
         .route("/v1/info", get(get_info));
 
-    let onchain_routes = Router::new()
-        .route("/v1/mint/quote/onchain", post(post_mint_quote_onchain))
-        .route("/v1/mint/quote/onchain/:quote", get(get_mint_quote_onchain))
-        .route("/v1/mint/onchain", post(post_mint_onchain))
-        .route("/v1/melt/quote/onchain", post(post_melt_quote_onchain))
-        .route("/v1/melt/quote/onchain/:quote", get(get_melt_quote_onchain))
-        .route("/v1/melt/onchain", post(post_melt_onchain));
+    let onchain_routes = if mint.onchain.is_some() {
+        Router::new()
+            .route("/v1/mint/quote/onchain", post(post_mint_quote_onchain))
+            .route("/v1/mint/quote/onchain/:quote", get(get_mint_quote_onchain))
+            .route("/v1/mint/onchain", post(post_mint_onchain))
+            .route("/v1/melt/quote/onchain", post(post_melt_quote_onchain))
+            .route("/v1/melt/quote/onchain/:quote", get(get_melt_quote_onchain))
+            .route("/v1/melt/onchain", post(post_melt_onchain))
+    } else {
+        Router::new()
+    };
 
     let general_routes = Router::new().route("/health", get(get_health));
 
@@ -700,7 +704,12 @@ async fn post_mint_quote_onchain(
     Json(request): Json<PostMintQuoteOnchainRequest>,
 ) -> Result<Json<PostMintQuoteOnchainResponse>, MokshaMintError> {
     let quote_id = Uuid::new_v4();
-    let address = mint.onchain.new_address().await?;
+    let address = mint
+        .onchain
+        .as_ref()
+        .expect("onchain backend not configured")
+        .new_address()
+        .await?;
     // TODO check amount and unit
 
     let quote = OnchainMintQuote {
@@ -737,7 +746,12 @@ async fn get_mint_quote_onchain(
         .get_onchain_mint_quote(&Uuid::from_str(quote_id.as_str())?)
         .await?;
 
-    let paid = mint.onchain.is_paid(&quote.address, quote.amount).await?;
+    let paid = mint
+        .onchain
+        .as_ref()
+        .expect("onchain backend not configured")
+        .is_paid(&quote.address, quote.amount)
+        .await?;
 
     Ok(Json(OnchainMintQuote { paid, ..quote }.into()))
 }
@@ -796,7 +810,12 @@ async fn post_melt_quote_onchain(
     } = melt_request;
 
     // FIXME check currency unit
-    let fee_response = mint.onchain.estimate_fee(&address, amount).await?;
+    let fee_response = mint
+        .onchain
+        .as_ref()
+        .expect("onchain backend not configured")
+        .estimate_fee(&address, amount)
+        .await?;
 
     let key = Uuid::new_v4();
     let quote = OnchainMeltQuote {
@@ -965,7 +984,7 @@ mod tests {
                 info,
                 ..Default::default()
             },
-            Arc::new(MockOnchain::default()),
+            Some(Arc::new(MockOnchain::default())),
         )
     }
 

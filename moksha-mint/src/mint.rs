@@ -1,4 +1,4 @@
-use std::{collections::HashSet, env, path::PathBuf, sync::Arc, vec};
+use std::{collections::HashSet, sync::Arc, vec};
 
 use moksha_core::{
     amount::Amount,
@@ -8,11 +8,11 @@ use moksha_core::{
     primitives::{OnchainMeltQuote, PaymentMethod},
     proof::Proofs,
 };
-use url::Url;
 
 use crate::{
     config::{
-        BuildConfig, DatabaseConfig, LightningFeeConfig, MintConfig, MintInfoConfig, ServerConfig,
+        BuildConfig, DatabaseConfig, LightningFeeConfig, MintConfig, MintInfoConfig, OnchainType,
+        ServerConfig,
     },
     database::Database,
     error::MokshaMintError,
@@ -30,7 +30,7 @@ pub struct Mint {
     pub keyset: MintKeyset,
     pub db: Arc<dyn Database + Send + Sync>,
     pub dhke: Dhke,
-    pub onchain: Arc<dyn Onchain + Send + Sync>,
+    pub onchain: Option<Arc<dyn Onchain + Send + Sync>>,
     pub config: MintConfig,
 }
 
@@ -43,7 +43,7 @@ impl Mint {
         lightning_type: LightningType,
         db: Arc<dyn Database + Send + Sync>,
         config: MintConfig,
-        onchain: Arc<dyn Onchain + Send + Sync>,
+        onchain: Option<Arc<dyn Onchain + Send + Sync>>,
     ) -> Self {
         Self {
             lightning,
@@ -233,6 +233,8 @@ impl Mint {
 
         let send_response = self
             .onchain
+            .as_ref()
+            .expect("onchain backend not set")
             .send_coins(&quote.address, quote.amount, 50)
             .await?; // FIXME set correct sat_per_vbyte
 
@@ -319,17 +321,21 @@ impl MintBuilder {
         let db = Arc::new(crate::database::postgres::PostgresDB::new(&db_config).await?);
         db.migrate().await;
 
-        // FIXME use specific config for onchain
-        let lnd_host =
-            Url::parse(&env::var("LND_GRPC_HOST").expect("LND_GRPC_HOST not set")).unwrap();
+        let onchain_config = OnchainType::from_env();
 
-        let tls_path =
-            PathBuf::from(&env::var("LND_TLS_CERT_PATH").expect("LND_TLS_CERT_PATH not set"));
-
-        let mac_path =
-            PathBuf::from(&env::var("LND_MACAROON_PATH").expect("LND_MACAROON_PATH not set"));
-
-        let lnd_onchain = Arc::new(LndOnchain::new(lnd_host, &tls_path, &mac_path).await?);
+        let lnd_onchain: Option<Arc<dyn Onchain + Send + Sync>> =
+            if let Some(OnchainType::Lnd(cfg)) = onchain_config.clone() {
+                Some(Arc::new(
+                    LndOnchain::new(
+                        cfg.grpc_host.expect("LND_GRPC_HOST not found"),
+                        &cfg.tls_cert_path.expect("LND_TLS_CERT_PATH not found"),
+                        &cfg.macaroon_path.expect("LND_MACAROON_PATH not found"),
+                    )
+                    .await?,
+                ))
+            } else {
+                None
+            };
 
         Ok(Mint::new(
             self.private_key.expect("MINT_PRIVATE_KEY not set"),
@@ -344,6 +350,7 @@ impl MintBuilder {
                 self.fee_config.expect("fee-config not set"),
                 self.server_config.unwrap_or_default(),
                 db_config,
+                onchain_config,
             ),
             lnd_onchain,
         ))
@@ -510,7 +517,7 @@ mod tests {
             LightningType::Lnbits(Default::default()),
             Arc::new(create_mock_db_get_used_proofs()),
             Default::default(),
-            Arc::new(MockOnchain::default()),
+            Some(Arc::new(MockOnchain::default())),
         );
 
         let tokens = create_token_from_fixture("token_60.cashu".to_string())?;
@@ -570,7 +577,7 @@ mod tests {
             LightningType::Lnbits(Default::default()),
             db,
             Default::default(),
-            Arc::new(MockOnchain::default()),
+            Some(Arc::new(MockOnchain::default())),
         )
     }
 
