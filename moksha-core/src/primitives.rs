@@ -422,13 +422,14 @@ pub struct Nuts {
     /// DLEQ proofs
     pub nut12: Nut12,
 
-    #[serde(rename = "14")]
+    // TODO remove this if nut-14 and nut-15 are merged
+    #[serde(rename = "14", skip_serializing_if = "Option::is_none")]
     /// minting tokens onchain
-    pub nut14: Nut14,
+    pub nut14: Option<Nut14>,
 
-    #[serde(rename = "15")]
+    #[serde(rename = "15", skip_serializing_if = "Option::is_none")]
     /// melting tokens onchain
-    pub nut15: Nut15,
+    pub nut15: Option<Nut15>,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
@@ -509,6 +510,7 @@ pub struct Nut12 {
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
 pub struct Nut14 {
     pub supported: bool,
+    #[serde(rename = "methods")]
     pub payment_methods: Vec<(PaymentMethod, CurrencyUnit)>,
     //TODO add min / max amounts
 }
@@ -525,6 +527,7 @@ impl Default for Nut14 {
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
 pub struct Nut15 {
     pub supported: bool,
+    #[serde(rename = "methods")]
     pub payment_methods: Vec<(PaymentMethod, CurrencyUnit)>,
     //TODO add min / max amounts
 }

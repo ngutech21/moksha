@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
+use crate::config::MintConfig;
 use crate::error::MokshaMintError;
 use axum::extract::{Path, Query, Request, State};
 use axum::http::{HeaderName, HeaderValue, StatusCode};
@@ -676,6 +677,7 @@ async fn get_melt_quote_bolt11(
 async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, MokshaMintError> {
     // TODO implement From-trait
     let mint_info = MintInfoResponse {
+        nuts: get_nuts(&mint.config),
         name: mint.config.info.name,
         pubkey: mint.keyset.mint_pubkey,
         version: match mint.config.info.version {
@@ -685,10 +687,20 @@ async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, Mo
         description: mint.config.info.description,
         description_long: mint.config.info.description_long,
         contact: mint.config.info.contact,
-        nuts: Nuts::default(),
         motd: mint.config.info.motd,
     };
     Ok(Json(mint_info))
+}
+
+fn get_nuts(cfg: &MintConfig) -> Nuts {
+    match cfg.onchain {
+        Some(_) => Nuts {
+            nut14: Some(Nut14::default()),
+            nut15: Some(Nut15::default()),
+            ..Nuts::default()
+        },
+        _ => Nuts::default(),
+    }
 }
 
 #[utoipa::path(
