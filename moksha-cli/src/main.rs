@@ -3,6 +3,7 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use moksha_core::primitives::{
     PaymentMethod, PostMintQuoteBolt11Response, PostMintQuoteOnchainResponse,
 };
+use num_format::{Locale, ToFormattedString};
 use std::path::PathBuf;
 use url::Url;
 
@@ -91,7 +92,7 @@ async fn main() -> anyhow::Result<()> {
             wallet.receive_tokens(&token.try_into()?).await?;
             println!(
                 "Tokens received successfully.\nNew balance {} sats",
-                wallet.get_balance().await?
+                wallet.get_balance().await?.to_formatted_string(&Locale::en)
             );
         }
         Command::Send { amount } => {
@@ -99,12 +100,15 @@ async fn main() -> anyhow::Result<()> {
             let ser: String = result.try_into()?;
 
             println!("Result {amount} sats:\n{ser}");
-            println!("\nNew balance: {:?} sats", wallet.get_balance().await?);
+            println!(
+                "\nNew balance: {} sats",
+                wallet.get_balance().await?.to_formatted_string(&Locale::en)
+            );
         }
 
         Command::Balance => {
-            let balance = wallet.get_balance().await?;
-            println!("Balance: {balance:?} sats");
+            let balance = wallet.get_balance().await?.to_formatted_string(&Locale::en);
+            println!("Balance: {balance} sats");
         }
         Command::Pay { invoice } => {
             let response = wallet.pay_invoice(invoice).await?;
@@ -113,8 +117,8 @@ async fn main() -> anyhow::Result<()> {
 
             if response.paid {
                 println!(
-                    "\nInvoice has been paid: Tokens melted successfully\nNew balance: {:?} sats",
-                    wallet.get_balance().await?
+                    "\nInvoice has been paid: Tokens melted successfully\nNew balance: {} sats",
+                    wallet.get_balance().await?.to_formatted_string(&Locale::en)
                 );
             } else {
                 println!("Error: Tokens not melted");
@@ -132,9 +136,9 @@ async fn main() -> anyhow::Result<()> {
 
             if response.paid {
                 println!(
-                    "\nTokens melted successfully\nTransaction-id {}\nNew balance: {:?} sats",
+                    "\nTokens melted successfully\nTransaction-id {}\nNew balance: {} sats",
                     response.txid,
-                    wallet.get_balance().await?
+                    wallet.get_balance().await?.to_formatted_string(&Locale::en)
                 );
             } else {
                 println!("Error: Tokens not melted");
@@ -203,7 +207,7 @@ async fn main() -> anyhow::Result<()> {
                     Ok(_) => {
                         println!(
                             "Tokens minted successfully.\nNew balance {} sats",
-                            wallet.get_balance().await?
+                            wallet.get_balance().await?.to_formatted_string(&Locale::en)
                         );
                         break;
                     }
