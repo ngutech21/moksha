@@ -121,6 +121,13 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Command::PayOnchain { address, amount } => {
+            let info = wallet.get_mint_info().await?;
+
+            if info.nuts.nut15.is_none() {
+                println!("Error: onchain-payments are not supported by this mint");
+                return Ok(());
+            }
+
             let response = wallet.pay_onchain(address, amount).await?;
 
             if response.paid {
@@ -134,16 +141,26 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Command::Mint { amount } => {
-            let selections = &[PaymentMethod::Onchain, PaymentMethod::Bolt11];
+            let info = wallet.get_mint_info().await?;
 
-            let selection = Select::with_theme(&ColorfulTheme::default())
-                .with_prompt("Choose a payment method:")
-                .default(0)
-                .items(&selections[..])
-                .interact()
-                .unwrap();
-            println!("Selection: {}", selection);
-            let payment_method = selections[selection].clone();
+            let payment_method = match info.nuts.nut14 {
+                Some(_) => {
+                    let selections = &[PaymentMethod::Onchain, PaymentMethod::Bolt11];
+
+                    let selection = Select::with_theme(&ColorfulTheme::default())
+                        .with_prompt("Choose a payment method:")
+                        .default(0)
+                        .items(&selections[..])
+                        .interact()
+                        .unwrap();
+                    println!("Selection: {}", selection);
+                    selections[selection].clone()
+                }
+                None => {
+                    println!("Only bolt11 minting is supported");
+                    PaymentMethod::Bolt11
+                }
+            };
 
             let quote = match payment_method {
                 PaymentMethod::Onchain => {
