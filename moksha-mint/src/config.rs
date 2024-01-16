@@ -1,7 +1,14 @@
-use std::{env, net::SocketAddr, path::PathBuf};
+use core::fmt;
+use std::u32;
+use std::{env, fmt::Formatter, net::SocketAddr, path::PathBuf};
 
 use crate::lightning::LndLightningSettings;
+use crate::url_serialize::deserialize_url;
+use crate::url_serialize::serialize_url;
+
+use moksha_core::primitives::{CurrencyUnit, Nut14, Nut15, PaymentMethod};
 use serde_derive::{Deserialize, Serialize};
+use url::Url;
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct MintConfig {
@@ -35,7 +42,7 @@ impl MintConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OnchainType {
-    Lnd(LndLightningSettings),
+    Lnd(LndOnchainSettings),
 }
 
 impl OnchainType {
@@ -45,14 +52,97 @@ impl OnchainType {
         match onchain_type.as_deref() {
             None => None,
             Some("Lnd") => {
+                // reuse lnd settings with prefix LND_
                 let lnd_settings = envy::prefixed("LND_")
-                    .from_env::<LndLightningSettings>()
+                    .from_env::<LndOnchainSettings>()
                     .expect("Please provide lnd info");
-                Some(OnchainType::Lnd(lnd_settings))
+
+                let onchain_settings = LndOnchainSettings {
+                    min_amount: env_or_default(
+                        "MINT_ONCHAIN_BACKEND_MIN_AMOUNT",
+                        lnd_settings.min_amount,
+                    ),
+                    max_amount: env_or_default(
+                        "MINT_ONCHAIN_BACKEND_MAX_AMOUNT",
+                        lnd_settings.max_amount,
+                    ),
+                    min_confirmations: env_or_default(
+                        "MINT_ONCHAIN_BACKEND_MIN_CONFIRMATIONS",
+                        lnd_settings.min_confirmations,
+                    ),
+                    ..lnd_settings
+                };
+
+                Some(OnchainType::Lnd(onchain_settings))
             }
             _ => {
                 panic!("env MINT_ONCHAIN_BACKEND not found or invalid values. Valid values are Lnd")
             }
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct LndOnchainSettings {
+    #[serde(serialize_with = "serialize_url", deserialize_with = "deserialize_url")]
+    pub grpc_host: Option<Url>,
+    pub tls_cert_path: Option<PathBuf>,
+    pub macaroon_path: Option<PathBuf>,
+    pub min_confirmations: u8,
+    pub min_amount: u64,
+    pub max_amount: u64,
+}
+impl fmt::Display for LndOnchainSettings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "grpc_host: {}, tls_cert_path: {}, macaroon_path: {}",
+            self.grpc_host.as_ref().unwrap(),
+            self.tls_cert_path
+                .as_ref()
+                .unwrap() // FIXME unwrap
+                .to_str()
+                .unwrap_or_default(),
+            self.macaroon_path
+                .as_ref()
+                .unwrap()
+                .to_str()
+                .unwrap_or_default()
+        )
+    }
+}
+
+impl Default for LndOnchainSettings {
+    fn default() -> Self {
+        Self {
+            grpc_host: None,
+            tls_cert_path: None,
+            macaroon_path: None,
+            min_confirmations: 1,
+            min_amount: 1_000,
+            max_amount: 1_000_000,
+        }
+    }
+}
+
+impl From<LndOnchainSettings> for Nut14 {
+    fn from(settings: LndOnchainSettings) -> Self {
+        Self {
+            supported: true,
+            payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            min_amount: settings.min_amount,
+            max_amount: settings.max_amount,
+        }
+    }
+}
+
+impl From<LndOnchainSettings> for Nut15 {
+    fn from(settings: LndOnchainSettings) -> Self {
+        Self {
+            supported: true,
+            payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            min_amount: settings.min_amount,
+            max_amount: settings.max_amount,
         }
     }
 }

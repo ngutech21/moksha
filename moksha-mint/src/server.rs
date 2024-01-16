@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use crate::config::MintConfig;
+use crate::config::{LndOnchainSettings, MintConfig, OnchainType};
 use crate::error::MokshaMintError;
 use axum::extract::{Path, Query, Request, State};
 use axum::http::{HeaderName, HeaderValue, StatusCode};
@@ -693,10 +693,10 @@ async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, Mo
 }
 
 fn get_nuts(cfg: &MintConfig) -> Nuts {
-    match cfg.onchain {
-        Some(_) => Nuts {
-            nut14: Some(Nut14::default()),
-            nut15: Some(Nut15::default()),
+    match cfg.onchain.as_ref() {
+        Some(OnchainType::Lnd(settings)) => Nuts {
+            nut14: Some(settings.to_owned().into()),
+            nut15: Some(settings.to_owned().into()),
             ..Nuts::default()
         },
         _ => Nuts::default(),
@@ -758,11 +758,16 @@ async fn get_mint_quote_onchain(
         .get_onchain_mint_quote(&Uuid::from_str(quote_id.as_str())?)
         .await?;
 
+    let min_confs = match mint.config.onchain.as_ref() {
+        Some(OnchainType::Lnd(settings)) => settings.min_confirmations,
+        _ => LndOnchainSettings::default().min_confirmations,
+    };
+
     let paid = mint
         .onchain
         .as_ref()
         .expect("onchain backend not configured")
-        .is_paid(&quote.address, quote.amount)
+        .is_paid(&quote.address, quote.amount, min_confs)
         .await?;
 
     Ok(Json(OnchainMintQuote { paid, ..quote }.into()))

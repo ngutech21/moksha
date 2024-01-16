@@ -512,7 +512,8 @@ pub struct Nut14 {
     pub supported: bool,
     #[serde(rename = "methods")]
     pub payment_methods: Vec<(PaymentMethod, CurrencyUnit)>,
-    //TODO add min / max amounts
+    pub min_amount: u64,
+    pub max_amount: u64,
 }
 
 impl Default for Nut14 {
@@ -520,6 +521,8 @@ impl Default for Nut14 {
         Self {
             supported: true,
             payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            min_amount: 1_000,
+            max_amount: 1_000_000,
         }
     }
 }
@@ -529,7 +532,8 @@ pub struct Nut15 {
     pub supported: bool,
     #[serde(rename = "methods")]
     pub payment_methods: Vec<(PaymentMethod, CurrencyUnit)>,
-    //TODO add min / max amounts
+    pub min_amount: u64,
+    pub max_amount: u64,
 }
 
 impl Default for Nut15 {
@@ -537,6 +541,8 @@ impl Default for Nut15 {
         Self {
             supported: true,
             payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            min_amount: 1_000,
+            max_amount: 1_000_000,
         }
     }
 }

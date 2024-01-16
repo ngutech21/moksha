@@ -31,7 +31,12 @@ pub trait Onchain: Send + Sync {
         amount: u64,
     ) -> Result<EstimateFeeResult, MokshaMintError>;
 
-    async fn is_paid(&self, address: &str, amount: u64) -> Result<bool, MokshaMintError>;
+    async fn is_paid(
+        &self,
+        address: &str,
+        amount: u64,
+        min_confirmations: u8,
+    ) -> Result<bool, MokshaMintError>;
 }
 
 #[derive(Debug, Clone)]
@@ -77,7 +82,12 @@ impl LndOnchain {
 
 #[async_trait]
 impl Onchain for LndOnchain {
-    async fn is_paid(&self, address: &str, amount: u64) -> Result<bool, MokshaMintError> {
+    async fn is_paid(
+        &self,
+        address: &str,
+        amount: u64,
+        min_confirmations: u8,
+    ) -> Result<bool, MokshaMintError> {
         let mut wal = self.wallet_lock().await.expect("failed to lock wallet");
 
         let request = ListUnspentRequest {
@@ -92,7 +102,9 @@ impl Onchain for LndOnchain {
             .expect("failed to get response");
 
         Ok(response.get_ref().utxos.iter().any(|utxo| {
-            utxo.address == address && utxo.amount_sat >= amount as i64 && utxo.confirmations > 0
+            utxo.address == address
+                && utxo.amount_sat >= amount as i64
+                && utxo.confirmations > min_confirmations as i64
         }))
     }
 
