@@ -148,8 +148,8 @@ async fn main() -> anyhow::Result<()> {
             let info = wallet.get_mint_info().await?;
 
             let payment_method = match info.nuts.nut14 {
-                Some(nut14) => {
-                    if nut14.supported {
+                Some(ref nut14) => {
+                    if !nut14.supported {
                         println!("Only bolt11 minting is supported");
                         PaymentMethod::Bolt11
                     } else {
@@ -161,7 +161,6 @@ async fn main() -> anyhow::Result<()> {
                             .items(&selections[..])
                             .interact()
                             .unwrap();
-                        println!("Selection: {}", selection);
                         selections[selection].clone()
                     }
                 }
@@ -173,6 +172,23 @@ async fn main() -> anyhow::Result<()> {
 
             let quote = match payment_method {
                 PaymentMethod::Onchain => {
+                    let nut14 = info.nuts.nut14.expect("nut14 is None");
+                    if amount < nut14.min_amount {
+                        println!(
+                            "Amount too low. Minimum amount is {} sats",
+                            nut14.min_amount.to_formatted_string(&Locale::en)
+                        );
+                        return Ok(());
+                    }
+
+                    if amount > nut14.max_amount {
+                        println!(
+                            "Amount too high. Maximum amount is {} sats",
+                            nut14.max_amount.to_formatted_string(&Locale::en)
+                        );
+                        return Ok(());
+                    }
+
                     let PostMintQuoteOnchainResponse { address, quote, .. } =
                         wallet.create_quote_onchain(amount).await?;
                     println!("Pay onchain to mint tokens:\n\n{address}");

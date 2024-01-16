@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use crate::config::{LndOnchainSettings, MintConfig, OnchainType};
+use crate::config::MintConfig;
 use crate::error::MokshaMintError;
 use axum::extract::{Path, Query, Request, State};
 use axum::http::{HeaderName, HeaderValue, StatusCode};
@@ -69,6 +69,15 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
     info!("mint-info: {:?}", mint.config.info);
     info!("lightning fee-reserve: {:?}", mint.config.lightning_fee);
     info!("lightning-backend: {}", mint.lightning_type);
+
+    if let Some(ref onchain) = mint.config.onchain {
+        info!("onchain-type: {:?}", onchain.onchain_type);
+        info!("onchain-min-confirmations: {}", onchain.min_confirmations);
+        info!("onchain-min-amount: {}", onchain.min_amount);
+        info!("onchain-max-amount: {}", onchain.max_amount);
+    } else {
+        info!("onchain-backend is not configured");
+    }
 
     let listener = tokio::net::TcpListener::bind(&mint.config.server.host_port)
         .await
@@ -290,11 +299,9 @@ async fn post_legacy_check_fees(
     let invoice = mint.lightning.decode_invoice(_check_fees.pr).await?;
 
     Ok(Json(CheckFeesResponse {
-        fee: mint.fee_reserve(
-            invoice
-                .amount_milli_satoshis()
-                .ok_or_else(|| crate::error::MokshaMintError::InvalidAmount)?,
-        ),
+        fee: mint.fee_reserve(invoice.amount_milli_satoshis().ok_or_else(|| {
+            crate::error::MokshaMintError::InvalidAmount("invalid invoice".to_owned())
+        })?),
     }))
 }
 
@@ -543,9 +550,9 @@ async fn post_melt_quote_bolt11(
         .lightning
         .decode_invoice(melt_request.request.clone())
         .await?;
-    let amount = invoice
-        .amount_milli_satoshis()
-        .ok_or_else(|| crate::error::MokshaMintError::InvalidAmount)?;
+    let amount = invoice.amount_milli_satoshis().ok_or_else(|| {
+        crate::error::MokshaMintError::InvalidAmount("invalid invoice".to_owned())
+    })?;
     let fee_reserve = mint.fee_reserve(amount) / 1_000; // FIXME check if this is correct
     info!("fee_reserve: {}", fee_reserve);
 
@@ -694,9 +701,9 @@ async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, Mo
 
 fn get_nuts(cfg: &MintConfig) -> Nuts {
     match cfg.onchain.as_ref() {
-        Some(OnchainType::Lnd(settings)) => Nuts {
-            nut14: Some(settings.to_owned().into()),
-            nut15: Some(settings.to_owned().into()),
+        Some(config) => Nuts {
+            nut14: Some(config.to_owned().into()),
+            nut15: Some(config.to_owned().into()),
             ..Nuts::default()
         },
         _ => Nuts::default(),
@@ -715,6 +722,26 @@ async fn post_mint_quote_onchain(
     State(mint): State<Mint>,
     Json(request): Json<PostMintQuoteOnchainRequest>,
 ) -> Result<Json<PostMintQuoteOnchainResponse>, MokshaMintError> {
+    let onchain_config = mint.config.onchain.unwrap_or_default();
+
+    if request.unit != CurrencyUnit::Sat {
+        return Err(MokshaMintError::CurrencyNotSupported(request.unit));
+    }
+
+    if request.amount < onchain_config.min_amount {
+        return Err(MokshaMintError::InvalidAmount(format!(
+            "amount is too low. Min amount is {}",
+            onchain_config.min_amount
+        )));
+    }
+
+    if request.amount > onchain_config.max_amount {
+        return Err(MokshaMintError::InvalidAmount(format!(
+            "amount is too high. Max amount is {}",
+            onchain_config.max_amount
+        )));
+    }
+
     let quote_id = Uuid::new_v4();
     let address = mint
         .onchain
@@ -722,7 +749,6 @@ async fn post_mint_quote_onchain(
         .expect("onchain backend not configured")
         .new_address()
         .await?;
-    // TODO check amount and unit
 
     let quote = OnchainMintQuote {
         quote_id,
@@ -758,10 +784,7 @@ async fn get_mint_quote_onchain(
         .get_onchain_mint_quote(&Uuid::from_str(quote_id.as_str())?)
         .await?;
 
-    let min_confs = match mint.config.onchain.as_ref() {
-        Some(OnchainType::Lnd(settings)) => settings.min_confirmations,
-        _ => LndOnchainSettings::default().min_confirmations,
-    };
+    let min_confs = mint.config.onchain.unwrap_or_default().min_confirmations;
 
     let paid = mint
         .onchain
@@ -826,7 +849,26 @@ async fn post_melt_quote_onchain(
         unit,
     } = melt_request;
 
-    // FIXME check currency unit
+    let onchain_config = mint.config.onchain.unwrap_or_default();
+
+    if unit != CurrencyUnit::Sat {
+        return Err(MokshaMintError::CurrencyNotSupported(unit));
+    }
+
+    if amount < onchain_config.min_amount {
+        return Err(MokshaMintError::InvalidAmount(format!(
+            "amount is too low. Min amount is {}",
+            onchain_config.min_amount
+        )));
+    }
+
+    if amount > onchain_config.max_amount {
+        return Err(MokshaMintError::InvalidAmount(format!(
+            "amount is too high. Max amount is {}",
+            onchain_config.max_amount
+        )));
+    }
+
     let fee_response = mint
         .onchain
         .as_ref()

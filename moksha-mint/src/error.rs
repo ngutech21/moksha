@@ -8,6 +8,7 @@ use axum::{
 use fedimint_tonic_lnd::ConnectError;
 
 use lightning_invoice::ParseOrSemanticError;
+use moksha_core::primitives::CurrencyUnit;
 use serde_json::json;
 use thiserror::Error;
 use tracing::{event, Level};
@@ -52,8 +53,8 @@ pub enum MokshaMintError {
     #[error("duplicate promises.")]
     SwapHasDuplicatePromises,
 
-    #[error("Invalid amount")]
-    InvalidAmount,
+    #[error("Invalid amount: {0}")]
+    InvalidAmount(String),
 
     #[error("Lightning Error {0}")]
     Lightning(#[from] LightningError),
@@ -66,6 +67,9 @@ pub enum MokshaMintError {
 
     #[error("Keyset not found {0}")]
     KeysetNotFound(String),
+
+    #[error("Currency not supported {0}")]
+    CurrencyNotSupported(CurrencyUnit),
 }
 
 impl IntoResponse for MokshaMintError {

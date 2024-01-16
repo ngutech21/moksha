@@ -11,8 +11,8 @@ use moksha_core::{
 
 use crate::{
     config::{
-        BuildConfig, DatabaseConfig, LightningFeeConfig, MintConfig, MintInfoConfig, OnchainType,
-        ServerConfig,
+        BuildConfig, DatabaseConfig, LightningFeeConfig, MintConfig, MintInfoConfig, OnchainConfig,
+        OnchainType, ServerConfig,
     },
     database::Database,
     error::MokshaMintError,
@@ -321,21 +321,22 @@ impl MintBuilder {
         let db = Arc::new(crate::database::postgres::PostgresDB::new(&db_config).await?);
         db.migrate().await;
 
-        let onchain_config = OnchainType::from_env();
+        let onchain_config = OnchainConfig::from_env();
 
-        let lnd_onchain: Option<Arc<dyn Onchain + Send + Sync>> =
-            if let Some(OnchainType::Lnd(cfg)) = onchain_config.clone() {
-                Some(Arc::new(
-                    LndOnchain::new(
-                        cfg.grpc_host.expect("LND_GRPC_HOST not found"),
-                        &cfg.tls_cert_path.expect("LND_TLS_CERT_PATH not found"),
-                        &cfg.macaroon_path.expect("LND_MACAROON_PATH not found"),
-                    )
-                    .await?,
-                ))
-            } else {
-                None
-            };
+        let lnd_onchain: Option<Arc<dyn Onchain + Send + Sync>> = match onchain_config.clone() {
+            Some(OnchainConfig {
+                onchain_type: OnchainType::Lnd(cfg),
+                ..
+            }) => Some(Arc::new(
+                LndOnchain::new(
+                    cfg.grpc_host.expect("LND_GRPC_HOST not found"),
+                    &cfg.tls_cert_path.expect("LND_TLS_CERT_PATH not found"),
+                    &cfg.macaroon_path.expect("LND_MACAROON_PATH not found"),
+                )
+                .await?,
+            )),
+            _ => None,
+        };
 
         Ok(Mint::new(
             self.private_key.expect("MINT_PRIVATE_KEY not set"),
