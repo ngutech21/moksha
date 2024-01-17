@@ -93,7 +93,7 @@ async fn main() -> anyhow::Result<()> {
         Command::Receive { token } => {
             wallet.receive_tokens(&token.try_into()?).await?;
             println!(
-                "Tokens received successfully.\nNew balance {} sats",
+                "Tokens received successfully.\nNew balance {} (sat)",
                 wallet.get_balance().await?.to_formatted_string(&Locale::en)
             );
         }
@@ -101,16 +101,16 @@ async fn main() -> anyhow::Result<()> {
             let result = wallet.send_tokens(amount).await?;
             let ser: String = result.try_into()?;
 
-            println!("Result {amount} sats:\n{ser}");
+            println!("Result {amount} (sat):\n{ser}");
             println!(
-                "\nNew balance: {} sats",
+                "\nNew balance: {} (sat)",
                 wallet.get_balance().await?.to_formatted_string(&Locale::en)
             );
         }
 
         Command::Balance => {
             let balance = wallet.get_balance().await?.to_formatted_string(&Locale::en);
-            println!("Balance: {balance} sats");
+            println!("Balance: {balance} (sat)");
         }
         Command::Pay { invoice } => {
             let response = wallet.pay_invoice(invoice).await?;
@@ -119,7 +119,7 @@ async fn main() -> anyhow::Result<()> {
 
             if response.paid {
                 println!(
-                    "\nInvoice has been paid: Tokens melted successfully\nNew balance: {} sats",
+                    "\nInvoice has been paid: Tokens melted successfully\nNew balance: {} (sat)",
                     wallet.get_balance().await?.to_formatted_string(&Locale::en)
                 );
             } else {
@@ -144,7 +144,7 @@ async fn main() -> anyhow::Result<()> {
                 address
             );
             let pay_confirmed = Confirm::new()
-                .with_prompt("Would you like to proceed with the on-chain transaction payment?")
+                .with_prompt("Confirm payment?")
                 .interact()
                 .unwrap();
 
@@ -164,7 +164,7 @@ async fn main() -> anyhow::Result<()> {
 
                 if paid || wallet.is_onchain_tx_paid(txid.clone()).await? {
                     println!(
-                        "\nTokens melted successfully\nNew balance: {} sats",
+                        "\nTokens melted successfully\nNew balance: {} (sat)",
                         wallet.get_balance().await?.to_formatted_string(&Locale::en)
                     );
                     break;
@@ -206,7 +206,7 @@ async fn main() -> anyhow::Result<()> {
                     let nut14 = info.nuts.nut14.expect("nut14 is None");
                     if amount < nut14.min_amount {
                         println!(
-                            "Amount too low. Minimum amount is {} sats",
+                            "Amount too low. Minimum amount is {} (sat)",
                             nut14.min_amount.to_formatted_string(&Locale::en)
                         );
                         return Ok(());
@@ -214,7 +214,7 @@ async fn main() -> anyhow::Result<()> {
 
                     if amount > nut14.max_amount {
                         println!(
-                            "Amount too high. Maximum amount is {} sats",
+                            "Amount too high. Maximum amount is {} (sat)",
                             nut14.max_amount.to_formatted_string(&Locale::en)
                         );
                         return Ok(());
@@ -254,7 +254,7 @@ async fn main() -> anyhow::Result<()> {
                 match mint_result {
                     Ok(_) => {
                         println!(
-                            "Tokens minted successfully.\nNew balance {} sats",
+                            "Tokens minted successfully.\nNew balance {} (sat)",
                             wallet.get_balance().await?.to_formatted_string(&Locale::en)
                         );
                         break;
