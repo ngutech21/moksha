@@ -1,5 +1,6 @@
 export CFLAGS := ""
 
+DB_URL := "postgres://postgres:postgres@localhost/moksha-mint"
 
 # list all tasks
 default:
@@ -123,7 +124,7 @@ build-wasm:
 # runs sqlx prepare
 db-prepare:
   cd moksha-mint && \
-  cargo sqlx prepare --database-url postgres://postgres:postgres@127.0.0.1/moksha-mint
+  cargo sqlx prepare --database-url {{ DB_URL }}
 
 # runs sqlx prepare
 db-migrate:
@@ -133,7 +134,7 @@ db-migrate:
 # creates the postgres database
 db-create:
   cd moksha-mint && \
-  cargo sqlx database create --database-url postgres://postgres:postgres@localhost/moksha-mint
+  cargo sqlx database create --database-url {{ DB_URL }}
 
 # starts the fly.io database proxy
 start-fly-proxy:
