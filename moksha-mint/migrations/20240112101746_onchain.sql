@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS public.onchain_melt_quotes
     id uuid NOT NULL,
 	amount bigint NOT NULL,
     address text COLLATE pg_catalog."default" NOT NULL,
-    fee bigint NOT NULL,
+    fee_total bigint NOT NULL,
+    fee_sat_per_vbyte bigint NOT NULL,
     expiry bigint NOT NULL,
     paid boolean NOT NULL,
     CONSTRAINT onchain_melt_quotes_pkey PRIMARY KEY (id)

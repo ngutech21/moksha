@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, amount,address, fee, expiry, paid  FROM onchain_melt_quotes WHERE id = $1",
+  "query": "SELECT id, amount,address, fee_total, fee_sat_per_vbyte, expiry, paid  FROM onchain_melt_quotes WHERE id = $1",
   "describe": {
     "columns": [
       {
@@ -20,16 +20,21 @@
       },
       {
         "ordinal": 3,
-        "name": "fee",
+        "name": "fee_total",
         "type_info": "Int8"
       },
       {
         "ordinal": 4,
-        "name": "expiry",
+        "name": "fee_sat_per_vbyte",
         "type_info": "Int8"
       },
       {
         "ordinal": 5,
+        "name": "expiry",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
         "name": "paid",
         "type_info": "Bool"
       }
@@ -45,8 +50,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "5d0f049a82bfd9b62044e6cdb388546d5338114c6766cda9e62c99e64b9eac8b"
+  "hash": "f8d1dba52a7096cf4aa82648404c97ae5e28a82e71f8a178bd423d21b2b7e963"
 }

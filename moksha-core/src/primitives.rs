@@ -298,7 +298,8 @@ pub struct OnchainMeltQuote {
     pub quote_id: Uuid,
     pub amount: u64,
     pub address: String,
-    pub fee: u64,
+    pub fee_total: u64,
+    pub fee_sat_per_vbyte: u32,
     pub expiry: u64,
     pub paid: bool,
 }
@@ -362,7 +363,7 @@ impl From<OnchainMeltQuote> for PostMeltQuoteOnchainResponse {
         Self {
             quote: quote.quote_id.to_string(),
             amount: quote.amount,
-            fee: quote.fee,
+            fee: quote.fee_total,
             expiry: quote.expiry,
             paid: quote.paid,
         }

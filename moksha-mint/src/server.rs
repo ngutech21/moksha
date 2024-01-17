@@ -885,13 +885,24 @@ async fn post_melt_quote_onchain(
         .estimate_fee(&address, amount)
         .await?;
 
+    info!(
+        "post_melt_quote_onchain fee_reserve >>>>>>>>>>>>>> : {:#?}",
+        &fee_response
+    );
+
+    println!(
+        "post_melt_quote_onchain fee_reserve >>>>>>>>>>>>>> : {:#?}",
+        &fee_response
+    );
+
     let key = Uuid::new_v4();
     let quote = OnchainMeltQuote {
         quote_id: key,
         address,
         amount,
-        fee: fee_response.fee_in_sat,
-        expiry: quote_expiry(), // set specific onchain expiry
+        fee_total: fee_response.fee_in_sat,
+        fee_sat_per_vbyte: fee_response.sat_per_vbyte,
+        expiry: quote_onchain_expiry(),
         paid: false,
     };
     mint.db.add_onchain_melt_quote(&quote).await?;

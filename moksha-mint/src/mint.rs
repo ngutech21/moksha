@@ -239,8 +239,8 @@ impl Mint {
             .onchain
             .as_ref()
             .expect("onchain backend not set")
-            .send_coins(&quote.address, quote.amount, 50)
-            .await?; // FIXME set correct sat_per_vbyte
+            .send_coins(&quote.address, quote.amount, quote.fee_sat_per_vbyte)
+            .await?;
 
         self.db.add_used_proofs(proofs).await?;
 
