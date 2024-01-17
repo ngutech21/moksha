@@ -24,9 +24,9 @@ use moksha_core::blind::BlindedMessage;
 use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
     Bolt11MeltQuote, Bolt11MintQuote, CheckFeesRequest, CheckFeesResponse, CurrencyUnit,
-    KeyResponse, KeysResponse, MintInfoResponse, MintLegacyInfoResponse, Nut10, Nut11, Nut12,
-    Nut14, Nut15, Nut4, Nut5, Nut6, Nut7, Nut8, Nut9, Nuts, OnchainMeltQuote, OnchainMintQuote,
-    PaymentMethod, PaymentRequest, PostMeltBolt11Request, PostMeltBolt11Response,
+    GetMeltOnchainResponse, KeyResponse, KeysResponse, MintInfoResponse, MintLegacyInfoResponse,
+    Nut10, Nut11, Nut12, Nut14, Nut15, Nut4, Nut5, Nut6, Nut7, Nut8, Nut9, Nuts, OnchainMeltQuote,
+    OnchainMintQuote, PaymentMethod, PaymentRequest, PostMeltBolt11Request, PostMeltBolt11Response,
     PostMeltOnchainRequest, PostMeltOnchainResponse, PostMeltQuoteBolt11Request,
     PostMeltQuoteBolt11Response, PostMeltQuoteOnchainRequest, PostMeltQuoteOnchainResponse,
     PostMeltRequest, PostMeltResponse, PostMintBolt11Request, PostMintBolt11Response,
@@ -196,6 +196,7 @@ fn app(mint: Mint) -> Router {
             .route("/v1/melt/quote/onchain", post(post_melt_quote_onchain))
             .route("/v1/melt/quote/onchain/:quote", get(get_melt_quote_onchain))
             .route("/v1/melt/onchain", post(post_melt_onchain))
+            .route("/v1/melt/onchain/:txid", get(get_melt_onchain))
     } else {
         Router::new()
     };
@@ -912,8 +913,17 @@ async fn get_melt_quote_onchain(
         .get_onchain_melt_quote(&Uuid::from_str(quote_id.as_str())?)
         .await?;
 
-    // FIXME check for paid?
-    Ok(Json(quote.into()))
+    let paid = is_onchain_paid(&mint, &quote).await?;
+    if paid {
+        mint.db
+            .update_onchain_melt_quote(&OnchainMeltQuote {
+                paid,
+                ..quote.clone()
+            })
+            .await?;
+    }
+
+    Ok(Json(OnchainMeltQuote { paid, ..quote }.into()))
 }
 
 #[utoipa::path(
@@ -933,20 +943,70 @@ async fn post_melt_onchain(
         .get_onchain_melt_quote(&Uuid::from_str(melt_request.quote.as_str())?)
         .await?;
 
-    let txid = mint
-        .melt_onchain(&quote, &melt_request.inputs, &mint.keyset)
-        .await?;
-    mint.db
-        .update_onchain_melt_quote(&OnchainMeltQuote {
-            paid: true, // FIXME check if paid
-            ..quote
-        })
-        .await?;
+    let txid = mint.melt_onchain(&quote, &melt_request.inputs).await?;
 
-    // FIXME
-    let paid = true;
+    let paid = is_onchain_paid(&mint, &quote).await?;
+
+    mint.db
+        .update_onchain_melt_quote(&OnchainMeltQuote { paid, ..quote })
+        .await?;
 
     Ok(Json(PostMeltOnchainResponse { paid, txid }))
+}
+
+#[utoipa::path(
+        get,
+        path = "/v1/melt/onchain/{tx_id}",
+        responses(
+            (status = 200, description = "is transaction paid", body = [GetMeltOnchainResponse])
+        ),
+        params(
+            ("tx_id" = String, Path, description = "Bitcoin onchain transaction-id"),
+        )
+    )]
+async fn get_melt_onchain(
+    Path(tx_id): Path<String>,
+    State(mint): State<Mint>,
+) -> Result<Json<GetMeltOnchainResponse>, MokshaMintError> {
+    info!("is transaction paid: {}", tx_id);
+
+    // let quote = mint
+    //     .db
+    //     .get_onchain_melt_quote(&Uuid::from_str(tx_id.as_str())?)
+    //     .await?;
+
+    // let paid = is_onchain_paid(&mint, &quote).await?;
+    // if paid {
+    //     mint.db
+    //         .update_onchain_melt_quote(&OnchainMeltQuote {
+    //             paid,
+    //             ..quote.clone()
+    //         })
+    //         .await?;
+    // }
+    let paid = mint
+        .onchain
+        .as_ref()
+        .expect("onchain not set")
+        .is_transaction_paid(&tx_id)
+        .await?;
+
+    Ok(Json(GetMeltOnchainResponse { paid }))
+}
+
+async fn is_onchain_paid(mint: &Mint, quote: &OnchainMeltQuote) -> Result<bool, MokshaMintError> {
+    let min_confs = mint
+        .config
+        .onchain
+        .clone()
+        .unwrap_or_default()
+        .min_confirmations;
+
+    mint.onchain
+        .as_ref()
+        .expect("onchain backend not configured")
+        .is_paid(&quote.address, quote.amount, min_confs)
+        .await
 }
 
 #[cfg(test)]

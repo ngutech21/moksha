@@ -223,11 +223,15 @@ impl Mint {
         &self,
         quote: &OnchainMeltQuote,
         proofs: &Proofs,
-        keyset: &MintKeyset,
     ) -> Result<String, MokshaMintError> {
         let proofs_amount = proofs.total_amount();
 
-        // TODO check proofs against quote
+        if proofs_amount < quote.amount {
+            return Err(MokshaMintError::NotEnoughTokens(format!(
+                "Required amount: {}",
+                quote.amount
+            )));
+        }
 
         self.check_used_proofs(proofs).await?;
 

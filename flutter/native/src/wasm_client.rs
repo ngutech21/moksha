@@ -5,12 +5,13 @@ use moksha_core::{
     blind::BlindedMessage,
     keyset::V1Keysets,
     primitives::{
-        CashuErrorResponse, CurrencyUnit, KeysResponse, MintInfoResponse, PostMeltBolt11Request,
-        PostMeltBolt11Response, PostMeltOnchainResponse, PostMeltQuoteBolt11Request,
-        PostMeltQuoteBolt11Response, PostMeltQuoteOnchainRequest, PostMeltQuoteOnchainResponse,
-        PostMintBolt11Request, PostMintBolt11Response, PostMintOnchainRequest,
-        PostMintOnchainResponse, PostMintQuoteBolt11Request, PostMintQuoteBolt11Response,
-        PostMintQuoteOnchainResponse, PostSwapRequest, PostSwapResponse,
+        CashuErrorResponse, CurrencyUnit, GetMeltOnchainResponse, KeysResponse, MintInfoResponse,
+        PostMeltBolt11Request, PostMeltBolt11Response, PostMeltOnchainResponse,
+        PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response, PostMeltQuoteOnchainRequest,
+        PostMeltQuoteOnchainResponse, PostMintBolt11Request, PostMintBolt11Response,
+        PostMintOnchainRequest, PostMintOnchainResponse, PostMintQuoteBolt11Request,
+        PostMintQuoteBolt11Response, PostMintQuoteOnchainResponse, PostSwapRequest,
+        PostSwapResponse,
     },
     proof::Proofs,
 };
@@ -190,6 +191,14 @@ impl Client for WasmClient {
         quote: String,
     ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError> {
         todo!()
+    }
+
+    async fn get_melt_onchain(
+        &self,
+        mint_url: &Url,
+        txid: String,
+    ) -> Result<GetMeltOnchainResponse, MokshaWalletError> {
+        do_get(&mint_url.join(&format!("/v1/melt/onchain/{txid}"))?).await
     }
 }
 

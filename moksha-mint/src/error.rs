@@ -70,6 +70,9 @@ pub enum MokshaMintError {
 
     #[error("Currency not supported {0}")]
     CurrencyNotSupported(CurrencyUnit),
+
+    #[error("Not Enough tokens: {0}")]
+    NotEnoughTokens(String),
 }
 
 impl IntoResponse for MokshaMintError {

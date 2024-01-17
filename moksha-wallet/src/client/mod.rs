@@ -5,8 +5,8 @@ use moksha_core::{
     blind::BlindedMessage,
     keyset::{Keysets, V1Keysets},
     primitives::{
-        CheckFeesResponse, CurrencyUnit, KeysResponse, MintInfoResponse, MintLegacyInfoResponse,
-        PaymentRequest, PostMeltBolt11Response, PostMeltOnchainResponse,
+        CheckFeesResponse, CurrencyUnit, GetMeltOnchainResponse, KeysResponse, MintInfoResponse,
+        MintLegacyInfoResponse, PaymentRequest, PostMeltBolt11Response, PostMeltOnchainResponse,
         PostMeltQuoteBolt11Response, PostMeltQuoteOnchainResponse, PostMeltResponse,
         PostMintBolt11Response, PostMintOnchainResponse, PostMintQuoteBolt11Response,
         PostMintQuoteOnchainResponse, PostMintResponse, PostSplitResponse, PostSwapResponse,
@@ -175,4 +175,10 @@ pub trait Client {
         mint_url: &Url,
         quote: String,
     ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError>;
+
+    async fn get_melt_onchain(
+        &self,
+        mint_url: &Url,
+        txid: String,
+    ) -> Result<GetMeltOnchainResponse, MokshaWalletError>;
 }

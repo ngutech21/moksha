@@ -446,9 +446,6 @@ impl Lightning for LndLightning {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use std::path::PathBuf;
-
     use crate::lightning::Lightning;
     use crate::lightning::LnbitsLightning;
 

@@ -174,6 +174,22 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
         })
     }
 
+    pub async fn is_onchain_paid(&self, quote: String) -> Result<bool, MokshaWalletError> {
+        Ok(self
+            .client
+            .get_melt_quote_onchain(&self.mint_url, quote)
+            .await?
+            .paid)
+    }
+
+    pub async fn is_onchain_tx_paid(&self, txid: String) -> Result<bool, MokshaWalletError> {
+        Ok(self
+            .client
+            .get_melt_onchain(&self.mint_url, txid)
+            .await?
+            .paid)
+    }
+
     pub async fn get_balance(&self) -> Result<u64, MokshaWalletError> {
         Ok(self.localstore.get_proofs().await?.total_amount())
     }

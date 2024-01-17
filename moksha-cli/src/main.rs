@@ -1,7 +1,8 @@
 use clap::{Parser, Subcommand};
 use dialoguer::{theme::ColorfulTheme, Select};
 use moksha_core::primitives::{
-    PaymentMethod, PostMintQuoteBolt11Response, PostMintQuoteOnchainResponse,
+    PaymentMethod, PostMeltOnchainResponse, PostMintQuoteBolt11Response,
+    PostMintQuoteOnchainResponse,
 };
 use num_format::{Locale, ToFormattedString};
 use std::path::PathBuf;
@@ -132,16 +133,28 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            let response = wallet.pay_onchain(address, amount).await?;
+            println!("Pay onchain to melt tokens:\n\n{address}");
+            let PostMeltOnchainResponse { paid, txid } =
+                wallet.pay_onchain(address, amount).await?;
 
-            if response.paid {
-                println!(
-                    "\nTokens melted successfully\nTransaction-id {}\nNew balance: {} sats",
-                    response.txid,
-                    wallet.get_balance().await?.to_formatted_string(&Locale::en)
-                );
-            } else {
-                println!("Error: Tokens not melted");
+            println!("Created transaction with txid: {}\n", &txid);
+
+            loop {
+                tokio::time::sleep_until(
+                    tokio::time::Instant::now() + std::time::Duration::from_millis(2_000),
+                )
+                .await;
+
+                if paid || wallet.is_onchain_tx_paid(txid.clone()).await? {
+                    println!(
+                        "\nTokens melted successfully\nNew balance: {} sats",
+                        wallet.get_balance().await?.to_formatted_string(&Locale::en)
+                    );
+                    break;
+                } else {
+                    print!(".");
+                    continue;
+                }
             }
         }
         Command::Mint { amount } => {

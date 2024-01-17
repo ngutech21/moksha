@@ -369,6 +369,11 @@ impl From<OnchainMeltQuote> for PostMeltQuoteOnchainResponse {
     }
 }
 
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct GetMeltOnchainResponse {
+    pub paid: bool,
+}
+
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
 pub struct Nuts {
     // /// Cryptography and Models
