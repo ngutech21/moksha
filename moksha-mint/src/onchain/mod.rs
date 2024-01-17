@@ -150,7 +150,7 @@ impl Onchain for LndOnchain {
         amount: u64,
         sat_per_vbyte: u32,
     ) -> Result<SendCoinsResult, MokshaMintError> {
-        let mut client = self.client_lock().await.expect("failed to local client");
+        let mut client = self.client_lock().await.expect("failed to lock client");
         let response = client
             .send_coins(SendCoinsRequest {
                 addr: address.to_owned(),
@@ -171,7 +171,7 @@ impl Onchain for LndOnchain {
         address: &str,
         amount: u64,
     ) -> Result<EstimateFeeResult, MokshaMintError> {
-        let mut client = self.client_lock().await.expect("failed to local client");
+        let mut client = self.client_lock().await.expect("failed to lock client");
         let response = client
             .estimate_fee(EstimateFeeRequest {
                 addr_to_amount: [(address.to_owned(), amount as i64)]

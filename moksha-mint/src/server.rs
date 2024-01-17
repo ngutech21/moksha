@@ -119,7 +119,8 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         post_mint_onchain,
         post_melt_quote_onchain,
         get_melt_quote_onchain,
-        post_melt_onchain
+        post_melt_onchain,
+        get_melt_onchain
     ),
     components(schemas(
         MintInfoResponse,
@@ -160,6 +161,7 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         PostMintQuoteOnchainResponse,
         PostMeltQuoteOnchainRequest,
         PostMeltQuoteOnchainResponse,
+        GetMeltOnchainResponse
     ))
 )]
 struct ApiDoc;
@@ -580,6 +582,12 @@ fn quote_expiry() -> u64 {
     now.timestamp() as u64
 }
 
+fn quote_onchain_expiry() -> u64 {
+    // FIXME add config option for expiry
+    let now = Utc::now() + Duration::minutes(5);
+    now.timestamp() as u64
+}
+
 #[utoipa::path(
         post,
         path = "/v1/melt/bolt11",
@@ -756,7 +764,7 @@ async fn post_mint_quote_onchain(
         address,
         unit: request.unit,
         amount: request.amount,
-        expiry: quote_expiry(),
+        expiry: quote_onchain_expiry(),
         paid: false,
     };
 

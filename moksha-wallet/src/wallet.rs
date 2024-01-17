@@ -5,7 +5,8 @@ use moksha_core::{
     keyset::V1Keyset,
     primitives::{
         CurrencyUnit, KeyResponse, MintInfoResponse, PaymentMethod, PostMeltBolt11Response,
-        PostMeltOnchainResponse, PostMintQuoteBolt11Response, PostMintQuoteOnchainResponse,
+        PostMeltOnchainResponse, PostMeltQuoteOnchainResponse, PostMintQuoteBolt11Response,
+        PostMintQuoteOnchainResponse,
     },
     proof::{Proof, Proofs},
     token::TokenV3,
@@ -307,19 +308,24 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
         }
     }
 
-    pub async fn pay_onchain(
+    pub async fn pay_onchain_quote(
         &self,
         address: String,
         amount: u64,
+    ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError> {
+        self.client
+            .post_melt_quote_onchain(&self.mint_url, address, amount, CurrencyUnit::Sat)
+            .await
+    }
+
+    pub async fn pay_onchain(
+        &self,
+
+        melt_quote: &PostMeltQuoteOnchainResponse,
     ) -> Result<PostMeltOnchainResponse, MokshaWalletError> {
         let all_proofs = self.localstore.get_proofs().await?;
 
-        let melt_quote = self
-            .client
-            .post_melt_quote_onchain(&self.mint_url, address, amount, CurrencyUnit::Sat)
-            .await?;
-
-        let ln_amount = amount + melt_quote.fee;
+        let ln_amount = melt_quote.amount + melt_quote.fee;
 
         if ln_amount > all_proofs.total_amount() {
             return Err(MokshaWalletError::NotEnoughTokens);
@@ -341,7 +347,11 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
 
         let melt_response = self
             .client
-            .post_melt_onchain(&self.mint_url, total_proofs.clone(), melt_quote.quote)
+            .post_melt_onchain(
+                &self.mint_url,
+                total_proofs.clone(),
+                melt_quote.quote.clone(),
+            )
             .await?;
 
         if melt_response.paid {

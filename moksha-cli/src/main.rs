@@ -1,11 +1,12 @@
 use clap::{Parser, Subcommand};
-use dialoguer::{theme::ColorfulTheme, Select};
+use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 use moksha_core::primitives::{
     PaymentMethod, PostMeltOnchainResponse, PostMintQuoteBolt11Response,
     PostMintQuoteOnchainResponse,
 };
 use num_format::{Locale, ToFormattedString};
-use std::path::PathBuf;
+use std::io::Write;
+use std::{io::stdout, path::PathBuf};
 use url::Url;
 
 #[derive(Parser)]
@@ -133,12 +134,28 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            println!("Pay onchain to melt tokens:\n\n{address}");
-            let PostMeltOnchainResponse { paid, txid } =
-                wallet.pay_onchain(address, amount).await?;
+            let quote = wallet.pay_onchain_quote(address.clone(), amount).await?;
 
-            println!("Created transaction with txid: {}\n", &txid);
+            println!(
+                "Create onchain transaction to melt tokens: amount {} + fee {} = {} (sat)\n\n{}",
+                amount,
+                quote.fee,
+                amount + quote.fee,
+                address
+            );
+            let pay_confirmed = Confirm::new()
+                .with_prompt("Would you like to proceed with the on-chain transaction payment?")
+                .interact()
+                .unwrap();
 
+            if !pay_confirmed {
+                return Ok(());
+            }
+
+            let PostMeltOnchainResponse { paid, txid } = wallet.pay_onchain(&quote).await?;
+            println!("Created transaction: {}\n", &txid);
+
+            let mut lock = stdout().lock();
             loop {
                 tokio::time::sleep_until(
                     tokio::time::Instant::now() + std::time::Duration::from_millis(2_000),
@@ -152,7 +169,8 @@ async fn main() -> anyhow::Result<()> {
                     );
                     break;
                 } else {
-                    print!(".");
+                    write!(lock, ".").unwrap();
+                    lock.flush().unwrap();
                     continue;
                 }
             }
@@ -204,6 +222,7 @@ async fn main() -> anyhow::Result<()> {
 
                     let PostMintQuoteOnchainResponse { address, quote, .. } =
                         wallet.create_quote_onchain(amount).await?;
+
                     println!("Pay onchain to mint tokens:\n\n{address}");
                     quote
                 }
