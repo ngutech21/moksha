@@ -723,6 +723,7 @@ mod tests {
         client
             .expect_get_keysets()
             .returning(move |_| Ok(keysets.clone()));
+        client.expect_is_v1_supported().returning(move |_| Ok(true));
         client
     }
 
