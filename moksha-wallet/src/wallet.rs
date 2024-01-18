@@ -68,6 +68,10 @@ impl<C: Client, L: LocalStore> WalletBuilder<C, L> {
         let localstore = self.localstore.expect("localstore is required");
         let mint_url = self.mint_url.expect("mint_url is required");
 
+        if !client.is_v1_supported(&mint_url).await? {
+            return Err(MokshaWalletError::UnsupportedApiVersion);
+        }
+
         let load_keysets = localstore.get_keysets().await?;
 
         let mint_keysets = client.get_keysets(&mint_url).await?;

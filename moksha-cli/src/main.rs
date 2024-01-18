@@ -72,15 +72,20 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let localstore = SqliteLocalStore::with_path(db_path.clone()).await?;
-
     let client = moksha_wallet::client::reqwest::HttpClient::new();
-
     let wallet = moksha_wallet::wallet::WalletBuilder::default()
         .with_client(client)
         .with_localstore(localstore)
         .with_mint_url(cli.mint_url.clone())
         .build()
-        .await?;
+        .await
+        .map_err(|e| {
+            if let moksha_wallet::error::MokshaWalletError::UnsupportedApiVersion = e {
+                println!("Error: Mint does not support /v1 api");
+                std::process::exit(1);
+            }
+            e
+        })?;
 
     match cli.command {
         Command::Info => {
