@@ -35,7 +35,6 @@ pub struct Mint {
 }
 
 impl Mint {
-    // FIXME create a new struct for all config-settings
     pub fn new(
         secret: String,
         derivation_path: String,
@@ -115,6 +114,7 @@ impl Mint {
                 .is_invoice_paid(invoice.payment_request.clone())
                 .await?;
 
+            // FIXME remove after legacy api is removed
             if !is_paid {
                 return Err(MokshaMintError::InvoiceNotPaidYet);
             }
