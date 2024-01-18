@@ -34,7 +34,7 @@ jobs:
           context: .
           push: true
           build-args: |
-            COMMITHASH=${{ steps.date.outputs.sha }}
+            COMMITHASH=${{ steps.sha.outputs.sha }}
             BUILDTIME=${{ steps.date.outputs.date }}
 
-          tags: docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:latest, docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:${{ steps.date.outputs.sha }}
+          tags: docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:latest, docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:${{ steps.sha.outputs.sha }}
