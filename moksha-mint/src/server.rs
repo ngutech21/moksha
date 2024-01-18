@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use crate::config::MintConfig;
+use crate::config::{MintConfig, OnchainConfig};
 use crate::error::MokshaMintError;
 use axum::extract::{Path, Query, Request, State};
 use axum::http::{HeaderName, HeaderValue, StatusCode};
@@ -709,13 +709,12 @@ async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, Mo
 }
 
 fn get_nuts(cfg: &MintConfig) -> Nuts {
-    match cfg.onchain.as_ref() {
-        Some(config) => Nuts {
-            nut14: Some(config.to_owned().into()),
-            nut15: Some(config.to_owned().into()),
-            ..Nuts::default()
-        },
-        _ => Nuts::default(),
+    let default_config = OnchainConfig::default();
+    let config = cfg.onchain.as_ref().unwrap_or(&default_config);
+    Nuts {
+        nut14: Some(config.to_owned().into()),
+        nut15: Some(config.to_owned().into()),
+        ..Nuts::default()
     }
 }
 
