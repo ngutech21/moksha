@@ -24,13 +24,17 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date -u '+%F-%T')"
 
+      - name: Get short SHA
+        id: sha
+        run: echo "::set-output name=sha::$(git rev-parse --short HEAD)"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           build-args: |
-            COMMITHASH=${{ github.sha }}
+            COMMITHASH=${{ steps.date.outputs.sha }}
             BUILDTIME=${{ steps.date.outputs.date }}
 
-          tags: docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:latest
+          tags: docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:latest, docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:${{ steps.date.outputs.sha }}
