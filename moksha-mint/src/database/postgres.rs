@@ -304,7 +304,7 @@ impl Database for PostgresDB {
         .await?;
         Ok(())
     }
- 
+
     async fn get_onchain_melt_quote(
         &self,
         key: &Uuid,
@@ -324,17 +324,17 @@ impl Database for PostgresDB {
         })
         .fetch_one(&self.pool)
         .await?;
- 
+
         Ok(quote)
     }
     async fn add_onchain_melt_quote(
-        &self, 
+        &self,
         quote: &OnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "INSERT INTO onchain_melt_quotes (id, amount, address, fee_total, fee_sat_per_vbyte, expiry, paid) VALUES ($1, $2, $3, $4, $5, $6, $7)",
             quote.quote_id,
-            quote.amount as i64, 
+            quote.amount as i64,
             quote.address,
             quote.fee_total as i64,
             quote.fee_sat_per_vbyte as i64,
