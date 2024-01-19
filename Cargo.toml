@@ -51,6 +51,7 @@ protobuf-compiler = '*'
 
 [workspace.metadata.dist.dependencies.homebrew]
 protobuf = '*'
+sqlite = '*'
 
 [patch.crates-io]
 secp256k1-zkp = { git = "https://github.com/dpc/rust-secp256k1-zkp/", branch = "sanket-pr" }
