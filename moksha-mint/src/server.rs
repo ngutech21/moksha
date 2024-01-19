@@ -571,9 +571,7 @@ async fn post_melt_quote_bolt11(
     };
     mint.db.add_bolt11_melt_quote(&quote).await?;
 
-    Ok(Json(quote.try_into().map_err(|_| {
-        crate::error::MokshaMintError::InvalidQuote("".to_string())
-    })?))
+    Ok(Json(quote.into()))
 }
 
 fn quote_expiry() -> u64 {
@@ -904,11 +902,7 @@ async fn post_melt_quote_onchain(
         expiry: quote_onchain_expiry(),
         paid: false,
     };
-    mint.db.add_onchain_melt_quote(&quote).await?;
-
-    Ok(Json(quote.try_into().map_err(|_| {
-        crate::error::MokshaMintError::InvalidQuote("".to_string())
-    })?))
+    Ok(Json(quote.into()))
 }
 
 #[utoipa::path(
