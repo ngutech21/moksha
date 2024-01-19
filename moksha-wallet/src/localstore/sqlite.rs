@@ -182,11 +182,11 @@ mod tests {
 
         let proofs = tokens
             .tokens
-            .get(0)
+            .first()
             .expect("Tokens is empty")
             .proofs
             .proofs();
-        let proof_4 = proofs.get(0).expect("Proof is empty").to_owned();
+        let proof_4 = proofs.first().expect("Proof is empty").to_owned();
         print!("first {:?}", proof_4);
 
         localstore.delete_proofs(&proof_4.into()).await?;

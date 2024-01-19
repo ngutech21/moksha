@@ -96,7 +96,7 @@ mod tests {
         assert!(result.is_ok());
         let result = result.unwrap();
         assert!(result.clone().len() == 10);
-        assert!(result.get(0).unwrap().0.amount == 1);
+        assert!(result.first().unwrap().0.amount == 1);
     }
 
     #[test]

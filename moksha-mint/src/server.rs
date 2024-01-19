@@ -1175,9 +1175,9 @@ mod tests {
         assert_eq!(1, keys.keysets.len());
         assert_eq!(
             64,
-            keys.keysets.get(0).expect("keyset not found").keys.len()
+            keys.keysets.first().expect("keyset not found").keys.len()
         );
-        println!("{:#?}", keys.keysets.get(0).unwrap().id);
+        println!("{:#?}", keys.keysets.first().unwrap().id);
         Ok(())
     }
 
@@ -1213,11 +1213,11 @@ mod tests {
         assert_eq!(1, keys.keysets.len());
         assert_eq!(
             64,
-            keys.keysets.get(0).expect("keyset not found").keys.len()
+            keys.keysets.first().expect("keyset not found").keys.len()
         );
         assert_eq!(
             "00f545318e4fad2b",
-            keys.keysets.get(0).expect("keyset not found").id
+            keys.keysets.first().expect("keyset not found").id
         );
         Ok(())
     }
@@ -1233,7 +1233,7 @@ mod tests {
         let body = response.into_body().collect().await.unwrap().to_bytes();
         let keys: V1Keysets = serde_json::from_slice(&body)?;
         assert_eq!(1, keys.keysets.len());
-        let keyset = keys.keysets.get(0).expect("keyset not found");
+        let keyset = keys.keysets.first().expect("keyset not found");
         assert!(keyset.active);
         assert_eq!(CurrencyUnit::Sat, keyset.unit);
         assert_eq!("00f545318e4fad2b", keyset.id);
