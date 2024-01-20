@@ -27,8 +27,6 @@ url = "2.4.1"
 dirs = "5.0.1"
 
 [target.'cfg(target_family = "wasm")'.dependencies]
-#ring = { version = "0.16.20", features = ["wasm32_unknown_unknown_js", "wasm32_c"] }
-ring = { version = "0.17.5" }
 gloo-net = { version = "0.4.0" }
 serde-wasm-bindgen = "0.6.1"
 wasm-bindgen = "0.2.88"
