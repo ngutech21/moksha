@@ -2880,7 +2880,6 @@ dependencies = [
  "rand",
  "reqwest",
  "rexie",
- "ring 0.17.7",
  "secp256k1 0.28.1",
  "serde",
  "serde-wasm-bindgen",
