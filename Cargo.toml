@@ -55,6 +55,7 @@ sqlite = '*'
 
 [workspace.metadata.dist.dependencies.chocolatey]
 protoc = '*'
+nasm = '*'
 
 [patch.crates-io]
 secp256k1-zkp = { git = "https://github.com/dpc/rust-secp256k1-zkp/", branch = "sanket-pr" }
