@@ -42,10 +42,10 @@ pub struct MintKeyset {
 }
 
 impl MintKeyset {
-    pub fn legacy_new(seed: &str, derivation_path: &str) -> MintKeyset {
+    pub fn legacy_new(seed: &str, derivation_path: &str) -> Self {
         let priv_keys = derive_keys(seed, derivation_path);
         let pub_keys = derive_pubkeys(&priv_keys);
-        MintKeyset {
+        Self {
             private_keys: priv_keys,
             keyset_id: legacy_derive_keyset_id(&pub_keys),
             public_keys: pub_keys,
@@ -53,10 +53,10 @@ impl MintKeyset {
         }
     }
 
-    pub fn new(seed: &str, derivation_path: &str) -> MintKeyset {
+    pub fn new(seed: &str, derivation_path: &str) -> Self {
         let priv_keys = derive_keys(seed, derivation_path);
         let pub_keys = derive_pubkeys(&priv_keys);
-        MintKeyset {
+        Self {
             private_keys: priv_keys,
             keyset_id: derive_keyset_id(&pub_keys),
             public_keys: pub_keys,
@@ -65,7 +65,7 @@ impl MintKeyset {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct Keysets {
     pub keysets: Vec<String>,
 }

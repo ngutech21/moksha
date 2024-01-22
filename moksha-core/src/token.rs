@@ -12,7 +12,7 @@ use crate::{error::MokshaCoreError, primitives::CurrencyUnit, proof::Proofs};
 const TOKEN_PREFIX_V3: &str = "cashuA";
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Token {
     #[serde(serialize_with = "serialize_url", deserialize_with = "deserialize_url")]
     pub mint: Option<Url>,
@@ -24,10 +24,10 @@ where
     D: Deserializer<'de>,
 {
     let url_str: Option<String> = Option::deserialize(deserializer)?;
-    match url_str {
-        Some(s) => Url::parse(&s).map_err(serde::de::Error::custom).map(Some),
-        None => Ok(None),
-    }
+    url_str.map_or_else(
+        || Ok(None),
+        |s| Url::parse(&s).map_err(serde::de::Error::custom).map(Some),
+    )
 }
 
 fn serialize_url<S>(url: &Option<Url>, serializer: S) -> Result<S::Ok, S::Error>
@@ -47,7 +47,7 @@ where
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TokenV3 {
     #[serde(rename = "token")]
     pub tokens: Vec<Token>,
@@ -64,7 +64,7 @@ impl TokenV3 {
         }
     }
 
-    pub fn empty() -> Self {
+    pub const fn empty() -> Self {
         Self {
             tokens: vec![],
             memo: None,
@@ -104,14 +104,14 @@ impl TokenV3 {
         ))
     }
 
-    pub fn deserialize(data: impl Into<String>) -> Result<TokenV3, MokshaCoreError> {
+    pub fn deserialize(data: impl Into<String>) -> Result<Self, MokshaCoreError> {
         let json = general_purpose::URL_SAFE.decode(
             data.into()
                 .strip_prefix(TOKEN_PREFIX_V3)
                 .ok_or(MokshaCoreError::InvalidTokenPrefix)?
                 .as_bytes(),
         )?;
-        Ok(serde_json::from_slice::<TokenV3>(&json)?)
+        Ok(serde_json::from_slice::<Self>(&json)?)
     }
 
     pub fn mint(&self) -> Option<Url> {

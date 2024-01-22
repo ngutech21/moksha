@@ -16,9 +16,8 @@ pub const ENV_DB_PATH: &str = "WALLET_DB_PATH";
 /// println!("Database path: {}", db_path);
 /// ```
 pub fn db_path() -> String {
-    match std::env::var(ENV_DB_PATH) {
-        Ok(val) => val,
-        Err(_) => {
+    std::env::var(ENV_DB_PATH).map_or_else(
+        |_| {
             let home = home_dir()
                 .expect("home dir not found")
                 .to_str()
@@ -39,8 +38,9 @@ pub fn db_path() -> String {
             }
 
             format!("{moksha_dir}/wallet.db")
-        }
-    }
+        },
+        |val| val,
+    )
 }
 
 pub fn config_dir() -> PathBuf {

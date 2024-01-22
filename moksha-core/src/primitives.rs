@@ -139,8 +139,8 @@ pub enum CurrencyUnit {
 impl Display for CurrencyUnit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CurrencyUnit::Sat => write!(f, "sat"),
-            CurrencyUnit::Usd => write!(f, "usd"),
+            Self::Sat => write!(f, "sat"),
+            Self::Usd => write!(f, "usd"),
         }
     }
 }
@@ -155,8 +155,8 @@ pub enum PaymentMethod {
 impl Display for PaymentMethod {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PaymentMethod::Bolt11 => write!(f, "Lightning"),
-            PaymentMethod::Onchain => write!(f, "Onchain"),
+            Self::Bolt11 => write!(f, "Lightning"),
+            Self::Onchain => write!(f, "Onchain"),
         }
     }
 }
@@ -214,7 +214,7 @@ pub struct PostMeltQuoteBolt11Response {
     pub expiry: u64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Bolt11MintQuote {
     pub quote_id: Uuid,
     pub payment_request: String,
@@ -222,7 +222,7 @@ pub struct Bolt11MintQuote {
     pub paid: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Bolt11MeltQuote {
     pub quote_id: Uuid,
     pub amount: u64,
@@ -272,7 +272,7 @@ pub struct MintInfoResponse {
     pub nuts: Nuts,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OnchainMintQuote {
     pub quote_id: Uuid,
     pub address: String,
@@ -293,7 +293,7 @@ impl From<OnchainMintQuote> for PostMintQuoteOnchainResponse {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OnchainMeltQuote {
     pub quote_id: Uuid,
     pub amount: u64,

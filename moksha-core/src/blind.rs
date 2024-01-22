@@ -40,7 +40,7 @@ impl BlindedMessage {
     pub fn blank(
         fee_reserve: Amount,
         keyset_id: String,
-    ) -> Result<Vec<(BlindedMessage, SecretKey, String)>, MokshaCoreError> {
+    ) -> Result<Vec<(Self, SecretKey, String)>, MokshaCoreError> {
         if fee_reserve.0 == 0 {
             return Ok(vec![]);
         }
@@ -54,7 +54,7 @@ impl BlindedMessage {
                 let secret = generate_random_string();
                 let (b_, alice_secret_key) = dhke.step1_alice(secret.clone(), None).unwrap(); // FIXME
                 (
-                    BlindedMessage {
+                    Self {
                         amount: 1,
                         b_,
                         id: keyset_id.clone(),
@@ -63,7 +63,7 @@ impl BlindedMessage {
                     secret,
                 )
             })
-            .collect::<Vec<(BlindedMessage, SecretKey, String)>>();
+            .collect::<Vec<(Self, SecretKey, String)>>();
 
         Ok(blinded_messages)
     }
@@ -95,7 +95,7 @@ mod tests {
         println!("{:?}", result);
         assert!(result.is_ok());
         let result = result.unwrap();
-        assert!(result.clone().len() == 10);
+        assert!(result.len() == 10);
         assert!(result.first().unwrap().0.amount == 1);
     }
 

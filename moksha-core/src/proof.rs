@@ -18,7 +18,7 @@ use utoipa::ToSchema;
 use crate::error::MokshaCoreError;
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub struct Proof {
     pub amount: u64,
     #[serde(rename = "id")]
@@ -31,7 +31,7 @@ pub struct Proof {
 }
 
 impl Proof {
-    pub fn new(amount: u64, secret: String, c: PublicKey, id: String) -> Self {
+    pub const fn new(amount: u64, secret: String, c: PublicKey, id: String) -> Self {
         Self {
             amount,
             secret,
@@ -42,10 +42,10 @@ impl Proof {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub struct P2SHScript;
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub struct Proofs(pub(super) Vec<Proof>);
 
 impl Proofs {
@@ -57,7 +57,7 @@ impl Proofs {
         Self(vec![proof])
     }
 
-    pub fn empty() -> Self {
+    pub const fn empty() -> Self {
         Self(vec![])
     }
 
@@ -77,7 +77,7 @@ impl Proofs {
         self.0.is_empty()
     }
 
-    pub fn proofs_for_amount(&self, amount: u64) -> Result<Proofs, MokshaCoreError> {
+    pub fn proofs_for_amount(&self, amount: u64) -> Result<Self, MokshaCoreError> {
         let mut all_proofs = self.0.clone();
         if amount > self.total_amount() {
             return Err(MokshaCoreError::NotEnoughTokens);

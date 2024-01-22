@@ -40,7 +40,7 @@ pub struct WalletBuilder<C: Client, L: LocalStore> {
 }
 
 impl<C: Client, L: LocalStore> WalletBuilder<C, L> {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self {
             client: None,
             localstore: None,

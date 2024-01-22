@@ -73,7 +73,7 @@ impl Dhke {
         let mut point: Option<PublicKey> = None;
         let mut msg_to_hash = message.to_vec();
         while point.is_none() {
-            let hash = Dhke::get_hash(&msg_to_hash);
+            let hash = Self::get_hash(&msg_to_hash);
             let input = &[0x02]
                 .iter()
                 .chain(hash.iter())
@@ -95,7 +95,7 @@ impl Dhke {
     ) -> Result<(PublicKey, SecretKey), MokshaCoreError> {
         let mut rng = rand::thread_rng();
 
-        let y = Dhke::hash_to_curve(secret_msg.into().as_bytes());
+        let y = Self::hash_to_curve(secret_msg.into().as_bytes());
         let secret_key = match blinding_factor {
             Some(f) => SecretKey::from_slice(f)?,
             None => SecretKey::new(&mut rng),
@@ -129,7 +129,7 @@ impl Dhke {
         c: PublicKey,
         secret_msg: impl Into<String>,
     ) -> Result<bool, MokshaCoreError> {
-        let y = Dhke::hash_to_curve(secret_msg.into().as_bytes());
+        let y = Self::hash_to_curve(secret_msg.into().as_bytes());
         Some(c == y.mul_tweak(&self.secp, &Scalar::from(a))?).ok_or(
             MokshaCoreError::Secp256k1Error(secp256k1::Error::InvalidPublicKey),
         )
