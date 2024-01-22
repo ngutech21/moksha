@@ -40,3 +40,6 @@ wasm-bindgen-futures = "0.4.37"
 # see https://docs.rs/getrandom/latest/getrandom/#indirect-dependencies and https://docs.rs/getrandom/latest/getrandom/#webassembly-support
 getrandom = { version = "0.2.11", features = ["js"] }
 ring = { version = "0.16.20", features = ["wasm32_unknown_unknown_js", "wasm32_c"] }
+
+[lints]
+workspace = true

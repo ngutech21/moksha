@@ -80,7 +80,10 @@ async fn main() -> anyhow::Result<()> {
         .build()
         .await
         .map_err(|e| {
-            if let moksha_wallet::error::MokshaWalletError::UnsupportedApiVersion = e {
+            if matches!(
+                e,
+                moksha_wallet::error::MokshaWalletError::UnsupportedApiVersion
+            ) {
                 println!("Error: Mint does not support /v1 api");
                 std::process::exit(1);
             }
@@ -183,8 +186,12 @@ async fn main() -> anyhow::Result<()> {
         Command::Mint { amount } => {
             let info = wallet.get_mint_info().await?;
 
-            let payment_method = match info.nuts.nut14 {
-                Some(ref nut14) => {
+            let payment_method = info.nuts.nut14.as_ref().map_or_else(
+                || {
+                    println!("Only bolt11 minting is supported");
+                    PaymentMethod::Bolt11
+                },
+                |nut14| {
                     if !nut14.supported {
                         println!("Only bolt11 minting is supported");
                         PaymentMethod::Bolt11
@@ -199,12 +206,8 @@ async fn main() -> anyhow::Result<()> {
                             .unwrap();
                         selections[selection].clone()
                     }
-                }
-                None => {
-                    println!("Only bolt11 minting is supported");
-                    PaymentMethod::Bolt11
-                }
-            };
+                },
+            );
 
             let quote = match payment_method {
                 PaymentMethod::Onchain => {

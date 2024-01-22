@@ -86,15 +86,16 @@ impl LndOnchain {
 #[async_trait]
 impl Onchain for LndOnchain {
     async fn is_transaction_paid(&self, txid: &str) -> Result<bool, MokshaMintError> {
-        let mut wal = self.wallet_lock().await.expect("failed to lock wallet");
-
         let request = ListUnspentRequest {
             min_confs: 0,
             max_confs: i32::MAX,
             ..Default::default()
         };
 
-        let response = wal
+        let response = self
+            .wallet_lock()
+            .await
+            .expect("failed to lock wallet")
             .list_unspent(request)
             .await
             .expect("failed to get response");
@@ -112,15 +113,17 @@ impl Onchain for LndOnchain {
         amount: u64,
         min_confirmations: u8,
     ) -> Result<bool, MokshaMintError> {
-        let mut wal = self.wallet_lock().await.expect("failed to lock wallet");
-
         let request = ListUnspentRequest {
             min_confs: 0,
             max_confs: i32::MAX,
             ..Default::default()
         };
+        //let mut wal = ;
 
-        let response = wal
+        let response = self
+            .wallet_lock()
+            .await
+            .expect("failed to lock wallet")
             .list_unspent(request)
             .await
             .expect("failed to get response");
@@ -151,8 +154,10 @@ impl Onchain for LndOnchain {
         amount: u64,
         sat_per_vbyte: u32,
     ) -> Result<SendCoinsResult, MokshaMintError> {
-        let mut client = self.client_lock().await.expect("failed to lock client");
-        let response = client
+        let response = self
+            .client_lock()
+            .await
+            .expect("failed to lock client")
             .send_coins(SendCoinsRequest {
                 addr: address.to_owned(),
                 amount: amount as i64,
@@ -172,11 +177,12 @@ impl Onchain for LndOnchain {
         address: &str,
         amount: u64,
     ) -> Result<EstimateFeeResult, MokshaMintError> {
-        let mut client = self.client_lock().await.expect("failed to lock client");
-        let response = client
+        let response = self
+            .client_lock()
+            .await
+            .expect("failed to lock client")
             .estimate_fee(EstimateFeeRequest {
-                addr_to_amount: [(address.to_owned(), amount as i64)]
-                    .iter()
+                addr_to_amount: std::iter::once(&(address.to_owned(), amount as i64))
                     .cloned()
                     .collect::<HashMap<_, _>>(),
                 target_conf: 1,
