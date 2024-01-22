@@ -44,6 +44,3 @@ tracing-subscriber = "0.3.18"
 
 [dev-dependencies]
 tempfile = "3.9.0"
-
-[lints.rust]
-unsafe_code = "allow"
