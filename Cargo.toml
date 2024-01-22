@@ -23,6 +23,8 @@ codegen-units = 1 # Reduce the number of object files to speed up compilation.
 [profile.dist]
 inherits = "release"
 lto = "thin"
+strip = true
+codegen-units = 1
 
 [workspace.metadata]
 authors = ["The moksha Developers"]
