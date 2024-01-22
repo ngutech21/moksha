@@ -1,5 +1,5 @@
 # build backend
-FROM rust:1.74.1-slim-bullseye as rust-builder
+FROM rust:1.75-slim-bullseye as rust-builder
 RUN apt update && apt install -y make clang pkg-config libssl-dev protobuf-compiler
 
 WORKDIR /rust-app
