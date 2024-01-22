@@ -8,7 +8,7 @@ default:
 
 # install all dependencies
 deps:
-  cargo install flutter_rust_bridge_codegen@1.82.5 sqlx-cli typos-cli  grcov wasm-pack wasm-opt just
+  cargo install flutter_rust_bridge_codegen@1.82.6 sqlx-cli typos-cli  grcov wasm-pack wasm-opt just
 
 
 # clean cargo and flutter

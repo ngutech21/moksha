@@ -59,7 +59,7 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 - [x] [NUT-06](https://github.com/cashubtc/nuts/blob/main/06.md)
 - [ ] [NUT-07](https://github.com/cashubtc/nuts/blob/main/07.md)
 - [x] [NUT-08](https://github.com/cashubtc/nuts/blob/main/08.md)
-- [x] [NUT-09](https://github.com/cashubtc/nuts/blob/main/09.md)
+- [ ] [NUT-09](https://github.com/cashubtc/nuts/blob/main/09.md)
 
 ## Crates
 
