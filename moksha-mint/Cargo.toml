@@ -1,6 +1,6 @@
 [package]
 name = "moksha-mint"
-version = "0.1.2"
+version = "0.2.0-beta"
 edition = "2021"
 repository = "https://github.com/ngutech21/moksha"
 license = "MIT"
@@ -32,13 +32,14 @@ tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 secp256k1 = { version = "0.28.1", features = ["rand", "serde"] }
 thiserror = "1.0.50"
-moksha-core = { path = "../moksha-core", version = "0.1.2" }
+moksha-core = { path = "../moksha-core", version = "0.2.0-beta" }
 lightning-invoice = "0.26.0"
 reqwest = { version = "0.11.22", default-features = false, features = ["serde_json", "json", "rustls-tls", "socks"] }
 url = "2.4.1"
 dotenvy = "0.15.7"
 envy = "0.4.2"
 fedimint-tonic-lnd = { version = "0.2.0", features = ["lightningrpc", "walletrpc"] }
+
 uuid = { version = "1.6.1", features = ["serde", "v4"] }
 
 utoipa = { version = "4.1.0", features = ["axum_extras"] }

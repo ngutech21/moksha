@@ -5,17 +5,20 @@ use moksha_core::{
     blind::{BlindedMessage, BlindedSignature, TotalAmount},
     dhke::Dhke,
     keyset::MintKeyset,
+    primitives::{OnchainMeltQuote, PaymentMethod},
     proof::Proofs,
 };
 
 use crate::{
     config::{
-        BuildConfig, DatabaseConfig, LightningFeeConfig, MintConfig, MintInfoConfig, ServerConfig,
+        BuildConfig, DatabaseConfig, LightningFeeConfig, MintConfig, MintInfoConfig, OnchainConfig,
+        OnchainType, ServerConfig,
     },
     database::Database,
     error::MokshaMintError,
     lightning::{AlbyLightning, Lightning, LightningType, LnbitsLightning, StrikeLightning},
     model::Invoice,
+    onchain::{LndOnchain, Onchain},
 };
 
 #[derive(Clone)]
@@ -27,11 +30,11 @@ pub struct Mint {
     pub keyset: MintKeyset,
     pub db: Arc<dyn Database + Send + Sync>,
     pub dhke: Dhke,
+    pub onchain: Option<Arc<dyn Onchain + Send + Sync>>,
     pub config: MintConfig,
 }
 
 impl Mint {
-    // FIXME create a new struct for all config-settings
     pub fn new(
         secret: String,
         derivation_path: String,
@@ -39,6 +42,7 @@ impl Mint {
         lightning_type: LightningType,
         db: Arc<dyn Database + Send + Sync>,
         config: MintConfig,
+        onchain: Option<Arc<dyn Onchain + Send + Sync>>,
     ) -> Self {
         Self {
             lightning,
@@ -48,6 +52,7 @@ impl Mint {
             db,
             dhke: Dhke::new(),
             config,
+            onchain,
         }
     }
 
@@ -95,22 +100,27 @@ impl Mint {
 
     pub async fn mint_tokens(
         &self,
+        payment_method: PaymentMethod,
         key: String,
         outputs: &[BlindedMessage],
         keyset: &MintKeyset,
     ) -> Result<Vec<BlindedSignature>, MokshaMintError> {
-        let invoice = self.db.get_pending_invoice(key.clone()).await?;
+        // FIXME refactor
+        if payment_method == PaymentMethod::Bolt11 {
+            let invoice = self.db.get_pending_invoice(key.clone()).await?;
 
-        let is_paid = self
-            .lightning
-            .is_invoice_paid(invoice.payment_request.clone())
-            .await?;
+            let is_paid = self
+                .lightning
+                .is_invoice_paid(invoice.payment_request.clone())
+                .await?;
 
-        if !is_paid {
-            return Err(MokshaMintError::InvoiceNotPaidYet);
+            // FIXME remove after legacy api is removed
+            if !is_paid {
+                return Err(MokshaMintError::InvoiceNotPaidYet);
+            }
+
+            self.db.delete_pending_invoice(key).await?;
         }
-
-        self.db.delete_pending_invoice(key).await?;
         self.create_blinded_signatures(outputs, keyset)
     }
 
@@ -145,7 +155,7 @@ impl Mint {
         Ok(promises)
     }
 
-    pub async fn melt(
+    pub async fn melt_bolt11(
         &self,
         payment_request: String,
         fee_reserve: u64,
@@ -208,6 +218,33 @@ impl Mint {
             }
         }
         Ok(())
+    }
+    pub async fn melt_onchain(
+        &self,
+        quote: &OnchainMeltQuote,
+        proofs: &Proofs,
+    ) -> Result<String, MokshaMintError> {
+        let proofs_amount = proofs.total_amount();
+
+        if proofs_amount < quote.amount {
+            return Err(MokshaMintError::NotEnoughTokens(format!(
+                "Required amount: {}",
+                quote.amount
+            )));
+        }
+
+        self.check_used_proofs(proofs).await?;
+
+        let send_response = self
+            .onchain
+            .as_ref()
+            .expect("onchain backend not set")
+            .send_coins(&quote.address, quote.amount, quote.fee_sat_per_vbyte)
+            .await?;
+
+        self.db.add_used_proofs(proofs).await?;
+
+        Ok(send_response.txid)
     }
 }
 
@@ -288,6 +325,23 @@ impl MintBuilder {
         let db = Arc::new(crate::database::postgres::PostgresDB::new(&db_config).await?);
         db.migrate().await;
 
+        let onchain_config = OnchainConfig::from_env();
+
+        let lnd_onchain: Option<Arc<dyn Onchain + Send + Sync>> = match onchain_config.clone() {
+            Some(OnchainConfig {
+                onchain_type: OnchainType::Lnd(cfg),
+                ..
+            }) => Some(Arc::new(
+                LndOnchain::new(
+                    cfg.grpc_host.expect("LND_GRPC_HOST not found"),
+                    &cfg.tls_cert_path.expect("LND_TLS_CERT_PATH not found"),
+                    &cfg.macaroon_path.expect("LND_MACAROON_PATH not found"),
+                )
+                .await?,
+            )),
+            _ => None,
+        };
+
         Ok(Mint::new(
             self.private_key.expect("MINT_PRIVATE_KEY not set"),
             "".to_string(),
@@ -301,7 +355,9 @@ impl MintBuilder {
                 self.fee_config.expect("fee-config not set"),
                 self.server_config.unwrap_or_default(),
                 db_config,
+                onchain_config,
             ),
+            lnd_onchain,
         ))
     }
 }
@@ -312,6 +368,7 @@ mod tests {
     use crate::lightning::{LightningType, MockLightning};
     use crate::mint::Mint;
     use crate::model::{Invoice, PayInvoiceResult};
+    use crate::onchain::MockOnchain;
     use crate::{database::MockDatabase, error::MokshaMintError};
     use moksha_core::blind::{BlindedMessage, TotalAmount};
     use moksha_core::dhke;
@@ -362,7 +419,12 @@ mod tests {
 
         let outputs = vec![];
         let result = mint
-            .mint_tokens("somehash".to_string(), &outputs, &mint.keyset_legacy)
+            .mint_tokens(
+                moksha_core::primitives::PaymentMethod::Bolt11,
+                "somehash".to_string(),
+                &outputs,
+                &mint.keyset_legacy,
+            )
             .await?;
         assert!(result.is_empty());
         Ok(())
@@ -376,7 +438,12 @@ mod tests {
 
         let outputs = create_blinded_msgs_from_fixture("blinded_messages_40.json".to_string())?;
         let result = mint
-            .mint_tokens("somehash".to_string(), &outputs, &mint.keyset_legacy)
+            .mint_tokens(
+                moksha_core::primitives::PaymentMethod::Bolt11,
+                "somehash".to_string(),
+                &outputs,
+                &mint.keyset_legacy,
+            )
             .await?;
         assert_eq!(40, result.total_amount());
         Ok(())
@@ -455,6 +522,7 @@ mod tests {
             LightningType::Lnbits(Default::default()),
             Arc::new(create_mock_db_get_used_proofs()),
             Default::default(),
+            Some(Arc::new(MockOnchain::default())),
         );
 
         let tokens = create_token_from_fixture("token_60.cashu".to_string())?;
@@ -463,7 +531,7 @@ mod tests {
             create_blinded_msgs_from_fixture("blinded_messages_blank_4000.json".to_string())?;
 
         let (paid, _payment_hash, change) = mint
-            .melt(invoice, 4, &tokens.proofs(), &change, &mint.keyset_legacy)
+            .melt_bolt11(invoice, 4, &tokens.proofs(), &change, &mint.keyset_legacy)
             .await?;
 
         assert!(paid);
@@ -514,6 +582,7 @@ mod tests {
             LightningType::Lnbits(Default::default()),
             db,
             Default::default(),
+            Some(Arc::new(MockOnchain::default())),
         )
     }
 

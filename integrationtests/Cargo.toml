@@ -1,6 +1,6 @@
 [package]
 name = "moksha-integrationtests"
-version = "0.1.2"
+version = "0.2.0-beta"
 edition = "2021"
 repository = "https://github.com/ngutech21/moksha"
 license = "MIT"

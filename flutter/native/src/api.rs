@@ -1,6 +1,8 @@
 use flutter_rust_bridge::{StreamSink, SyncReturn};
 use lightning_invoice::Bolt11Invoice;
-use moksha_core::primitives::{CurrencyUnit, PaymentRequest, PostMintQuoteBolt11Response};
+use moksha_core::primitives::{
+    CurrencyUnit, PaymentMethod, PaymentRequest, PostMintQuoteBolt11Response,
+};
 use moksha_fedimint::FedimintWallet;
 use moksha_wallet::localstore::LocalStore;
 use std::future::Future;
@@ -163,7 +165,9 @@ pub fn cashu_mint_tokens(sink: StreamSink<u64>, amount: u64, hash: String) -> an
         for _ in 0..30 {
             sleep_until(1_000).await;
 
-            let mint_result = wallet.mint_tokens(amount.into(), hash.clone()).await;
+            let mint_result = wallet
+                .mint_tokens(&PaymentMethod::Bolt11, amount.into(), hash.clone())
+                .await;
 
             match mint_result {
                 Ok(value) => {

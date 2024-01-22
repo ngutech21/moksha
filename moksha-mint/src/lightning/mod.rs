@@ -5,7 +5,9 @@ use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 
 use url::Url;
 
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
+
+use crate::url_serialize::{deserialize_url, serialize_url};
 
 use crate::{
     error::MokshaMintError,
@@ -317,27 +319,6 @@ fn format_as_uuid_string(bytes: &[u8]) -> String {
         &byte_str[16..20],
         &byte_str[20..]
     )
-}
-
-fn deserialize_url<'de, D>(deserializer: D) -> Result<Option<Url>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let url_str: Option<String> = Option::deserialize(deserializer)?;
-    match url_str {
-        Some(s) => Url::parse(&s).map_err(serde::de::Error::custom).map(Some),
-        None => Ok(None),
-    }
-}
-
-fn serialize_url<S>(url: &Option<Url>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    match url {
-        Some(url) => serializer.serialize_str(url.as_str()),
-        None => serializer.serialize_none(),
-    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]

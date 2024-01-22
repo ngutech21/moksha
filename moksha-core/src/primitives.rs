@@ -149,6 +149,16 @@ impl Display for CurrencyUnit {
 #[serde(rename_all = "lowercase")]
 pub enum PaymentMethod {
     Bolt11,
+    Onchain,
+}
+
+impl Display for PaymentMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PaymentMethod::Bolt11 => write!(f, "Lightning"),
+            PaymentMethod::Onchain => write!(f, "Onchain"),
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
@@ -262,6 +272,109 @@ pub struct MintInfoResponse {
     pub nuts: Nuts,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct OnchainMintQuote {
+    pub quote_id: Uuid,
+    pub address: String,
+    pub unit: CurrencyUnit,
+    pub amount: u64,
+    pub expiry: u64,
+    pub paid: bool,
+}
+
+impl From<OnchainMintQuote> for PostMintQuoteOnchainResponse {
+    fn from(quote: OnchainMintQuote) -> Self {
+        Self {
+            quote: quote.quote_id.to_string(),
+            address: quote.address,
+            paid: quote.paid,
+            expiry: quote.expiry,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct OnchainMeltQuote {
+    pub quote_id: Uuid,
+    pub amount: u64,
+    pub address: String,
+    pub fee_total: u64,
+    pub fee_sat_per_vbyte: u32,
+    pub expiry: u64,
+    pub paid: bool,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMintQuoteOnchainRequest {
+    pub amount: u64,
+    pub unit: CurrencyUnit,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMintQuoteOnchainResponse {
+    pub quote: String,
+    pub address: String,
+    pub paid: bool,
+    pub expiry: u64,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMintOnchainRequest {
+    pub quote: String,
+    pub outputs: Vec<BlindedMessage>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMintOnchainResponse {
+    pub signatures: Vec<BlindedSignature>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMeltQuoteOnchainRequest {
+    /// onchain address
+    pub amount: u64,
+    pub address: String,
+    pub unit: CurrencyUnit,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMeltQuoteOnchainResponse {
+    pub quote: String,
+    pub amount: u64,
+    pub fee: u64,
+    pub paid: bool,
+    pub expiry: u64,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMeltOnchainRequest {
+    pub quote: String,
+    pub inputs: Proofs,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMeltOnchainResponse {
+    pub paid: bool,
+    pub txid: String,
+}
+
+impl From<OnchainMeltQuote> for PostMeltQuoteOnchainResponse {
+    fn from(quote: OnchainMeltQuote) -> Self {
+        Self {
+            quote: quote.quote_id.to_string(),
+            amount: quote.amount,
+            fee: quote.fee_total,
+            expiry: quote.expiry,
+            paid: quote.paid,
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct GetMeltOnchainResponse {
+    pub paid: bool,
+}
+
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
 pub struct Nuts {
     // /// Cryptography and Models
@@ -314,6 +427,15 @@ pub struct Nuts {
     #[serde(rename = "12")]
     /// DLEQ proofs
     pub nut12: Nut12,
+
+    // TODO remove this if nut-14 and nut-15 are merged
+    #[serde(rename = "14", skip_serializing_if = "Option::is_none")]
+    /// minting tokens onchain
+    pub nut14: Option<Nut14>,
+
+    #[serde(rename = "15", skip_serializing_if = "Option::is_none")]
+    /// melting tokens onchain
+    pub nut15: Option<Nut15>,
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
@@ -389,6 +511,46 @@ pub struct Nut11 {
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
 pub struct Nut12 {
     pub supported: bool,
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+pub struct Nut14 {
+    pub supported: bool,
+    #[serde(rename = "methods")]
+    pub payment_methods: Vec<(PaymentMethod, CurrencyUnit)>,
+    pub min_amount: u64,
+    pub max_amount: u64,
+}
+
+impl Default for Nut14 {
+    fn default() -> Self {
+        Self {
+            supported: true,
+            payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            min_amount: 1_000,
+            max_amount: 1_000_000,
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+pub struct Nut15 {
+    pub supported: bool,
+    #[serde(rename = "methods")]
+    pub payment_methods: Vec<(PaymentMethod, CurrencyUnit)>,
+    pub min_amount: u64,
+    pub max_amount: u64,
+}
+
+impl Default for Nut15 {
+    fn default() -> Self {
+        Self {
+            supported: true,
+            payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            min_amount: 1_000,
+            max_amount: 1_000_000,
+        }
+    }
 }
 
 #[cfg(test)]

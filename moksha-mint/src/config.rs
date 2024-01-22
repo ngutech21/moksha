@@ -1,5 +1,8 @@
 use std::{env, net::SocketAddr, path::PathBuf};
 
+use crate::lightning::LndLightningSettings;
+
+use moksha_core::primitives::{CurrencyUnit, Nut14, Nut15, PaymentMethod};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
@@ -9,6 +12,7 @@ pub struct MintConfig {
     pub lightning_fee: LightningFeeConfig,
     pub server: ServerConfig,
     pub database: DatabaseConfig,
+    pub onchain: Option<OnchainConfig>,
 }
 
 impl MintConfig {
@@ -18,6 +22,7 @@ impl MintConfig {
         lightning_fee: LightningFeeConfig,
         server: ServerConfig,
         database: DatabaseConfig,
+        onchain: Option<OnchainConfig>,
     ) -> Self {
         Self {
             info,
@@ -25,6 +30,95 @@ impl MintConfig {
             lightning_fee,
             server,
             database,
+            onchain,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OnchainConfig {
+    pub onchain_type: OnchainType,
+    pub min_confirmations: u8,
+    pub min_amount: u64,
+    pub max_amount: u64,
+}
+
+impl Default for OnchainConfig {
+    fn default() -> Self {
+        Self {
+            onchain_type: OnchainType::Lnd(LndLightningSettings::default()),
+            min_confirmations: 1,
+            min_amount: 1_000,
+            max_amount: 1_000_000,
+        }
+    }
+}
+
+impl OnchainConfig {
+    pub fn from_env() -> Option<Self> {
+        let onchain_type = OnchainType::from_env();
+
+        println!("onchain_type: {:?}", onchain_type);
+
+        onchain_type.as_ref()?;
+
+        let def = OnchainConfig::default();
+
+        Some(OnchainConfig {
+            onchain_type: onchain_type.unwrap(),
+            min_amount: env_or_default("MINT_ONCHAIN_BACKEND_MIN_AMOUNT", def.min_amount),
+            max_amount: env_or_default("MINT_ONCHAIN_BACKEND_MAX_AMOUNT", def.max_amount),
+            min_confirmations: env_or_default(
+                "MINT_ONCHAIN_BACKEND_MIN_CONFIRMATIONS",
+                def.min_confirmations,
+            ),
+        })
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum OnchainType {
+    Lnd(LndLightningSettings),
+}
+
+impl OnchainType {
+    pub fn from_env() -> Option<Self> {
+        let onchain_type = env::var("MINT_ONCHAIN_BACKEND").ok();
+
+        match onchain_type.as_deref() {
+            None => None,
+            Some("Lnd") => {
+                // reuse lnd settings with prefix LND_
+                let lnd_settings = envy::prefixed("LND_")
+                    .from_env::<LndLightningSettings>()
+                    .expect("Please provide lnd info");
+                Some(OnchainType::Lnd(lnd_settings))
+            }
+            _ => {
+                panic!("env MINT_ONCHAIN_BACKEND not found or invalid values. Valid values are Lnd")
+            }
+        }
+    }
+}
+
+impl From<OnchainConfig> for Nut14 {
+    fn from(settings: OnchainConfig) -> Self {
+        Self {
+            supported: true,
+            payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            min_amount: settings.min_amount,
+            max_amount: settings.max_amount,
+        }
+    }
+}
+
+impl From<OnchainConfig> for Nut15 {
+    fn from(settings: OnchainConfig) -> Self {
+        Self {
+            supported: true,
+            payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            min_amount: settings.min_amount,
+            max_amount: settings.max_amount,
         }
     }
 }

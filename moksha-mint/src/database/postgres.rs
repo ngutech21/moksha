@@ -1,7 +1,9 @@
 use async_trait::async_trait;
 use moksha_core::{
     dhke,
-    primitives::{Bolt11MeltQuote, Bolt11MintQuote},
+    primitives::{
+        Bolt11MeltQuote, Bolt11MintQuote, CurrencyUnit, OnchainMeltQuote, OnchainMintQuote,
+    },
     proof::{Proof, Proofs},
 };
 
@@ -231,6 +233,137 @@ impl Database for PostgresDB {
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "DELETE FROM bolt11_melt_quotes WHERE id = $1",
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_onchain_mint_quote(
+        &self,
+        key: &Uuid,
+    ) -> Result<OnchainMintQuote, MokshaMintError> {
+        let quote: OnchainMintQuote = sqlx::query!(
+            "SELECT id, address, amount, expiry, paid  FROM onchain_mint_quotes WHERE id = $1",
+            key
+        )
+        .map(|row| OnchainMintQuote {
+            quote_id: row.id,
+            address: row.address,
+            expiry: row.expiry as u64,
+            paid: row.paid,
+            amount: row.amount as u64,
+            unit: CurrencyUnit::Sat,
+        })
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(quote)
+    }
+    async fn add_onchain_mint_quote(
+        &self,
+        quote: &OnchainMintQuote,
+    ) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "INSERT INTO onchain_mint_quotes (id, address, amount, expiry, paid) VALUES ($1, $2, $3, $4, $5)",
+            quote.quote_id,
+            quote.address,
+            quote.amount as i64,
+            quote.expiry as i64,
+            quote.paid,
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn update_onchain_mint_quote(
+        &self,
+        quote: &OnchainMintQuote,
+    ) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "UPDATE onchain_mint_quotes SET paid = $1 WHERE id = $2",
+            quote.paid,
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn delete_onchain_mint_quote(
+        &self,
+        quote: &OnchainMintQuote,
+    ) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "DELETE FROM onchain_mint_quotes WHERE id = $1",
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_onchain_melt_quote(
+        &self,
+        key: &Uuid,
+    ) -> Result<OnchainMeltQuote, MokshaMintError> {
+        let quote: OnchainMeltQuote = sqlx::query!(
+            "SELECT id, amount,address, fee_total, fee_sat_per_vbyte, expiry, paid  FROM onchain_melt_quotes WHERE id = $1",
+            key
+        )
+        .map(|row| OnchainMeltQuote {
+            quote_id: row.id,
+            address: row.address,
+            amount: row.amount as u64,
+            fee_total: row.fee_total as u64,
+            fee_sat_per_vbyte: row.fee_sat_per_vbyte as u32,
+            expiry: row.expiry as u64,
+            paid: row.paid,
+        })
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(quote)
+    }
+    async fn add_onchain_melt_quote(
+        &self,
+        quote: &OnchainMeltQuote,
+    ) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "INSERT INTO onchain_melt_quotes (id, amount, address, fee_total, fee_sat_per_vbyte, expiry, paid) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            quote.quote_id,
+            quote.amount as i64,
+            quote.address,
+            quote.fee_total as i64,
+            quote.fee_sat_per_vbyte as i64,
+            quote.expiry as i64,
+            quote.paid,
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+    async fn update_onchain_melt_quote(
+        &self,
+        quote: &OnchainMeltQuote,
+    ) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "UPDATE onchain_melt_quotes SET paid = $1 WHERE id = $2",
+            quote.paid,
+            quote.quote_id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+    async fn delete_onchain_melt_quote(
+        &self,
+        quote: &OnchainMeltQuote,
+    ) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "DELETE FROM onchain_melt_quotes WHERE id = $1",
             quote.quote_id
         )
         .execute(&self.pool)

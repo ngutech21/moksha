@@ -35,7 +35,7 @@ Mint Features:
   - [x] Lnd
   - [x] Alby
   - [x] Strike
-  - [] core-lightning
+  - [ ] core-lightning
 
 Wallet Features:
 
@@ -45,8 +45,8 @@ Wallet Features:
 - [x] sending tokens (get an encoded token for chosen value)
 - [x] receiving tokens
 - [x] melting tokens
-- [] check if tokens are spent
-- [] multi mint support
+- [ ] check if tokens are spent
+- [ ] multi mint support
 
 Implemented [NUTs](https://github.com/cashubtc/nuts/):
 
@@ -57,8 +57,8 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 - [x] [NUT-04](https://github.com/cashubtc/nuts/blob/main/04.md)
 - [x] [NUT-05](https://github.com/cashubtc/nuts/blob/main/05.md)
 - [x] [NUT-06](https://github.com/cashubtc/nuts/blob/main/06.md)
-- [] [NUT-07](https://github.com/cashubtc/nuts/blob/main/07.md)
-- [] [NUT-08](https://github.com/cashubtc/nuts/blob/main/08.md)
+- [ ] [NUT-07](https://github.com/cashubtc/nuts/blob/main/07.md)
+- [x] [NUT-08](https://github.com/cashubtc/nuts/blob/main/08.md)
 - [x] [NUT-09](https://github.com/cashubtc/nuts/blob/main/09.md)
 
 ## Crates

@@ -4,8 +4,9 @@ use moksha_core::{
     dhke::Dhke,
     keyset::V1Keyset,
     primitives::{
-        CurrencyUnit, KeyResponse, MintInfoResponse, PostMeltBolt11Response,
-        PostMintQuoteBolt11Response,
+        CurrencyUnit, KeyResponse, MintInfoResponse, PaymentMethod, PostMeltBolt11Response,
+        PostMeltOnchainResponse, PostMeltQuoteOnchainResponse, PostMintQuoteBolt11Response,
+        PostMintQuoteOnchainResponse,
     },
     proof::{Proof, Proofs},
     token::TokenV3,
@@ -66,6 +67,10 @@ impl<C: Client, L: LocalStore> WalletBuilder<C, L> {
         let client = self.client.expect("client is required");
         let localstore = self.localstore.expect("localstore is required");
         let mint_url = self.mint_url.expect("mint_url is required");
+
+        if !client.is_v1_supported(&mint_url).await? {
+            return Err(MokshaWalletError::UnsupportedApiVersion);
+        }
 
         let load_keysets = localstore.get_keysets().await?;
 
@@ -134,7 +139,7 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
         }
     }
 
-    pub async fn create_quote(
+    pub async fn create_quote_bolt11(
         &self,
         amount: u64,
     ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError> {
@@ -143,10 +148,49 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             .await
     }
 
-    pub async fn is_quote_paid(&self, quote: String) -> Result<bool, MokshaWalletError> {
+    pub async fn create_quote_onchain(
+        &self,
+        amount: u64,
+    ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError> {
+        self.client
+            .post_mint_quote_onchain(&self.mint_url, amount, CurrencyUnit::Sat)
+            .await
+    }
+
+    pub async fn is_quote_paid(
+        &self,
+        payment_method: &PaymentMethod,
+        quote: String,
+    ) -> Result<bool, MokshaWalletError> {
+        Ok(match payment_method {
+            PaymentMethod::Bolt11 => {
+                self.client
+                    .get_mint_quote_bolt11(&self.mint_url, quote)
+                    .await?
+                    .paid
+            }
+
+            PaymentMethod::Onchain => {
+                self.client
+                    .get_mint_quote_onchain(&self.mint_url, quote)
+                    .await?
+                    .paid
+            }
+        })
+    }
+
+    pub async fn is_onchain_paid(&self, quote: String) -> Result<bool, MokshaWalletError> {
         Ok(self
             .client
-            .get_mint_quote_bolt11(&self.mint_url, quote)
+            .get_melt_quote_onchain(&self.mint_url, quote)
+            .await?
+            .paid)
+    }
+
+    pub async fn is_onchain_tx_paid(&self, txid: String) -> Result<bool, MokshaWalletError> {
+        Ok(self
+            .client
+            .get_melt_onchain(&self.mint_url, txid)
             .await?
             .paid)
     }
@@ -268,6 +312,81 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
         }
     }
 
+    pub async fn pay_onchain_quote(
+        &self,
+        address: String,
+        amount: u64,
+    ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError> {
+        self.client
+            .post_melt_quote_onchain(&self.mint_url, address, amount, CurrencyUnit::Sat)
+            .await
+    }
+
+    pub async fn pay_onchain(
+        &self,
+
+        melt_quote: &PostMeltQuoteOnchainResponse,
+    ) -> Result<PostMeltOnchainResponse, MokshaWalletError> {
+        let all_proofs = self.localstore.get_proofs().await?;
+
+        let ln_amount = melt_quote.amount + melt_quote.fee;
+
+        if ln_amount > all_proofs.total_amount() {
+            return Err(MokshaWalletError::NotEnoughTokens);
+        }
+        let selected_proofs = all_proofs.proofs_for_amount(ln_amount)?;
+
+        let total_proofs = {
+            let selected_tokens = (self.mint_url.to_owned(), selected_proofs.clone()).into();
+            let split_result = self
+                .split_tokens(&selected_tokens, ln_amount.into())
+                .await?;
+
+            // FIXME create transaction
+            self.localstore.delete_proofs(&selected_proofs).await?;
+            self.localstore.add_proofs(&split_result.0.proofs()).await?;
+
+            split_result.1.proofs()
+        };
+
+        let melt_response = self
+            .client
+            .post_melt_onchain(
+                &self.mint_url,
+                total_proofs.clone(),
+                melt_quote.quote.clone(),
+            )
+            .await?;
+
+        if melt_response.paid {
+            self.localstore.delete_proofs(&total_proofs).await?;
+        }
+        Ok(melt_response)
+
+        // match self
+        //     .melt_token(melt_quote.quote, ln_amount, &total_proofs, msgs)
+        //     .await
+        // {
+        //     Ok(response) => {
+        //         if !response.paid {
+        //             self.localstore.add_proofs(&total_proofs).await?;
+        //         }
+        //         let change_proofs = self.create_proofs_from_blinded_signatures(
+        //             response.clone().change,
+        //             secrets,
+        //             outputs,
+        //         )?;
+        //         self.localstore.add_proofs(&change_proofs).await?;
+
+        //         Ok(response)
+        //     }
+        //     Err(e) => {
+        //         self.localstore.add_proofs(&total_proofs).await?;
+        //         Err(e)
+        //     }
+        // }
+    }
+
     pub async fn split_tokens(
         &self,
         tokens: &TokenV3,
@@ -365,6 +484,7 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
 
     pub async fn mint_tokens(
         &self,
+        payment_method: &PaymentMethod,
         amount: Amount,
         quote_id: String,
     ) -> Result<TokenV3, MokshaWalletError> {
@@ -387,18 +507,38 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             })
             .collect::<Vec<(BlindedMessage, SecretKey)>>();
 
-        let post_mint_resp = self
-            .client
-            .post_mint_bolt11(
-                &self.mint_url,
-                quote_id,
-                blinded_messages
-                    .clone()
-                    .into_iter()
-                    .map(|(msg, _)| msg)
-                    .collect::<Vec<BlindedMessage>>(),
-            )
-            .await?;
+        let signatures = match payment_method {
+            PaymentMethod::Bolt11 => {
+                let post_mint_resp = self
+                    .client
+                    .post_mint_bolt11(
+                        &self.mint_url,
+                        quote_id,
+                        blinded_messages
+                            .clone()
+                            .into_iter()
+                            .map(|(msg, _)| msg)
+                            .collect::<Vec<BlindedMessage>>(),
+                    )
+                    .await?;
+                post_mint_resp.signatures
+            }
+            PaymentMethod::Onchain => {
+                let post_mint_resp = self
+                    .client
+                    .post_mint_onchain(
+                        &self.mint_url,
+                        quote_id,
+                        blinded_messages
+                            .clone()
+                            .into_iter()
+                            .map(|(msg, _)| msg)
+                            .collect::<Vec<BlindedMessage>>(),
+                    )
+                    .await?;
+                post_mint_resp.signatures
+            }
+        };
 
         // step 3: unblind signatures
         let current_keyset_id = self.keyset_id.clone().id; // FIXME
@@ -409,8 +549,7 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
             .map(|(_, secret)| secret)
             .collect::<Vec<SecretKey>>();
 
-        let proofs = post_mint_resp
-            .signatures
+        let proofs = signatures
             .iter()
             .zip(private_keys)
             .zip(secrets)
@@ -510,7 +649,7 @@ mod tests {
     use moksha_core::fixture::{read_fixture, read_fixture_as};
     use moksha_core::keyset::{MintKeyset, V1Keysets};
     use moksha_core::primitives::{
-        CurrencyUnit, KeyResponse, KeysResponse, PostMeltBolt11Response,
+        CurrencyUnit, KeyResponse, KeysResponse, PaymentMethod, PostMeltBolt11Response,
         PostMeltQuoteBolt11Response, PostMintBolt11Response, PostSwapResponse,
     };
     use moksha_core::proof::Proofs;
@@ -584,6 +723,7 @@ mod tests {
         client
             .expect_get_keysets()
             .returning(move |_| Ok(keysets.clone()));
+        client.expect_is_v1_supported().returning(move |_| Ok(true));
         client
     }
 
@@ -607,7 +747,9 @@ mod tests {
             .build()
             .await?;
 
-        let result = wallet.mint_tokens(20.into(), "hash".to_string()).await?;
+        let result = wallet
+            .mint_tokens(&PaymentMethod::Bolt11, 20.into(), "hash".to_string())
+            .await?;
         assert_eq!(20, result.total_amount());
         result.tokens.into_iter().for_each(|t| {
             assert_eq!(mint_url, t.mint.expect("mint is empty"));

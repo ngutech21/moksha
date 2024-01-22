@@ -1,6 +1,6 @@
 [package]
 name = "moksha-cli"
-version = "0.1.2"
+version = "0.2.0-beta"
 edition = "2021"
 resolver = "2"
 repository = "https://github.com/ngutech21/moksha"
@@ -13,9 +13,11 @@ description = "cashu-cli wallet"
 name = "moksha-cli"
 
 [dependencies]
-moksha-wallet = { version = "0.1.2", path = "../moksha-wallet" }
-moksha-core = { version = "0.1.2", path = "../moksha-core" }
+moksha-wallet = { version = "0.2.0-beta", path = "../moksha-wallet" }
+moksha-core = { version = "0.2.0-beta", path = "../moksha-core" }
 clap = { version = "4.4.8", features = ["derive"] }
 tokio = { version = "1.34.0", features = ["rt", "rt-multi-thread", "macros"] }
 url = "2.4.1"
 anyhow = { version = "1.0.75", features = ["backtrace"] }
+dialoguer = "0.11.0"
+num-format = "0.4.4"

@@ -4,4 +4,6 @@ pub mod error;
 pub mod lightning;
 pub mod mint;
 pub mod model;
+pub mod onchain;
 pub mod server;
+pub mod url_serialize;

@@ -55,4 +55,7 @@ pub enum MokshaWalletError {
 
     #[error("URLParseError - {0}")]
     Url(#[from] url::ParseError),
+
+    #[error("Unsupported version: Only mints with /v1 api are supported")]
+    UnsupportedApiVersion,
 }

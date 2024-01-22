@@ -1,6 +1,6 @@
 [package]
 name = "native"
-version = "0.1.2"
+version = "0.2.0-beta"
 edition = "2021"
 resolver = "2"
 repository = "https://github.com/ngutech21/moksha"
@@ -13,9 +13,9 @@ publish = false
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-moksha-wallet = { version = "0.1.2", path = "../../moksha-wallet" }
-moksha-core = { version = "0.1.2", path = "../../moksha-core" }
-moksha-fedimint = { version = "0.1.2", path = "../../moksha-fedimint" }
+moksha-wallet = { version = "0.2.0-beta", path = "../../moksha-wallet" }
+moksha-core = { version = "0.2.0-beta", path = "../../moksha-core" }
+moksha-fedimint = { version = "0.2.0-beta", path = "../../moksha-fedimint" }
 
 tracing = "0.1.40"
 anyhow = { version = "1.0.75", features = ["backtrace"] }

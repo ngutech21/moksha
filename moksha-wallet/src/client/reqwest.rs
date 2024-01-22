@@ -5,12 +5,15 @@ use moksha_core::{
     blind::BlindedMessage,
     keyset::{Keysets, V1Keysets},
     primitives::{
-        CashuErrorResponse, CheckFeesRequest, CheckFeesResponse, CurrencyUnit, KeysResponse,
-        MintInfoResponse, MintLegacyInfoResponse, PaymentRequest, PostMeltBolt11Request,
-        PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
-        PostMeltRequest, PostMeltResponse, PostMintBolt11Request, PostMintBolt11Response,
-        PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintRequest, PostMintResponse,
-        PostSplitRequest, PostSplitResponse, PostSwapRequest, PostSwapResponse,
+        CashuErrorResponse, CheckFeesRequest, CheckFeesResponse, CurrencyUnit,
+        GetMeltOnchainResponse, KeysResponse, MintInfoResponse, MintLegacyInfoResponse,
+        PaymentRequest, PostMeltBolt11Request, PostMeltBolt11Response, PostMeltOnchainRequest,
+        PostMeltOnchainResponse, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
+        PostMeltQuoteOnchainRequest, PostMeltQuoteOnchainResponse, PostMeltRequest,
+        PostMeltResponse, PostMintBolt11Request, PostMintBolt11Response, PostMintOnchainRequest,
+        PostMintOnchainResponse, PostMintQuoteBolt11Request, PostMintQuoteBolt11Response,
+        PostMintQuoteOnchainRequest, PostMintQuoteOnchainResponse, PostMintRequest,
+        PostMintResponse, PostSplitRequest, PostSplitResponse, PostSwapRequest, PostSwapResponse,
     },
     proof::Proofs,
 };
@@ -293,6 +296,40 @@ impl Client for HttpClient {
             .await
     }
 
+    async fn post_mint_onchain(
+        &self,
+        mint_url: &Url,
+        quote: String,
+        blinded_messages: Vec<BlindedMessage>,
+    ) -> Result<PostMintOnchainResponse, MokshaWalletError> {
+        let body = PostMintOnchainRequest {
+            quote,
+            outputs: blinded_messages,
+        };
+        self.do_post(&mint_url.join("v1/mint/onchain")?, &body)
+            .await
+    }
+
+    async fn post_mint_quote_onchain(
+        &self,
+        mint_url: &Url,
+        amount: u64,
+        unit: CurrencyUnit,
+    ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError> {
+        let body = PostMintQuoteOnchainRequest { amount, unit };
+        self.do_post(&mint_url.join("v1/mint/quote/onchain")?, &body)
+            .await
+    }
+
+    async fn get_mint_quote_onchain(
+        &self,
+        mint_url: &Url,
+        quote: String,
+    ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError> {
+        self.do_get(&mint_url.join(&format!("v1/mint/quote/onchain/{}", quote))?)
+            .await
+    }
+
     async fn get_info(&self, mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError> {
         self.do_get(&mint_url.join("v1/info")?).await
     }
@@ -304,6 +341,51 @@ impl Client for HttpClient {
             .send()
             .await?;
         Ok(resp.status() == StatusCode::OK)
+    }
+
+    async fn post_melt_onchain(
+        &self,
+        mint_url: &Url,
+        inputs: Proofs,
+        quote: String,
+    ) -> Result<PostMeltOnchainResponse, MokshaWalletError> {
+        let body = PostMeltOnchainRequest { quote, inputs };
+        self.do_post(&mint_url.join("v1/melt/onchain")?, &body)
+            .await
+    }
+
+    async fn post_melt_quote_onchain(
+        &self,
+        mint_url: &Url,
+        address: String,
+        amount: u64,
+        unit: CurrencyUnit,
+    ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError> {
+        let body = PostMeltQuoteOnchainRequest {
+            address,
+            amount,
+            unit,
+        };
+        self.do_post(&mint_url.join("v1/melt/quote/onchain")?, &body)
+            .await
+    }
+
+    async fn get_melt_quote_onchain(
+        &self,
+        mint_url: &Url,
+        quote: String,
+    ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError> {
+        self.do_get(&mint_url.join(&format!("/v1/melt/quote/onchain/{quote}"))?)
+            .await
+    }
+
+    async fn get_melt_onchain(
+        &self,
+        mint_url: &Url,
+        txid: String,
+    ) -> Result<GetMeltOnchainResponse, MokshaWalletError> {
+        self.do_get(&mint_url.join(&format!("/v1/melt/onchain/{txid}"))?)
+            .await
     }
 }
 
