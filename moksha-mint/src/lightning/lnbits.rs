@@ -17,7 +17,7 @@ impl LNBitsClient {
         admin_key: &str,
         lnbits_url: &str,
         tor_socket: Option<&str>,
-    ) -> Result<LNBitsClient, LightningError> {
+    ) -> Result<Self, LightningError> {
         let lnbits_url = Url::parse(lnbits_url)?;
 
         let reqwest_client = {
@@ -29,7 +29,7 @@ impl LNBitsClient {
             }
         };
 
-        Ok(LNBitsClient {
+        Ok(Self {
             admin_key: admin_key.to_string(),
             lnbits_url,
             reqwest_client,

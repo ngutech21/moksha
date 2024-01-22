@@ -14,12 +14,12 @@ pub struct AlbyClient {
 }
 
 impl AlbyClient {
-    pub fn new(api_key: &str) -> Result<AlbyClient, LightningError> {
+    pub fn new(api_key: &str) -> Result<Self, LightningError> {
         let alby_url = Url::parse("https://api.getalby.com")?;
 
         let reqwest_client = reqwest::Client::builder().build()?;
 
-        Ok(AlbyClient {
+        Ok(Self {
             api_key: api_key.to_owned(),
             alby_url,
             reqwest_client,

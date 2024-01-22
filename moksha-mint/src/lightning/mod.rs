@@ -38,10 +38,10 @@ pub enum LightningType {
 impl fmt::Display for LightningType {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            LightningType::Lnbits(settings) => write!(f, "Lnbits: {}", settings),
-            LightningType::Alby(settings) => write!(f, "Alby: {}", settings),
-            LightningType::Strike(settings) => write!(f, "Strike: {}", settings),
-            LightningType::Lnd(settings) => write!(f, "Lnd: {}", settings),
+            Self::Lnbits(settings) => write!(f, "Lnbits: {}", settings),
+            Self::Alby(settings) => write!(f, "Alby: {}", settings),
+            Self::Strike(settings) => write!(f, "Strike: {}", settings),
+            Self::Lnd(settings) => write!(f, "Lnd: {}", settings),
         }
     }
 }

@@ -6,10 +6,10 @@ where
     D: Deserializer<'de>,
 {
     let url_str: Option<String> = Option::deserialize(deserializer)?;
-    match url_str {
-        Some(s) => Url::parse(&s).map_err(serde::de::Error::custom).map(Some),
-        None => Ok(None),
-    }
+    url_str.map_or_else(
+        || Ok(None),
+        |s| Url::parse(&s).map_err(serde::de::Error::custom).map(Some),
+    )
 }
 
 pub fn serialize_url<S>(url: &Option<Url>, serializer: S) -> Result<S::Ok, S::Error>

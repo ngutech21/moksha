@@ -19,8 +19,8 @@ pub struct PostgresDB {
 }
 
 impl PostgresDB {
-    pub async fn new(config: &DatabaseConfig) -> Result<PostgresDB, sqlx::Error> {
-        Ok(PostgresDB {
+    pub async fn new(config: &DatabaseConfig) -> Result<Self, sqlx::Error> {
+        Ok(Self {
             pool: PgPoolOptions::new()
                 .max_connections(5) // FIXME make max connections configurable
                 .connect(config.url.as_ref().expect("Database-url not set"))

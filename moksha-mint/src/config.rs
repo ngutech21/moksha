@@ -16,7 +16,7 @@ pub struct MintConfig {
 }
 
 impl MintConfig {
-    pub fn new(
+    pub const fn new(
         info: MintInfoConfig,
         build: BuildConfig,
         lightning_fee: LightningFeeConfig,
@@ -62,9 +62,9 @@ impl OnchainConfig {
 
         onchain_type.as_ref()?;
 
-        let def = OnchainConfig::default();
+        let def = Self::default();
 
-        Some(OnchainConfig {
+        Some(Self {
             onchain_type: onchain_type.unwrap(),
             min_amount: env_or_default("MINT_ONCHAIN_BACKEND_MIN_AMOUNT", def.min_amount),
             max_amount: env_or_default("MINT_ONCHAIN_BACKEND_MAX_AMOUNT", def.max_amount),
@@ -92,7 +92,7 @@ impl OnchainType {
                 let lnd_settings = envy::prefixed("LND_")
                     .from_env::<LndLightningSettings>()
                     .expect("Please provide lnd info");
-                Some(OnchainType::Lnd(lnd_settings))
+                Some(Self::Lnd(lnd_settings))
             }
             _ => {
                 panic!("env MINT_ONCHAIN_BACKEND not found or invalid values. Valid values are Lnd")
@@ -130,7 +130,7 @@ pub struct DatabaseConfig {
 
 impl DatabaseConfig {
     pub fn from_env() -> Self {
-        DatabaseConfig {
+        Self {
             url: env::var("MINT_DB_URL").ok(),
         }
     }
@@ -155,9 +155,9 @@ impl Default for ServerConfig {
 
 impl ServerConfig {
     pub fn from_env() -> Self {
-        let server_config_default = ServerConfig::default();
+        let server_config_default = Self::default();
 
-        ServerConfig {
+        Self {
             host_port: env_or_default("MINT_HOST_PORT", server_config_default.host_port),
             serve_wallet_path: env::var("MINT_SERVE_WALLET_PATH").ok().map(PathBuf::from),
             api_prefix: env::var("MINT_API_PREFIX").ok(),
@@ -177,7 +177,7 @@ pub struct MintInfoConfig {
     // FIXME add missing fields for v1/info endpoint nut4/nut5 payment_methods, nut4 disabled flag
 }
 
-fn default_version() -> bool {
+const fn default_version() -> bool {
     true
 }
 
@@ -191,8 +191,8 @@ pub struct BuildConfig {
 impl BuildConfig {
     pub fn from_env() -> Self {
         Self {
-            commit_hash: env::var("COMMITHASH").ok().map(|s| s.to_string()),
-            build_time: env::var("BUILDTIME").ok().map(|s| s.to_string()),
+            commit_hash: env::var("COMMITHASH").ok(),
+            build_time: env::var("BUILDTIME").ok(),
             cargo_pkg_version: Some(env!("CARGO_PKG_VERSION").to_owned()),
         }
     }
@@ -216,7 +216,7 @@ pub struct LightningFeeConfig {
 }
 
 impl LightningFeeConfig {
-    pub fn new(fee_percent: f32, fee_reserve_min: u64) -> Self {
+    pub const fn new(fee_percent: f32, fee_reserve_min: u64) -> Self {
         Self {
             fee_percent,
             fee_reserve_min,
@@ -224,9 +224,9 @@ impl LightningFeeConfig {
     }
 
     pub fn from_env() -> Self {
-        let fee_config_default = LightningFeeConfig::default();
+        let fee_config_default = Self::default();
 
-        LightningFeeConfig {
+        Self {
             fee_percent: env_or_default("LIGHTNING_FEE_PERCENT", fee_config_default.fee_percent),
             fee_reserve_min: env_or_default(
                 "LIGHTNING_RESERVE_FEE_MIN",

@@ -15,12 +15,12 @@ pub struct StrikeClient {
 }
 
 impl StrikeClient {
-    pub fn new(api_key: &str) -> Result<StrikeClient, LightningError> {
+    pub fn new(api_key: &str) -> Result<Self, LightningError> {
         let strike_url = Url::parse("https://api.strike.me")?;
 
         let reqwest_client = reqwest::Client::builder().build()?;
 
-        Ok(StrikeClient {
+        Ok(Self {
             api_key: api_key.to_owned(),
             strike_url,
             reqwest_client,

@@ -263,32 +263,32 @@ impl MintBuilder {
         Self::default()
     }
 
-    pub fn with_mint_info(mut self, mint_info: MintInfoConfig) -> MintBuilder {
+    pub fn with_mint_info(mut self, mint_info: MintInfoConfig) -> Self {
         self.mint_info_settings = Some(mint_info);
         self
     }
 
-    pub fn with_server(mut self, server_config: ServerConfig) -> MintBuilder {
+    pub fn with_server(mut self, server_config: ServerConfig) -> Self {
         self.server_config = Some(server_config);
         self
     }
 
-    pub fn with_private_key(mut self, private_key: String) -> MintBuilder {
+    pub fn with_private_key(mut self, private_key: String) -> Self {
         self.private_key = Some(private_key);
         self
     }
 
-    pub fn with_db(mut self, db_config: DatabaseConfig) -> MintBuilder {
+    pub fn with_db(mut self, db_config: DatabaseConfig) -> Self {
         self.db_config = Some(db_config);
         self
     }
 
-    pub fn with_lightning(mut self, lightning: LightningType) -> MintBuilder {
+    pub fn with_lightning(mut self, lightning: LightningType) -> Self {
         self.lightning_type = Some(lightning);
         self
     }
 
-    pub fn with_fee(mut self, fee_config: LightningFeeConfig) -> MintBuilder {
+    pub const fn with_fee(mut self, fee_config: LightningFeeConfig) -> Self {
         self.fee_config = Some(fee_config);
         self
     }

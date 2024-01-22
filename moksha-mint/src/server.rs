@@ -425,7 +425,7 @@ async fn get_keys(State(mint): State<Mint>) -> Result<Json<KeysResponse>, Moksha
         keysets: vec![KeyResponse {
             id: mint.keyset.keyset_id.clone(),
             unit: CurrencyUnit::Sat,
-            keys: mint.keyset.public_keys.clone(),
+            keys: mint.keyset.public_keys,
         }],
     }))
 }
@@ -452,7 +452,7 @@ async fn get_keys_by_id(
         keysets: vec![KeyResponse {
             id: mint.keyset.keyset_id.clone(),
             unit: CurrencyUnit::Sat,
-            keys: mint.keyset.public_keys.clone(),
+            keys: mint.keyset.public_keys,
         }],
     }))
 }
