@@ -35,6 +35,3 @@ getrandom = { version = "0.2.11", features = ["js"] }
 [dev-dependencies]
 anyhow = "1.0.75"
 pretty_assertions = "1.4.0"
-
-[lints]
-workspace = true

@@ -79,13 +79,3 @@ subtle = { opt-level = 3 }
 ring = { opt-level = 3 }
 fedimint-threshold-crypto = { opt-level = 3 }
 sqlx-macros = { opt-level = 3 }
-
-[workspace.lints.rust]
-unsafe_code = "forbid"
-
-[workspace.lints.clippy]
-enum_glob_use = "warn"
-#pedantic = "ignore"
-#nursery = "warn"
-#unwrap_used = "deny"
-#allow_unwrap_in_tests = "true"

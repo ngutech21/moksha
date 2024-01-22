@@ -42,6 +42,3 @@ sqlx = { version = "0.7.3", default-features = false, features = ["sqlite", "run
 [dev-dependencies]
 tempfile = "3.8.1"
 mockall = "0.12.1"
-
-[lints]
-workspace = true
