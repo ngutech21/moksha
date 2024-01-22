@@ -36,15 +36,27 @@ keywords = ["bitcoin", "e-cash"]
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.3.1"
+cargo-dist-version = "0.8.0"
 # CI backends to support
 ci = ["github"]
 # The installers to generate for each app
 installers = []
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin"]
+targets = ["x86_64-apple-darwin", "x86_64-unknown-linux-gnu"]
 # Publish jobs to run in CI
 pr-run-mode = "plan"
+
+[workspace.metadata.dist.dependencies.apt]
+protobuf-compiler = '*'
+
+[workspace.metadata.dist.dependencies.homebrew]
+protobuf = '*'
+sqlite = '*'
+
+[workspace.metadata.dist.dependencies.chocolatey]
+protoc = '*'
+nasm = '*'
+activeperl = "*"
 
 [patch.crates-io]
 secp256k1-zkp = { git = "https://github.com/dpc/rust-secp256k1-zkp/", branch = "sanket-pr" }
