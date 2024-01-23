@@ -714,7 +714,7 @@ mod tests {
             unit: CurrencyUnit::Sat,
         };
         let keys_response = KeysResponse::new(key_response);
-        let keysets = V1Keysets::new(keys.keyset_id.clone(), CurrencyUnit::Sat, true);
+        let keysets = V1Keysets::new(keys.keyset_id, CurrencyUnit::Sat, true);
 
         let mut client = MockClient::default();
         client
