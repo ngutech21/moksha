@@ -43,6 +43,7 @@
 use crate::error::MokshaCoreError;
 use bitcoin_hashes::{sha256, Hash};
 use secp256k1::{All, PublicKey, Scalar, Secp256k1, SecretKey};
+use std::iter::once;
 
 #[derive(Clone, Debug)]
 pub struct Dhke {
@@ -74,16 +75,8 @@ impl Dhke {
         let mut msg_to_hash = message.to_vec();
         while point.is_none() {
             let hash = Self::get_hash(&msg_to_hash);
-            let input = &[0x02]
-                .iter()
-                .chain(hash.iter())
-                .cloned()
-                .collect::<Vec<u8>>();
-
-            match PublicKey::from_slice(input) {
-                Ok(p) => point = Some(p),
-                Err(_) => msg_to_hash = hash,
-            }
+            let input = &once(&0x02).chain(hash.iter()).cloned().collect::<Vec<u8>>();
+            PublicKey::from_slice(input).map_or_else(|_| msg_to_hash = hash, |p| point = Some(p))
         }
         point.unwrap()
     }
