@@ -20,6 +20,9 @@ pub enum MokshaMintError {
     #[error("LndConnectError - {0}")]
     ConnectError(ConnectError),
 
+    #[error("ClnConnectError - {0}")]
+    ClnConnectError(anyhow::Error),
+
     #[error("Failed to decode payment request {0} - Error {1}")]
     DecodeInvoice(String, ParseOrSemanticError),
 

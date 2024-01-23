@@ -17,6 +17,7 @@ use crate::{
 use lightning_invoice::{Bolt11Invoice as LNInvoice, SignedRawBolt11Invoice};
 
 mod alby;
+pub mod cln;
 pub mod error;
 mod lnbits;
 mod strike;
@@ -25,6 +26,7 @@ mod strike;
 use mockall::automock;
 use std::{path::PathBuf, str::FromStr, sync::Arc};
 
+use self::cln::ClnLightningSettings;
 use self::{alby::AlbyClient, error::LightningError, lnbits::LNBitsClient, strike::StrikeClient};
 
 #[derive(Debug, Clone)]
@@ -33,6 +35,7 @@ pub enum LightningType {
     Alby(AlbyLightningSettings),
     Strike(StrikeLightningSettings),
     Lnd(LndLightningSettings),
+    Cln(ClnLightningSettings),
 }
 
 impl fmt::Display for LightningType {
@@ -42,6 +45,7 @@ impl fmt::Display for LightningType {
             Self::Alby(settings) => write!(f, "Alby: {}", settings),
             Self::Strike(settings) => write!(f, "Strike: {}", settings),
             Self::Lnd(settings) => write!(f, "Lnd: {}", settings),
+            Self::Cln(settings) => write!(f, "Cln: {}", settings),
         }
     }
 }

@@ -461,6 +461,7 @@ dependencies = [
  "bitcoin_hashes 0.12.0",
  "hex_lit",
  "secp256k1 0.27.0",
+ "serde",
 ]
 
 [[package]]
@@ -485,6 +486,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d7066118b13d4b20b23645932dfb3a81ce7e29f95726c2036fa33cd7b092501"
 dependencies = [
  "bitcoin-private",
+ "serde",
 ]
 
 [[package]]
@@ -720,6 +722,24 @@ name = "clap_lex"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "702fc72eb24e5a1e48ce58027a675bc24edd52096d5397d4aea7c6dd9eca0bd1"
+
+[[package]]
+name = "cln-rpc"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a385bf28474fe5636297023b5550e74f27271ca569b31832bfebbfcf7de26d88"
+dependencies = [
+ "anyhow",
+ "bitcoin 0.30.2",
+ "bytes",
+ "futures-util",
+ "hex",
+ "log",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+]
 
 [[package]]
 name = "colorchoice"
@@ -2832,7 +2852,9 @@ dependencies = [
  "anyhow",
  "async-trait",
  "axum 0.7.4",
+ "bitcoin_hashes 0.12.0",
  "chrono",
+ "cln-rpc",
  "dotenvy",
  "envy",
  "fedimint-tonic-lnd",
@@ -3805,6 +3827,7 @@ dependencies = [
  "bitcoin_hashes 0.12.0",
  "rand",
  "secp256k1-sys 0.8.1",
+ "serde",
 ]
 
 [[package]]

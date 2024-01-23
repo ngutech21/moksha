@@ -21,6 +21,8 @@ use crate::{
     onchain::{LndOnchain, Onchain},
 };
 
+use crate::lightning::cln::ClnLightning;
+
 #[derive(Clone)]
 pub struct Mint {
     pub lightning: Arc<dyn Lightning + Send + Sync>,
@@ -305,6 +307,9 @@ impl MintBuilder {
             Some(LightningType::Strike(strike_settings)) => Arc::new(StrikeLightning::new(
                 strike_settings.api_key.expect("STRIKE_API_KEY not set"),
             )),
+            Some(LightningType::Cln(cln_settings)) => Arc::new(
+                ClnLightning::new(&cln_settings.rpc_path.expect("CLN_RPC_PATH not set")).await?,
+            ),
             Some(LightningType::Lnd(lnd_settings)) => Arc::new(
                 crate::lightning::LndLightning::new(
                     lnd_settings.grpc_host.expect("LND_GRPC_HOST not set"),
