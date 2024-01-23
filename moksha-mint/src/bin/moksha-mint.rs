@@ -77,7 +77,7 @@ pub async fn main() -> anyhow::Result<()> {
     mokshamint::server::run_server(mint?).await
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum AppEnv {
     Dev,
     Prod,
@@ -86,8 +86,8 @@ pub enum AppEnv {
 impl fmt::Display for AppEnv {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            AppEnv::Dev => write!(f, "dev"),
-            AppEnv::Prod => write!(f, "prod"),
+            Self::Dev => write!(f, "dev"),
+            Self::Prod => write!(f, "prod"),
         }
     }
 }
