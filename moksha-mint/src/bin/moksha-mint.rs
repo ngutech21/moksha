@@ -1,8 +1,8 @@
 use mokshamint::{
     config::{DatabaseConfig, LightningFeeConfig, MintInfoConfig, ServerConfig},
     lightning::{
-        AlbyLightningSettings, LightningType, LnbitsLightningSettings, LndLightningSettings,
-        StrikeLightningSettings,
+        cln::ClnLightningSettings, AlbyLightningSettings, LightningType, LnbitsLightningSettings,
+        LndLightningSettings, StrikeLightningSettings,
     },
     mint::MintBuilder,
 };
@@ -26,6 +26,7 @@ pub async fn main() -> anyhow::Result<()> {
 
     // TODO move to config module
     let ln_backend = get_env("MINT_LIGHTNING_BACKEND");
+    // FIXME don't match on string
     let ln_type = match ln_backend.as_str() {
         "Lnbits" => {
             let lnbits_settings = envy::prefixed("LNBITS_")
@@ -50,9 +51,15 @@ pub async fn main() -> anyhow::Result<()> {
                 .from_env::<StrikeLightningSettings>()
                 .expect("Please provide strike info");
             LightningType::Strike(strike_settings)
+        },
+        "Cln" => {
+            let settings = envy::prefixed("CLN_")
+                .from_env::<ClnLightningSettings>()
+                .expect("Please provide cln info");
+            LightningType::Cln(settings)
         }
         _ => panic!(
-            "env MINT_LIGHTNING_BACKEND not found or invalid values. Valid values are Lnbits, Lnd, Alby, and Strike"
+            "env MINT_LIGHTNING_BACKEND not found or invalid values. Valid values are Lnbits, Lnd,Cln, Alby, and Strike"
         ),
     };
 

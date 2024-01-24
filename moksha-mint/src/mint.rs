@@ -307,8 +307,14 @@ impl MintBuilder {
             Some(LightningType::Strike(strike_settings)) => Arc::new(StrikeLightning::new(
                 strike_settings.api_key.expect("STRIKE_API_KEY not set"),
             )),
-            Some(LightningType::Cln(cln_settings)) => Arc::new(
-                ClnLightning::new(&cln_settings.rpc_path.expect("CLN_RPC_PATH not set")).await?,
+            Some(LightningType::Cln(set)) => Arc::new(
+                ClnLightning::new(
+                    set.grpc_host.expect("CLN_GRPC_HOST not set"),
+                    &set.client_cert.expect("CLN_CLIENT_CERT not set"),
+                    &set.client_key.expect("CLN_CLIENT_KEY not set"),
+                    &set.ca_cert.expect("CLN_CA_CERT not set"),
+                )
+                .await?,
             ),
             Some(LightningType::Lnd(lnd_settings)) => Arc::new(
                 crate::lightning::LndLightning::new(

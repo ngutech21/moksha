@@ -1,49 +1,73 @@
-use std::{fmt::Formatter, path::PathBuf, sync::Arc};
-
 use async_trait::async_trait;
-use bitcoin_hashes::Hash;
-use cln_rpc::{
-    primitives::{Amount, AmountOrAny},
-    ClnRpc,
-};
+use cln_grpc::pb::{amount_or_any, Amount, AmountOrAny};
+use cln_grpc::pb::{listinvoices_invoices::ListinvoicesInvoicesStatus, node_client::NodeClient};
 use serde_derive::{Deserialize, Serialize};
 use std::fmt::{self};
+use std::{fmt::Formatter, path::PathBuf, sync::Arc};
 
 use crate::{
     error::MokshaMintError,
     model::{CreateInvoiceResult, PayInvoiceResult},
 };
+use tonic::transport::{Certificate, ClientTlsConfig, Identity};
 
 use super::Lightning;
+
 use secp256k1::rand;
+use std::fs::read;
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct ClnLightningSettings {
-    pub rpc_path: Option<PathBuf>,
+    pub grpc_host: Option<String>,
+    pub client_cert: Option<PathBuf>,
+    pub client_key: Option<PathBuf>,
+    pub ca_cert: Option<PathBuf>,
 }
+
 impl fmt::Display for ClnLightningSettings {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "rpc_path: {}",
-            self.rpc_path.as_ref().unwrap().to_str().unwrap_or_default()
-        )
+        write!(f, "ClnLightningSettings")
     }
 }
 
-pub struct ClnLightning(Arc<Mutex<ClnRpc>>);
+pub struct ClnLightning(Arc<Mutex<NodeClient<tonic::transport::Channel>>>);
 
 impl ClnLightning {
-    pub async fn new(path: &PathBuf) -> Result<Self, MokshaMintError> {
-        let client = ClnRpc::new(path).await;
+    pub async fn new(
+        grpc_host: String,
+        client_cert: &PathBuf,
+        client_key: &PathBuf,
+        ca_cert: &PathBuf,
+    ) -> Result<Self, MokshaMintError> {
+        let client_cert = read(client_cert).unwrap();
+        let client_key = read(client_key).unwrap();
 
-        Ok(Self(Arc::new(Mutex::new(
-            client.map_err(MokshaMintError::ClnConnectError)?,
-        ))))
+        let identity = Identity::from_pem(client_cert, client_key);
+        let ca_cert = read(ca_cert).unwrap();
+        let ca_certificate = Certificate::from_pem(ca_cert);
+
+        let tls_config = ClientTlsConfig::new()
+            .domain_name("localhost")
+            .identity(identity)
+            .ca_certificate(ca_certificate);
+        let url = grpc_host.to_owned();
+
+        let channel = tonic::transport::Channel::from_shared(url)
+            .unwrap()
+            .tls_config(tls_config)
+            .unwrap()
+            .connect()
+            .await
+            .unwrap();
+
+        let node = NodeClient::new(channel);
+        Ok(Self(Arc::new(Mutex::new(node))))
     }
 
-    pub async fn client_lock(&self) -> anyhow::Result<MappedMutexGuard<'_, ClnRpc>> {
+    pub async fn client_lock(
+        &self,
+    ) -> anyhow::Result<MappedMutexGuard<'_, NodeClient<tonic::transport::Channel>>> {
         let guard = self.0.lock().await;
         Ok(MutexGuard::map(guard, |client| client))
     }
@@ -56,7 +80,7 @@ impl Lightning for ClnLightning {
             .client_lock()
             .await
             .expect("failed to lock client")
-            .call_typed(cln_rpc::model::requests::ListinvoicesRequest {
+            .list_invoices(cln_grpc::pb::ListinvoicesRequest {
                 invstring: Some(payment_request),
                 label: None,
                 payment_hash: None,
@@ -66,35 +90,43 @@ impl Lightning for ClnLightning {
                 limit: None,
             })
             .await
-            .expect("failed to lookup invoice");
+            .expect("failed to lookup invoice")
+            .into_inner();
+
         let invoice = invoices
             .invoices
             .first()
             .expect("no matching invoice found");
 
-        Ok(invoice.status == cln_rpc::model::responses::ListinvoicesInvoicesStatus::PAID)
+        Ok(invoice.status() == ListinvoicesInvoicesStatus::Paid)
     }
 
     async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, MokshaMintError> {
+        let amount_msat = Some(AmountOrAny {
+            value: Some(amount_or_any::Value::Amount(Amount {
+                msat: amount * 1_000,
+            })),
+        });
         let invoice = self
             .client_lock()
             .await
             .expect("failed to lock client")
-            .call_typed(cln_rpc::model::requests::InvoiceRequest {
-                amount_msat: AmountOrAny::Amount(Amount::from_sat(amount)),
+            .invoice(cln_grpc::pb::InvoiceRequest {
+                amount_msat,
                 description: format!("{:x}", rand::random::<u128>()),
                 label: format!("{:x}", rand::random::<u128>()),
                 expiry: None,
-                fallbacks: None,
+                fallbacks: vec![],
                 preimage: None,
                 cltv: None,
                 deschashonly: None,
             })
             .await
-            .expect("failed to create invoice");
+            .expect("failed to create invoice")
+            .into_inner();
 
         Ok(CreateInvoiceResult {
-            payment_hash: invoice.payment_hash.to_byte_array().to_vec(),
+            payment_hash: invoice.payment_hash,
             payment_request: invoice.bolt11,
         })
     }
@@ -107,7 +139,7 @@ impl Lightning for ClnLightning {
             .client_lock()
             .await
             .expect("failed to lock client") //FIXME map error
-            .call_typed(cln_rpc::model::requests::PayRequest {
+            .pay(cln_grpc::pb::PayRequest {
                 bolt11: payment_request,
                 amount_msat: None,
                 label: None,
@@ -117,16 +149,35 @@ impl Lightning for ClnLightning {
                 maxdelay: None,
                 exemptfee: None,
                 localinvreqid: None,
-                exclude: None,
+                exclude: vec![],
                 maxfee: None,
                 description: None,
             })
             .await
-            .expect("failed to pay invoice");
+            .expect("failed to pay invoice")
+            .into_inner();
 
         Ok(PayInvoiceResult {
             payment_hash: hex::encode(payment.payment_hash),
-            total_fees: payment.amount_sent_msat.msat() - payment.amount_msat.msat(), // FIXME check if this is correct
+            total_fees: payment.amount_sent_msat.unwrap().msat - payment.amount_msat.unwrap().msat, // FIXME check if this is correct
         })
     }
 }
+
+// mod tests {
+//     use cln_grpc::pb::GetinfoRequest;
+
+//     #[tokio::test]
+//     async fn test_connect() -> anyhow::Result<()> {
+//         let path = std::path::PathBuf::from("/Users/steffen/.polar/networks/1/volumes/c-lightning/bob/lightningd/regtest/lightning-rpc");
+//         let client = super::ClnLightning::new(&path).await?;
+//         let info = client
+//             .client_lock()
+//             .await
+//             .expect("failed to lock client")
+//             .getinfo(GetinfoRequest {})
+//             .await?;
+//         println!("{:?}", info);
+//         Ok(())
+//     }
+// }
