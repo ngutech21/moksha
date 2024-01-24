@@ -16,7 +16,10 @@ use crate::{
     },
     database::Database,
     error::MokshaMintError,
-    lightning::{AlbyLightning, Lightning, LightningType, LnbitsLightning, StrikeLightning},
+    lightning::{
+        lnd::LndLightning, AlbyLightning, Lightning, LightningType, LnbitsLightning,
+        StrikeLightning,
+    },
     model::Invoice,
     onchain::{LndOnchain, Onchain},
 };
@@ -317,7 +320,7 @@ impl MintBuilder {
                 .await?,
             ),
             Some(LightningType::Lnd(lnd_settings)) => Arc::new(
-                crate::lightning::LndLightning::new(
+                LndLightning::new(
                     lnd_settings.grpc_host.expect("LND_GRPC_HOST not set"),
                     &lnd_settings
                         .tls_cert_path

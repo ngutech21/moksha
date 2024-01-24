@@ -1,8 +1,8 @@
 use mokshamint::{
     config::{DatabaseConfig, LightningFeeConfig, MintInfoConfig, ServerConfig},
     lightning::{
-        cln::ClnLightningSettings, AlbyLightningSettings, LightningType, LnbitsLightningSettings,
-        LndLightningSettings, StrikeLightningSettings,
+        cln::ClnLightningSettings, lnd::LndLightningSettings, AlbyLightningSettings, LightningType,
+        LnbitsLightningSettings, StrikeLightningSettings,
     },
     mint::MintBuilder,
 };

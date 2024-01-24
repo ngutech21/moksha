@@ -1,9 +1,9 @@
 use std::{env, net::SocketAddr, path::PathBuf};
 
-use crate::lightning::LndLightningSettings;
-
 use moksha_core::primitives::{CurrencyUnit, Nut14, Nut15, PaymentMethod};
 use serde_derive::{Deserialize, Serialize};
+
+use crate::lightning::lnd::LndLightningSettings;
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct MintConfig {
