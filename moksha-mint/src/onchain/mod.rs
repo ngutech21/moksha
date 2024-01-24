@@ -118,7 +118,6 @@ impl Onchain for LndOnchain {
             max_confs: i32::MAX,
             ..Default::default()
         };
-        //let mut wal = ;
 
         let response = self
             .wallet_lock()
