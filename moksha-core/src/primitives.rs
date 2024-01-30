@@ -259,7 +259,7 @@ pub struct PostMeltBolt11Response {
 }
 
 #[skip_serializing_none]
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct MintInfoResponse {
     pub name: Option<String>,
     #[schema(value_type = String)]
@@ -375,7 +375,7 @@ pub struct GetMeltOnchainResponse {
     pub paid: bool,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
 pub struct Nuts {
     // /// Cryptography and Models
     // #[serde(rename = "0")]
@@ -438,7 +438,7 @@ pub struct Nuts {
     pub nut15: Option<Nut15>,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct Nut4 {
     pub methods: Vec<(PaymentMethod, CurrencyUnit)>,
     pub disabled: bool,
@@ -453,7 +453,7 @@ impl Default for Nut4 {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct Nut5 {
     pub methods: Vec<(PaymentMethod, CurrencyUnit)>,
 }
@@ -466,7 +466,7 @@ impl Default for Nut5 {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct Nut6 {
     pub supported: bool,
 }
@@ -477,12 +477,12 @@ impl Default for Nut6 {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
 pub struct Nut7 {
     pub supported: bool,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct Nut8 {
     pub supported: bool,
 }
@@ -493,27 +493,27 @@ impl Default for Nut8 {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
 pub struct Nut9 {
     pub supported: bool,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
 pub struct Nut10 {
     pub supported: bool,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
 pub struct Nut11 {
     pub supported: bool,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Default, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
 pub struct Nut12 {
     pub supported: bool,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct Nut14 {
     pub supported: bool,
     #[serde(rename = "methods")]
@@ -533,7 +533,7 @@ impl Default for Nut14 {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct Nut15 {
     pub supported: bool,
     #[serde(rename = "methods")]
