@@ -16,8 +16,10 @@ use moksha_core::{
     proof::Proofs,
 };
 
-use moksha_wallet::{client::Client, error::MokshaWalletError};
+use crate::error::MokshaWalletError;
 use url::Url;
+
+use super::Client;
 
 #[derive(Debug, Clone)]
 pub struct WasmClient;

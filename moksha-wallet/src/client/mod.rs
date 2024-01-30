@@ -21,6 +21,9 @@ use crate::error::MokshaWalletError;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod reqwest;
 
+#[cfg(target_arch = "wasm32")]
+pub mod wasm_client;
+
 #[async_trait(?Send)]
 pub trait LegacyClient {
     async fn post_split_tokens(

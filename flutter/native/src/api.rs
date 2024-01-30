@@ -29,7 +29,8 @@ static RUNTIME: once_cell::sync::Lazy<std::sync::Mutex<tokio::runtime::Runtime>>
     });
 
 #[cfg(target_arch = "wasm32")]
-static WALLET: OnceLock<Wallet<crate::wasm_client::WasmClient, RexieLocalStore>> = OnceLock::new();
+static WALLET: OnceLock<Wallet<moksha_wallet::client::wasm_client::WasmClient, RexieLocalStore>> =
+    OnceLock::new();
 
 #[cfg(not(target_arch = "wasm32"))]
 static WALLET: OnceLock<
@@ -132,7 +133,7 @@ async fn local_wallet() -> anyhow::Result<&'static Wallet<impl Client, impl Loca
     #[cfg(target_arch = "wasm32")]
     {
         if WALLET.get().is_none() {
-            let client = crate::wasm_client::WasmClient::new();
+            let client = moksha_wallet::client::wasm_client::WasmClient::new();
             let lc = RexieLocalStore::default();
             let mint_url = url::Url::parse(mint_url).expect("invalid url"); // FIXME redundant
             let wallet = WalletBuilder::default()
