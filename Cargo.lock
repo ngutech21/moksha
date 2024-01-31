@@ -2581,15 +2581,6 @@ dependencies = [
 
 [[package]]
 name = "lightning"
-version = "0.0.118"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d52cec5fa9382154fe9671e8df93095b800c7d77abc66e2a5ef839d672521c5e"
-dependencies = [
- "bitcoin 0.29.2",
-]
-
-[[package]]
-name = "lightning"
 version = "0.0.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32899363dc48d297838ce1264c4bb6867ede6ec11f06f3b9823f3ff403f1ccc2"
@@ -2614,20 +2605,6 @@ dependencies = [
 
 [[package]]
 name = "lightning-invoice"
-version = "0.26.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3eb24878b0f4ef75f020976c886d9ad1503867802329cc963e0ab4623ea3b25c"
-dependencies = [
- "bech32",
- "bitcoin 0.29.2",
- "bitcoin_hashes 0.11.0",
- "lightning 0.0.118",
- "num-traits",
- "secp256k1 0.24.3",
-]
-
-[[package]]
-name = "lightning-invoice"
 version = "0.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd3421ccfaeac77763114f68f3fc5308f11a0e8a880618b4f84d1d22493aa465"
@@ -2637,6 +2614,7 @@ dependencies = [
  "lightning 0.0.119",
  "num-traits",
  "secp256k1 0.27.0",
+ "serde",
 ]
 
 [[package]]
@@ -2848,7 +2826,7 @@ dependencies = [
  "fedimint-wallet-client",
  "futures",
  "getrandom",
- "lightning-invoice 0.21.0",
+ "lightning-invoice 0.27.0",
  "ring 0.16.20",
  "serde_json",
  "tokio",
@@ -2894,7 +2872,7 @@ dependencies = [
  "hex",
  "http-body-util",
  "hyper 0.14.28",
- "lightning-invoice 0.26.0",
+ "lightning-invoice 0.27.0",
  "mockall",
  "moksha-core",
  "reqwest",
