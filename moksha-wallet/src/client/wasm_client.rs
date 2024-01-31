@@ -6,12 +6,12 @@ use moksha_core::{
     keyset::V1Keysets,
     primitives::{
         CashuErrorResponse, CurrencyUnit, GetMeltOnchainResponse, KeysResponse, MintInfoResponse,
-        PostMeltBolt11Request, PostMeltBolt11Response, PostMeltOnchainResponse,
-        PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response, PostMeltQuoteOnchainRequest,
-        PostMeltQuoteOnchainResponse, PostMintBolt11Request, PostMintBolt11Response,
-        PostMintOnchainRequest, PostMintOnchainResponse, PostMintQuoteBolt11Request,
-        PostMintQuoteBolt11Response, PostMintQuoteOnchainResponse, PostSwapRequest,
-        PostSwapResponse,
+        PostMeltBolt11Request, PostMeltBolt11Response, PostMeltOnchainRequest,
+        PostMeltOnchainResponse, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
+        PostMeltQuoteOnchainRequest, PostMeltQuoteOnchainResponse, PostMintBolt11Request,
+        PostMintBolt11Response, PostMintOnchainRequest, PostMintOnchainResponse,
+        PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintQuoteOnchainRequest,
+        PostMintQuoteOnchainResponse, PostSwapRequest, PostSwapResponse,
     },
     proof::Proofs,
 };
@@ -141,14 +141,17 @@ impl Client for WasmClient {
         Ok(resp.status() == 200)
     }
 
-    // TODO implement onchain methods for wasm_client
     async fn post_mint_onchain(
         &self,
         mint_url: &Url,
         quote: String,
         blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMintOnchainResponse, MokshaWalletError> {
-        todo!()
+        let body = PostMintOnchainRequest {
+            quote,
+            outputs: blinded_messages,
+        };
+        do_post(&mint_url.join("v1/mint/onchain")?, &body).await
     }
 
     async fn post_mint_quote_onchain(
@@ -157,7 +160,11 @@ impl Client for WasmClient {
         amount: u64,
         unit: CurrencyUnit,
     ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError> {
-        todo!()
+        do_post(
+            &mint_url.join("v1/mint/quote/onchain")?,
+            &PostMintQuoteOnchainRequest { amount, unit },
+        )
+        .await
     }
 
     async fn get_mint_quote_onchain(
@@ -165,16 +172,20 @@ impl Client for WasmClient {
         mint_url: &Url,
         quote: String,
     ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError> {
-        todo!()
+        do_get(&mint_url.join(&format!("v1/mint/quote/onchain/{}", quote))?).await
     }
 
     async fn post_melt_onchain(
         &self,
         mint_url: &Url,
-        proofs: Proofs,
+        inputs: Proofs,
         quote: String,
     ) -> Result<PostMeltOnchainResponse, MokshaWalletError> {
-        todo!()
+        do_post(
+            &mint_url.join("v1/melt/onchain")?,
+            &PostMeltOnchainRequest { quote, inputs },
+        )
+        .await
     }
 
     async fn post_melt_quote_onchain(
@@ -184,7 +195,12 @@ impl Client for WasmClient {
         amount: u64,
         unit: CurrencyUnit,
     ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError> {
-        todo!()
+        let body = PostMeltQuoteOnchainRequest {
+            address,
+            amount,
+            unit,
+        };
+        do_post(&mint_url.join("v1/melt/quote/onchain")?, &body).await
     }
 
     async fn get_melt_quote_onchain(
@@ -192,7 +208,7 @@ impl Client for WasmClient {
         mint_url: &Url,
         quote: String,
     ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError> {
-        todo!()
+        do_get(&mint_url.join(&format!("/v1/melt/quote/onchain/{quote}"))?).await
     }
 
     async fn get_melt_onchain(
