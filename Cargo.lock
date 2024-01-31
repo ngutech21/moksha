@@ -2893,7 +2893,6 @@ dependencies = [
  "lightning-invoice 0.27.0",
  "mockall",
  "moksha-core",
- "rand",
  "reqwest",
  "rexie",
  "secp256k1 0.28.1",
