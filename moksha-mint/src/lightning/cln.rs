@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use cln_grpc::pb::{amount_or_any, Amount, AmountOrAny};
 use cln_grpc::pb::{listinvoices_invoices::ListinvoicesInvoicesStatus, node_client::NodeClient};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::fmt::{self};
 use std::{fmt::Formatter, path::PathBuf, sync::Arc};
 

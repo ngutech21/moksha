@@ -11,7 +11,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use fedimint_tonic_lnd::Client;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 use url::Url;
 
