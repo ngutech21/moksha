@@ -34,7 +34,7 @@ Mint Features:
   - [x] Lnd
   - [x] Alby
   - [x] Strike
-  - [ ] core-lightning
+  - [ ] core-lightning (WIP)
 
 Wallet Features:
 
@@ -59,6 +59,11 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 - [ ] [NUT-07](https://github.com/cashubtc/nuts/blob/main/07.md)
 - [x] [NUT-08](https://github.com/cashubtc/nuts/blob/main/08.md)
 - [ ] [NUT-09](https://github.com/cashubtc/nuts/blob/main/09.md)
+- [ ] [NUT-10](https://github.com/cashubtc/nuts/blob/main/10.md)
+- [ ] [NUT-11](https://github.com/cashubtc/nuts/blob/main/11.md)
+- [ ] [NUT-12](https://github.com/cashubtc/nuts/blob/main/12.md)
+- [x] NUT-14 on-chain mint (unofficial nut)
+- [x] NUT-15 on-chain melt (unofficial nut)
 
 ## Crates
 
