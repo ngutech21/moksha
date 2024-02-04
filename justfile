@@ -8,13 +8,12 @@ default:
 
 # install all dependencies
 deps:
-  cargo install flutter_rust_bridge_codegen@1.82.6 sqlx-cli typos-cli  grcov wasm-pack wasm-opt just
+  cargo install sqlx-cli typos-cli  grcov wasm-pack wasm-opt just
 
 
-# clean cargo and flutter
+# clean cargo
 clean:
   cargo clean
-  cd flutter && flutter clean
 
 
 # check code for typos
@@ -32,6 +31,7 @@ typos-fix-all:
   >&2 echo '💡 Valid new words can be added to `typos.toml`'
   typos --write-changes
 
+
 # format code, check typos and run tests
 final-check:
   cargo fmt --all
@@ -39,6 +39,7 @@ final-check:
   cargo test
   just run-itests
   just build-wasm
+
 
 #run coverage
 run-coverage:
@@ -49,23 +50,7 @@ run-coverage:
   grcov . --binary-path ./target/debug/deps/ -s . -t html --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o target/coverage/html
   find . -name '*.profraw' -exec rm -r {} \;
   >&2 echo '💡 Created the report in target/coverage/html`'
-  
 
-
-# generate flutter-rust bridge
-gen-flutter-bridge:
-    cd flutter && \
-    flutter pub get && \
-    flutter_rust_bridge_codegen \
-        --rust-input native/src/api.rs \
-        --dart-output lib/generated/bridge_generated.dart \
-        --c-output ios/Runner/bridge_generated.h \
-        --extra-c-output-path macos/Runner/ \
-        --dart-decl-output lib/generated/bridge_definitions.dart \
-        --dart-format-line-length 120 \
-        --dart-enums-style \
-        --no-use-bridge-in-method \
-        --wasm
 
 # run the cashu-mint
 run-mint:
@@ -76,47 +61,19 @@ run-cli *ARGS:
   RUST_BACKTRACE=1 cargo run --bin moksha-cli -- -m http://127.0.0.1:3338 -d ./data/wallet  {{ARGS}} 
 
 
-# run flutter desktop-app 
-run-desktop:
-    cd flutter && \
-    flutter run -d {{ os() }}
-
-# run flutter web-app
-run-web:
-    cd flutter && \
-    dart run flutter_rust_bridge:serve 
-
 # run integrationtests
 run-itests:
     cd integrationtests && \
     cargo test -- --ignored
-
-
-# build flutter desktop-app
-build-desktop:
-    cd flutter && \
-    flutter clean && \
-    flutter build {{ os() }}
-
 
 # build the mint docker-image
 build-docker:
     docker build --build-arg COMMITHASH=$(git rev-parse HEAD) --build-arg BUILDTIME=$(date -u '+%F-%T') -t moksha-mint:latest .
 
 
-# build flutter web-app in flutter/build/web
-build-web: build-wasm
-  cd flutter && \
-  flutter clean && \
-  RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals" RUSTUP_TOOLCHAIN=nightly wasm-pack build -t no-modules -d  $(pwd)/web/pkg --no-typescript --out-name native --dev native -- -Z build-std=std,panic_abort && \
-  wasm-opt -Oz -o $(pwd)/web/pkg/native_bg.wasm $(pwd)/web/pkg/native_bg.wasm && \
-  flutter build web --profile
-  
-
-
 # compile all rust crates, that are relevant for the client, to wasm
 build-wasm:
-   RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals" cargo +nightly build -p native -p  moksha-core -p moksha-wallet -p moksha-fedimint \
+   RUSTFLAGS="-C target-feature=+atomics,+bulk-memory,+mutable-globals" cargo +nightly build -p  moksha-core -p moksha-wallet -p moksha-fedimint \
    --target wasm32-unknown-unknown \
    -Z build-std=std,panic_abort
 

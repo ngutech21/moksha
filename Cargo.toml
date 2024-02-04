@@ -8,7 +8,6 @@ members = [
     "moksha-mint",
     "moksha-fedimint",
     "integrationtests",
-    "flutter/native",
 ]
 
 [profile.dev]

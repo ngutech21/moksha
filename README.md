@@ -7,7 +7,7 @@
 
 # moksha
 
-moksha is a cashu mint, cli-wallet and flutter desktop-app.
+moksha is a cashu library, mint and cli-wallet written in Rust.
 
 ## Contents
 
@@ -73,7 +73,6 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 - [moksha-mint](./moksha-mint) Cashu mint server. Handles minting, melting and token requests.
 - [moksha-fedimint](./moksha-fedimint) Fedimint wrapper for the cashu wallet
 - [integrationtests](./integrationtests) Spins up a mint and runs integration tests against it.
-- [flutter](./flutter/native) Thin wrapper using [flutter-rust-bridge](https://github.com/fzyzcjy/flutter_rust_bridge) around the wallet library for use in flutter.
 
 ## Usage
 
@@ -109,7 +108,7 @@ docker-compose up -d app database
 
 ```bash
 git clone https://github.com/ngutech21/moksha.git
-cargo install just typos-cli sqlx-cli grcov flutter_rust_bridge_codegen wasm-pack wasm-opt
+cargo install just typos-cli sqlx-cli grcov wasm-pack wasm-opt
 rustup component add llvm-tools-preview
 cd moksha
 ```
@@ -173,54 +172,29 @@ To receive tokens you need to enter the token as first argument to the receive c
 just run-cli receive cashuAeyJ0...
 ```
 
-### Setup flutter
-
-If you want to use the flutter app you need to setup flutter and the rust bridge:
-
-- [Flutter SDK](https://docs.flutter.dev/get-started/install)
-- `flutter_rust_bridge_codegen` [cargo package](https://cjycode.com/flutter_rust_bridge/integrate/deps.html#build-time-dependencies)
-- Appropriate [Rust targets](https://rust-lang.github.io/rustup/cross-compilation.html) for cross-compiling to your device
-
-### update flutter dependencies
-
-```bash
-cd flutter
-flutter pub get
-```
-
-### Run flutter desktop app
-
-```bash
-just run-desktop
-```
-
 ### Development
 
-To run coverage, check for typos, generate the flutter rust bridge etc. use the just commands:
+To run coverage, check for typos etc. use the just commands:
 
 ```bash
 Available recipes:
-    build-desktop      # build flutter desktop-app
-    build-docker       # build the mint docker-image
-    build-wasm         # compile all rust crates, that are relevant for the client, to wasm
-    build-web          # build flutter web-app in flutter/build/web
-    clean              # clean cargo and flutter
-    db-create          # creates the postgres database
-    db-prepare         # runs sqlx prepare
-    db-secrets         # creates the fly.io secrets used for LND
-    default            # list all tasks
-    deps               # install all dependencies
-    final-check        # format code, check typos and run tests
-    gen-flutter-bridge # generate flutter-rust bridge
-    run-cli *ARGS      # run cli-wallet with the given args
-    run-coverage       # run coverage
-    run-desktop        # run flutter desktop-app
-    run-itests         # run integrationtests
-    run-mint           # run the cashu-mint
-    run-web            # run flutter web-app
-    start-fly-proxy    # starts the fly.io database proxy
-    typos              # check code for typos
-    typos-fix-all      # fix all typos
+    build-docker    # build the mint docker-image
+    build-wasm      # compile all rust crates, that are relevant for the client, to wasm
+    clean           # clean cargo
+    db-create       # creates the postgres database
+    db-migrate      # runs sqlx prepare
+    db-prepare      # runs sqlx prepare
+    db-secrets      # creates the fly.io secrets used for LND
+    default         # list all tasks
+    deps            # install all dependencies
+    final-check     # format code, check typos and run tests
+    run-cli *ARGS   # run cli-wallet with the given args
+    run-coverage    # run coverage
+    run-itests      # run integrationtests
+    run-mint        # run the cashu-mint
+    start-fly-proxy # starts the fly.io database proxy
+    typos           # check code for typos
+    typos-fix-all   # fix all typos
 ```
 
 ## License
