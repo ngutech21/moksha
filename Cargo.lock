@@ -2771,7 +2771,7 @@ dependencies = [
  "anyhow",
  "axum 0.7.4",
  "bitcoin_hashes 0.12.0",
- "lightning 0.0.119",
+ "lightning 0.0.121",
  "lightning-invoice 0.27.0",
  "moksha-core",
  "moksha-mint",
