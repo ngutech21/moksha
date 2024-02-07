@@ -11,8 +11,8 @@ use moksha_core::{
 
 use crate::{
     config::{
-        BuildConfig, DatabaseConfig, LightningFeeConfig, MintConfig, MintInfoConfig, OnchainConfig,
-        OnchainType, ServerConfig,
+        BtcOnchainConfig, BtcOnchainType, BuildConfig, DatabaseConfig, LightningFeeConfig,
+        MintConfig, MintInfoConfig, ServerConfig,
     },
     database::Database,
     error::MokshaMintError,
@@ -339,11 +339,11 @@ impl MintBuilder {
         let db = Arc::new(crate::database::postgres::PostgresDB::new(&db_config).await?);
         db.migrate().await;
 
-        let onchain_config = OnchainConfig::from_env();
+        let onchain_config = BtcOnchainConfig::from_env();
 
         let lnd_onchain: Option<Arc<dyn Onchain + Send + Sync>> = match onchain_config.clone() {
-            Some(OnchainConfig {
-                onchain_type: OnchainType::Lnd(cfg),
+            Some(BtcOnchainConfig {
+                onchain_type: BtcOnchainType::Lnd(cfg),
                 ..
             }) => Some(Arc::new(
                 LndOnchain::new(

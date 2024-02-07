@@ -151,7 +151,7 @@ impl Client for WasmClient {
             quote,
             outputs: blinded_messages,
         };
-        do_post(&mint_url.join("v1/mint/onchain")?, &body).await
+        do_post(&mint_url.join("v1/mint/btconchain")?, &body).await
     }
 
     async fn post_mint_quote_onchain(
@@ -161,7 +161,7 @@ impl Client for WasmClient {
         unit: CurrencyUnit,
     ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError> {
         do_post(
-            &mint_url.join("v1/mint/quote/onchain")?,
+            &mint_url.join("v1/mint/quote/btconchain")?,
             &PostMintQuoteOnchainRequest { amount, unit },
         )
         .await
@@ -172,7 +172,7 @@ impl Client for WasmClient {
         mint_url: &Url,
         quote: String,
     ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError> {
-        do_get(&mint_url.join(&format!("v1/mint/quote/onchain/{}", quote))?).await
+        do_get(&mint_url.join(&format!("v1/mint/quote/btconchain/{}", quote))?).await
     }
 
     async fn post_melt_onchain(
@@ -182,7 +182,7 @@ impl Client for WasmClient {
         quote: String,
     ) -> Result<PostMeltOnchainResponse, MokshaWalletError> {
         do_post(
-            &mint_url.join("v1/melt/onchain")?,
+            &mint_url.join("v1/melt/btconchain")?,
             &PostMeltOnchainRequest { quote, inputs },
         )
         .await
@@ -200,7 +200,7 @@ impl Client for WasmClient {
             amount,
             unit,
         };
-        do_post(&mint_url.join("v1/melt/quote/onchain")?, &body).await
+        do_post(&mint_url.join("v1/melt/quote/btconchain")?, &body).await
     }
 
     async fn get_melt_quote_onchain(
@@ -208,7 +208,7 @@ impl Client for WasmClient {
         mint_url: &Url,
         quote: String,
     ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError> {
-        do_get(&mint_url.join(&format!("/v1/melt/quote/onchain/{quote}"))?).await
+        do_get(&mint_url.join(&format!("/v1/melt/quote/btconchain/{quote}"))?).await
     }
 
     async fn get_melt_onchain(
@@ -216,7 +216,7 @@ impl Client for WasmClient {
         mint_url: &Url,
         txid: String,
     ) -> Result<GetMeltOnchainResponse, MokshaWalletError> {
-        do_get(&mint_url.join(&format!("/v1/melt/onchain/{txid}"))?).await
+        do_get(&mint_url.join(&format!("/v1/melt/btconchain/{txid}"))?).await
     }
 }
 

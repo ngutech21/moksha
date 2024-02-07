@@ -170,7 +170,7 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
                     .paid
             }
 
-            PaymentMethod::Onchain => {
+            PaymentMethod::BtcOnchain => {
                 self.client
                     .get_mint_quote_onchain(&self.mint_url, quote)
                     .await?
@@ -523,7 +523,7 @@ impl<C: Client, L: LocalStore> Wallet<C, L> {
                     .await?;
                 post_mint_resp.signatures
             }
-            PaymentMethod::Onchain => {
+            PaymentMethod::BtcOnchain => {
                 let post_mint_resp = self
                     .client
                     .post_mint_onchain(

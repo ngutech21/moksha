@@ -196,7 +196,7 @@ async fn main() -> anyhow::Result<()> {
                         println!("Only bolt11 minting is supported");
                         PaymentMethod::Bolt11
                     } else {
-                        let selections = &[PaymentMethod::Onchain, PaymentMethod::Bolt11];
+                        let selections = &[PaymentMethod::BtcOnchain, PaymentMethod::Bolt11];
 
                         let selection = Select::with_theme(&ColorfulTheme::default())
                             .with_prompt("Choose a payment method:")
@@ -210,7 +210,7 @@ async fn main() -> anyhow::Result<()> {
             );
 
             let quote = match payment_method {
-                PaymentMethod::Onchain => {
+                PaymentMethod::BtcOnchain => {
                     let nut14 = info.nuts.nut14.expect("nut14 is None");
                     if amount < nut14.min_amount {
                         println!(

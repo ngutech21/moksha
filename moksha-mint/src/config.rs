@@ -12,7 +12,7 @@ pub struct MintConfig {
     pub lightning_fee: LightningFeeConfig,
     pub server: ServerConfig,
     pub database: DatabaseConfig,
-    pub onchain: Option<OnchainConfig>,
+    pub onchain: Option<BtcOnchainConfig>,
 }
 
 impl MintConfig {
@@ -22,7 +22,7 @@ impl MintConfig {
         lightning_fee: LightningFeeConfig,
         server: ServerConfig,
         database: DatabaseConfig,
-        onchain: Option<OnchainConfig>,
+        onchain: Option<BtcOnchainConfig>,
     ) -> Self {
         Self {
             info,
@@ -36,17 +36,17 @@ impl MintConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OnchainConfig {
-    pub onchain_type: OnchainType,
+pub struct BtcOnchainConfig {
+    pub onchain_type: BtcOnchainType,
     pub min_confirmations: u8,
     pub min_amount: u64,
     pub max_amount: u64,
 }
 
-impl Default for OnchainConfig {
+impl Default for BtcOnchainConfig {
     fn default() -> Self {
         Self {
-            onchain_type: OnchainType::Lnd(LndLightningSettings::default()),
+            onchain_type: BtcOnchainType::Lnd(LndLightningSettings::default()),
             min_confirmations: 1,
             min_amount: 1_000,
             max_amount: 1_000_000,
@@ -54,9 +54,9 @@ impl Default for OnchainConfig {
     }
 }
 
-impl OnchainConfig {
+impl BtcOnchainConfig {
     pub fn from_env() -> Option<Self> {
-        let onchain_type = OnchainType::from_env();
+        let onchain_type = BtcOnchainType::from_env();
 
         println!("onchain_type: {:?}", onchain_type);
 
@@ -66,10 +66,10 @@ impl OnchainConfig {
 
         Some(Self {
             onchain_type: onchain_type.unwrap(),
-            min_amount: env_or_default("MINT_ONCHAIN_BACKEND_MIN_AMOUNT", def.min_amount),
-            max_amount: env_or_default("MINT_ONCHAIN_BACKEND_MAX_AMOUNT", def.max_amount),
+            min_amount: env_or_default("MINT_BTC_ONCHAIN_BACKEND_MIN_AMOUNT", def.min_amount),
+            max_amount: env_or_default("MINT_BTC_ONCHAIN_BACKEND_MAX_AMOUNT", def.max_amount),
             min_confirmations: env_or_default(
-                "MINT_ONCHAIN_BACKEND_MIN_CONFIRMATIONS",
+                "MINT_BTC_ONCHAIN_BACKEND_MIN_CONFIRMATIONS",
                 def.min_confirmations,
             ),
         })
@@ -77,13 +77,13 @@ impl OnchainConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum OnchainType {
+pub enum BtcOnchainType {
     Lnd(LndLightningSettings),
 }
 
-impl OnchainType {
+impl BtcOnchainType {
     pub fn from_env() -> Option<Self> {
-        let onchain_type = env::var("MINT_ONCHAIN_BACKEND").ok();
+        let onchain_type = env::var("MINT_BTC_ONCHAIN_BACKEND").ok();
 
         match onchain_type.as_deref() {
             None => None,
@@ -101,22 +101,22 @@ impl OnchainType {
     }
 }
 
-impl From<OnchainConfig> for Nut14 {
-    fn from(settings: OnchainConfig) -> Self {
+impl From<BtcOnchainConfig> for Nut14 {
+    fn from(settings: BtcOnchainConfig) -> Self {
         Self {
             supported: true,
-            payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            payment_methods: vec![(PaymentMethod::BtcOnchain, CurrencyUnit::Sat)],
             min_amount: settings.min_amount,
             max_amount: settings.max_amount,
         }
     }
 }
 
-impl From<OnchainConfig> for Nut15 {
-    fn from(settings: OnchainConfig) -> Self {
+impl From<BtcOnchainConfig> for Nut15 {
+    fn from(settings: BtcOnchainConfig) -> Self {
         Self {
             supported: true,
-            payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            payment_methods: vec![(PaymentMethod::BtcOnchain, CurrencyUnit::Sat)],
             min_amount: settings.min_amount,
             max_amount: settings.max_amount,
         }

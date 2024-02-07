@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use crate::config::{MintConfig, OnchainConfig};
+use crate::config::{BtcOnchainConfig, MintConfig};
 use crate::error::MokshaMintError;
 use axum::extract::{Path, Query, Request, State};
 use axum::http::{HeaderName, HeaderValue, StatusCode};
@@ -72,11 +72,14 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
 
     if let Some(ref onchain) = mint.config.onchain {
         info!("onchain-type: {:?}", onchain.onchain_type);
-        info!("onchain-min-confirmations: {}", onchain.min_confirmations);
-        info!("onchain-min-amount: {}", onchain.min_amount);
-        info!("onchain-max-amount: {}", onchain.max_amount);
+        info!(
+            "btconchain-min-confirmations: {}",
+            onchain.min_confirmations
+        );
+        info!("btconchain-min-amount: {}", onchain.min_amount);
+        info!("btconchain-max-amount: {}", onchain.max_amount);
     } else {
-        info!("onchain-backend is not configured");
+        info!("btconchain-backend is not configured");
     }
 
     let listener = tokio::net::TcpListener::bind(&mint.config.server.host_port)
@@ -114,13 +117,13 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         post_swap,
         get_info,
         get_health,
-        post_mint_quote_onchain,
-        get_mint_quote_onchain,
-        post_mint_onchain,
-        post_melt_quote_onchain,
-        get_melt_quote_onchain,
-        post_melt_onchain,
-        get_melt_onchain
+        post_mint_quote_btconchain,
+        get_mint_quote_btconchain,
+        post_mint_btconchain,
+        post_melt_quote_btconchain,
+        get_melt_quote_btconchain,
+        post_melt_btconchain,
+        get_melt_btconchain
     ),
     components(schemas(
         MintInfoResponse,
@@ -192,13 +195,25 @@ fn app(mint: Mint) -> Router {
 
     let onchain_routes = if mint.onchain.is_some() {
         Router::new()
-            .route("/v1/mint/quote/onchain", post(post_mint_quote_onchain))
-            .route("/v1/mint/quote/onchain/:quote", get(get_mint_quote_onchain))
-            .route("/v1/mint/onchain", post(post_mint_onchain))
-            .route("/v1/melt/quote/onchain", post(post_melt_quote_onchain))
-            .route("/v1/melt/quote/onchain/:quote", get(get_melt_quote_onchain))
-            .route("/v1/melt/onchain", post(post_melt_onchain))
-            .route("/v1/melt/onchain/:txid", get(get_melt_onchain))
+            .route(
+                "/v1/mint/quote/btconchain",
+                post(post_mint_quote_btconchain),
+            )
+            .route(
+                "/v1/mint/quote/btconchain/:quote",
+                get(get_mint_quote_btconchain),
+            )
+            .route("/v1/mint/btconchain", post(post_mint_btconchain))
+            .route(
+                "/v1/melt/quote/btconchain",
+                post(post_melt_quote_btconchain),
+            )
+            .route(
+                "/v1/melt/quote/btconchain/:quote",
+                get(get_melt_quote_btconchain),
+            )
+            .route("/v1/melt/btconchain", post(post_melt_btconchain))
+            .route("/v1/melt/btconchain/:txid", get(get_melt_btconchain))
     } else {
         Router::new()
     };
@@ -707,7 +722,7 @@ async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, Mo
 }
 
 fn get_nuts(cfg: &MintConfig) -> Nuts {
-    let default_config = OnchainConfig::default();
+    let default_config = BtcOnchainConfig::default();
     let config = cfg.onchain.as_ref().unwrap_or(&default_config);
     Nuts {
         nut14: Some(config.to_owned().into()),
@@ -718,13 +733,13 @@ fn get_nuts(cfg: &MintConfig) -> Nuts {
 
 #[utoipa::path(
         post,
-        path = "/v1/mint/quote/onchain",
+        path = "/v1/mint/quote/btconchain",
         request_body = PostMintQuoteOnchainRequest,
         responses(
             (status = 200, description = "post mint quote", body = [PostMintQuoteOnchainResponse])
         ),
     )]
-async fn post_mint_quote_onchain(
+async fn post_mint_quote_btconchain(
     State(mint): State<Mint>,
     Json(request): Json<PostMintQuoteOnchainRequest>,
 ) -> Result<Json<PostMintQuoteOnchainResponse>, MokshaMintError> {
@@ -771,7 +786,7 @@ async fn post_mint_quote_onchain(
 
 #[utoipa::path(
         get,
-        path = "/v1/mint/quote/onchain/{quote_id}",
+        path = "/v1/mint/quote/btconchain/{quote_id}",
         responses(
             (status = 200, description = "get mint quote by id", body = [PostMintQuoteOnchainResponse])
         ),
@@ -779,7 +794,7 @@ async fn post_mint_quote_onchain(
             ("quote_id" = String, Path, description = "quote id"),
         )
     )]
-async fn get_mint_quote_onchain(
+async fn get_mint_quote_btconchain(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
 ) -> Result<Json<PostMintQuoteOnchainResponse>, MokshaMintError> {
@@ -804,19 +819,19 @@ async fn get_mint_quote_onchain(
 
 #[utoipa::path(
         post,
-        path = "/v1/mint/onchain",
+        path = "/v1/mint/btconchain",
         request_body = PostMintOnchainRequest,
         responses(
             (status = 200, description = "post mint", body = [PostMintOnchainResponse])
         ),
     )]
-async fn post_mint_onchain(
+async fn post_mint_btconchain(
     State(mint): State<Mint>,
     Json(request): Json<PostMintOnchainRequest>,
 ) -> Result<Json<PostMintOnchainResponse>, MokshaMintError> {
     let signatures = mint
         .mint_tokens(
-            PaymentMethod::Onchain,
+            PaymentMethod::BtcOnchain,
             request.quote.clone(),
             &request.outputs,
             &mint.keyset,
@@ -839,13 +854,13 @@ async fn post_mint_onchain(
 
 #[utoipa::path(
         post,
-        path = "/v1/melt/quote/onchain",
+        path = "/v1/melt/quote/btconchain",
         request_body = PostMeltQuoteOnchainRequest,
         responses(
             (status = 200, description = "post mint quote", body = [PostMeltQuoteOnchainResponse])
         ),
     )]
-async fn post_melt_quote_onchain(
+async fn post_melt_quote_btconchain(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltQuoteOnchainRequest>,
 ) -> Result<Json<PostMeltQuoteOnchainResponse>, MokshaMintError> {
@@ -907,7 +922,7 @@ async fn post_melt_quote_onchain(
 
 #[utoipa::path(
         get,
-        path = "/v1/melt/quote/onchain/{quote_id}",
+        path = "/v1/melt/quote/btconchain/{quote_id}",
         responses(
             (status = 200, description = "post mint quote", body = [PostMeltQuoteOnchainResponse])
         ),
@@ -915,7 +930,7 @@ async fn post_melt_quote_onchain(
             ("quote_id" = String, Path, description = "quote id"),
         )
     )]
-async fn get_melt_quote_onchain(
+async fn get_melt_quote_btconchain(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
 ) -> Result<Json<PostMeltQuoteOnchainResponse>, MokshaMintError> {
@@ -940,13 +955,13 @@ async fn get_melt_quote_onchain(
 
 #[utoipa::path(
         post,
-        path = "/v1/melt/onchain",
+        path = "/v1/melt/btconchain",
         request_body = PostMeltOnchainRequest,
         responses(
             (status = 200, description = "post melt", body = [PostMeltOnchainResponse])
         ),
     )]
-async fn post_melt_onchain(
+async fn post_melt_btconchain(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltOnchainRequest>,
 ) -> Result<Json<PostMeltOnchainResponse>, MokshaMintError> {
@@ -968,7 +983,7 @@ async fn post_melt_onchain(
 
 #[utoipa::path(
         get,
-        path = "/v1/melt/onchain/{tx_id}",
+        path = "/v1/melt/btconchain/{tx_id}",
         responses(
             (status = 200, description = "is transaction paid", body = [GetMeltOnchainResponse])
         ),
@@ -976,26 +991,11 @@ async fn post_melt_onchain(
             ("tx_id" = String, Path, description = "Bitcoin onchain transaction-id"),
         )
     )]
-async fn get_melt_onchain(
+async fn get_melt_btconchain(
     Path(tx_id): Path<String>,
     State(mint): State<Mint>,
 ) -> Result<Json<GetMeltOnchainResponse>, MokshaMintError> {
     info!("is transaction paid: {}", tx_id);
-
-    // let quote = mint
-    //     .db
-    //     .get_onchain_melt_quote(&Uuid::from_str(tx_id.as_str())?)
-    //     .await?;
-
-    // let paid = is_onchain_paid(&mint, &quote).await?;
-    // if paid {
-    //     mint.db
-    //         .update_onchain_melt_quote(&OnchainMeltQuote {
-    //             paid,
-    //             ..quote.clone()
-    //         })
-    //         .await?;
-    // }
     let paid = mint
         .onchain
         .as_ref()

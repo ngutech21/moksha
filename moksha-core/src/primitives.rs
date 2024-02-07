@@ -149,14 +149,14 @@ impl Display for CurrencyUnit {
 #[serde(rename_all = "lowercase")]
 pub enum PaymentMethod {
     Bolt11,
-    Onchain,
+    BtcOnchain,
 }
 
 impl Display for PaymentMethod {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Bolt11 => write!(f, "Lightning"),
-            Self::Onchain => write!(f, "Onchain"),
+            Self::BtcOnchain => write!(f, "Onchain"),
         }
     }
 }
@@ -526,7 +526,7 @@ impl Default for Nut14 {
     fn default() -> Self {
         Self {
             supported: true,
-            payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            payment_methods: vec![(PaymentMethod::BtcOnchain, CurrencyUnit::Sat)],
             min_amount: 1_000,
             max_amount: 1_000_000,
         }
@@ -546,7 +546,7 @@ impl Default for Nut15 {
     fn default() -> Self {
         Self {
             supported: true,
-            payment_methods: vec![(PaymentMethod::Onchain, CurrencyUnit::Sat)],
+            payment_methods: vec![(PaymentMethod::BtcOnchain, CurrencyUnit::Sat)],
             min_amount: 1_000,
             max_amount: 1_000_000,
         }
