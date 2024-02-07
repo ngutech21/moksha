@@ -1,6 +1,6 @@
 use std::{env, net::SocketAddr, path::PathBuf};
 
-use moksha_core::primitives::{CurrencyUnit, Nut14, Nut15, PaymentMethod};
+use moksha_core::primitives::{CurrencyUnit, Nut14, Nut15, PaymentMethod, PaymentMethodConfig};
 use serde::{Deserialize, Serialize};
 
 use crate::lightning::lnd::LndLightningSettings;
@@ -105,9 +105,12 @@ impl From<BtcOnchainConfig> for Nut14 {
     fn from(settings: BtcOnchainConfig) -> Self {
         Self {
             supported: true,
-            payment_methods: vec![(PaymentMethod::BtcOnchain, CurrencyUnit::Sat)],
-            min_amount: settings.min_amount,
-            max_amount: settings.max_amount,
+            payment_methods: vec![PaymentMethodConfig {
+                payment_method: PaymentMethod::BtcOnchain,
+                unit: CurrencyUnit::Sat,
+                min_amount: settings.min_amount,
+                max_amount: settings.max_amount,
+            }],
         }
     }
 }
@@ -116,9 +119,12 @@ impl From<BtcOnchainConfig> for Nut15 {
     fn from(settings: BtcOnchainConfig) -> Self {
         Self {
             supported: true,
-            payment_methods: vec![(PaymentMethod::BtcOnchain, CurrencyUnit::Sat)],
-            min_amount: settings.min_amount,
-            max_amount: settings.max_amount,
+            payment_methods: vec![PaymentMethodConfig {
+                payment_method: PaymentMethod::BtcOnchain,
+                unit: CurrencyUnit::Sat,
+                min_amount: settings.min_amount,
+                max_amount: settings.max_amount,
+            }],
         }
     }
 }

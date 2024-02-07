@@ -212,18 +212,19 @@ async fn main() -> anyhow::Result<()> {
             let quote = match payment_method {
                 PaymentMethod::BtcOnchain => {
                     let nut14 = info.nuts.nut14.expect("nut14 is None");
-                    if amount < nut14.min_amount {
+                    let payment_method = nut14.payment_methods.first().expect("no payment methods");
+                    if amount < payment_method.min_amount {
                         println!(
                             "Amount too low. Minimum amount is {} (sat)",
-                            nut14.min_amount.to_formatted_string(&Locale::en)
+                            payment_method.min_amount.to_formatted_string(&Locale::en)
                         );
                         return Ok(());
                     }
 
-                    if amount > nut14.max_amount {
+                    if amount > payment_method.max_amount {
                         println!(
                             "Amount too high. Maximum amount is {} (sat)",
-                            nut14.max_amount.to_formatted_string(&Locale::en)
+                            payment_method.max_amount.to_formatted_string(&Locale::en)
                         );
                         return Ok(());
                     }
