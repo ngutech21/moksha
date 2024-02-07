@@ -113,6 +113,16 @@ rustup component add llvm-tools-preview
 cd moksha
 ```
 
+### Install protobuf for your platform
+
+This is needed for the LND backend.
+
+```bash
+sudo apt install protobuf-compiler
+brew install protobuf
+choco install protoc
+```
+
 ### Config
 
 ```bash
