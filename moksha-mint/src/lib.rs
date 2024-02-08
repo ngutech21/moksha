@@ -5,5 +5,6 @@ pub mod lightning;
 pub mod mint;
 pub mod model;
 pub mod onchain;
+mod routes;
 pub mod server;
 pub mod url_serialize;
