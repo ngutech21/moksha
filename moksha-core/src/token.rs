@@ -2,6 +2,8 @@
 //!
 //! The `Token` struct represents a token, with an optional `mint` field for the URL of the Mint and a `proofs` field for the proofs associated with the token.
 
+use std::str::FromStr;
+
 use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::skip_serializing_none;
@@ -135,6 +137,14 @@ impl TryFrom<String> for TokenV3 {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::deserialize(value)
+    }
+}
+
+impl FromStr for TokenV3 {
+    type Err = MokshaCoreError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::deserialize(s)
     }
 }
 
