@@ -64,7 +64,7 @@ run-cli *ARGS:
 # run integrationtests
 run-itests:
     cd integrationtests && \
-    cargo test -- --ignored
+    cargo test
 
 # build the mint docker-image
 build-docker:

@@ -4,6 +4,7 @@ use moksha_core::primitives::{
     PaymentMethod, PostMeltOnchainResponse, PostMintQuoteBolt11Response,
     PostMintQuoteOnchainResponse,
 };
+use moksha_wallet::http::CrossPlatformHttpClient;
 use num_format::{Locale, ToFormattedString};
 use std::io::Write;
 use std::{io::stdout, path::PathBuf};
@@ -72,7 +73,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let localstore = SqliteLocalStore::with_path(db_path.clone()).await?;
-    let client = moksha_wallet::client::reqwest::HttpClient::new();
+    let client = CrossPlatformHttpClient::new();
     let wallet = moksha_wallet::wallet::WalletBuilder::default()
         .with_client(client)
         .with_localstore(localstore)

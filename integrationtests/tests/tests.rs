@@ -1,7 +1,7 @@
-#![allow(unused_imports)]
 use moksha_core::primitives::PaymentMethod;
-use moksha_wallet::client::reqwest::HttpClient;
-use moksha_wallet::client::LegacyClient;
+
+use moksha_wallet::client::CashuClient;
+use moksha_wallet::http::CrossPlatformHttpClient;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::wallet::WalletBuilder;
 use mokshamint::lightning::lnbits::LnbitsLightningSettings;
@@ -18,7 +18,7 @@ use tokio::time::{sleep_until, Instant};
 
 #[test]
 pub fn test_integration() -> anyhow::Result<()> {
-    use mokshamint::config::{DatabaseConfig, LightningFeeConfig, ServerConfig};
+    use mokshamint::config::{DatabaseConfig, ServerConfig};
 
     let docker = clients::Cli::default();
     let node = docker.run(Postgres::default());
@@ -66,14 +66,14 @@ pub fn test_integration() -> anyhow::Result<()> {
     // Wait for the server to start
     std::thread::sleep(std::time::Duration::from_millis(800));
 
-    let client = HttpClient::default();
+    let client = CrossPlatformHttpClient::new();
     let mint_url = Url::parse("http://127.0.0.1:8686")?;
     let rt = Runtime::new()?;
     rt.block_on(async move {
-        let keys = client.get_mint_keys(&mint_url).await;
+        let keys = client.get_keys(&mint_url).await;
         assert!(keys.is_ok());
 
-        let keysets = client.get_mint_keysets(&mint_url).await;
+        let keysets = client.get_keysets(&mint_url).await;
         assert!(keysets.is_ok());
 
         // create wallet

@@ -2,7 +2,7 @@ use std::env::temp_dir;
 
 use moksha_core::token::TokenV3;
 use moksha_wallet::{
-    client::reqwest::HttpClient, localstore::sqlite::SqliteLocalStore, wallet::WalletBuilder,
+    http::CrossPlatformHttpClient, localstore::sqlite::SqliteLocalStore, wallet::WalletBuilder,
 };
 use url::Url;
 
@@ -10,7 +10,7 @@ use url::Url;
 async fn main() -> anyhow::Result<()> {
     let db_path = temp_dir().join("wallet.db").to_str().unwrap().to_string();
     let localstore = SqliteLocalStore::with_path(db_path).await?;
-    let client = HttpClient::new();
+    let client = CrossPlatformHttpClient::new();
     let wallet = WalletBuilder::default()
         .with_client(client)
         .with_localstore(localstore)

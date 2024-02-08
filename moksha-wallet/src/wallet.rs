@@ -16,7 +16,7 @@ use secp256k1::SecretKey;
 use url::Url;
 
 use crate::{
-    client::Client,
+    client::CashuClient,
     error::MokshaWalletError,
     localstore::{LocalStore, WalletKeyset},
 };
@@ -24,7 +24,7 @@ use lightning_invoice::Bolt11Invoice as LNInvoice;
 use std::str::FromStr;
 
 #[derive(Clone)]
-pub struct Wallet<C: Client, L: LocalStore> {
+pub struct Wallet<C: CashuClient, L: LocalStore> {
     client: C,
     keyset_id: V1Keyset,
     keyset: KeyResponse,
@@ -33,13 +33,13 @@ pub struct Wallet<C: Client, L: LocalStore> {
     mint_url: Url,
 }
 
-pub struct WalletBuilder<C: Client, L: LocalStore> {
+pub struct WalletBuilder<C: CashuClient, L: LocalStore> {
     client: Option<C>,
     localstore: Option<L>,
     mint_url: Option<Url>,
 }
 
-impl<C: Client, L: LocalStore> WalletBuilder<C, L> {
+impl<C: CashuClient, L: LocalStore> WalletBuilder<C, L> {
     const fn new() -> Self {
         Self {
             client: None,
@@ -115,13 +115,13 @@ impl<C: Client, L: LocalStore> WalletBuilder<C, L> {
     }
 }
 
-impl<C: Client, L: LocalStore> Default for WalletBuilder<C, L> {
+impl<C: CashuClient, L: LocalStore> Default for WalletBuilder<C, L> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<C: Client, L: LocalStore> Wallet<C, L> {
+impl<C: CashuClient, L: LocalStore> Wallet<C, L> {
     fn new(
         client: C,
         mint_keys: V1Keyset,
@@ -637,7 +637,7 @@ fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, SecretKey)>) -> Vec<Bl
 
 #[cfg(test)]
 mod tests {
-    use crate::client::MockClient;
+    use crate::client::MockCashuClient;
     use crate::localstore::sqlite::SqliteLocalStore;
     use crate::wallet::WalletBuilder;
     use crate::{
@@ -706,7 +706,7 @@ mod tests {
         }
     }
 
-    fn create_mock() -> MockClient {
+    fn create_mock() -> MockCashuClient {
         let keys = MintKeyset::new("mykey", "");
         let key_response = KeyResponse {
             keys: keys.public_keys.clone(),
@@ -716,7 +716,7 @@ mod tests {
         let keys_response = KeysResponse::new(key_response);
         let keysets = V1Keysets::new(keys.keyset_id, CurrencyUnit::Sat, true);
 
-        let mut client = MockClient::default();
+        let mut client = MockCashuClient::default();
         client
             .expect_get_keys()
             .returning(move |_| Ok(keys_response.clone()));

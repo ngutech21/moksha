@@ -1,81 +1,28 @@
-use std::collections::HashMap;
-
 use async_trait::async_trait;
 use moksha_core::{
     blind::BlindedMessage,
-    keyset::{Keysets, V1Keysets},
+    keyset::V1Keysets,
     primitives::{
-        CheckFeesResponse, CurrencyUnit, GetMeltOnchainResponse, KeysResponse, MintInfoResponse,
-        MintLegacyInfoResponse, PaymentRequest, PostMeltBolt11Response, PostMeltOnchainResponse,
-        PostMeltQuoteBolt11Response, PostMeltQuoteOnchainResponse, PostMeltResponse,
-        PostMintBolt11Response, PostMintOnchainResponse, PostMintQuoteBolt11Response,
-        PostMintQuoteOnchainResponse, PostMintResponse, PostSplitResponse, PostSwapResponse,
+        CurrencyUnit, GetMeltOnchainResponse, KeysResponse, MintInfoResponse,
+        PostMeltBolt11Response, PostMeltOnchainResponse, PostMeltQuoteBolt11Response,
+        PostMeltQuoteOnchainResponse, PostMintBolt11Response, PostMintOnchainResponse,
+        PostMintQuoteBolt11Response, PostMintQuoteOnchainResponse, PostSwapResponse,
     },
     proof::Proofs,
 };
-use secp256k1::PublicKey;
+
 use url::Url;
 
 use crate::error::MokshaWalletError;
 
-#[cfg(not(target_arch = "wasm32"))]
-pub mod reqwest;
-
-#[cfg(target_arch = "wasm32")]
-pub mod wasm_client;
-
-#[async_trait(?Send)]
-pub trait LegacyClient {
-    async fn post_split_tokens(
-        &self,
-        mint_url: &Url,
-        proofs: Proofs,
-        output: Vec<BlindedMessage>,
-    ) -> Result<PostSplitResponse, MokshaWalletError>;
-
-    async fn post_mint_payment_request(
-        &self,
-        mint_url: &Url,
-        hash: String,
-        blinded_messages: Vec<BlindedMessage>,
-    ) -> Result<PostMintResponse, MokshaWalletError>;
-
-    async fn post_melt_tokens(
-        &self,
-        mint_url: &Url,
-        proofs: Proofs,
-        pr: String,
-        outputs: Vec<BlindedMessage>,
-    ) -> Result<PostMeltResponse, MokshaWalletError>;
-
-    async fn post_checkfees(
-        &self,
-        mint_url: &Url,
-        pr: String,
-    ) -> Result<CheckFeesResponse, MokshaWalletError>;
-
-    async fn get_mint_keys(
-        &self,
-        mint_url: &Url,
-    ) -> Result<HashMap<u64, PublicKey>, MokshaWalletError>;
-
-    async fn get_mint_keysets(&self, mint_url: &Url) -> Result<Keysets, MokshaWalletError>;
-
-    async fn get_mint_payment_request(
-        &self,
-        mint_url: &Url,
-        amount: u64,
-    ) -> Result<PaymentRequest, MokshaWalletError>;
-
-    async fn get_info(&self, mint_url: &Url) -> Result<MintLegacyInfoResponse, MokshaWalletError>;
-}
+pub mod crossplatform;
 
 #[cfg(test)]
 use mockall::automock;
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
-pub trait Client {
+pub trait CashuClient {
     async fn get_keys(&self, mint_url: &Url) -> Result<KeysResponse, MokshaWalletError>;
 
     async fn get_keys_by_id(
