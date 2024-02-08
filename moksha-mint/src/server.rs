@@ -1,39 +1,39 @@
-use std::str::FromStr;
-
-use crate::config::{BtcOnchainConfig, MintConfig};
 use crate::error::MokshaMintError;
 use crate::routes::btconchain::{
     get_melt_btconchain, get_melt_quote_btconchain, get_mint_quote_btconchain,
     post_melt_btconchain, post_melt_quote_btconchain, post_mint_btconchain,
     post_mint_quote_btconchain,
 };
-use axum::extract::{Path, Request, State};
+use crate::routes::default::{
+    get_info, get_keys, get_keys_by_id, get_keysets, get_melt_quote_bolt11, get_mint_quote_bolt11,
+    post_melt_bolt11, post_melt_quote_bolt11, post_mint_bolt11, post_mint_quote_bolt11, post_swap,
+};
+use axum::extract::{Request, State};
 use axum::http::{HeaderName, HeaderValue, StatusCode};
 use axum::middleware::Next;
 use axum::response::IntoResponse;
 use axum::routing::{get_service, post};
 use axum::{middleware, Router};
 use axum::{routing::get, Json};
-use chrono::{Duration, Utc};
+
 use moksha_core::keyset::{V1Keyset, V1Keysets};
 use moksha_core::proof::Proofs;
 use moksha_core::proof::{P2SHScript, Proof};
 use tracing_subscriber::EnvFilter;
 use utoipa_swagger_ui::SwaggerUi;
-use uuid::Uuid;
 
 use crate::mint::Mint;
 
 use moksha_core::blind::BlindedMessage;
 use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
-    Bolt11MeltQuote, Bolt11MintQuote, CurrencyUnit, GetMeltOnchainResponse, KeyResponse,
-    KeysResponse, MintInfoResponse, MintLegacyInfoResponse, Nut10, Nut11, Nut12, Nut14, Nut15,
-    Nut4, Nut5, Nut6, Nut7, Nut8, Nut9, Nuts, PaymentMethod, PostMeltBolt11Request,
-    PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
-    PostMeltQuoteOnchainRequest, PostMeltQuoteOnchainResponse, PostMintBolt11Request,
-    PostMintBolt11Response, PostMintQuoteBolt11Request, PostMintQuoteBolt11Response,
-    PostMintQuoteOnchainRequest, PostMintQuoteOnchainResponse, PostSwapRequest, PostSwapResponse,
+    CurrencyUnit, GetMeltOnchainResponse, KeyResponse, KeysResponse, MintInfoResponse,
+    MintLegacyInfoResponse, Nut10, Nut11, Nut12, Nut14, Nut15, Nut4, Nut5, Nut6, Nut7, Nut8, Nut9,
+    Nuts, PaymentMethod, PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
+    PostMeltQuoteBolt11Response, PostMeltQuoteOnchainRequest, PostMeltQuoteOnchainResponse,
+    PostMintBolt11Request, PostMintBolt11Response, PostMintQuoteBolt11Request,
+    PostMintQuoteBolt11Response, PostMintQuoteOnchainRequest, PostMintQuoteOnchainResponse,
+    PostSwapRequest, PostSwapResponse,
 };
 
 use tower_http::services::ServeDir;
@@ -109,17 +109,17 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        get_keys,
-        get_keys_by_id,
-        get_keysets,
-        post_mint_bolt11,
-        post_mint_quote_bolt11,
-        get_mint_quote_bolt11,
-        post_melt_bolt11,
-        post_melt_quote_bolt11,
-        get_melt_quote_bolt11,
-        post_swap,
-        get_info,
+        crate::routes::default::get_keys,
+        crate::routes::default::get_keys_by_id,
+        crate::routes::default::get_keysets,
+        crate::routes::default::post_mint_bolt11,
+        crate::routes::default::post_mint_quote_bolt11,
+        crate::routes::default::get_mint_quote_bolt11,
+        crate::routes::default::post_melt_bolt11,
+        crate::routes::default::post_melt_quote_bolt11,
+        crate::routes::default::get_melt_quote_bolt11,
+        crate::routes::default::post_swap,
+        crate::routes::default::get_info,
         get_health,
         crate::routes::btconchain::post_mint_quote_btconchain,
         crate::routes::btconchain::get_mint_quote_btconchain,
@@ -183,7 +183,7 @@ fn app(mint: Mint) -> Router {
         .route("/split", post(post_legacy_split))
         .route("/info", get(get_legacy_info));
 
-    let routes = Router::new()
+    let default_routes = Router::new()
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .route("/v1/keys", get(get_keys))
         .route("/v1/keys/:id", get(get_keys_by_id))
@@ -229,7 +229,7 @@ fn app(mint: Mint) -> Router {
 
     let router = Router::new()
         .nest(&prefix, legacy_routes)
-        .nest(&prefix, routes)
+        .nest(&prefix, default_routes)
         .nest(&prefix, btconchain_routes)
         .nest("", general_routes)
         .with_state(mint)
@@ -320,324 +320,6 @@ async fn get_health() -> impl IntoResponse {
 }
 
 // ######################################################################################################
-
-#[utoipa::path(
-        post,
-        path = "/v1/swap",
-        request_body = PostSwapRequest,
-        responses(
-            (status = 200, description = "post swap", body = [PostSwapResponse])
-        ),
-    )]
-async fn post_swap(
-    State(mint): State<Mint>,
-    Json(swap_request): Json<PostSwapRequest>,
-) -> Result<Json<PostSwapResponse>, MokshaMintError> {
-    let response = mint
-        .swap(&swap_request.inputs, &swap_request.outputs, &mint.keyset)
-        .await?;
-
-    Ok(Json(PostSwapResponse {
-        signatures: response,
-    }))
-}
-
-#[utoipa::path(
-        get,
-        path = "/v1/keys",
-        responses(
-            (status = 200, description = "get keys", body = [KeysResponse])
-        )
-    )]
-async fn get_keys(State(mint): State<Mint>) -> Result<Json<KeysResponse>, MokshaMintError> {
-    Ok(Json(KeysResponse {
-        keysets: vec![KeyResponse {
-            id: mint.keyset.keyset_id.clone(),
-            unit: CurrencyUnit::Sat,
-            keys: mint.keyset.public_keys,
-        }],
-    }))
-}
-
-#[utoipa::path(
-        get,
-        path = "/v1/keys/{id}",
-        responses(
-            (status = 200, description = "get keys by id", body = [KeysResponse])
-        ),
-        params(
-            ("id" = String, Path, description = "keyset id"),
-        )
-    )]
-async fn get_keys_by_id(
-    Path(id): Path<String>,
-    State(mint): State<Mint>,
-) -> Result<Json<KeysResponse>, MokshaMintError> {
-    if id != mint.keyset.keyset_id {
-        return Err(MokshaMintError::KeysetNotFound(id));
-    }
-
-    Ok(Json(KeysResponse {
-        keysets: vec![KeyResponse {
-            id: mint.keyset.keyset_id.clone(),
-            unit: CurrencyUnit::Sat,
-            keys: mint.keyset.public_keys,
-        }],
-    }))
-}
-
-#[utoipa::path(
-        get,
-        path = "/v1/keysets",
-        responses(
-            (status = 200, description = "get keysets", body = [V1Keysets])
-        ),
-    )]
-async fn get_keysets(State(mint): State<Mint>) -> Result<Json<V1Keysets>, MokshaMintError> {
-    Ok(Json(V1Keysets::new(
-        mint.keyset.keyset_id,
-        CurrencyUnit::Sat,
-        true,
-    )))
-}
-
-#[utoipa::path(
-        post,
-        path = "/v1/mint/quote/bolt11",
-        request_body = PostMintQuoteBolt11Request,
-        responses(
-            (status = 200, description = "post mint quote", body = [PostMintQuoteBolt11Response])
-        ),
-    )]
-async fn post_mint_quote_bolt11(
-    State(mint): State<Mint>,
-    Json(request): Json<PostMintQuoteBolt11Request>,
-) -> Result<Json<PostMintQuoteBolt11Response>, MokshaMintError> {
-    // FIXME check currency unit
-    let key = Uuid::new_v4();
-    let (pr, _hash) = mint.create_invoice(key.to_string(), request.amount).await?;
-
-    let quote = Bolt11MintQuote {
-        quote_id: key,
-        payment_request: pr.clone(),
-        expiry: quote_expiry(), // FIXME use timestamp type in DB
-        paid: false,
-    };
-
-    mint.db.add_bolt11_mint_quote(&quote).await?;
-    Ok(Json(quote.into()))
-}
-
-#[utoipa::path(
-        post,
-        path = "/v1/mint/bolt11/{quote_id}",
-        request_body = PostMintBolt11Request,
-        responses(
-            (status = 200, description = "post mint quote", body = [PostMintBolt11Response])
-        ),
-        params(
-            ("quote_id" = String, Path, description = "quote id"),
-        )
-    )]
-async fn post_mint_bolt11(
-    State(mint): State<Mint>,
-    Json(request): Json<PostMintBolt11Request>,
-) -> Result<Json<PostMintBolt11Response>, MokshaMintError> {
-    let signatures = mint
-        .mint_tokens(
-            PaymentMethod::Bolt11,
-            request.quote.clone(),
-            &request.outputs,
-            &mint.keyset,
-        )
-        .await?;
-
-    let old_quote = &mint
-        .db
-        .get_bolt11_mint_quote(&Uuid::from_str(request.quote.as_str())?)
-        .await?;
-
-    mint.db
-        .update_bolt11_mint_quote(&Bolt11MintQuote {
-            paid: true,
-            ..old_quote.clone()
-        })
-        .await?;
-    Ok(Json(PostMintBolt11Response { signatures }))
-}
-
-#[utoipa::path(
-        post,
-        path = "/v1/melt/quote/bolt11",
-        request_body = PostMeltQuoteBolt11Request,
-        responses(
-            (status = 200, description = "post mint quote", body = [PostMeltQuoteBolt11Response])
-        ),
-    )]
-async fn post_melt_quote_bolt11(
-    State(mint): State<Mint>,
-    Json(melt_request): Json<PostMeltQuoteBolt11Request>,
-) -> Result<Json<PostMeltQuoteBolt11Response>, MokshaMintError> {
-    let invoice = mint
-        .lightning
-        .decode_invoice(melt_request.request.clone())
-        .await?;
-    let amount = invoice.amount_milli_satoshis().ok_or_else(|| {
-        crate::error::MokshaMintError::InvalidAmount("invalid invoice".to_owned())
-    })?;
-    let fee_reserve = mint.fee_reserve(amount) / 1_000; // FIXME check if this is correct
-    info!("fee_reserve: {}", fee_reserve);
-
-    let amount_sat = amount / 1_000;
-    let key = Uuid::new_v4();
-    let quote = Bolt11MeltQuote {
-        quote_id: key,
-        amount: amount_sat,
-        fee_reserve,
-        expiry: quote_expiry(),
-        payment_request: melt_request.request.clone(),
-        paid: false,
-    };
-    mint.db.add_bolt11_melt_quote(&quote).await?;
-
-    Ok(Json(quote.into()))
-}
-
-fn quote_expiry() -> u64 {
-    // FIXME add config option for expiry
-    let now = Utc::now() + Duration::minutes(30);
-    now.timestamp() as u64
-}
-
-#[utoipa::path(
-        post,
-        path = "/v1/melt/bolt11",
-        request_body = PostMeltBolt11Request,
-        responses(
-            (status = 200, description = "post melt", body = [PostMeltBolt11Response])
-        ),
-    )]
-async fn post_melt_bolt11(
-    State(mint): State<Mint>,
-    Json(melt_request): Json<PostMeltBolt11Request>,
-) -> Result<Json<PostMeltBolt11Response>, MokshaMintError> {
-    let quote = mint
-        .db
-        .get_bolt11_melt_quote(&Uuid::from_str(melt_request.quote.as_str())?)
-        .await?;
-
-    println!(
-        "post_melt_bolt11 fee_reserve >>>>>>>>>>>>>> : {:#?}",
-        &quote
-    );
-
-    let (paid, payment_preimage, change) = mint
-        .melt_bolt11(
-            quote.payment_request.to_owned(),
-            quote.fee_reserve,
-            &melt_request.inputs,
-            &melt_request.outputs,
-            &mint.keyset,
-        )
-        .await?;
-    mint.db
-        .update_bolt11_melt_quote(&Bolt11MeltQuote { paid, ..quote })
-        .await?;
-
-    Ok(Json(PostMeltBolt11Response {
-        paid,
-        payment_preimage: Some(payment_preimage),
-        change,
-    }))
-}
-
-#[utoipa::path(
-        get,
-        path = "/v1/mint/quote/bolt11/{quote_id}",
-        responses(
-            (status = 200, description = "get mint quote by id", body = [PostMintQuoteBolt11Response])
-        ),
-        params(
-            ("quote_id" = String, Path, description = "quote id"),
-        )
-    )]
-async fn get_mint_quote_bolt11(
-    Path(quote_id): Path<String>,
-    State(mint): State<Mint>,
-) -> Result<Json<PostMintQuoteBolt11Response>, MokshaMintError> {
-    info!("get_quote: {}", quote_id);
-
-    let quote = mint
-        .db
-        .get_bolt11_mint_quote(&Uuid::from_str(quote_id.as_str())?)
-        .await?;
-
-    let paid = mint
-        .lightning
-        .is_invoice_paid(quote.payment_request.clone())
-        .await?;
-
-    Ok(Json(Bolt11MintQuote { paid, ..quote }.into()))
-}
-
-#[utoipa::path(
-        get,
-        path = "/v1/melt/quote/bolt11/{quote_id}",
-        responses(
-            (status = 200, description = "post mint quote", body = [PostMeltQuoteBolt11Response])
-        ),
-        params(
-            ("quote_id" = String, Path, description = "quote id"),
-        )
-    )]
-async fn get_melt_quote_bolt11(
-    Path(quote_id): Path<String>,
-    State(mint): State<Mint>,
-) -> Result<Json<PostMeltQuoteBolt11Response>, MokshaMintError> {
-    info!("get_melt_quote: {}", quote_id);
-    let quote = mint
-        .db
-        .get_bolt11_melt_quote(&Uuid::from_str(quote_id.as_str())?)
-        .await?;
-
-    // FIXME check for paid?
-    Ok(Json(quote.into()))
-}
-
-#[utoipa::path(
-        get,
-        path = "/v1/info",
-        responses(
-            (status = 200, description = "get mint info", body = [MintInfoResponse])
-        )
-    )]
-async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, MokshaMintError> {
-    // TODO implement From-trait
-    let mint_info = MintInfoResponse {
-        nuts: get_nuts(&mint.config),
-        name: mint.config.info.name,
-        pubkey: mint.keyset.mint_pubkey,
-        version: match mint.config.info.version {
-            true => Some(mint.config.build.full_version()),
-            _ => None,
-        },
-        description: mint.config.info.description,
-        description_long: mint.config.info.description_long,
-        contact: mint.config.info.contact,
-        motd: mint.config.info.motd,
-    };
-    Ok(Json(mint_info))
-}
-
-fn get_nuts(cfg: &MintConfig) -> Nuts {
-    let default_config = BtcOnchainConfig::default();
-    let config = cfg.onchain.as_ref().unwrap_or(&default_config);
-    Nuts {
-        nut14: Some(config.to_owned().into()),
-        nut15: Some(config.to_owned().into()),
-        ..Nuts::default()
-    }
-}
 
 #[cfg(test)]
 mod tests {
