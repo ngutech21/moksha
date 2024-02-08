@@ -18,13 +18,18 @@ use url::Url;
 use crate::{
     client::CashuClient,
     error::MokshaWalletError,
+    http::CrossPlatformHttpClient,
     localstore::{LocalStore, WalletKeyset},
 };
 use lightning_invoice::Bolt11Invoice as LNInvoice;
 use std::str::FromStr;
 
 #[derive(Clone)]
-pub struct Wallet<C: CashuClient, L: LocalStore> {
+pub struct Wallet<L, C>
+where
+    L: LocalStore,
+    C: CashuClient,
+{
     client: C,
     keyset_id: V1Keyset,
     keyset: KeyResponse,
@@ -33,16 +38,24 @@ pub struct Wallet<C: CashuClient, L: LocalStore> {
     mint_url: Url,
 }
 
-pub struct WalletBuilder<C: CashuClient, L: LocalStore> {
+pub struct WalletBuilder<L, C: CashuClient = CrossPlatformHttpClient>
+where
+    L: LocalStore,
+    C: CashuClient + Default,
+{
     client: Option<C>,
     localstore: Option<L>,
     mint_url: Option<Url>,
 }
 
-impl<C: CashuClient, L: LocalStore> WalletBuilder<C, L> {
-    const fn new() -> Self {
+impl<L, C> WalletBuilder<L, C>
+where
+    L: LocalStore,
+    C: CashuClient + Default,
+{
+    fn new() -> Self {
         Self {
-            client: None,
+            client: Some(C::default()),
             localstore: None,
             mint_url: None,
         }
@@ -63,8 +76,8 @@ impl<C: CashuClient, L: LocalStore> WalletBuilder<C, L> {
         self
     }
 
-    pub async fn build(self) -> Result<Wallet<C, L>, MokshaWalletError> {
-        let client = self.client.expect("client is required");
+    pub async fn build(self) -> Result<Wallet<L, C>, MokshaWalletError> {
+        let client = self.client.unwrap_or_default();
         let localstore = self.localstore.expect("localstore is required");
         let mint_url = self.mint_url.expect("mint_url is required");
 
@@ -115,13 +128,17 @@ impl<C: CashuClient, L: LocalStore> WalletBuilder<C, L> {
     }
 }
 
-impl<C: CashuClient, L: LocalStore> Default for WalletBuilder<C, L> {
+impl<L, C> Default for WalletBuilder<L, C>
+where
+    C: CashuClient + Default,
+    L: LocalStore,
+{
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<C: CashuClient, L: LocalStore> Wallet<C, L> {
+impl<L: LocalStore, C: CashuClient> Wallet<L, C> {
     fn new(
         client: C,
         mint_keys: V1Keyset,

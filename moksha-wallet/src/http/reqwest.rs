@@ -82,9 +82,3 @@ impl CrossPlatformHttpClient {
         Ok(resp.status().as_u16())
     }
 }
-
-impl Default for CrossPlatformHttpClient {
-    fn default() -> Self {
-        Self::new()
-    }
-}
