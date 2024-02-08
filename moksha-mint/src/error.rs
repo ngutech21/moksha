@@ -5,7 +5,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use fedimint_tonic_lnd::ConnectError;
+use fedimint_tonic_lnd::{tonic::Status, ConnectError};
 
 use lightning_invoice::ParseOrSemanticError;
 use moksha_core::primitives::CurrencyUnit;
@@ -76,6 +76,9 @@ pub enum MokshaMintError {
 
     #[error("Not Enough tokens: {0}")]
     NotEnoughTokens(String),
+
+    #[error("BtcOnchain error: {0}")]
+    BtcOnchain(#[from] Status),
 }
 
 impl IntoResponse for MokshaMintError {

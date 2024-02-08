@@ -97,8 +97,7 @@ impl Onchain for LndOnchain {
             .await
             .expect("failed to lock wallet")
             .list_unspent(request)
-            .await
-            .expect("failed to get response");
+            .await?;
 
         Ok(response
             .get_ref()
@@ -124,8 +123,7 @@ impl Onchain for LndOnchain {
             .await
             .expect("failed to lock wallet")
             .list_unspent(request)
-            .await
-            .expect("failed to get response");
+            .await?;
 
         Ok(response.get_ref().utxos.iter().any(|utxo| {
             utxo.address == address
@@ -140,11 +138,7 @@ impl Onchain for LndOnchain {
             r#type: AddressType::WitnessPubkeyHash as i32,
             ..Default::default()
         });
-        Ok(response
-            .await
-            .expect("failed to create address")
-            .into_inner()
-            .address)
+        Ok(response.await?.into_inner().address)
     }
 
     async fn send_coins(
@@ -163,8 +157,7 @@ impl Onchain for LndOnchain {
                 sat_per_vbyte: sat_per_vbyte as u64,
                 ..Default::default()
             })
-            .await
-            .expect("failed to send coins");
+            .await?;
 
         Ok(SendCoinsResult {
             txid: response.into_inner().txid,
@@ -187,8 +180,7 @@ impl Onchain for LndOnchain {
                 target_conf: 1,
                 ..Default::default()
             })
-            .await
-            .expect("failed to estimate fee")
+            .await?
             .into_inner();
 
         Ok(EstimateFeeResult {
