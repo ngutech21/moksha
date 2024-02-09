@@ -10,6 +10,7 @@ use moksha_core::{
 };
 
 use crate::{
+    btconchain::{lnd::LndBtcOnchain, BtcOnchain},
     config::{
         BtcOnchainConfig, BtcOnchainType, BuildConfig, DatabaseConfig, LightningFeeConfig,
         MintConfig, MintInfoConfig, ServerConfig,
@@ -21,7 +22,6 @@ use crate::{
         Lightning, LightningType,
     },
     model::Invoice,
-    onchain::{LndOnchain, Onchain},
 };
 
 use crate::lightning::cln::ClnLightning;
@@ -35,7 +35,7 @@ pub struct Mint {
     pub keyset: MintKeyset,
     pub db: Arc<dyn Database + Send + Sync>,
     pub dhke: Dhke,
-    pub onchain: Option<Arc<dyn Onchain + Send + Sync>>,
+    pub onchain: Option<Arc<dyn BtcOnchain + Send + Sync>>,
     pub config: MintConfig,
 }
 
@@ -47,7 +47,7 @@ impl Mint {
         lightning_type: LightningType,
         db: Arc<dyn Database + Send + Sync>,
         config: MintConfig,
-        onchain: Option<Arc<dyn Onchain + Send + Sync>>,
+        onchain: Option<Arc<dyn BtcOnchain + Send + Sync>>,
     ) -> Self {
         Self {
             lightning,
@@ -341,12 +341,12 @@ impl MintBuilder {
 
         let onchain_config = BtcOnchainConfig::from_env();
 
-        let lnd_onchain: Option<Arc<dyn Onchain + Send + Sync>> = match onchain_config.clone() {
+        let lnd_onchain: Option<Arc<dyn BtcOnchain + Send + Sync>> = match onchain_config.clone() {
             Some(BtcOnchainConfig {
                 onchain_type: BtcOnchainType::Lnd(cfg),
                 ..
             }) => Some(Arc::new(
-                LndOnchain::new(
+                LndBtcOnchain::new(
                     cfg.grpc_host.expect("LND_GRPC_HOST not found"),
                     &cfg.tls_cert_path.expect("LND_TLS_CERT_PATH not found"),
                     &cfg.macaroon_path.expect("LND_MACAROON_PATH not found"),
@@ -378,11 +378,11 @@ impl MintBuilder {
 
 #[cfg(test)]
 mod tests {
+    use crate::btconchain::MockBtcOnchain;
     use crate::lightning::error::LightningError;
     use crate::lightning::{LightningType, MockLightning};
     use crate::mint::Mint;
     use crate::model::{Invoice, PayInvoiceResult};
-    use crate::onchain::MockOnchain;
     use crate::{database::MockDatabase, error::MokshaMintError};
     use moksha_core::blind::{BlindedMessage, TotalAmount};
     use moksha_core::dhke;
@@ -536,7 +536,7 @@ mod tests {
             LightningType::Lnbits(Default::default()),
             Arc::new(create_mock_db_get_used_proofs()),
             Default::default(),
-            Some(Arc::new(MockOnchain::default())),
+            Some(Arc::new(MockBtcOnchain::default())),
         );
 
         let tokens = create_token_from_fixture("token_60.cashu".to_string())?;
@@ -588,7 +588,6 @@ mod tests {
             None => Arc::new(MockLightning::new()),
         };
 
-        //let lightning = Arc::new(MockLightning::new());
         Mint::new(
             "TEST_PRIVATE_KEY".to_string(),
             "0/0/0/0".to_string(),
@@ -596,7 +595,7 @@ mod tests {
             LightningType::Lnbits(Default::default()),
             db,
             Default::default(),
-            Some(Arc::new(MockOnchain::default())),
+            Some(Arc::new(MockBtcOnchain::default())),
         )
     }
 
@@ -610,9 +609,7 @@ mod tests {
     }
 
     fn create_mock_mint() -> MockDatabase {
-        //use lightning_invoice::Invoice as LNInvoice;
         let mut mock_db = MockDatabase::new();
-        //let invoice = LNInvoice::from_str("lnbcrt1u1pjgamjepp5cr2dzhcuy9tjwl7u45kxa9h02khvsd2a7f2x9yjxgst8trduld4sdqqcqzzsxqyz5vqsp5kaclwkq79ylef295qj7x6c9kvhaq6272ge4tgz7stlzv46csrzks9qyyssq9szxlvhh0uen2jmh07hp242nj5529wje3x5e434kepjzeqaq5hnsje8rzrl97s0j8cxxt3kgz5gfswrrchr45u8fq3twz2jjc029klqpd6jmgv").expect("invalid invoice");
         let invoice = Invoice{
             amount: 100,
             payment_request: "lnbcrt1u1pjgamjepp5cr2dzhcuy9tjwl7u45kxa9h02khvsd2a7f2x9yjxgst8trduld4sdqqcqzzsxqyz5vqsp5kaclwkq79ylef295qj7x6c9kvhaq6272ge4tgz7stlzv46csrzks9qyyssq9szxlvhh0uen2jmh07hp242nj5529wje3x5e434kepjzeqaq5hnsje8rzrl97s0j8cxxt3kgz5gfswrrchr45u8fq3twz2jjc029klqpd6jmgv".to_string(),            

@@ -1,60 +1,18 @@
-use std::{collections::HashMap, path::PathBuf, sync::Arc};
-
+use super::{BtcOnchain, EstimateFeeResult, SendCoinsResult};
+use crate::error::MokshaMintError;
 use async_trait::async_trait;
 use fedimint_tonic_lnd::{
     lnrpc::{AddressType, EstimateFeeRequest, NewAddressRequest, SendCoinsRequest},
     walletrpc::ListUnspentRequest,
     Client,
 };
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 use url::Url;
 
-use crate::error::MokshaMintError;
+pub struct LndBtcOnchain(Arc<Mutex<Client>>);
 
-#[cfg(test)]
-use mockall::automock;
-
-#[cfg_attr(test, automock)]
-#[async_trait]
-pub trait Onchain: Send + Sync {
-    async fn new_address(&self) -> Result<String, MokshaMintError>;
-    async fn send_coins(
-        &self,
-        address: &str,
-        amount: u64,
-        sat_per_vbyte: u32,
-    ) -> Result<SendCoinsResult, MokshaMintError>;
-
-    async fn estimate_fee(
-        &self,
-        address: &str,
-        amount: u64,
-    ) -> Result<EstimateFeeResult, MokshaMintError>;
-
-    async fn is_paid(
-        &self,
-        address: &str,
-        amount: u64,
-        min_confirmations: u8,
-    ) -> Result<bool, MokshaMintError>;
-
-    async fn is_transaction_paid(&self, txid: &str) -> Result<bool, MokshaMintError>;
-}
-
-#[derive(Debug, Clone)]
-pub struct EstimateFeeResult {
-    pub fee_in_sat: u64,
-    pub sat_per_vbyte: u32,
-}
-
-#[derive(Debug, Clone)]
-pub struct SendCoinsResult {
-    pub txid: String,
-}
-
-pub struct LndOnchain(Arc<Mutex<Client>>);
-
-impl LndOnchain {
+impl LndBtcOnchain {
     pub async fn new(
         address: Url,
         cert_file: &PathBuf,
@@ -84,7 +42,7 @@ impl LndOnchain {
 }
 
 #[async_trait]
-impl Onchain for LndOnchain {
+impl BtcOnchain for LndBtcOnchain {
     async fn is_transaction_paid(&self, txid: &str) -> Result<bool, MokshaMintError> {
         let request = ListUnspentRequest {
             min_confs: 0,
@@ -134,11 +92,15 @@ impl Onchain for LndOnchain {
 
     async fn new_address(&self) -> Result<String, MokshaMintError> {
         let mut client = self.client_lock().await.expect("failed to lock client");
-        let response = client.new_address(NewAddressRequest {
-            r#type: AddressType::WitnessPubkeyHash as i32,
-            ..Default::default()
-        });
-        Ok(response.await?.into_inner().address)
+        let response = client
+            .new_address(NewAddressRequest {
+                r#type: AddressType::WitnessPubkeyHash as i32,
+                ..Default::default()
+            })
+            .await?
+            .into_inner();
+
+        Ok(response.address)
     }
 
     async fn send_coins(
@@ -157,10 +119,11 @@ impl Onchain for LndOnchain {
                 sat_per_vbyte: sat_per_vbyte as u64,
                 ..Default::default()
             })
-            .await?;
+            .await?
+            .into_inner();
 
         Ok(SendCoinsResult {
-            txid: response.into_inner().txid,
+            txid: response.txid,
         })
     }
 

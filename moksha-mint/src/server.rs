@@ -325,7 +325,7 @@ async fn get_health() -> impl IntoResponse {
 mod tests {
     use std::{collections::HashMap, sync::Arc};
 
-    use crate::{config::MintConfig, onchain::MockOnchain, server::app};
+    use crate::{btconchain::MockBtcOnchain, config::MintConfig, server::app};
     use axum::{
         body::Body,
         http::{Request, StatusCode},
@@ -415,7 +415,7 @@ mod tests {
                 info,
                 ..Default::default()
             },
-            Some(Arc::new(MockOnchain::default())),
+            Some(Arc::new(MockBtcOnchain::default())),
         )
     }
 
