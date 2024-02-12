@@ -351,7 +351,7 @@ impl MintBuilder {
         let lnd_onchain: Option<Arc<dyn BtcOnchain + Send + Sync>> =
             match self.btc_onchain_config.clone() {
                 Some(BtcOnchainConfig {
-                    onchain_type: BtcOnchainType::Lnd(cfg),
+                    onchain_type: Some(BtcOnchainType::Lnd(cfg)),
                     ..
                 }) => Some(Arc::new(
                     LndBtcOnchain::new(

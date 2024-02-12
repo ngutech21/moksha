@@ -90,14 +90,18 @@ impl MintConfig {
             LightningTypeVariant::Cln => LightningType::Cln(ClnLightningSettings::parse()),
         };
 
-        // let btc_onchain = match opts.btconchain_backend {
-        //     Some(BtcOnchainTypeVariant::Lnd) => {
-        //         Some(BtcOnchainType::Lnd(LndLightningSettings::parse()))
-        //     }
-        //     None => None,
-        // };
+        let btc_onchain: Option<BtcOnchainConfig> = match opts.btconchain_backend {
+            Some(BtcOnchainTypeVariant::Lnd) => {
+                let cfg = BtcOnchainConfig::parse();
+                Some(BtcOnchainConfig {
+                    onchain_type: Some(BtcOnchainType::Lnd(LndLightningSettings::parse())),
+                    ..cfg
+                })
+            }
+            None => None,
+        };
 
-        (opts, lightning, None).into()
+        (opts, lightning, btc_onchain).into()
     }
 }
 
@@ -123,25 +127,25 @@ impl MintConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Parser)]
 pub struct BtcOnchainConfig {
-    // #[clap(flatten)]
-    pub onchain_type: BtcOnchainType,
+    #[clap(skip)]
+    pub onchain_type: Option<BtcOnchainType>,
 
-    //#[clap(long, env = "MINT_BTC_ONCHAIN_BACKEND_MIN_CONFIRMATIONS")]
+    #[clap(long, default = 1, env = "MINT_BTC_ONCHAIN_BACKEND_MIN_CONFIRMATIONS")]
     pub min_confirmations: u8,
 
-    //#[clap(long, env = "MINT_BTC_ONCHAIN_BACKEND_MIN_AMOUNT")]
+    #[clap(long, env = "MINT_BTC_ONCHAIN_BACKEND_MIN_AMOUNT")]
     pub min_amount: u64,
 
-    //#[clap(long, env = "MINT_BTC_ONCHAIN_BACKEND_MAX_AMOUNT")]
+    #[clap(long, env = "MINT_BTC_ONCHAIN_BACKEND_MAX_AMOUNT")]
     pub max_amount: u64,
 }
 
 impl Default for BtcOnchainConfig {
     fn default() -> Self {
         Self {
-            onchain_type: BtcOnchainType::Lnd(LndLightningSettings::default()),
+            onchain_type: None,
             min_confirmations: 1,
             min_amount: 1_000,
             max_amount: 1_000_000,
