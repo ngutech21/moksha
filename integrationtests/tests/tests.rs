@@ -38,21 +38,21 @@ pub fn test_integration() -> anyhow::Result<()> {
         rt.block_on(async {
             let mint = Mint::builder()
                 .with_private_key("my_private_key".to_string())
-                .with_server(ServerConfig {
+                .with_server(Some(ServerConfig {
                     host_port: "127.0.0.1:8686".parse().expect("invalid address"),
                     ..Default::default()
-                })
+                }))
                 .with_db(DatabaseConfig {
-                    url: Some(format!(
+                    db_url: format!(
                         "postgres://postgres:postgres@localhost:{}/moksha-mint",
                         host_port
-                    )),
+                    ),
                 })
                 .with_lightning(LightningType::Lnbits(LnbitsLightningSettings::new(
                     "my_admin_key",
                     "http://127.0.0.1:6100",
                 )))
-                .with_fee((0.0, 0).into())
+                .with_fee(Some((0.0, 0).into()))
                 .build();
 
             let result = mokshamint::server::run_server(

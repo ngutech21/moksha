@@ -1,6 +1,7 @@
 use std::fmt::{self, Formatter};
 
 use async_trait::async_trait;
+use clap::Parser;
 use hyper::{header::CONTENT_TYPE, http::HeaderValue};
 use lightning_invoice::SignedRawBolt11Invoice;
 use serde::{Deserialize, Serialize};
@@ -14,8 +15,9 @@ use crate::{
 };
 use lightning_invoice::Bolt11Invoice as LNInvoice;
 
-#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default, Parser)]
 pub struct StrikeLightningSettings {
+    #[clap(long, env = "MINT_STRIKE_API_KEY")]
     pub api_key: Option<String>,
 }
 

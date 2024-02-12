@@ -17,6 +17,7 @@ name = "mokshamint"
 path = "src/lib.rs"
 
 [dependencies]
+clap = { version = "4.5.0", features = ["env", "derive"] }
 hex = "0.4.3"
 async-trait = "0.1.74"
 anyhow = { version = "1.0.75", features = ["backtrace"] }
@@ -46,6 +47,7 @@ chrono = "0.4.31"
 cln-grpc = "0.1.7"
 bitcoin_hashes = "0.13.0"
 tonic = { version = "0.8", features = ["transport", "tls"] }
+serde_yaml = "0.9.31"
 
 [dev-dependencies]
 tempfile = "3.8.1"

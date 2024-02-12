@@ -4,6 +4,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use lightning_invoice::Bolt11Invoice as LNInvoice;
+use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
 pub mod alby;
@@ -23,7 +24,8 @@ use self::{
     strike::StrikeLightningSettings,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
 pub enum LightningType {
     Lnbits(LnbitsLightningSettings),
     Alby(AlbyLightningSettings),

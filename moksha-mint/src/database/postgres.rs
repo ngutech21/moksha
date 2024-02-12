@@ -23,7 +23,7 @@ impl PostgresDB {
         Ok(Self {
             pool: PgPoolOptions::new()
                 .max_connections(5) // FIXME make max connections configurable
-                .connect(config.url.as_ref().expect("Database-url not set"))
+                .connect(config.db_url.as_str())
                 .await?,
         })
     }

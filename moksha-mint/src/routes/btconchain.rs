@@ -27,7 +27,7 @@ pub async fn post_mint_quote_btconchain(
     State(mint): State<Mint>,
     Json(request): Json<PostMintQuoteOnchainRequest>,
 ) -> Result<Json<PostMintQuoteOnchainResponse>, MokshaMintError> {
-    let onchain_config = mint.config.onchain.unwrap_or_default();
+    let onchain_config = mint.config.btconchain_backend.unwrap_or_default();
 
     if request.unit != CurrencyUnit::Sat {
         return Err(MokshaMintError::CurrencyNotSupported(request.unit));
@@ -89,7 +89,11 @@ pub async fn get_mint_quote_btconchain(
         .get_onchain_mint_quote(&Uuid::from_str(quote_id.as_str())?)
         .await?;
 
-    let min_confs = mint.config.onchain.unwrap_or_default().min_confirmations;
+    let min_confs = mint
+        .config
+        .btconchain_backend
+        .unwrap_or_default()
+        .min_confirmations;
 
     let paid = mint
         .onchain
@@ -154,7 +158,7 @@ pub async fn post_melt_quote_btconchain(
         unit,
     } = melt_request;
 
-    let onchain_config = mint.config.onchain.unwrap_or_default();
+    let onchain_config = mint.config.btconchain_backend.unwrap_or_default();
 
     if unit != CurrencyUnit::Sat {
         return Err(MokshaMintError::CurrencyNotSupported(unit));
@@ -293,7 +297,7 @@ pub async fn get_melt_btconchain(
 async fn is_onchain_paid(mint: &Mint, quote: &OnchainMeltQuote) -> Result<bool, MokshaMintError> {
     let min_confs = mint
         .config
-        .onchain
+        .btconchain_backend
         .clone()
         .unwrap_or_default()
         .min_confirmations;

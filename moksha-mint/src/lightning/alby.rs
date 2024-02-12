@@ -1,6 +1,7 @@
 use std::fmt::{self, Formatter};
 
 use async_trait::async_trait;
+use clap::Parser;
 use hyper::{header::CONTENT_TYPE, http::HeaderValue};
 use serde::{Deserialize, Serialize};
 use tracing::info;
@@ -13,8 +14,9 @@ use crate::{
 
 use super::{error::LightningError, Lightning};
 
-#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default, Parser)]
 pub struct AlbyLightningSettings {
+    #[clap(long, env = "MINT_ALBY_API_KEY")]
     pub api_key: Option<String>,
 }
 

@@ -315,17 +315,26 @@ pub async fn get_melt_quote_bolt11(
     )]
 pub async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, MokshaMintError> {
     // TODO implement From-trait
+
+    let contact = mint
+        .config
+        .clone()
+        .info
+        .contact
+        .map(|contact| vec![vec![contact]]);
+    // FIXME
+
     let mint_info = MintInfoResponse {
         nuts: get_nuts(&mint.config),
         name: mint.config.info.name,
         pubkey: mint.keyset.mint_pubkey,
         version: match mint.config.info.version {
-            true => Some(mint.config.build.full_version()),
+            true => Some(mint.build_params.full_version()),
             _ => None,
         },
         description: mint.config.info.description,
         description_long: mint.config.info.description_long,
-        contact: mint.config.info.contact,
+        contact,
         motd: mint.config.info.motd,
     };
     Ok(Json(mint_info))
@@ -333,7 +342,7 @@ pub async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>
 
 fn get_nuts(cfg: &MintConfig) -> Nuts {
     let default_config = BtcOnchainConfig::default();
-    let config = cfg.onchain.as_ref().unwrap_or(&default_config);
+    let config = cfg.btconchain_backend.as_ref().unwrap_or(&default_config);
     Nuts {
         nut14: Some(config.to_owned().into()),
         nut15: Some(config.to_owned().into()),

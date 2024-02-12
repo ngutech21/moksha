@@ -1,11 +1,4 @@
-use mokshamint::{
-    config::{DatabaseConfig, LightningFeeConfig, MintInfoConfig, ServerConfig},
-    lightning::{
-        alby::AlbyLightningSettings, cln::ClnLightningSettings, lnbits::LnbitsLightningSettings,
-        lnd::LndLightningSettings, strike::StrikeLightningSettings, LightningType,
-    },
-    mint::MintBuilder,
-};
+use mokshamint::{config::MintConfig, mint::MintBuilder};
 use std::{env, fmt};
 
 #[tokio::main]
@@ -24,60 +17,24 @@ pub async fn main() -> anyhow::Result<()> {
         };
     }
 
-    // TODO move to config module
-    let ln_backend = get_env("MINT_LIGHTNING_BACKEND");
-    // FIXME don't match on string
-    let ln_type = match ln_backend.as_str() {
-        "Lnbits" => {
-            let lnbits_settings = envy::prefixed("LNBITS_")
-                .from_env::<LnbitsLightningSettings>()
-                .expect("Please provide lnbits info");
-            LightningType::Lnbits(lnbits_settings)
-        }
-        "Lnd" => {
-            let lnd_settings = envy::prefixed("LND_")
-                .from_env::<LndLightningSettings>()
-                .expect("Please provide lnd info");
-            LightningType::Lnd(lnd_settings)
-        }
-        "Alby" => {
-            let alby_settings = envy::prefixed("ALBY_")
-                .from_env::<AlbyLightningSettings>()
-                .expect("Please provide alby info");
-            LightningType::Alby(alby_settings)
-        }
-        "Strike" => {
-            let strike_settings = envy::prefixed("STRIKE_")
-                .from_env::<StrikeLightningSettings>()
-                .expect("Please provide strike info");
-            LightningType::Strike(strike_settings)
-        },
-        "Cln" => {
-            let settings = envy::prefixed("CLN_")
-                .from_env::<ClnLightningSettings>()
-                .expect("Please provide cln info");
-            LightningType::Cln(settings)
-        }
-        _ => panic!(
-            "env MINT_LIGHTNING_BACKEND not found or invalid values. Valid values are Lnbits, Lnd,Cln, Alby, and Strike"
-        ),
-    };
-
-    let mint_info_settings = envy::prefixed("MINT_INFO_")
-        .from_env::<MintInfoConfig>()
-        .expect("Please provide mint info");
-
-    let fee_config = LightningFeeConfig::from_env();
-    let server_config = ServerConfig::from_env();
-    let db_config = DatabaseConfig::from_env();
+    let MintConfig {
+        privatekey,
+        info,
+        lightning_fee,
+        server,
+        database,
+        btconchain_backend,
+        lightning_backend,
+    } = MintConfig::read_config_with_defaults();
 
     let mint = MintBuilder::new()
-        .with_mint_info(mint_info_settings)
-        .with_server(server_config)
-        .with_private_key(get_env("MINT_PRIVATE_KEY"))
-        .with_db(db_config)
-        .with_lightning(ln_type)
-        .with_fee(fee_config)
+        .with_mint_info(Some(info))
+        .with_server(Some(server))
+        .with_private_key(privatekey)
+        .with_db(database)
+        .with_lightning(lightning_backend.expect("lightning not set"))
+        .with_btc_onchain(btconchain_backend)
+        .with_fee(Some(lightning_fee))
         .build()
         .await;
 
@@ -97,8 +54,4 @@ impl fmt::Display for AppEnv {
             Self::Prod => write!(f, "prod"),
         }
     }
-}
-
-fn get_env(key: &str) -> String {
-    env::var(key).unwrap_or_else(|_| panic!("{} not found", key))
 }
