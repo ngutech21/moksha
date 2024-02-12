@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use clap::Parser;
 use cln_grpc::pb::{amount_or_any, Amount, AmountOrAny};
 use cln_grpc::pb::{listinvoices_invoices::ListinvoicesInvoicesStatus, node_client::NodeClient};
 use serde::{Deserialize, Serialize};
@@ -17,11 +18,15 @@ use secp256k1::rand;
 use std::fs::read;
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 
-#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default, Parser)]
 pub struct ClnLightningSettings {
+    #[clap(long, env = "MINT_LND_GRPC_HOST")]
     pub grpc_host: Option<String>,
+    #[clap(long, env = "MINT_LND_CLIENT_CERT")]
     pub client_cert: Option<PathBuf>,
+    #[clap(long, env = "MINT_LND_CLIENT_CERT")]
     pub client_key: Option<PathBuf>,
+    #[clap(long, env = "MINT_LND_CA_CERT")]
     pub ca_cert: Option<PathBuf>,
 }
 

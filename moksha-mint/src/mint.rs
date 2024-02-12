@@ -12,7 +12,7 @@ use moksha_core::{
 use crate::{
     btconchain::{lnd::LndBtcOnchain, BtcOnchain},
     config::{
-        BtcOnchainConfig, BtcOnchainType, BuildConfig, DatabaseConfig, LightningFeeConfig,
+        BtcOnchainConfig, BtcOnchainType, BuildParams, DatabaseConfig, LightningFeeConfig,
         MintConfig, MintInfoConfig, ServerConfig,
     },
     database::Database,
@@ -37,6 +37,7 @@ pub struct Mint {
     pub dhke: Dhke,
     pub onchain: Option<Arc<dyn BtcOnchain + Send + Sync>>,
     pub config: MintConfig,
+    pub build_params: BuildParams,
 }
 
 impl Mint {
@@ -47,6 +48,7 @@ impl Mint {
         lightning_type: LightningType,
         db: Arc<dyn Database + Send + Sync>,
         config: MintConfig,
+        build_params: BuildParams,
         onchain: Option<Arc<dyn BtcOnchain + Send + Sync>>,
     ) -> Self {
         Self {
@@ -58,6 +60,7 @@ impl Mint {
             dhke: Dhke::new(),
             config,
             onchain,
+            build_params,
         }
     }
 
@@ -261,6 +264,7 @@ pub struct MintBuilder {
     fee_config: Option<LightningFeeConfig>,
     mint_info_settings: Option<MintInfoConfig>,
     server_config: Option<ServerConfig>,
+    btc_onchain_config: Option<BtcOnchainConfig>,
 }
 
 impl MintBuilder {
@@ -268,13 +272,13 @@ impl MintBuilder {
         Self::default()
     }
 
-    pub fn with_mint_info(mut self, mint_info: MintInfoConfig) -> Self {
-        self.mint_info_settings = Some(mint_info);
+    pub fn with_mint_info(mut self, mint_info: Option<MintInfoConfig>) -> Self {
+        self.mint_info_settings = mint_info;
         self
     }
 
-    pub fn with_server(mut self, server_config: ServerConfig) -> Self {
-        self.server_config = Some(server_config);
+    pub fn with_server(mut self, server_config: Option<ServerConfig>) -> Self {
+        self.server_config = server_config;
         self
     }
 
@@ -293,8 +297,13 @@ impl MintBuilder {
         self
     }
 
-    pub const fn with_fee(mut self, fee_config: LightningFeeConfig) -> Self {
-        self.fee_config = Some(fee_config);
+    pub const fn with_fee(mut self, fee_config: Option<LightningFeeConfig>) -> Self {
+        self.fee_config = fee_config;
+        self
+    }
+
+    pub fn with_btc_onchain(mut self, btc_onchain_config: Option<BtcOnchainConfig>) -> Self {
+        self.btc_onchain_config = btc_onchain_config;
         self
     }
 
@@ -339,38 +348,41 @@ impl MintBuilder {
         let db = Arc::new(crate::database::postgres::PostgresDB::new(&db_config).await?);
         db.migrate().await;
 
-        let onchain_config = BtcOnchainConfig::from_env();
-
-        let lnd_onchain: Option<Arc<dyn BtcOnchain + Send + Sync>> = match onchain_config.clone() {
-            Some(BtcOnchainConfig {
-                onchain_type: BtcOnchainType::Lnd(cfg),
-                ..
-            }) => Some(Arc::new(
-                LndBtcOnchain::new(
-                    cfg.grpc_host.expect("LND_GRPC_HOST not found"),
-                    &cfg.tls_cert_path.expect("LND_TLS_CERT_PATH not found"),
-                    &cfg.macaroon_path.expect("LND_MACAROON_PATH not found"),
-                )
-                .await?,
-            )),
-            _ => None,
-        };
+        let lnd_onchain: Option<Arc<dyn BtcOnchain + Send + Sync>> =
+            match self.btc_onchain_config.clone() {
+                Some(BtcOnchainConfig {
+                    onchain_type: BtcOnchainType::Lnd(cfg),
+                    ..
+                }) => Some(Arc::new(
+                    LndBtcOnchain::new(
+                        cfg.grpc_host.expect("LND_GRPC_HOST not found"),
+                        &cfg.tls_cert_path.expect("LND_TLS_CERT_PATH not found"),
+                        &cfg.macaroon_path.expect("LND_MACAROON_PATH not found"),
+                    )
+                    .await?,
+                )),
+                _ => None,
+            };
 
         Ok(Mint::new(
-            self.private_key.expect("MINT_PRIVATE_KEY not set"),
+            self.private_key.clone().expect("MINT_PRIVATE_KEY not set"),
             "".to_string(),
             ln,
-            self.lightning_type.expect("Lightning backend not set"),
+            self.lightning_type
+                .clone()
+                .expect("Lightning backend not set"),
             db,
             // FIXME simplify config creation
             MintConfig::new(
+                self.private_key.expect("private-key not set"),
                 self.mint_info_settings.unwrap_or_default(),
-                BuildConfig::from_env(),
                 self.fee_config.expect("fee-config not set"),
                 self.server_config.unwrap_or_default(),
                 db_config,
-                onchain_config,
+                self.btc_onchain_config,
+                self.lightning_type,
             ),
+            BuildParams::from_env(),
             lnd_onchain,
         ))
     }
@@ -536,6 +548,7 @@ mod tests {
             LightningType::Lnbits(Default::default()),
             Arc::new(create_mock_db_get_used_proofs()),
             Default::default(),
+            Default::default(),
             Some(Arc::new(MockBtcOnchain::default())),
         );
 
@@ -594,6 +607,7 @@ mod tests {
             lightning,
             LightningType::Lnbits(Default::default()),
             db,
+            Default::default(),
             Default::default(),
             Some(Arc::new(MockBtcOnchain::default())),
         )

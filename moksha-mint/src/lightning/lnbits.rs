@@ -1,6 +1,7 @@
 use std::fmt::{self, Formatter};
 
 use async_trait::async_trait;
+use clap::Parser;
 use hyper::{header::CONTENT_TYPE, http::HeaderValue};
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -12,9 +13,11 @@ use crate::{
 
 use super::{error::LightningError, Lightning};
 
-#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default, Parser)]
 pub struct LnbitsLightningSettings {
+    #[clap(long, env = "MINT_LNBITS_ADMIN_KEY")]
     pub admin_key: Option<String>,
+    #[clap(long, env = "MINT_LNBITS_URL")]
     pub url: Option<String>, // FIXME use Url type instead
 }
 

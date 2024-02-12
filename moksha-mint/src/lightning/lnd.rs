@@ -10,6 +10,7 @@ use crate::{
     url_serialize::{deserialize_url, serialize_url},
 };
 use async_trait::async_trait;
+use clap::Parser;
 use fedimint_tonic_lnd::Client;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
@@ -17,11 +18,16 @@ use url::Url;
 
 use super::Lightning;
 
-#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, Default, Parser)]
 pub struct LndLightningSettings {
+    #[clap(long, env = "MINT_LND_GRPC_HOST")]
     #[serde(serialize_with = "serialize_url", deserialize_with = "deserialize_url")]
     pub grpc_host: Option<Url>,
+
+    #[clap(long, env = "MINT_LND_TLS_CERT_PATH")]
     pub tls_cert_path: Option<PathBuf>,
+
+    #[clap(long, env = "MINT_LND_MACAROON_PATH")]
     pub macaroon_path: Option<PathBuf>,
 }
 impl fmt::Display for LndLightningSettings {

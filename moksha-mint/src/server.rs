@@ -60,10 +60,10 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         .with(EnvFilter::from_default_env())
         .init();
 
-    if let Some(ref buildtime) = mint.config.build.build_time {
+    if let Some(ref buildtime) = mint.build_params.build_time {
         info!("build time: {}", buildtime);
     }
-    if let Some(ref commithash) = mint.config.build.commit_hash {
+    if let Some(ref commithash) = mint.build_params.commit_hash {
         info!("git commit-hash: {}", commithash);
     }
     if let Some(ref serve_wallet_path) = mint.config.server.serve_wallet_path {
@@ -74,7 +74,7 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
     info!("lightning fee-reserve: {:?}", mint.config.lightning_fee);
     info!("lightning-backend: {}", mint.lightning_type);
 
-    if let Some(ref onchain) = mint.config.onchain {
+    if let Some(ref onchain) = mint.config.btconchain_backend {
         info!("onchain-type: {:?}", onchain.onchain_type);
         info!(
             "btconchain-min-confirmations: {}",
@@ -285,12 +285,12 @@ async fn get_legacy_info(
         name: mint.config.info.name,
         pubkey: mint.keyset_legacy.mint_pubkey,
         version: match mint.config.info.version {
-            true => Some(mint.config.build.full_version()),
+            true => Some(mint.build_params.full_version()),
             _ => None,
         },
         description: mint.config.info.description,
         description_long: mint.config.info.description_long,
-        contact: mint.config.info.contact,
+        contact: None, // FIXME set contact
         nuts: vec![
             "NUT-00".to_string(),
             "NUT-01".to_string(),
@@ -415,6 +415,7 @@ mod tests {
                 info,
                 ..Default::default()
             },
+            Default::default(),
             Some(Arc::new(MockBtcOnchain::default())),
         )
     }

@@ -34,6 +34,7 @@ impl CrossPlatformHttpClient {
 
     pub async fn get_status(&self, url: &Url) -> Result<u16, MokshaWalletError> {
         let resp = Request::get(url.as_str()).send().await?;
+
         Ok(resp.status())
     }
 
