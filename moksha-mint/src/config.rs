@@ -10,6 +10,7 @@ use crate::lightning::{
 };
 
 #[derive(Parser, Debug)]
+#[command(arg_required_else_help(true))]
 pub struct Opts {
     #[clap(long, env = "MINT_PRIVATE_KEY")]
     pub privatekey: String,
@@ -210,7 +211,7 @@ pub struct DatabaseConfig {
 
 #[derive(Debug, Clone, Parser)]
 pub struct ServerConfig {
-    #[clap(long, env = "MINT_HOST_PORT")]
+    #[clap(long, default_value = "[::]:3338", env = "MINT_HOST_PORT")]
     pub host_port: SocketAddr,
     #[clap(long, env = "MINT_SERVE_WALLET_PATH")]
     pub serve_wallet_path: Option<PathBuf>,
@@ -229,11 +230,10 @@ impl Default for ServerConfig {
 }
 #[derive(Deserialize, Serialize, Debug, Clone, Default, Parser)]
 pub struct MintInfoConfig {
-    #[clap(long, env = "MINT_INFO_NAME")]
+    #[clap(long, default_value = "moksha-mint", env = "MINT_INFO_NAME")]
     pub name: Option<String>,
 
-    #[clap(long, env = "MINT_INFO_VERSION")]
-    #[serde(default = "default_version")]
+    #[clap(long, default_value_t = true, env = "MINT_INFO_VERSION")]
     pub version: bool,
 
     #[clap(long, env = "MINT_INFO_DESCRIPTION")]
@@ -249,10 +249,6 @@ pub struct MintInfoConfig {
     #[clap(long, env = "MINT_INFO_MOTD")]
     pub motd: Option<String>,
     // FIXME add missing fields for v1/info endpoint nut4/nut5 payment_methods, nut4 disabled flag
-}
-
-const fn default_version() -> bool {
-    true
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
@@ -284,9 +280,9 @@ impl BuildParams {
 
 #[derive(Debug, Clone, Parser)]
 pub struct LightningFeeConfig {
-    #[clap(long, env = "MINT_LIGHTNING_FEE_PERCENT")]
+    #[clap(long, default_value_t = 1.0, env = "MINT_LIGHTNING_FEE_PERCENT")]
     pub fee_percent: f32,
-    #[clap(long, env = "MINT_LIGHTNING_FEE_RESERVE_MIN")]
+    #[clap(long, default_value_t = 4_000, env = "MINT_LIGHTNING_FEE_RESERVE_MIN")]
     pub fee_reserve_min: u64,
     // TODO check if fee_percent is in range
 }
@@ -298,18 +294,6 @@ impl LightningFeeConfig {
             fee_reserve_min,
         }
     }
-
-    // pub fn from_env() -> Self {
-    //     let fee_config_default = Self::default();
-
-    //     Self {
-    //         fee_percent: env_or_default("LIGHTNING_FEE_PERCENT", fee_config_default.fee_percent),
-    //         fee_reserve_min: env_or_default(
-    //             "LIGHTNING_RESERVE_FEE_MIN",
-    //             fee_config_default.fee_reserve_min,
-    //         ),
-    //     }
-    // }
 }
 
 impl From<(f32, u64)> for LightningFeeConfig {
@@ -320,13 +304,6 @@ impl From<(f32, u64)> for LightningFeeConfig {
         }
     }
 }
-
-// fn env_or_default<T: std::str::FromStr>(key: &str, default: T) -> T {
-//     env::var(key)
-//         .ok()
-//         .and_then(|v| v.parse().ok())
-//         .unwrap_or(default)
-// }
 
 impl Default for LightningFeeConfig {
     fn default() -> Self {
