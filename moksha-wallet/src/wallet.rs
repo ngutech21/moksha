@@ -138,7 +138,11 @@ where
     }
 }
 
-impl<L: LocalStore, C: CashuClient> Wallet<L, C> {
+impl<L, C> Wallet<L, C>
+where
+    C: CashuClient + Default,
+    L: LocalStore,
+{
     fn new(
         client: C,
         mint_keys: V1Keyset,
@@ -154,6 +158,10 @@ impl<L: LocalStore, C: CashuClient> Wallet<L, C> {
             localstore,
             mint_url,
         }
+    }
+
+    pub fn builder() -> WalletBuilder<L, C> {
+        WalletBuilder::default()
     }
 
     pub async fn create_quote_bolt11(
