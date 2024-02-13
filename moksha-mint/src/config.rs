@@ -336,27 +336,3 @@ impl Default for LightningFeeConfig {
         }
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_config() {
-        dotenvy::dotenv().ok();
-
-        // env::set_var("MINT_LIGHTNING_BACKEND_TYPE", "Lnd");
-        // env::set_var("MINT_LIGHTNING_BACKEND_MACAROON_PATH","/Users/steffen/.polar/networks/1/volumes/lnd/alice/data/chain/bitcoin/regtest/admin.macaroon");
-        // env::set_var(
-        //     "MINT_LIGHTNING_BACKEND_TLS_CERT_PATH",
-        //     "/Users/steffen/.polar/networks/1/volumes/lnd/alice/tls.cert",
-        // );
-        // env::set_var(
-        //     "MINT_LIGHTNING_BACKEND_GRPC_HOST",
-        //     "https://localhost:10001",
-        // );
-
-        let config = MintConfig::read_config_with_defaults();
-        println!("{:?}", config);
-    }
-}
