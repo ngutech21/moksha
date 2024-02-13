@@ -4,7 +4,6 @@ use async_trait::async_trait;
 use clap::Parser;
 use hyper::{header::CONTENT_TYPE, http::HeaderValue};
 use serde::{Deserialize, Serialize};
-use tracing::info;
 use url::Url;
 
 use crate::{
@@ -191,14 +190,12 @@ impl AlbyClient {
                 .as_str()
                 .expect("payment_hash is empty")
                 .to_owned(),
-            total_fees: 0, // FIXME return fees for alby
+            total_fees: 0, // FIXME alby does not return fees at the moment
         })
     }
 
     pub async fn is_invoice_paid(&self, payment_hash: &str) -> Result<bool, LightningError> {
-        info!("KODY checking if invoice is paid: {}", payment_hash);
         let body = self.make_get(&format!("invoices/{payment_hash}")).await?;
-        info!("KODY body: {}", body);
         Ok(serde_json::from_str::<serde_json::Value>(&body)?["settled"]
             .as_bool()
             .unwrap_or(false))
