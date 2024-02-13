@@ -42,8 +42,6 @@ pub struct Mint {
 
 impl Mint {
     pub fn new(
-        secret: String,
-        derivation_path: String,
         lightning: Arc<dyn Lightning + Send + Sync>,
         lightning_type: LightningType,
         db: Arc<dyn Database + Send + Sync>,
@@ -54,8 +52,15 @@ impl Mint {
         Self {
             lightning,
             lightning_type,
-            keyset_legacy: MintKeyset::legacy_new(&secret, &derivation_path),
-            keyset: MintKeyset::new(&secret, &derivation_path),
+            keyset_legacy: MintKeyset::legacy_new(
+                // FIXME
+                &config.privatekey.clone(),
+                &config.derivation_path.clone().unwrap_or_default(),
+            ),
+            keyset: MintKeyset::new(
+                &config.privatekey.clone(),
+                &config.derivation_path.clone().unwrap_or_default(),
+            ),
             db,
             dhke: Dhke::new(),
             config,
@@ -259,6 +264,7 @@ impl Mint {
 #[derive(Debug, Default)]
 pub struct MintBuilder {
     private_key: Option<String>,
+    derivation_path: Option<String>,
     lightning_type: Option<LightningType>,
     db_config: Option<DatabaseConfig>,
     fee_config: Option<LightningFeeConfig>,
@@ -284,6 +290,11 @@ impl MintBuilder {
 
     pub fn with_private_key(mut self, private_key: String) -> Self {
         self.private_key = Some(private_key);
+        self
+    }
+
+    pub fn with_derivation_path(mut self, derivation_path: Option<String>) -> Self {
+        self.derivation_path = derivation_path;
         self
     }
 
@@ -365,8 +376,6 @@ impl MintBuilder {
             };
 
         Ok(Mint::new(
-            self.private_key.clone().expect("MINT_PRIVATE_KEY not set"),
-            "".to_string(),
             ln,
             self.lightning_type
                 .clone()
@@ -375,6 +384,7 @@ impl MintBuilder {
             // FIXME simplify config creation
             MintConfig::new(
                 self.private_key.expect("private-key not set"),
+                self.derivation_path,
                 self.mint_info_settings.unwrap_or_default(),
                 self.fee_config.expect("fee-config not set"),
                 self.server_config.unwrap_or_default(),
@@ -391,6 +401,7 @@ impl MintBuilder {
 #[cfg(test)]
 mod tests {
     use crate::btconchain::MockBtcOnchain;
+    use crate::config::MintConfig;
     use crate::lightning::error::LightningError;
     use crate::lightning::{LightningType, MockLightning};
     use crate::mint::Mint;
@@ -542,8 +553,8 @@ mod tests {
         });
 
         let mint = Mint::new(
-            "TEST_PRIVATE_KEY".to_string(),
-            "0/0/0/0".to_string(),
+            // "TEST_PRIVATE_KEY".to_string(),
+            // "0/0/0/0".to_string(),
             Arc::new(lightning),
             LightningType::Lnbits(Default::default()),
             Arc::new(create_mock_db_get_used_proofs()),
@@ -602,12 +613,14 @@ mod tests {
         };
 
         Mint::new(
-            "TEST_PRIVATE_KEY".to_string(),
-            "0/0/0/0".to_string(),
             lightning,
             LightningType::Lnbits(Default::default()),
             db,
-            Default::default(),
+            MintConfig {
+                privatekey: "TEST_PRIVATE_KEY".to_string(),
+                derivation_path: Some("0/0/0/0".to_string()),
+                ..Default::default()
+            },
             Default::default(),
             Some(Arc::new(MockBtcOnchain::default())),
         )

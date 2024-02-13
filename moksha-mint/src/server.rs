@@ -406,13 +406,12 @@ mod tests {
         let lightning = Arc::new(MockLightning::new());
 
         Mint::new(
-            "mytestsecret".to_string(),
-            "".to_string(),
             lightning,
             LightningType::Lnbits(Default::default()),
             db,
             MintConfig {
                 info,
+                privatekey: "mytestsecret".to_string(),
                 ..Default::default()
             },
             Default::default(),

@@ -14,6 +14,8 @@ use crate::lightning::{
 pub struct Opts {
     #[clap(long, env = "MINT_PRIVATE_KEY")]
     pub privatekey: String,
+    #[clap(long, env = "MINT_DERIVATION_PATH")]
+    pub derivation_path: Option<String>,
     #[clap(flatten)]
     pub info: MintInfoConfig,
     #[clap(flatten)]
@@ -57,6 +59,7 @@ impl FromStr for LightningTypeVariant {
 #[derive(Debug, Clone, Default)]
 pub struct MintConfig {
     pub privatekey: String,
+    pub derivation_path: Option<String>,
     pub info: MintInfoConfig,
     pub lightning_fee: LightningFeeConfig,
     pub server: ServerConfig,
@@ -69,6 +72,7 @@ impl From<(Opts, LightningType, Option<BtcOnchainConfig>)> for MintConfig {
     fn from((opts, ln, btc): (Opts, LightningType, Option<BtcOnchainConfig>)) -> Self {
         Self {
             privatekey: opts.privatekey,
+            derivation_path: opts.derivation_path,
             info: opts.info,
             lightning_fee: opts.lightning_fee,
             server: opts.server,
@@ -109,6 +113,7 @@ impl MintConfig {
 impl MintConfig {
     pub const fn new(
         private_key: String,
+        derivation_path: Option<String>,
         info: MintInfoConfig,
         lightning_fee: LightningFeeConfig,
         server: ServerConfig,
@@ -118,6 +123,7 @@ impl MintConfig {
     ) -> Self {
         Self {
             privatekey: private_key,
+            derivation_path,
             info,
             lightning_fee,
             server,

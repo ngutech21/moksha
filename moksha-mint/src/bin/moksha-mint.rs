@@ -19,6 +19,7 @@ pub async fn main() -> anyhow::Result<()> {
 
     let MintConfig {
         privatekey,
+        derivation_path,
         info,
         lightning_fee,
         server,
@@ -31,6 +32,7 @@ pub async fn main() -> anyhow::Result<()> {
         .with_mint_info(Some(info))
         .with_server(Some(server))
         .with_private_key(privatekey)
+        .with_derivation_path(derivation_path)
         .with_db(database)
         .with_lightning(lightning_backend.expect("lightning not set"))
         .with_btc_onchain(btconchain_backend)
