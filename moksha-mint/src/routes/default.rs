@@ -320,8 +320,8 @@ pub async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>
         .config
         .clone()
         .info
-        .contact
-        .map(|contact| vec![vec![contact]]);
+        .contact_email
+        .map(|contact| vec![vec!["email".to_owned(), contact]]);
     // FIXME
 
     let mint_info = MintInfoResponse {

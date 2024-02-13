@@ -242,9 +242,8 @@ pub struct MintInfoConfig {
     #[clap(long, env = "MINT_INFO_DESCRIPTION_LONG")]
     pub description_long: Option<String>,
 
-    #[clap(long, env = "MINT_INFO_CONTACT")]
-    //pub contact: Option<Vec<Vec<String>>>,
-    pub contact: Option<String>, // FIXME change to Vec<Vec<String>>
+    #[clap(long, env = "MINT_INFO_CONTACT_EMAIL")]
+    pub contact_email: Option<String>,
 
     #[clap(long, env = "MINT_INFO_MOTD")]
     pub motd: Option<String>,
