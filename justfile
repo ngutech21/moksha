@@ -53,8 +53,8 @@ run-coverage:
 
 
 # run the cashu-mint
-run-mint:
-  RUST_BACKTRACE=1 MINT_APP_ENV=dev cargo run --bin moksha-mint
+run-mint *ARGS:
+  RUST_BACKTRACE=1 MINT_APP_ENV=dev cargo run --bin moksha-mint -- {{ARGS}}
 
 # run cli-wallet with the given args
 run-cli *ARGS:
