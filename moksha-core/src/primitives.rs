@@ -340,6 +340,7 @@ pub struct PostMeltQuoteOnchainRequest {
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMeltQuoteOnchainResponse {
     pub quote: String,
+    pub description: String,
     pub amount: u64,
     pub fee: u64,
     pub paid: bool,
@@ -358,9 +359,10 @@ pub struct PostMeltOnchainResponse {
     pub txid: String,
 }
 
-impl From<OnchainMeltQuote> for PostMeltQuoteOnchainResponse {
-    fn from(quote: OnchainMeltQuote) -> Self {
+impl From<(String, OnchainMeltQuote)> for PostMeltQuoteOnchainResponse {
+    fn from((description, quote): (String, OnchainMeltQuote)) -> Self {
         Self {
+            description,
             quote: quote.quote_id.to_string(),
             amount: quote.amount,
             fee: quote.fee_total,

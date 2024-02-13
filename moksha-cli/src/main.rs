@@ -143,7 +143,14 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            let quote = wallet.pay_onchain_quote(address.clone(), amount).await?;
+            let quotes = wallet.pay_onchain_quote(address.clone(), amount).await?;
+
+            if quotes.is_empty() {
+                println!("Error: No quotes found");
+                return Ok(());
+            }
+
+            let quote = quotes.first().expect("No quotes found");
 
             println!(
                 "Create onchain transaction to melt tokens: amount {} + fee {} = {} (sat)\n\n{}",
@@ -161,7 +168,7 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            let PostMeltOnchainResponse { paid, txid } = wallet.pay_onchain(&quote).await?;
+            let PostMeltOnchainResponse { paid, txid } = wallet.pay_onchain(quote).await?;
             println!("Created transaction: {}\n", &txid);
 
             let mut lock = stdout().lock();
@@ -256,6 +263,8 @@ async fn main() -> anyhow::Result<()> {
                 if !wallet.is_quote_paid(&payment_method, quote.clone()).await? {
                     continue;
                 }
+
+                // FIXME store quote in db and add option to retry minting later
 
                 let mint_result = wallet
                     .mint_tokens(&payment_method, amount.into(), quote.clone())

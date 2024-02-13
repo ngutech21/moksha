@@ -341,7 +341,7 @@ where
         &self,
         address: String,
         amount: u64,
-    ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError> {
+    ) -> Result<Vec<PostMeltQuoteOnchainResponse>, MokshaWalletError> {
         self.client
             .post_melt_quote_onchain(&self.mint_url, address, amount, CurrencyUnit::Sat)
             .await

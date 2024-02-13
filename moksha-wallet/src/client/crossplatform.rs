@@ -185,7 +185,7 @@ impl CashuClient for CrossPlatformHttpClient {
         address: String,
         amount: u64,
         unit: CurrencyUnit,
-    ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError> {
+    ) -> Result<Vec<PostMeltQuoteOnchainResponse>, MokshaWalletError> {
         let body = PostMeltQuoteOnchainRequest {
             address,
             amount,

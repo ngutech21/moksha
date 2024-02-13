@@ -8,7 +8,7 @@ use moksha_core::primitives::{
     PostMeltQuoteOnchainResponse, PostMintOnchainRequest, PostMintOnchainResponse,
     PostMintQuoteOnchainRequest, PostMintQuoteOnchainResponse,
 };
-use tracing::info;
+use tracing::{info, instrument};
 use uuid::Uuid;
 
 use crate::{error::MokshaMintError, mint::Mint};
@@ -23,6 +23,7 @@ use std::str::FromStr;
             (status = 200, description = "post mint quote", body = [PostMintQuoteOnchainResponse])
         ),
     )]
+#[instrument(skip(mint))]
 pub async fn post_mint_quote_btconchain(
     State(mint): State<Mint>,
     Json(request): Json<PostMintQuoteOnchainRequest>,
@@ -78,6 +79,7 @@ pub async fn post_mint_quote_btconchain(
             ("quote_id" = String, Path, description = "quote id"),
         )
     )]
+#[instrument(skip(mint))]
 pub async fn get_mint_quote_btconchain(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
@@ -113,6 +115,7 @@ pub async fn get_mint_quote_btconchain(
             (status = 200, description = "post mint", body = [PostMintOnchainResponse])
         ),
     )]
+#[instrument(skip(mint))]
 pub async fn post_mint_btconchain(
     State(mint): State<Mint>,
     Json(request): Json<PostMintOnchainRequest>,
@@ -145,13 +148,14 @@ pub async fn post_mint_btconchain(
         path = "/v1/melt/quote/btconchain",
         request_body = PostMeltQuoteOnchainRequest,
         responses(
-            (status = 200, description = "post mint quote", body = [PostMeltQuoteOnchainResponse])
+            (status = 200, description = "post mint quote", body = [Vec<PostMeltQuoteOnchainResponse>])
         ),
     )]
+#[instrument(skip(mint))]
 pub async fn post_melt_quote_btconchain(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltQuoteOnchainRequest>,
-) -> Result<Json<PostMeltQuoteOnchainResponse>, MokshaMintError> {
+) -> Result<Json<Vec<PostMeltQuoteOnchainResponse>>, MokshaMintError> {
     let PostMeltQuoteOnchainRequest {
         address,
         amount,
@@ -185,19 +189,10 @@ pub async fn post_melt_quote_btconchain(
         .estimate_fee(&address, amount)
         .await?;
 
-    info!(
-        "post_melt_quote_onchain fee_reserve >>>>>>>>>>>>>> : {:#?}",
-        &fee_response
-    );
+    info!("post_melt_quote_onchain fee_reserve: {:#?}", &fee_response);
 
-    println!(
-        "post_melt_quote_onchain fee_reserve >>>>>>>>>>>>>> : {:#?}",
-        &fee_response
-    );
-
-    let key = Uuid::new_v4();
     let quote = OnchainMeltQuote {
-        quote_id: key,
+        quote_id: Uuid::new_v4(),
         address,
         amount,
         fee_total: fee_response.fee_in_sat,
@@ -205,7 +200,10 @@ pub async fn post_melt_quote_btconchain(
         expiry: quote_onchain_expiry(),
         paid: false,
     };
-    Ok(Json(quote.into()))
+
+    mint.db.add_onchain_melt_quote(&quote).await?;
+
+    Ok(Json(vec![("1 sat per vbyte".to_owned(), quote).into()])) // FIXME return correct comment
 }
 
 #[utoipa::path(
@@ -218,6 +216,7 @@ pub async fn post_melt_quote_btconchain(
             ("quote_id" = String, Path, description = "quote id"),
         )
     )]
+#[instrument(skip(mint))]
 pub async fn get_melt_quote_btconchain(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
@@ -238,7 +237,13 @@ pub async fn get_melt_quote_btconchain(
             .await?;
     }
 
-    Ok(Json(OnchainMeltQuote { paid, ..quote }.into()))
+    Ok(Json(
+        (
+            "1 sat per vbyte".to_owned(), // FIXME return correct comment
+            OnchainMeltQuote { paid, ..quote },
+        )
+            .into(),
+    ))
 }
 
 #[utoipa::path(
@@ -249,6 +254,7 @@ pub async fn get_melt_quote_btconchain(
             (status = 200, description = "post melt", body = [PostMeltOnchainResponse])
         ),
     )]
+#[instrument(skip(mint))]
 pub async fn post_melt_btconchain(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltOnchainRequest>,
@@ -259,7 +265,6 @@ pub async fn post_melt_btconchain(
         .await?;
 
     let txid = mint.melt_onchain(&quote, &melt_request.inputs).await?;
-
     let paid = is_onchain_paid(&mint, &quote).await?;
 
     mint.db
@@ -279,6 +284,7 @@ pub async fn post_melt_btconchain(
             ("tx_id" = String, Path, description = "Bitcoin onchain transaction-id"),
         )
     )]
+#[instrument(skip(mint))]
 pub async fn get_melt_btconchain(
     Path(tx_id): Path<String>,
     State(mint): State<Mint>,

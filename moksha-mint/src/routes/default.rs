@@ -228,10 +228,7 @@ pub async fn post_melt_bolt11(
         .get_bolt11_melt_quote(&Uuid::from_str(melt_request.quote.as_str())?)
         .await?;
 
-    println!(
-        "post_melt_bolt11 fee_reserve >>>>>>>>>>>>>> : {:#?}",
-        &quote
-    );
+    info!("post_melt_bolt11 fee_reserve: {:#?}", &quote);
 
     let (paid, payment_preimage, change) = mint
         .melt_bolt11(

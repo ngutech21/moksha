@@ -118,7 +118,7 @@ pub trait CashuClient {
         address: String,
         amount: u64,
         unit: CurrencyUnit,
-    ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError>;
+    ) -> Result<Vec<PostMeltQuoteOnchainResponse>, MokshaWalletError>;
 
     async fn get_melt_quote_onchain(
         &self,

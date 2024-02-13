@@ -47,6 +47,9 @@ pub enum MokshaMintError {
     #[error("Lightning invoice not paid yet.")]
     InvoiceNotPaidYet,
 
+    #[error("BTC-Onchain not paid yet.")]
+    BtcOnchainNotPaidYet,
+
     #[error("Proof already used {0}")]
     ProofAlreadyUsed(String),
 
