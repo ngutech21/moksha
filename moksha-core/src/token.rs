@@ -107,7 +107,7 @@ impl TokenV3 {
     }
 
     pub fn deserialize(data: impl Into<String>) -> Result<Self, MokshaCoreError> {
-        let json = general_purpose::URL_SAFE.decode(
+        let json = general_purpose::URL_SAFE_NO_PAD.decode(
             data.into()
                 .strip_prefix(TOKEN_PREFIX_V3)
                 .ok_or(MokshaCoreError::InvalidTokenPrefix)?
@@ -282,6 +282,15 @@ mod tests {
         let input = read_fixture("token_nut_example.cashu")?;
         let tokens = TokenV3::deserialize(input)?;
         assert_eq!(tokens.memo, Some("Thank you.".to_string()),);
+        assert_eq!(tokens.tokens.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn test_tokens_deserialize_no_pad() -> anyhow::Result<()> {
+        let input = read_fixture("token_no_pad60.cashu")?;
+        let tokens = TokenV3::deserialize(input)?;
+        assert_eq!(tokens.memo, None);
         assert_eq!(tokens.tokens.len(), 1);
         Ok(())
     }
