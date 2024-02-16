@@ -173,7 +173,7 @@ pub struct PostMintQuoteBolt11Response {
     #[serde(rename = "request")]
     pub payment_request: String,
     pub paid: bool,
-    pub expiry: u64,
+    pub expiry: Option<u64>,
 }
 
 impl From<Bolt11MintQuote> for PostMintQuoteBolt11Response {
@@ -182,7 +182,7 @@ impl From<Bolt11MintQuote> for PostMintQuoteBolt11Response {
             quote: quote.quote_id.to_string(),
             payment_request: quote.payment_request,
             paid: quote.paid,
-            expiry: quote.expiry,
+            expiry: Some(quote.expiry),
         }
     }
 }
@@ -211,7 +211,7 @@ pub struct PostMeltQuoteBolt11Response {
     pub amount: u64,
     pub fee_reserve: u64,
     pub paid: bool,
-    pub expiry: u64,
+    pub expiry: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -238,7 +238,7 @@ impl From<Bolt11MeltQuote> for PostMeltQuoteBolt11Response {
             quote: quote.quote_id.to_string(),
             amount: quote.amount,
             fee_reserve: quote.fee_reserve,
-            expiry: quote.expiry,
+            expiry: Some(quote.expiry),
             paid: quote.paid,
         }
     }
@@ -379,21 +379,6 @@ pub struct GetMeltOnchainResponse {
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
 pub struct Nuts {
-    // /// Cryptography and Models
-    // #[serde(rename = "0")]
-    // pub nut0: bool,
-
-    // /// Mint public keys
-    // #[serde(rename = "1")]
-    // pub nut1: bool,
-
-    // /// Keysets and keyset IDs
-    // #[serde(rename = "2")]
-    // pub nut2: bool,
-
-    // /// Swapping tokens
-    // #[serde(rename = "3")]
-    // pub nut3: bool,
     /// Minting tokens
     #[serde(rename = "4")]
     pub nut4: Nut4,
