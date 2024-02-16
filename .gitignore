@@ -1,6 +1,7 @@
 tmp
 target
 .env
+.idea
 data
 .DS_Store
 *.profraw
