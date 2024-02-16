@@ -107,12 +107,16 @@ impl TokenV3 {
     }
 
     pub fn deserialize(data: impl Into<String>) -> Result<Self, MokshaCoreError> {
-        let json = general_purpose::URL_SAFE_NO_PAD.decode(
-            data.into()
-                .strip_prefix(TOKEN_PREFIX_V3)
-                .ok_or(MokshaCoreError::InvalidTokenPrefix)?
-                .as_bytes(),
-        )?;
+        let data = data.into();
+        let token = data
+            .strip_prefix(TOKEN_PREFIX_V3)
+            .ok_or(MokshaCoreError::InvalidTokenPrefix)?;
+
+        let json = general_purpose::URL_SAFE_NO_PAD
+            .decode(token.as_bytes())
+            .or_else(|_| general_purpose::URL_SAFE.decode(token.as_bytes()))
+            .map_err(|_| MokshaCoreError::InvalidToken)?;
+
         Ok(serde_json::from_slice::<Self>(&json)?)
     }
 
@@ -292,6 +296,22 @@ mod tests {
         let tokens = TokenV3::deserialize(input)?;
         assert_eq!(tokens.memo, None);
         assert_eq!(tokens.tokens.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn test_tokens_deserialize_with_padding() -> anyhow::Result<()> {
+        let input = read_fixture("token_60.cashu")?;
+        let tokens = TokenV3::deserialize(input)?;
+        assert_eq!(tokens.tokens.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn test_tokens_deserialize_invalid() -> anyhow::Result<()> {
+        let input = read_fixture("token_invalid.cashu")?;
+        let tokens = TokenV3::deserialize(input);
+        assert!(tokens.is_err());
         Ok(())
     }
 }

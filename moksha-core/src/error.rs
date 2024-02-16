@@ -25,4 +25,7 @@ pub enum MokshaCoreError {
 
     #[error("Not enough tokens")]
     NotEnoughTokens,
+
+    #[error("Invalid token")]
+    InvalidToken,
 }
