@@ -2509,13 +2509,15 @@ dependencies = [
 [[package]]
 name = "ring"
 version = "0.16.20"
-source = "git+https://github.com/dpc/ring?rev=5493e7e76d0d8fb1d3cbb0be9c4944700741b802#5493e7e76d0d8fb1d3cbb0be9c4944700741b802"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3053cf52e236a3ed746dfc745aa9cacf1b791d846bdaf412f60a8d7d6e17c8fc"
 dependencies = [
  "cc",
  "libc",
  "once_cell",
  "spin 0.5.2",
  "untrusted 0.7.1",
+ "web-sys",
  "winapi",
 ]
 
@@ -4272,8 +4274,3 @@ dependencies = [
  "crossbeam-utils",
  "flate2",
 ]
-
-[[patch.unused]]
-name = "secp256k1-zkp"
-version = "0.7.0"
-source = "git+https://github.com/dpc/rust-secp256k1-zkp/?branch=sanket-pr#f29b1b8c442d4b8a42547ce36d3987aaedf94224"
