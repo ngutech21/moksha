@@ -402,10 +402,6 @@ pub struct Nuts {
     #[serde(rename = "5")]
     pub nut5: Nut5,
 
-    /// Mint info
-    #[serde(rename = "6")]
-    pub nut6: Nut6,
-
     /// Token state check
     #[serde(rename = "7")]
     pub nut7: Nut7,
@@ -465,17 +461,6 @@ impl Default for Nut5 {
         Self {
             methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
         }
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
-pub struct Nut6 {
-    pub supported: bool,
-}
-
-impl Default for Nut6 {
-    fn default() -> Self {
-        Self { supported: true }
     }
 }
 
@@ -571,6 +556,7 @@ mod tests {
 
     use crate::{
         dhke::public_key_from_hex,
+        fixture::read_fixture,
         primitives::{
             KeyResponse, MintInfoResponse, MintLegacyInfoResponse, Nuts, Parameter,
             PostSwapResponse,
@@ -652,6 +638,16 @@ mod tests {
         assert!(!out.is_empty());
         // FIXME add asserts
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_deserialize_nustash_mint_info() -> anyhow::Result<()> {
+        let mint_info = read_fixture("nutshell_mint_info.json")?;
+        let info = serde_json::from_str::<MintInfoResponse>(&mint_info);
+        assert!(info.is_ok());
+        let info = info?;
+        assert_eq!("Nutshell/0.15.0", info.version.unwrap());
         Ok(())
     }
 }
