@@ -439,14 +439,12 @@ pub struct Nuts {
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct Nut4 {
     pub methods: Vec<(PaymentMethod, CurrencyUnit)>,
-    pub disabled: bool,
 }
 
 impl Default for Nut4 {
     fn default() -> Self {
         Self {
             methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
-            disabled: false,
         }
     }
 }
