@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS onchain_mint_quotes
     expiry bigint NOT NULL,
     paid boolean NOT NULL,
     CONSTRAINT onchain_mint_quotes_pkey PRIMARY KEY (id)
-)
+);
 
 
 CREATE TABLE IF NOT EXISTS onchain_melt_quotes
@@ -20,4 +20,4 @@ CREATE TABLE IF NOT EXISTS onchain_melt_quotes
     expiry bigint NOT NULL,
     paid boolean NOT NULL,
     CONSTRAINT onchain_melt_quotes_pkey PRIMARY KEY (id)
-)
+);
