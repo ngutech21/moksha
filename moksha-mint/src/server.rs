@@ -97,7 +97,8 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
                 CorsLayer::new()
                     .allow_origin(Any)
                     .allow_headers(Any)
-                    .allow_methods([axum::http::Method::GET, axum::http::Method::POST]),
+                    .allow_methods(Any)
+                    .expose_headers(Any),
             )
             .into_make_service(),
     )
