@@ -1,5 +1,5 @@
 -- Add migration script here
-CREATE TABLE IF NOT EXISTS public.onchain_mint_quotes
+CREATE TABLE IF NOT EXISTS onchain_mint_quotes
 (
     id uuid NOT NULL,
     address text COLLATE pg_catalog."default" NOT NULL,
@@ -9,12 +9,8 @@ CREATE TABLE IF NOT EXISTS public.onchain_mint_quotes
     CONSTRAINT onchain_mint_quotes_pkey PRIMARY KEY (id)
 )
 
-TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS public.onchain_mint_quotes
-    OWNER to postgres;
-
-CREATE TABLE IF NOT EXISTS public.onchain_melt_quotes
+CREATE TABLE IF NOT EXISTS onchain_melt_quotes
 (
     id uuid NOT NULL,
 	amount bigint NOT NULL,
@@ -25,8 +21,3 @@ CREATE TABLE IF NOT EXISTS public.onchain_melt_quotes
     paid boolean NOT NULL,
     CONSTRAINT onchain_melt_quotes_pkey PRIMARY KEY (id)
 )
-
-TABLESPACE pg_default;
-
-ALTER TABLE IF EXISTS public.onchain_melt_quotes
-    OWNER to postgres;
