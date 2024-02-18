@@ -80,24 +80,19 @@ pub enum MokshaMintError {
     #[error("Not Enough tokens: {0}")]
     NotEnoughTokens(String),
 
-    #[error("BtcOnchain error: {0}")]
-    BtcOnchain(#[from] Status),
+    #[error("Lnd error: {0}")]
+    Lnd(#[from] Status),
 }
 
 impl IntoResponse for MokshaMintError {
     fn into_response(self) -> Response {
         event!(Level::ERROR, "error in mint: {:?}", self);
 
-        let status = match self {
-            Self::Db(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            _ => StatusCode::BAD_REQUEST,
-        };
-
         let body = Json(json!({
             "code": 0,
             "detail": self.to_string(),
         }));
 
-        (status, body).into_response()
+        (StatusCode::BAD_REQUEST, body).into_response()
     }
 }
