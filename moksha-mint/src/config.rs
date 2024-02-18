@@ -139,13 +139,25 @@ pub struct BtcOnchainConfig {
     #[clap(skip)]
     pub onchain_type: Option<BtcOnchainType>,
 
-    #[clap(long, env = "MINT_BTC_ONCHAIN_BACKEND_MIN_CONFIRMATIONS")]
+    #[clap(
+        long,
+        default_value_t = 1,
+        env = "MINT_BTC_ONCHAIN_BACKEND_MIN_CONFIRMATIONS"
+    )]
     pub min_confirmations: u8,
 
-    #[clap(long, env = "MINT_BTC_ONCHAIN_BACKEND_MIN_AMOUNT")]
+    #[clap(
+        long,
+        default_value_t = 1_000,
+        env = "MINT_BTC_ONCHAIN_BACKEND_MIN_AMOUNT"
+    )]
     pub min_amount: u64,
 
-    #[clap(long, env = "MINT_BTC_ONCHAIN_BACKEND_MAX_AMOUNT")]
+    #[clap(
+        long,
+        default_value_t = 1_000_000,
+        env = "MINT_BTC_ONCHAIN_BACKEND_MAX_AMOUNT"
+    )]
     pub max_amount: u64,
 }
 
