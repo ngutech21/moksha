@@ -206,16 +206,21 @@ impl Mint {
         let change = if fee_reserve > 0 {
             let return_fees = Amount(fee_reserve - result.total_fees).split();
 
-            let out: Vec<_> = blinded_messages[0..return_fees.len()]
-                .iter()
-                .zip(return_fees.into_iter())
-                .map(|(message, fee)| BlindedMessage {
-                    amount: fee,
-                    ..message.clone()
-                })
-                .collect();
+            if (return_fees.len()) > blinded_messages.len() {
+                // FIXME better handle case when there are more fees than blinded messages
+                vec![]
+            } else {
+                let out: Vec<_> = blinded_messages[0..return_fees.len()]
+                    .iter()
+                    .zip(return_fees.into_iter())
+                    .map(|(message, fee)| BlindedMessage {
+                        amount: fee,
+                        ..message.clone()
+                    })
+                    .collect();
 
-            self.create_blinded_signatures(&out, keyset)?
+                self.create_blinded_signatures(&out, keyset)?
+            }
         } else {
             vec![]
         };
