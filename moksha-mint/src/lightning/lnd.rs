@@ -68,7 +68,7 @@ impl LndLightning {
 
     pub async fn client_lock(
         &self,
-    ) -> anyhow::Result<MappedMutexGuard<'_, fedimint_tonic_lnd::LightningClient>> {
+    ) -> Result<MappedMutexGuard<'_, fedimint_tonic_lnd::LightningClient>, MokshaMintError> {
         let guard = self.0.lock().await;
         Ok(MutexGuard::map(guard, |client| client.lightning()))
     }
@@ -87,11 +87,9 @@ impl Lightning for LndLightning {
 
         let invoice = self
             .client_lock()
-            .await
-            .expect("failed to lock client")
+            .await?
             .lookup_invoice(fedimint_tonic_lnd::tonic::Request::new(invoice_request))
-            .await
-            .expect("failed to lookup invoice")
+            .await?
             .into_inner();
 
         Ok(invoice.state == fedimint_tonic_lnd::lnrpc::invoice::InvoiceState::Settled as i32)
@@ -105,11 +103,9 @@ impl Lightning for LndLightning {
 
         let invoice = self
             .client_lock()
-            .await
-            .expect("failed to lock client")
+            .await?
             .add_invoice(fedimint_tonic_lnd::tonic::Request::new(invoice_request))
-            .await
-            .expect("failed to create invoice")
+            .await?
             .into_inner();
 
         Ok(CreateInvoiceResult {
@@ -128,11 +124,9 @@ impl Lightning for LndLightning {
         };
         let payment_response = self
             .client_lock()
-            .await
-            .expect("failed to lock client") //FIXME map error
+            .await?
             .send_payment_sync(fedimint_tonic_lnd::tonic::Request::new(pay_req))
-            .await
-            .expect("failed to pay invoice")
+            .await?
             .into_inner();
 
         let total_fees = payment_response

@@ -28,14 +28,14 @@ impl LndBtcOnchain {
 
     pub async fn client_lock(
         &self,
-    ) -> anyhow::Result<MappedMutexGuard<'_, fedimint_tonic_lnd::LightningClient>> {
+    ) -> Result<MappedMutexGuard<'_, fedimint_tonic_lnd::LightningClient>, MokshaMintError> {
         let guard = self.0.lock().await;
         Ok(MutexGuard::map(guard, |client| client.lightning()))
     }
 
     pub async fn wallet_lock(
         &self,
-    ) -> anyhow::Result<MappedMutexGuard<'_, fedimint_tonic_lnd::WalletKitClient>> {
+    ) -> Result<MappedMutexGuard<'_, fedimint_tonic_lnd::WalletKitClient>, MokshaMintError> {
         let guard = self.0.lock().await;
         Ok(MutexGuard::map(guard, |client| client.wallet()))
     }
@@ -50,12 +50,7 @@ impl BtcOnchain for LndBtcOnchain {
             ..Default::default()
         };
 
-        let response = self
-            .wallet_lock()
-            .await
-            .expect("failed to lock wallet")
-            .list_unspent(request)
-            .await?;
+        let response = self.wallet_lock().await?.list_unspent(request).await?;
 
         Ok(response
             .get_ref()
@@ -76,12 +71,7 @@ impl BtcOnchain for LndBtcOnchain {
             ..Default::default()
         };
 
-        let response = self
-            .wallet_lock()
-            .await
-            .expect("failed to lock wallet")
-            .list_unspent(request)
-            .await?;
+        let response = self.wallet_lock().await?.list_unspent(request).await?;
 
         Ok(response.get_ref().utxos.iter().any(|utxo| {
             utxo.address == address
@@ -91,7 +81,7 @@ impl BtcOnchain for LndBtcOnchain {
     }
 
     async fn new_address(&self) -> Result<String, MokshaMintError> {
-        let mut client = self.client_lock().await.expect("failed to lock client");
+        let mut client = self.client_lock().await?;
         let response = client
             .new_address(NewAddressRequest {
                 r#type: AddressType::WitnessPubkeyHash as i32,
@@ -111,8 +101,7 @@ impl BtcOnchain for LndBtcOnchain {
     ) -> Result<SendCoinsResult, MokshaMintError> {
         let response = self
             .client_lock()
-            .await
-            .expect("failed to lock client")
+            .await?
             .send_coins(SendCoinsRequest {
                 addr: address.to_owned(),
                 amount: amount as i64,
@@ -134,8 +123,7 @@ impl BtcOnchain for LndBtcOnchain {
     ) -> Result<EstimateFeeResult, MokshaMintError> {
         let response = self
             .client_lock()
-            .await
-            .expect("failed to lock client")
+            .await?
             .estimate_fee(EstimateFeeRequest {
                 addr_to_amount: std::iter::once(&(address.to_owned(), amount as i64))
                     .cloned()
