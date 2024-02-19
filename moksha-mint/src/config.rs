@@ -111,6 +111,7 @@ impl MintConfig {
 }
 
 impl MintConfig {
+    #[allow(clippy::too_many_arguments)]
     pub const fn new(
         private_key: String,
         derivation_path: Option<String>,
