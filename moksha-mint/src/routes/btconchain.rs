@@ -126,6 +126,7 @@ pub async fn post_mint_btconchain(
             request.quote.clone(),
             &request.outputs,
             &mint.keyset,
+            false,
         )
         .await?;
 

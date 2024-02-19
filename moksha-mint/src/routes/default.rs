@@ -151,6 +151,7 @@ pub async fn post_mint_bolt11(
             request.quote.clone(),
             &request.outputs,
             &mint.keyset,
+            false,
         )
         .await?;
 

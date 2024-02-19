@@ -117,8 +117,9 @@ impl Mint {
         key: String,
         outputs: &[BlindedMessage],
         keyset: &MintKeyset,
+        return_error: bool,
     ) -> Result<Vec<BlindedSignature>, MokshaMintError> {
-        // FIXME refactor
+        // FIXME refactor (split up in multiple functions)
         if payment_method == PaymentMethod::Bolt11 {
             let invoice = self.db.get_pending_invoice(key.clone()).await?;
 
@@ -128,7 +129,7 @@ impl Mint {
                 .await?;
 
             // FIXME remove after legacy api is removed
-            if !is_paid {
+            if return_error && !is_paid {
                 return Err(MokshaMintError::InvoiceNotPaidYet);
             }
 
@@ -466,6 +467,7 @@ mod tests {
                 "somehash".to_string(),
                 &outputs,
                 &mint.keyset_legacy,
+                true,
             )
             .await?;
         assert!(result.is_empty());
@@ -485,6 +487,7 @@ mod tests {
                 "somehash".to_string(),
                 &outputs,
                 &mint.keyset_legacy,
+                true,
             )
             .await?;
         assert_eq!(40, result.total_amount());

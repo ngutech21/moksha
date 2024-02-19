@@ -58,6 +58,7 @@ pub async fn post_legacy_mint(
             mint_query.hash,
             &blinded_messages.outputs,
             &mint.keyset_legacy,
+            true,
         )
         .await?;
     Ok(Json(PostMintResponse { promises }))
