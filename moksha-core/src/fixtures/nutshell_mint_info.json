@@ -11,7 +11,7 @@
   ],
   "motd": "Message to users",
   "nuts": {
-    "4": { "methods": [["bolt11", "sat"]] },
+    "4": { "methods": [["bolt11", "sat"]], "disabled": false },
     "5": { "methods": [["bolt11", "sat"]], "disabled": false },
     "7": { "supported": true },
     "8": { "supported": true },
