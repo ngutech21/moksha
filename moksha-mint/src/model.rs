@@ -34,7 +34,7 @@ pub struct CreateInvoiceResult {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PayInvoiceResult {
     pub payment_hash: String,
-    /// total fees in msat
+    /// total fees in sat
     pub total_fees: u64,
 }
 

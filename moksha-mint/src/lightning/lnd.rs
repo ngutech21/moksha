@@ -14,6 +14,7 @@ use clap::Parser;
 use fedimint_tonic_lnd::Client;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
+use tracing::info;
 use url::Url;
 
 use super::Lightning;
@@ -131,7 +132,9 @@ impl Lightning for LndLightning {
 
         let total_fees = payment_response
             .payment_route
-            .map_or(0, |route| route.total_fees_msat) as u64;
+            .map_or(0, |route| route.total_fees_msat / 1_000) as u64;
+
+        info!("lnd total_fees: {}", total_fees);
 
         Ok(PayInvoiceResult {
             payment_hash: hex::encode(payment_response.payment_hash),
