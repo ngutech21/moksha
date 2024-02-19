@@ -1,4 +1,4 @@
-use moksha_core::primitives::PaymentMethod;
+use moksha_core::primitives::{CurrencyUnit, PaymentMethod};
 
 use moksha_wallet::client::CashuClient;
 use moksha_wallet::http::CrossPlatformHttpClient;
@@ -116,7 +116,11 @@ pub fn test_integration() -> anyhow::Result<()> {
 
         // pay ln-invoice
         let invoice_1000 = read_fixture("invoice_1000.txt").unwrap();
-        let result_pay_invoice = wallet.pay_invoice(invoice_1000).await;
+        let quote = wallet
+            .get_melt_quote_bolt11(invoice_1000.clone(), CurrencyUnit::Sat)
+            .await
+            .expect("Could not get melt quote");
+        let result_pay_invoice = wallet.pay_invoice(&quote, invoice_1000).await;
         if result_pay_invoice.is_err() {
             println!("error in pay_invoice{:?}", result_pay_invoice);
         }

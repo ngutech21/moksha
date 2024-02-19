@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 use moksha_core::primitives::{
-    PaymentMethod, PostMeltOnchainResponse, PostMintQuoteBolt11Response,
+    CurrencyUnit, PaymentMethod, PostMeltOnchainResponse, PostMintQuoteBolt11Response,
     PostMintQuoteOnchainResponse,
 };
 use moksha_wallet::http::CrossPlatformHttpClient;
@@ -26,34 +26,24 @@ struct Opts {
 #[derive(Subcommand, Clone)]
 enum Command {
     /// Mint tokens
-    Mint {
-        amount: u64,
-    },
+    Mint { amount: u64 },
 
     /// Pay Lightning invoice
-    Pay {
-        invoice: String,
-    },
+    Pay { invoice: String },
 
-    /// Pay bitcoin onchain
-    PayOnchain {
-        address: String,
-        amount: u64,
-    },
+    /// Pay Bitcoin on chain
+    PayOnchain { address: String, amount: u64 },
 
     /// Send tokens
-    Send {
-        amount: u64,
-    },
+    Send { amount: u64 },
 
     /// Receive tokens
-    Receive {
-        token: String,
-    },
+    Receive { token: String },
 
     /// Show local balance
     Balance,
 
+    /// Show version and configuration
     Info,
 }
 
@@ -122,11 +112,35 @@ async fn main() -> anyhow::Result<()> {
             println!("Balance: {balance} (sat)");
         }
         Command::Pay { invoice } => {
-            let response = wallet.pay_invoice(invoice).await?;
+            let quote = wallet
+                .get_melt_quote_bolt11(invoice.clone(), CurrencyUnit::Sat)
+                .await?;
+
+            let pay_confirmed = Confirm::new()
+                .with_prompt(format!(
+                    "Pay lightning invoice: amount {} + fee {} = {} (sat)?",
+                    quote.amount,
+                    quote.fee_reserve,
+                    quote.amount + quote.fee_reserve
+                ))
+                .interact()
+                .unwrap();
+
+            if !pay_confirmed {
+                return Ok(());
+            }
+
+            let response = wallet.pay_invoice(&quote, invoice).await?;
 
             // FIXME handle not enough tokens error
 
-            if response.paid {
+            if response.0.paid {
+                if response.1 > 0 {
+                    println!(
+                        "Returned fees {} (sat)",
+                        response.1.to_formatted_string(&Locale::en)
+                    );
+                }
                 println!(
                     "\nInvoice has been paid: Tokens melted successfully\nNew balance: {} (sat)",
                     wallet.get_balance().await?.to_formatted_string(&Locale::en)
@@ -143,7 +157,9 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            let quotes = wallet.pay_onchain_quote(address.clone(), amount).await?;
+            let quotes = wallet
+                .get_melt_quote_btconchain(address.clone(), amount)
+                .await?;
 
             if quotes.is_empty() {
                 println!("Error: No quotes found");

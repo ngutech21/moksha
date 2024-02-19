@@ -5,8 +5,8 @@ use moksha_core::{
     keyset::V1Keyset,
     primitives::{
         CurrencyUnit, KeyResponse, MintInfoResponse, PaymentMethod, PostMeltBolt11Response,
-        PostMeltOnchainResponse, PostMeltQuoteOnchainResponse, PostMintQuoteBolt11Response,
-        PostMintQuoteOnchainResponse,
+        PostMeltOnchainResponse, PostMeltQuoteBolt11Response, PostMeltQuoteOnchainResponse,
+        PostMintQuoteBolt11Response, PostMintQuoteOnchainResponse,
     },
     proof::{Proof, Proofs},
     token::TokenV3,
@@ -264,16 +264,22 @@ where
             .await
     }
 
-    pub async fn pay_invoice(
+    pub async fn get_melt_quote_bolt11(
         &self,
         invoice: String,
-    ) -> Result<PostMeltBolt11Response, MokshaWalletError> {
-        let all_proofs = self.localstore.get_proofs().await?;
+        currency: CurrencyUnit,
+    ) -> Result<PostMeltQuoteBolt11Response, MokshaWalletError> {
+        self.client
+            .post_melt_quote_bolt11(&self.mint_url, invoice.clone(), currency)
+            .await
+    }
 
-        let melt_quote = self
-            .client
-            .post_melt_quote_bolt11(&self.mint_url, invoice.clone(), CurrencyUnit::Sat)
-            .await?;
+    pub async fn pay_invoice(
+        &self,
+        melt_quote: &PostMeltQuoteBolt11Response,
+        invoice: String,
+    ) -> Result<(PostMeltBolt11Response, u64), MokshaWalletError> {
+        let all_proofs = self.localstore.get_proofs().await?;
 
         let ln_amount = Self::get_invoice_amount(&invoice)? + melt_quote.fee_reserve;
 
@@ -314,7 +320,7 @@ where
             .collect::<Vec<(BlindedMessage, SecretKey)>>();
 
         match self
-            .melt_token(melt_quote.quote, ln_amount, &total_proofs, msgs)
+            .melt_token(melt_quote.to_owned().quote, ln_amount, &total_proofs, msgs)
             .await
         {
             Ok(response) => {
@@ -328,7 +334,7 @@ where
                 )?;
                 self.localstore.add_proofs(&change_proofs).await?;
 
-                Ok(response)
+                Ok((response, change_proofs.total_amount()))
             }
             Err(e) => {
                 self.localstore.add_proofs(&total_proofs).await?;
@@ -337,7 +343,7 @@ where
         }
     }
 
-    pub async fn pay_onchain_quote(
+    pub async fn get_melt_quote_btconchain(
         &self,
         address: String,
         amount: u64,
@@ -858,8 +864,12 @@ mod tests {
         // 21 sats
         let invoice = "lnbcrt210n1pjg6mqhpp5pza5wzh0csjjuvfpjpv4zdjmg30vedj9ycv5tyfes9x7dp8axy0sdqqcqzzsxqyz5vqsp5vtxg4c5tw2s2zxxya2a7an0psn9mcfmlqctxzntm3sngnpyk3muq9qyyssqf8z5f90yu3wrmsufnnza25qjlnvc6ukdr094ckzn63ktcy6z5fw5mxf9skndpg2p4648gfjfvvx4qg2lqvlryyycg5k7x9h4dw70t4qq37pegm".to_string();
 
-        let result = wallet.pay_invoice(invoice).await?;
-        assert!(result.paid);
+        let quote = wallet
+            .get_melt_quote_bolt11(invoice.clone(), CurrencyUnit::Sat)
+            .await?;
+
+        let result = wallet.pay_invoice(&quote, invoice).await?;
+        assert!(result.0.paid);
         Ok(())
     }
 
@@ -909,10 +919,13 @@ mod tests {
         // 21 sats
         let invoice = "lnbcrt210n1pjg6mqhpp5pza5wzh0csjjuvfpjpv4zdjmg30vedj9ycv5tyfes9x7dp8axy0sdqqcqzzsxqyz5vqsp5vtxg4c5tw2s2zxxya2a7an0psn9mcfmlqctxzntm3sngnpyk3muq9qyyssqf8z5f90yu3wrmsufnnza25qjlnvc6ukdr094ckzn63ktcy6z5fw5mxf9skndpg2p4648gfjfvvx4qg2lqvlryyycg5k7x9h4dw70t4qq37pegm".to_string();
 
-        let result = wallet.pay_invoice(invoice).await?;
-        assert!(!result.paid);
+        let quote = wallet
+            .get_melt_quote_bolt11(invoice.clone(), CurrencyUnit::Sat)
+            .await?;
+        let result = wallet.pay_invoice(&quote, invoice).await?;
+        assert!(!result.0.paid);
         assert_eq!(64, localstore.get_proofs().await?.total_amount());
-        assert!(!result.paid);
+        assert!(!result.0.paid);
         Ok(())
     }
 }
