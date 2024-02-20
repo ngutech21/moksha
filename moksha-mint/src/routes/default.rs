@@ -12,7 +12,7 @@ use moksha_core::{
         PostSwapRequest, PostSwapResponse,
     },
 };
-use tracing::info;
+use tracing::{info, instrument};
 use uuid::Uuid;
 
 use crate::{
@@ -31,6 +31,7 @@ use std::str::FromStr;
             (status = 200, description = "post swap", body = [PostSwapResponse])
         ),
     )]
+#[instrument(name = "post_swap", skip(mint), err)]
 pub async fn post_swap(
     State(mint): State<Mint>,
     Json(swap_request): Json<PostSwapRequest>,
@@ -51,6 +52,7 @@ pub async fn post_swap(
             (status = 200, description = "get keys", body = [KeysResponse])
         )
     )]
+#[instrument(skip(mint), err)]
 pub async fn get_keys(State(mint): State<Mint>) -> Result<Json<KeysResponse>, MokshaMintError> {
     Ok(Json(KeysResponse {
         keysets: vec![KeyResponse {
@@ -71,6 +73,7 @@ pub async fn get_keys(State(mint): State<Mint>) -> Result<Json<KeysResponse>, Mo
             ("id" = String, Path, description = "keyset id"),
         )
     )]
+#[instrument(skip(mint), err)]
 pub async fn get_keys_by_id(
     Path(id): Path<String>,
     State(mint): State<Mint>,
@@ -95,6 +98,7 @@ pub async fn get_keys_by_id(
             (status = 200, description = "get keysets", body = [V1Keysets])
         ),
     )]
+#[instrument(skip(mint), err)]
 pub async fn get_keysets(State(mint): State<Mint>) -> Result<Json<V1Keysets>, MokshaMintError> {
     Ok(Json(V1Keysets::new(
         mint.keyset.keyset_id,
@@ -111,6 +115,7 @@ pub async fn get_keysets(State(mint): State<Mint>) -> Result<Json<V1Keysets>, Mo
             (status = 200, description = "post mint quote", body = [PostMintQuoteBolt11Response])
         ),
     )]
+#[instrument(name = "post_mint_quote_bolt11", skip(mint), err)]
 pub async fn post_mint_quote_bolt11(
     State(mint): State<Mint>,
     Json(request): Json<PostMintQuoteBolt11Request>,
@@ -141,6 +146,7 @@ pub async fn post_mint_quote_bolt11(
             ("quote_id" = String, Path, description = "quote id"),
         )
     )]
+#[instrument(name = "post_mint_bolt11", skip(mint), err)]
 pub async fn post_mint_bolt11(
     State(mint): State<Mint>,
     Json(request): Json<PostMintBolt11Request>,
@@ -177,6 +183,7 @@ pub async fn post_mint_bolt11(
             (status = 200, description = "post mint quote", body = [PostMeltQuoteBolt11Response])
         ),
     )]
+#[instrument(name = "post_melt_quote_bolt11", skip(mint), err)]
 pub async fn post_melt_quote_bolt11(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltQuoteBolt11Request>,
@@ -220,6 +227,7 @@ fn quote_expiry() -> u64 {
             (status = 200, description = "post melt", body = [PostMeltBolt11Response])
         ),
     )]
+#[instrument(name = "post_melt_bolt11", skip(mint), err)]
 pub async fn post_melt_bolt11(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltBolt11Request>,
@@ -261,6 +269,7 @@ pub async fn post_melt_bolt11(
             ("quote_id" = String, Path, description = "quote id"),
         )
     )]
+#[instrument(name = "get_mint_quote_bolt11", skip(mint), err)]
 pub async fn get_mint_quote_bolt11(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
@@ -290,6 +299,7 @@ pub async fn get_mint_quote_bolt11(
             ("quote_id" = String, Path, description = "quote id"),
         )
     )]
+#[instrument(name = "get_melt_quote_bolt11", skip(mint), err)]
 pub async fn get_melt_quote_bolt11(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
@@ -311,6 +321,7 @@ pub async fn get_melt_quote_bolt11(
             (status = 200, description = "get mint info", body = [MintInfoResponse])
         )
     )]
+#[instrument(name = "get_info", skip(mint), err)]
 pub async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, MokshaMintError> {
     // TODO implement From-trait
 

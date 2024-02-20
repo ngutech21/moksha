@@ -23,7 +23,7 @@ use std::str::FromStr;
             (status = 200, description = "post mint quote", body = [PostMintQuoteOnchainResponse])
         ),
     )]
-#[instrument(skip(mint))]
+#[instrument(name = "post_mint_quote_btconchain", skip(mint), err)]
 pub async fn post_mint_quote_btconchain(
     State(mint): State<Mint>,
     Json(request): Json<PostMintQuoteOnchainRequest>,
@@ -79,7 +79,7 @@ pub async fn post_mint_quote_btconchain(
             ("quote_id" = String, Path, description = "quote id"),
         )
     )]
-#[instrument(skip(mint))]
+#[instrument(name = "get_mint_quote_btconchain", skip(mint), err)]
 pub async fn get_mint_quote_btconchain(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
@@ -115,7 +115,7 @@ pub async fn get_mint_quote_btconchain(
             (status = 200, description = "post mint", body = [PostMintOnchainResponse])
         ),
     )]
-#[instrument(skip(mint))]
+#[instrument(name = "post_mint_btconchain", skip(mint), err)]
 pub async fn post_mint_btconchain(
     State(mint): State<Mint>,
     Json(request): Json<PostMintOnchainRequest>,
@@ -152,7 +152,7 @@ pub async fn post_mint_btconchain(
             (status = 200, description = "post mint quote", body = [Vec<PostMeltQuoteOnchainResponse>])
         ),
     )]
-#[instrument(skip(mint))]
+#[instrument(name = "post_melt_quote_btconchain", skip(mint), err)]
 pub async fn post_melt_quote_btconchain(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltQuoteOnchainRequest>,
@@ -217,7 +217,7 @@ pub async fn post_melt_quote_btconchain(
             ("quote_id" = String, Path, description = "quote id"),
         )
     )]
-#[instrument(skip(mint))]
+#[instrument(name = "get_melt_quote_btconchain", skip(mint), err)]
 pub async fn get_melt_quote_btconchain(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
@@ -255,7 +255,7 @@ pub async fn get_melt_quote_btconchain(
             (status = 200, description = "post melt", body = [PostMeltOnchainResponse])
         ),
     )]
-#[instrument(skip(mint))]
+#[instrument(name = "post_melt_btconchain", skip(mint), err)]
 pub async fn post_melt_btconchain(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltOnchainRequest>,
@@ -285,7 +285,7 @@ pub async fn post_melt_btconchain(
             ("tx_id" = String, Path, description = "Bitcoin onchain transaction-id"),
         )
     )]
-#[instrument(skip(mint))]
+#[instrument(name = "get_melt_btconchain", skip(mint), err)]
 pub async fn get_melt_btconchain(
     Path(tx_id): Path<String>,
     State(mint): State<Mint>,
