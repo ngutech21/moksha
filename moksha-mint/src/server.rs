@@ -19,7 +19,7 @@ use axum::{routing::get, Json};
 use moksha_core::keyset::{V1Keyset, V1Keysets};
 use moksha_core::proof::Proofs;
 use moksha_core::proof::{P2SHScript, Proof};
-use tracing_subscriber::EnvFilter;
+
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::mint::Mint;
@@ -38,16 +38,12 @@ use moksha_core::primitives::{
 
 use tower_http::services::ServeDir;
 
-use tower_http::{
-    cors::{Any, CorsLayer},
-    trace::TraceLayer,
-};
+use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
 
-use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
-
 use utoipa::OpenApi;
+
+use tracing_subscriber::{filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::routes::legacy::{
     get_legacy_keys, get_legacy_keysets, get_legacy_mint, post_legacy_check_fees, post_legacy_melt,
@@ -55,10 +51,31 @@ use crate::routes::legacy::{
 };
 
 pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
+    let config = mint.config.clone();
+
+    let jaeger = if config.tracing.is_some() {
+        let tracer = opentelemetry_jaeger::new_agent_pipeline()
+            .with_service_name("moksha-mint")
+            .with_endpoint(
+                config
+                    .tracing
+                    .unwrap_or_default()
+                    .jaeger_endpoint
+                    .unwrap_or_default(),
+            )
+            .install_simple()
+            .unwrap();
+
+        Some(tracing_opentelemetry::layer().with_tracer(tracer))
+    } else {
+        None
+    };
+
     tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
+        .with(fmt::layer().pretty())
         .with(EnvFilter::from_default_env())
-        .init();
+        .with(jaeger)
+        .try_init()?;
 
     if let Some(ref buildtime) = mint.build_params.build_time {
         info!("build time: {}", buildtime);
@@ -85,6 +102,8 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
     } else {
         info!("btconchain-backend is not configured");
     }
+
+    info!("tracing jaeger-endpoint: {:?}", mint.config.tracing);
 
     let listener = tokio::net::TcpListener::bind(&mint.config.server.host_port)
         .await
@@ -232,8 +251,7 @@ fn app(mint: Mint) -> Router {
         .nest(&prefix, default_routes)
         .nest(&prefix, btconchain_routes)
         .nest("", general_routes)
-        .with_state(mint)
-        .layer(TraceLayer::new_for_http());
+        .with_state(mint);
 
     if let Some(ref serve_wallet_path) = server_config.serve_wallet_path {
         return router.nest_service(

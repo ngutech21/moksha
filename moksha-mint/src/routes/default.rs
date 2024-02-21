@@ -12,7 +12,7 @@ use moksha_core::{
         PostSwapRequest, PostSwapResponse,
     },
 };
-use tracing::{info, instrument};
+use tracing::{debug, instrument};
 use uuid::Uuid;
 
 use crate::{
@@ -146,7 +146,7 @@ pub async fn post_mint_quote_bolt11(
             ("quote_id" = String, Path, description = "quote id"),
         )
     )]
-#[instrument(name = "post_mint_bolt11", skip(mint), err)]
+#[instrument(name = "post_mint_bolt11", fields(quote_id = %request.quote), skip_all, err)]
 pub async fn post_mint_bolt11(
     State(mint): State<Mint>,
     Json(request): Json<PostMintBolt11Request>,
@@ -196,7 +196,7 @@ pub async fn post_melt_quote_bolt11(
         crate::error::MokshaMintError::InvalidAmount("invalid invoice".to_owned())
     })?;
     let fee_reserve = mint.fee_reserve(amount) / 1_000; // FIXME check if this is correct
-    info!("fee_reserve: {}", fee_reserve);
+    debug!("fee_reserve: {}", fee_reserve);
 
     let amount_sat = amount / 1_000;
     let key = Uuid::new_v4();
@@ -237,7 +237,7 @@ pub async fn post_melt_bolt11(
         .get_bolt11_melt_quote(&Uuid::from_str(melt_request.quote.as_str())?)
         .await?;
 
-    info!("post_melt_bolt11 fee_reserve: {:#?}", &quote);
+    debug!("post_melt_bolt11 fee_reserve: {:#?}", &quote);
 
     let (paid, payment_preimage, change) = mint
         .melt_bolt11(
@@ -274,7 +274,7 @@ pub async fn get_mint_quote_bolt11(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
 ) -> Result<Json<PostMintQuoteBolt11Response>, MokshaMintError> {
-    info!("get_quote: {}", quote_id);
+    debug!("get_quote: {}", quote_id);
 
     let quote = mint
         .db
@@ -304,7 +304,7 @@ pub async fn get_melt_quote_bolt11(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
 ) -> Result<Json<PostMeltQuoteBolt11Response>, MokshaMintError> {
-    info!("get_melt_quote: {}", quote_id);
+    debug!("get_melt_quote: {}", quote_id);
     let quote = mint
         .db
         .get_bolt11_melt_quote(&Uuid::from_str(quote_id.as_str())?)

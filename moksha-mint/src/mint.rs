@@ -8,12 +8,13 @@ use moksha_core::{
     primitives::{OnchainMeltQuote, PaymentMethod},
     proof::Proofs,
 };
+use tracing::instrument;
 
 use crate::{
     btconchain::{lnd::LndBtcOnchain, BtcOnchain},
     config::{
         BtcOnchainConfig, BtcOnchainType, BuildParams, DatabaseConfig, LightningFeeConfig,
-        MintConfig, MintInfoConfig, ServerConfig,
+        MintConfig, MintInfoConfig, ServerConfig, TracingConfig,
     },
     database::Database,
     error::MokshaMintError,
@@ -111,6 +112,7 @@ impl Mint {
         Ok((pr, key))
     }
 
+    #[instrument(level = "debug", skip(self))]
     pub async fn mint_tokens(
         &self,
         payment_method: PaymentMethod,
@@ -277,6 +279,7 @@ pub struct MintBuilder {
     mint_info_settings: Option<MintInfoConfig>,
     server_config: Option<ServerConfig>,
     btc_onchain_config: Option<BtcOnchainConfig>,
+    tracing_config: Option<TracingConfig>,
 }
 
 impl MintBuilder {
@@ -321,6 +324,11 @@ impl MintBuilder {
 
     pub fn with_btc_onchain(mut self, btc_onchain_config: Option<BtcOnchainConfig>) -> Self {
         self.btc_onchain_config = btc_onchain_config;
+        self
+    }
+
+    pub fn with_tracing(mut self, tracing_config: Option<TracingConfig>) -> Self {
+        self.tracing_config = tracing_config;
         self
     }
 
@@ -397,6 +405,7 @@ impl MintBuilder {
                 db_config,
                 self.btc_onchain_config,
                 self.lightning_type,
+                self.tracing_config,
             ),
             BuildParams::from_env(),
             lnd_onchain,

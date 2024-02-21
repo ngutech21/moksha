@@ -14,7 +14,7 @@ use clap::Parser;
 use fedimint_tonic_lnd::Client;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
-use tracing::info;
+use tracing::{debug, instrument};
 use url::Url;
 
 use super::Lightning;
@@ -78,6 +78,7 @@ impl LndLightning {
 #[allow(implied_bounds_entailment)]
 #[async_trait]
 impl Lightning for LndLightning {
+    #[instrument(skip(self), err)]
     async fn is_invoice_paid(&self, payment_request: String) -> Result<bool, MokshaMintError> {
         let invoice = self.decode_invoice(payment_request).await?;
         let payment_hash = invoice.payment_hash();
@@ -96,6 +97,7 @@ impl Lightning for LndLightning {
         Ok(invoice.state == fedimint_tonic_lnd::lnrpc::invoice::InvoiceState::Settled as i32)
     }
 
+    #[instrument(skip(self), err)]
     async fn create_invoice(&self, amount: u64) -> Result<CreateInvoiceResult, MokshaMintError> {
         let invoice_request = fedimint_tonic_lnd::lnrpc::Invoice {
             value: amount as i64,
@@ -115,6 +117,7 @@ impl Lightning for LndLightning {
         })
     }
 
+    #[instrument(skip(self), err)]
     async fn pay_invoice(
         &self,
         payment_request: String,
@@ -134,7 +137,7 @@ impl Lightning for LndLightning {
             .payment_route
             .map_or(0, |route| route.total_fees_msat / 1_000) as u64;
 
-        info!("lnd total_fees: {}", total_fees);
+        debug!("lnd total_fees: {}", total_fees);
 
         Ok(PayInvoiceResult {
             payment_hash: hex::encode(payment_response.payment_hash),
