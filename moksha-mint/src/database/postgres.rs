@@ -52,6 +52,7 @@ impl PostgresDB {
 
 #[async_trait]
 impl Database for PostgresDB {
+    #[instrument(level = "debug", skip(self), err)]
     async fn get_used_proofs(&self) -> Result<Proofs, MokshaMintError> {
         let proofs = sqlx::query!("SELECT * FROM used_proofs")
             .fetch_all(&self.pool)
@@ -69,6 +70,7 @@ impl Database for PostgresDB {
         Ok(proofs.into())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn add_used_proofs(&self, proofs: &Proofs) -> Result<(), MokshaMintError> {
         for proof in proofs.proofs() {
             sqlx::query!(
@@ -119,6 +121,7 @@ impl Database for PostgresDB {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn delete_pending_invoice(&self, key: String) -> Result<(), MokshaMintError> {
         sqlx::query!("DELETE FROM pending_invoices WHERE key = $1", key)
             .execute(&self.pool)
@@ -186,6 +189,7 @@ impl Database for PostgresDB {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn get_bolt11_melt_quote(&self, key: &Uuid) -> Result<Bolt11MeltQuote, MokshaMintError> {
         let quote: Bolt11MeltQuote = sqlx::query!(
             "SELECT id, payment_request, expiry, paid, amount, fee_reserve FROM bolt11_melt_quotes WHERE id = $1",
@@ -205,6 +209,7 @@ impl Database for PostgresDB {
         Ok(quote)
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn add_bolt11_melt_quote(&self, quote: &Bolt11MeltQuote) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "INSERT INTO bolt11_melt_quotes (id, payment_request, expiry, paid, amount, fee_reserve) VALUES ($1, $2, $3, $4, $5, $6)",
@@ -220,6 +225,7 @@ impl Database for PostgresDB {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn update_bolt11_melt_quote(
         &self,
         quote: &Bolt11MeltQuote,
@@ -234,6 +240,7 @@ impl Database for PostgresDB {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn delete_bolt11_melt_quote(
         &self,
         quote: &Bolt11MeltQuote,
@@ -247,6 +254,7 @@ impl Database for PostgresDB {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn get_onchain_mint_quote(
         &self,
         key: &Uuid,
@@ -268,6 +276,8 @@ impl Database for PostgresDB {
 
         Ok(quote)
     }
+
+    #[instrument(level = "debug", skip(self), err)]
     async fn add_onchain_mint_quote(
         &self,
         quote: &OnchainMintQuote,
@@ -285,6 +295,7 @@ impl Database for PostgresDB {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn update_onchain_mint_quote(
         &self,
         quote: &OnchainMintQuote,
@@ -299,6 +310,7 @@ impl Database for PostgresDB {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn delete_onchain_mint_quote(
         &self,
         quote: &OnchainMintQuote,
@@ -312,6 +324,7 @@ impl Database for PostgresDB {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn get_onchain_melt_quote(
         &self,
         key: &Uuid,
@@ -334,6 +347,8 @@ impl Database for PostgresDB {
 
         Ok(quote)
     }
+
+    #[instrument(level = "debug", skip(self), err)]
     async fn add_onchain_melt_quote(
         &self,
         quote: &OnchainMeltQuote,
@@ -352,6 +367,8 @@ impl Database for PostgresDB {
         .await?;
         Ok(())
     }
+
+    #[instrument(level = "debug", skip(self), err)]
     async fn update_onchain_melt_quote(
         &self,
         quote: &OnchainMeltQuote,
@@ -365,6 +382,8 @@ impl Database for PostgresDB {
         .await?;
         Ok(())
     }
+
+    #[instrument(level = "debug", skip(self), err)]
     async fn delete_onchain_melt_quote(
         &self,
         quote: &OnchainMeltQuote,

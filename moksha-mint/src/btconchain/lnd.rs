@@ -8,6 +8,7 @@ use fedimint_tonic_lnd::{
 };
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
+use tracing::instrument;
 use url::Url;
 
 pub struct LndBtcOnchain(Arc<Mutex<Client>>);
@@ -43,6 +44,7 @@ impl LndBtcOnchain {
 
 #[async_trait]
 impl BtcOnchain for LndBtcOnchain {
+    #[instrument(level = "debug", skip(self), err)]
     async fn is_transaction_paid(&self, txid: &str) -> Result<bool, MokshaMintError> {
         let request = ListUnspentRequest {
             min_confs: 0,
@@ -59,6 +61,7 @@ impl BtcOnchain for LndBtcOnchain {
             .any(|utxo| utxo.outpoint.clone().unwrap().txid_str == txid && utxo.confirmations > 0))
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn is_paid(
         &self,
         address: &str,
@@ -80,6 +83,7 @@ impl BtcOnchain for LndBtcOnchain {
         }))
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn new_address(&self) -> Result<String, MokshaMintError> {
         let mut client = self.client_lock().await?;
         let response = client
@@ -93,6 +97,7 @@ impl BtcOnchain for LndBtcOnchain {
         Ok(response.address)
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn send_coins(
         &self,
         address: &str,
@@ -116,6 +121,7 @@ impl BtcOnchain for LndBtcOnchain {
         })
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn estimate_fee(
         &self,
         address: &str,

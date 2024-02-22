@@ -100,6 +100,7 @@ impl Mint {
         Ok(promises)
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     pub async fn create_invoice(
         &self,
         key: String,
@@ -112,7 +113,7 @@ impl Mint {
         Ok((pr, key))
     }
 
-    #[instrument(level = "debug", skip(self))]
+    #[instrument(level = "debug", skip(self, outputs), err)]
     pub async fn mint_tokens(
         &self,
         payment_method: PaymentMethod,
@@ -145,6 +146,7 @@ impl Mint {
         !outputs.iter().all(move |x| uniq.insert(x.b_))
     }
 
+    #[instrument(level = "debug", skip_all, err)]
     pub async fn swap(
         &self,
         proofs: &Proofs,
