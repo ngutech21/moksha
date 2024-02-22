@@ -113,7 +113,7 @@ impl Mint {
         Ok((pr, key))
     }
 
-    #[instrument(level = "debug", skip(self, outputs), err)]
+    #[instrument(level = "debug", skip(self, outputs, keyset), err)]
     pub async fn mint_tokens(
         &self,
         payment_method: PaymentMethod,
@@ -173,6 +173,7 @@ impl Mint {
         Ok(promises)
     }
 
+    #[instrument(level = "debug", skip(self, proofs, blinded_messages, keyset), err)]
     pub async fn melt_bolt11(
         &self,
         payment_request: String,
@@ -242,6 +243,8 @@ impl Mint {
         }
         Ok(())
     }
+
+    #[instrument(level = "debug", skip(self, proofs), err)]
     pub async fn melt_onchain(
         &self,
         quote: &OnchainMeltQuote,
