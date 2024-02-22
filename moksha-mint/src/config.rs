@@ -30,6 +30,9 @@ pub struct Opts {
 
     #[clap(long, env = "MINT_BTC_ONCHAIN_BACKEND")]
     pub btconchain_backend: Option<BtcOnchainTypeVariant>,
+
+    #[clap(flatten)]
+    pub tracing: Option<TracingConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,6 +59,12 @@ impl FromStr for LightningTypeVariant {
     }
 }
 
+#[derive(Debug, Clone, Default, Parser)]
+pub struct TracingConfig {
+    #[clap(long, env = "MINT_TRACING_JAEGER_ENDPOINT")]
+    pub jaeger_endpoint: Option<String>,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct MintConfig {
     pub privatekey: String,
@@ -66,6 +75,7 @@ pub struct MintConfig {
     pub database: DatabaseConfig,
     pub btconchain_backend: Option<BtcOnchainConfig>,
     pub lightning_backend: Option<LightningType>,
+    pub tracing: Option<TracingConfig>,
 }
 
 impl From<(Opts, LightningType, Option<BtcOnchainConfig>)> for MintConfig {
@@ -79,6 +89,7 @@ impl From<(Opts, LightningType, Option<BtcOnchainConfig>)> for MintConfig {
             database: opts.database,
             btconchain_backend: btc,
             lightning_backend: Some(ln),
+            tracing: opts.tracing,
         }
     }
 }
@@ -121,6 +132,7 @@ impl MintConfig {
         database: DatabaseConfig,
         btconchain_backend: Option<BtcOnchainConfig>,
         lightning_backend: Option<LightningType>,
+        tracing: Option<TracingConfig>,
     ) -> Self {
         Self {
             privatekey: private_key,
@@ -131,6 +143,7 @@ impl MintConfig {
             database,
             btconchain_backend,
             lightning_backend,
+            tracing,
         }
     }
 }

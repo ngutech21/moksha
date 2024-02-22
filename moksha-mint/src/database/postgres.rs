@@ -8,6 +8,7 @@ use moksha_core::{
 };
 
 use sqlx::postgres::PgPoolOptions;
+use tracing::instrument;
 use uuid::Uuid;
 
 use crate::{config::DatabaseConfig, error::MokshaMintError, model::Invoice};
@@ -84,6 +85,7 @@ impl Database for PostgresDB {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self))]
     async fn get_pending_invoice(&self, key: String) -> Result<Invoice, MokshaMintError> {
         let invoice: Invoice = sqlx::query!(
             "SELECT amount, payment_request FROM pending_invoices WHERE key = $1",
@@ -99,6 +101,7 @@ impl Database for PostgresDB {
         Ok(invoice)
     }
 
+    #[instrument(level = "debug", skip(self))]
     async fn add_pending_invoice(
         &self,
         key: String,
@@ -123,6 +126,7 @@ impl Database for PostgresDB {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn get_bolt11_mint_quote(&self, id: &Uuid) -> Result<Bolt11MintQuote, MokshaMintError> {
         let quote: Bolt11MintQuote = sqlx::query!(
             "SELECT id, payment_request, expiry, paid FROM bolt11_mint_quotes WHERE id = $1",
@@ -139,6 +143,7 @@ impl Database for PostgresDB {
         Ok(quote)
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn add_bolt11_mint_quote(&self, quote: &Bolt11MintQuote) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "INSERT INTO bolt11_mint_quotes (id, payment_request, expiry, paid) VALUES ($1, $2, $3, $4)",
@@ -152,6 +157,7 @@ impl Database for PostgresDB {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn update_bolt11_mint_quote(
         &self,
         quote: &Bolt11MintQuote,
@@ -166,6 +172,7 @@ impl Database for PostgresDB {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     async fn delete_bolt11_mint_quote(
         &self,
         quote: &Bolt11MintQuote,
