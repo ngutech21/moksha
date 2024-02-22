@@ -2,6 +2,7 @@ tmp
 target
 .env
 .idea
+.vscode
 data
 .DS_Store
 *.profraw
