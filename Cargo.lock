@@ -808,15 +808,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "envy"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f47e0157f2cb54f5ae1bd371b30a2ae4311e1c028f575cd4e81de7353215965"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1781,12 +1772,10 @@ dependencies = [
  "anyhow",
  "async-trait",
  "axum 0.7.4",
- "bitcoin_hashes 0.13.0",
  "chrono",
  "clap",
  "cln-grpc",
  "dotenvy",
- "envy",
  "fedimint-tonic-lnd",
  "hex",
  "http-body-util",
@@ -1800,7 +1789,6 @@ dependencies = [
  "secp256k1 0.28.2",
  "serde",
  "serde_json",
- "serde_yaml",
  "sqlx",
  "tempfile",
  "thiserror",
@@ -1808,7 +1796,6 @@ dependencies = [
  "tonic 0.8.3",
  "tower",
  "tower-http",
- "tower-service",
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",
@@ -3004,19 +2991,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_yaml"
-version = "0.9.31"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "adf8a49373e98a4c5f0ceb5d05aa7c648d75f63774981ed95b7c7443bbd50c6e"
-dependencies = [
- "indexmap 2.2.3",
- "itoa",
- "ryu",
- "serde",
- "unsafe-libyaml",
-]
-
-[[package]]
 name = "sha1"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3960,12 +3934,6 @@ name = "unicode_categories"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39ec24b3121d976906ece63c9daad25b85969647682eee313cb5779fdd69e14e"
-
-[[package]]
-name = "unsafe-libyaml"
-version = "0.2.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab4c90930b95a82d00dc9e9ac071b4991924390d46cbd0dfe566148667605e4b"
 
 [[package]]
 name = "untrusted"
