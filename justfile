@@ -101,4 +101,13 @@ start-fly-proxy:
 db-secrets:
   flyctl secrets set LND_MACAROON="$(cat data/mutinynet/admin.macaroon)"
   flyctl secrets set LND_TLS_CERT="$(cat data/mutinynet/tls.cert)"
+
+
+# publish everything on crates.io
+publish:
+  cargo publish -p moksha-core
+  cargo publish -p moksha-wallet
+  cargo publish -p moksha-mint
+  cargo publish -p moksha-cli
+
    
