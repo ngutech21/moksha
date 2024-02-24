@@ -7,8 +7,7 @@ use std::net::SocketAddr;
 
 use bitcoin_hashes::sha256;
 use bitcoin_hashes::Hash;
-use lightning::ln::PaymentSecret;
-use lightning_invoice::{Currency, InvoiceBuilder};
+use lightning_invoice::{Currency, InvoiceBuilder, PaymentSecret};
 use secp256k1::Secp256k1;
 use secp256k1::SecretKey;
 

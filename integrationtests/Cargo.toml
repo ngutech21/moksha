@@ -23,7 +23,6 @@ axum = "0.7.3"
 anyhow = { version = "1.0.79", features = ["backtrace"] }
 serde = { version = "1.0.195", features = ["derive"] }
 lightning-invoice = "0.29.0"
-lightning = "0.0.121"
 bitcoin_hashes = { version = "0.12.0", default-features = false }
 secp256k1 = { version = "0.27.0", default-features = false, features = ["recovery", "alloc", "rand"] }
 tracing = "0.1.40"
