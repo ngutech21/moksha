@@ -28,4 +28,7 @@ pub enum MokshaCoreError {
 
     #[error("Invalid token")]
     InvalidToken,
+
+    #[error("No valid point on curve secp256k1 found")]
+    NoValidPointFound,
 }
