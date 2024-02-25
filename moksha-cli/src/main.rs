@@ -4,6 +4,7 @@ use moksha_core::primitives::{
     CurrencyUnit, PaymentMethod, PostMeltOnchainResponse, PostMintQuoteBolt11Response,
     PostMintQuoteOnchainResponse,
 };
+use moksha_wallet::deterministic_secrets;
 use moksha_wallet::http::CrossPlatformHttpClient;
 use num_format::{Locale, ToFormattedString};
 use std::io::Write;
@@ -26,25 +27,38 @@ struct Opts {
 #[derive(Subcommand, Clone)]
 enum Command {
     /// Mint tokens
-    Mint { amount: u64 },
+    Mint {
+        amount: u64,
+    },
 
     /// Pay Lightning invoice
-    Pay { invoice: String },
+    Pay {
+        invoice: String,
+    },
 
     /// Pay Bitcoin on chain
-    PayOnchain { address: String, amount: u64 },
+    PayOnchain {
+        address: String,
+        amount: u64,
+    },
 
     /// Send tokens
-    Send { amount: u64 },
+    Send {
+        amount: u64,
+    },
 
     /// Receive tokens
-    Receive { token: String },
+    Receive {
+        token: String,
+    },
 
     /// Show local balance
     Balance,
 
     /// Show version and configuration
     Info,
+
+    Seed,
 }
 
 #[tokio::main]
@@ -82,6 +96,24 @@ async fn main() -> anyhow::Result<()> {
         })?;
 
     match cli.command {
+        Command::Seed => {
+            let master = deterministic_secrets::generate_master_key().unwrap();
+            let first = deterministic_secrets::derive_private_key(
+                master,
+                0,
+                0,
+                deterministic_secrets::DerivationType::Secret,
+            );
+            println!("Seed: {}", master);
+            println!("first: {:?}", first);
+            let second = deterministic_secrets::derive_private_key(
+                master,
+                0,
+                1,
+                deterministic_secrets::DerivationType::Secret,
+            );
+            println!("second: {:?}", second);
+        }
         Command::Info => {
             let wallet_version = env!("CARGO_PKG_VERSION");
             println!(

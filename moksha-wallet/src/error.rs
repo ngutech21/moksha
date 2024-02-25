@@ -1,5 +1,6 @@
 use std::string::FromUtf8Error;
 
+use bdk::{bitcoin::bip32, keys::bip39};
 use lightning_invoice::ParseOrSemanticError;
 use thiserror::Error;
 
@@ -62,4 +63,10 @@ pub enum MokshaWalletError {
 
     #[error("Unsupported version: Only mints with /v1 api are supported")]
     UnsupportedApiVersion,
+
+    #[error("Bip32Error {0}")]
+    Bip32(#[from] bip32::Error),
+
+    #[error("Bip39Error {0}")]
+    Bip39(#[from] bip39::Error),
 }
