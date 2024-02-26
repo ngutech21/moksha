@@ -75,7 +75,6 @@ impl LndLightning {
     }
 }
 
-#[allow(implied_bounds_entailment)]
 #[async_trait]
 impl Lightning for LndLightning {
     #[instrument(skip(self), err)]
