@@ -77,8 +77,8 @@ pub enum MokshaMintError {
     #[error("Currency not supported {0}")]
     CurrencyNotSupported(CurrencyUnit),
 
-    #[error("Not Enough tokens: {0}")]
-    NotEnoughTokens(String),
+    #[error("Not Enough tokens. Required amount {0}")]
+    NotEnoughTokens(u64),
 
     #[error("Lnd error: {0}")]
     Lnd(#[from] Status),
