@@ -253,10 +253,7 @@ impl Mint {
         let proofs_amount = proofs.total_amount();
 
         if proofs_amount < quote.amount {
-            return Err(MokshaMintError::NotEnoughTokens(format!(
-                "Required amount: {}",
-                quote.amount
-            )));
+            return Err(MokshaMintError::NotEnoughTokens(quote.amount));
         }
 
         self.check_used_proofs(proofs).await?;

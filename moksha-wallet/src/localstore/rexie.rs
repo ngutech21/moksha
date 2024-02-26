@@ -1,4 +1,4 @@
-use super::{LocalStore, WalletKeyset};
+use super::{LocalStore, RexieTransaction, WalletKeyset};
 use crate::error::MokshaWalletError;
 use async_trait::async_trait;
 use moksha_core::proof::{Proof, Proofs};
@@ -37,7 +37,12 @@ impl RexieLocalStore {
 
 #[async_trait(?Send)]
 impl LocalStore for RexieLocalStore {
-    async fn add_proofs(&self, proofs: &Proofs) -> std::result::Result<(), MokshaWalletError> {
+    // FIXME implement tx-handling for Rexie
+    async fn add_proofs(
+        &self,
+        _tx: &mut RexieTransaction,
+        proofs: &Proofs,
+    ) -> std::result::Result<(), MokshaWalletError> {
         let db = Self::get_rexie().await;
 
         for proof in proofs.proofs() {
@@ -58,7 +63,10 @@ impl LocalStore for RexieLocalStore {
         Ok(())
     }
 
-    async fn get_proofs(&self) -> std::result::Result<Proofs, MokshaWalletError> {
+    async fn get_proofs(
+        &self,
+        _tx: &mut RexieTransaction,
+    ) -> std::result::Result<Proofs, MokshaWalletError> {
         let db = Self::get_rexie().await;
         let transaction = db
             .transaction(&[STORE_NAME], rexie::TransactionMode::ReadOnly)
@@ -81,6 +89,7 @@ impl LocalStore for RexieLocalStore {
 
     async fn delete_proofs(
         &self,
+        _tx: &mut RexieTransaction,
         proofs_to_delete: &Proofs,
     ) -> std::result::Result<(), MokshaWalletError> {
         let db = Self::get_rexie().await;

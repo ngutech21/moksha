@@ -35,7 +35,7 @@ tokio = { version = "1.35.1", features = ["rt", "sync"] }
 [target.'cfg(not(target_family="wasm"))'.dependencies]
 reqwest = { version = "0.11.23", features = ["serde_json", "json", "rustls-tls"], default-features = false }
 tokio = { version = "1.35.1", features = ["rt", "rt-multi-thread", "macros"] }
-sqlx = { version = "0.7.3", default-features = false, features = ["sqlite", "runtime-tokio", "tls-native-tls", "migrate", "macros"] }
+sqlx = { version = "0.7.3", default-features = false, features = ["sqlite", "runtime-tokio", "tls-rustls", "migrate", "macros"] }
 
 [dev-dependencies]
 tempfile = "3.9.0"
