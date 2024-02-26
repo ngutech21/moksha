@@ -54,11 +54,10 @@ impl BtcOnchain for LndBtcOnchain {
 
         let response = self.wallet_lock().await?.list_unspent(request).await?;
 
-        Ok(response
-            .get_ref()
-            .utxos
-            .iter()
-            .any(|utxo| utxo.outpoint.clone().unwrap().txid_str == txid && utxo.confirmations > 0))
+        Ok(response.get_ref().utxos.iter().any(|utxo| {
+            utxo.outpoint.clone().expect("No outpoint found").txid_str == txid
+                && utxo.confirmations > 0
+        }))
     }
 
     #[instrument(level = "debug", skip(self), err)]
