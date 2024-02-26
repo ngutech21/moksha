@@ -1,3 +1,4 @@
+#![allow(clippy::blocks_in_conditions)]
 use async_trait::async_trait;
 use moksha_core::{
     dhke,

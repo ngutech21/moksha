@@ -1,3 +1,4 @@
+#![allow(clippy::blocks_in_conditions)]
 use super::{BtcOnchain, EstimateFeeResult, SendCoinsResult};
 use crate::error::MokshaMintError;
 use async_trait::async_trait;
