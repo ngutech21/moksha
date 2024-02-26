@@ -221,7 +221,8 @@ where
     }
 
     pub async fn get_balance(&self) -> Result<u64, MokshaWalletError> {
-        Ok(self.localstore.get_proofs().await?.total_amount())
+        let mut tx = self.localstore.begin_tx().await?;
+        Ok(self.localstore.get_proofs(&mut tx).await?.total_amount())
     }
 
     pub async fn send_tokens(&self, amount: u64) -> Result<TokenV3, MokshaWalletError> {
@@ -230,17 +231,20 @@ where
             return Err(MokshaWalletError::NotEnoughTokens);
         }
 
-        let all_proofs = self.localstore.get_proofs().await?;
+        let mut tx = self.localstore.begin_tx().await?;
+        let all_proofs = self.localstore.get_proofs(&mut tx).await?;
         let selected_proofs = all_proofs.proofs_for_amount(amount)?;
         let selected_tokens = (self.mint_url.to_owned(), selected_proofs.clone()).into();
 
         let (remaining_tokens, result) = self.split_tokens(&selected_tokens, amount.into()).await?;
 
-        // FIXME create transaction
-        self.localstore.delete_proofs(&selected_proofs).await?;
         self.localstore
-            .add_proofs(&remaining_tokens.proofs())
+            .delete_proofs(&mut tx, &selected_proofs)
             .await?;
+        self.localstore
+            .add_proofs(&mut tx, &remaining_tokens.proofs())
+            .await?;
+        tx.commit().await?;
 
         Ok(result)
     }
@@ -248,9 +252,11 @@ where
     pub async fn receive_tokens(&self, tokens: &TokenV3) -> Result<(), MokshaWalletError> {
         let total_amount = tokens.total_amount();
         let (_, redeemed_tokens) = self.split_tokens(tokens, total_amount.into()).await?;
+        let mut tx = self.localstore.begin_tx().await?;
         self.localstore
-            .add_proofs(&redeemed_tokens.proofs())
+            .add_proofs(&mut tx, &redeemed_tokens.proofs())
             .await?;
+        tx.commit().await?;
         Ok(())
     }
 
@@ -279,7 +285,8 @@ where
         melt_quote: &PostMeltQuoteBolt11Response,
         invoice: String,
     ) -> Result<(PostMeltBolt11Response, u64), MokshaWalletError> {
-        let all_proofs = self.localstore.get_proofs().await?;
+        let mut tx = self.localstore.begin_tx().await?;
+        let all_proofs = self.localstore.get_proofs(&mut tx).await?;
 
         let ln_amount = Self::get_invoice_amount(&invoice)? + melt_quote.fee_reserve;
 
@@ -294,9 +301,13 @@ where
                 .split_tokens(&selected_tokens, ln_amount.into())
                 .await?;
 
-            // FIXME create transaction
-            self.localstore.delete_proofs(&selected_proofs).await?;
-            self.localstore.add_proofs(&split_result.0.proofs()).await?;
+            self.localstore
+                .delete_proofs(&mut tx, &selected_proofs)
+                .await?;
+            self.localstore
+                .add_proofs(&mut tx, &split_result.0.proofs())
+                .await?;
+            tx.commit().await?;
 
             split_result.1.proofs()
         };
@@ -319,25 +330,28 @@ where
             .map(|(msg, secret, _)| (msg.clone(), secret.to_owned()))
             .collect::<Vec<(BlindedMessage, SecretKey)>>();
 
+        let mut tx = self.localstore.begin_tx().await?;
         match self
             .melt_token(melt_quote.to_owned().quote, ln_amount, &total_proofs, msgs)
             .await
         {
             Ok(response) => {
                 if !response.paid {
-                    self.localstore.add_proofs(&total_proofs).await?;
+                    self.localstore.add_proofs(&mut tx, &total_proofs).await?;
                 }
                 let change_proofs = self.create_proofs_from_blinded_signatures(
                     response.clone().change,
                     secrets,
                     outputs,
                 )?;
-                self.localstore.add_proofs(&change_proofs).await?;
+                self.localstore.add_proofs(&mut tx, &change_proofs).await?;
+                tx.commit().await?;
 
                 Ok((response, change_proofs.total_amount()))
             }
             Err(e) => {
-                self.localstore.add_proofs(&total_proofs).await?;
+                self.localstore.add_proofs(&mut tx, &total_proofs).await?;
+                tx.commit().await?;
                 Err(e)
             }
         }
@@ -358,7 +372,8 @@ where
 
         melt_quote: &PostMeltQuoteOnchainResponse,
     ) -> Result<PostMeltOnchainResponse, MokshaWalletError> {
-        let all_proofs = self.localstore.get_proofs().await?;
+        let mut tx = self.localstore.begin_tx().await?;
+        let all_proofs = self.localstore.get_proofs(&mut tx).await?;
 
         let ln_amount = melt_quote.amount + melt_quote.fee;
 
@@ -373,9 +388,12 @@ where
                 .split_tokens(&selected_tokens, ln_amount.into())
                 .await?;
 
-            // FIXME create transaction
-            self.localstore.delete_proofs(&selected_proofs).await?;
-            self.localstore.add_proofs(&split_result.0.proofs()).await?;
+            self.localstore
+                .delete_proofs(&mut tx, &selected_proofs)
+                .await?;
+            self.localstore
+                .add_proofs(&mut tx, &split_result.0.proofs())
+                .await?;
 
             split_result.1.proofs()
         };
@@ -390,8 +408,11 @@ where
             .await?;
 
         if melt_response.paid {
-            self.localstore.delete_proofs(&total_proofs).await?;
+            self.localstore
+                .delete_proofs(&mut tx, &total_proofs)
+                .await?;
         }
+        tx.commit().await?;
         Ok(melt_response)
 
         // match self
@@ -495,7 +516,9 @@ where
             .await?;
 
         if melt_response.paid {
-            self.localstore.delete_proofs(proofs).await?;
+            let mut tx = self.localstore.begin_tx().await?;
+            self.localstore.delete_proofs(&mut tx, proofs).await?;
+            tx.commit().await?;
         }
         Ok(melt_response)
     }
@@ -597,7 +620,11 @@ where
             .into();
 
         let tokens: TokenV3 = (self.mint_url.to_owned(), proofs).into();
-        self.localstore.add_proofs(&tokens.proofs()).await?;
+        let mut tx = self.localstore.begin_tx().await?;
+        self.localstore
+            .add_proofs(&mut tx, &tokens.proofs())
+            .await?;
+        tx.commit().await?;
 
         Ok(tokens)
     }
@@ -670,12 +697,8 @@ fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, SecretKey)>) -> Vec<Bl
 mod tests {
     use crate::client::MockCashuClient;
     use crate::localstore::sqlite::SqliteLocalStore;
+    use crate::localstore::LocalStore;
     use crate::wallet::WalletBuilder;
-    use crate::{
-        error::MokshaWalletError,
-        localstore::{LocalStore, WalletKeyset},
-    };
-    use async_trait::async_trait;
 
     use moksha_core::fixture::{read_fixture, read_fixture_as};
     use moksha_core::keyset::{MintKeyset, V1Keysets};
@@ -683,59 +706,9 @@ mod tests {
         CurrencyUnit, KeyResponse, KeysResponse, PaymentMethod, PostMeltBolt11Response,
         PostMeltQuoteBolt11Response, PostMintBolt11Response, PostSwapResponse,
     };
-    use moksha_core::proof::Proofs;
-    use moksha_core::token::{Token, TokenV3};
+
+    use moksha_core::token::TokenV3;
     use url::Url;
-
-    #[derive(Clone)]
-    struct MockLocalStore {
-        tokens: TokenV3,
-    }
-
-    impl MockLocalStore {
-        fn with_tokens(tokens: TokenV3) -> Self {
-            Self { tokens }
-        }
-    }
-
-    impl Default for MockLocalStore {
-        fn default() -> Self {
-            Self {
-                tokens: TokenV3::new(Token {
-                    mint: Some(Url::parse("http://127.0.0.1:3338").expect("invalid url")),
-                    proofs: Proofs::empty(),
-                }),
-            }
-        }
-    }
-
-    #[async_trait(?Send)]
-    impl LocalStore for MockLocalStore {
-        async fn add_proofs(&self, _: &Proofs) -> Result<(), crate::error::MokshaWalletError> {
-            Ok(())
-        }
-
-        async fn get_proofs(
-            &self,
-        ) -> Result<moksha_core::proof::Proofs, crate::error::MokshaWalletError> {
-            Ok(self.tokens.clone().proofs())
-        }
-
-        async fn delete_proofs(
-            &self,
-            _proofs: &Proofs,
-        ) -> Result<(), crate::error::MokshaWalletError> {
-            Ok(())
-        }
-
-        async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
-            Ok(vec![])
-        }
-
-        async fn add_keyset(&self, _keyset: &WalletKeyset) -> Result<(), MokshaWalletError> {
-            Ok(())
-        }
-    }
 
     fn create_mock() -> MockCashuClient {
         let keys = MintKeyset::new("mykey", "");
@@ -768,7 +741,7 @@ mod tests {
             .expect_post_mint_bolt11()
             .returning(move |_, _, _| Ok(mint_response.clone()));
 
-        let localstore = MockLocalStore::default();
+        let localstore = SqliteLocalStore::with_in_memory().await?;
         let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
 
         let wallet = WalletBuilder::new()
@@ -795,7 +768,7 @@ mod tests {
         client
             .expect_post_swap()
             .returning(move |_, _, _| Ok(split_response.clone()));
-        let localstore = MockLocalStore::default();
+        let localstore = SqliteLocalStore::with_in_memory().await?;
 
         let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
         let wallet = WalletBuilder::new()
@@ -815,7 +788,11 @@ mod tests {
     #[tokio::test]
     async fn test_get_balance() -> anyhow::Result<()> {
         let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
-        let local_store = MockLocalStore::with_tokens(fixture.try_into()?);
+        let fixture: TokenV3 = fixture.try_into()?;
+        let local_store = SqliteLocalStore::with_in_memory().await?;
+        let mut tx = local_store.begin_tx().await?;
+        local_store.add_proofs(&mut tx, &fixture.proofs()).await?;
+        tx.commit().await?;
 
         let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
         let wallet = WalletBuilder::new()
@@ -829,11 +806,17 @@ mod tests {
         assert_eq!(60, result);
         Ok(())
     }
+    // FIXME
 
     #[tokio::test]
     async fn test_pay_invoice() -> anyhow::Result<()> {
         let fixture = read_fixture("token_60.cashu")?; // 60 tokens (4,8,16,32)
-        let local_store = MockLocalStore::with_tokens(fixture.try_into()?);
+
+        let local_store = SqliteLocalStore::with_in_memory().await?;
+        let fixture: TokenV3 = fixture.try_into()?;
+        let mut tx = local_store.begin_tx().await?;
+        local_store.add_proofs(&mut tx, &fixture.proofs()).await?;
+        tx.commit().await?;
 
         let melt_response =
             read_fixture_as::<PostMeltBolt11Response>("post_melt_response_21.json")?; // 60 tokens (4,8,16,32)
@@ -878,18 +861,14 @@ mod tests {
         let fixture = read_fixture("token_64.cashu")?; // 60 tokens (4,8,16,32)
         let tokens: TokenV3 = fixture.try_into()?;
 
-        let tmp = tempfile::tempdir().expect("Could not create tmp dir for wallet");
-        let tmp_dir = tmp
-            .path()
-            .to_str()
-            .expect("Could not create tmp dir for wallet");
-
-        let localstore = SqliteLocalStore::with_path(format!("{tmp_dir}/test_wallet.db"))
+        let localstore = SqliteLocalStore::with_in_memory()
             .await
             .expect("Could not create localstore");
 
-        localstore.add_proofs(&tokens.proofs()).await?;
-        assert_eq!(64, localstore.get_proofs().await?.total_amount());
+        let mut tx = localstore.begin_tx().await?;
+        localstore.add_proofs(&mut tx, &tokens.proofs()).await?;
+        assert_eq!(64, localstore.get_proofs(&mut tx).await?.total_amount());
+        tx.commit().await?;
 
         let melt_response =
             read_fixture_as::<PostMeltBolt11Response>("post_melt_response_not_paid.json")?;
@@ -924,7 +903,8 @@ mod tests {
             .await?;
         let result = wallet.pay_invoice(&quote, invoice).await?;
         assert!(!result.0.paid);
-        assert_eq!(64, localstore.get_proofs().await?.total_amount());
+        let mut tx = localstore.begin_tx().await?;
+        assert_eq!(64, localstore.get_proofs(&mut tx).await?.total_amount());
         assert!(!result.0.paid);
         Ok(())
     }
