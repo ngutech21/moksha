@@ -44,4 +44,5 @@ jobs:
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v4
         with:
-          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
