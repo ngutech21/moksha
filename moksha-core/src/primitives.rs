@@ -619,10 +619,8 @@ mod tests {
             motd: Some("Message to display to users.".to_string()),
         };
         let out = serde_json::to_string_pretty(&mint_info)?;
-        println!("{}", out);
         assert!(!out.is_empty());
-        // FIXME add asserts
-
+        assert!(out.contains("02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2"));
         Ok(())
     }
 
