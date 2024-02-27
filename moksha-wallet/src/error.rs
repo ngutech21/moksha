@@ -12,10 +12,12 @@ pub enum MokshaWalletError {
     #[error("SerdeJsonError - {0}")]
     Json(#[from] serde_json::Error),
 
+    #[cfg(not(target_os = "espidf"))]
     #[cfg(not(target_arch = "wasm32"))]
     #[error("ReqwestError - {0}")]
     Reqwest(#[from] reqwest::Error),
 
+    #[cfg(not(target_os = "espidf"))]
     #[cfg(not(target_arch = "wasm32"))]
     #[error("InvalidHeaderValueError - {0}")]
     InvalidHeaderValue(#[from] reqwest::header::InvalidHeaderValue),
@@ -31,10 +33,12 @@ pub enum MokshaWalletError {
     #[error("MokshaCoreError - {0}")]
     MokshaCore(#[from] moksha_core::error::MokshaCoreError),
 
+    #[cfg(not(target_os = "espidf"))]
     #[cfg(not(target_arch = "wasm32"))]
     #[error("DB Error {0}")]
     Db(#[from] sqlx::Error),
 
+    #[cfg(not(target_os = "espidf"))]
     #[cfg(not(target_arch = "wasm32"))]
     #[error("Migrate Error {0}")]
     Migrate(#[from] sqlx::migrate::MigrateError),

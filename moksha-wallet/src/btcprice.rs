@@ -1,6 +1,7 @@
 use crate::error::MokshaWalletError;
 
 async fn execute_request(url: &str) -> Result<String, MokshaWalletError> {
+    #[cfg(not(target_os = "espidf"))]
     #[cfg(not(target_arch = "wasm32"))]
     {
         let request_client = reqwest::Client::new();

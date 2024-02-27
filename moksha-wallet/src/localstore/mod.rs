@@ -3,6 +3,7 @@ use moksha_core::proof::Proofs;
 
 use crate::error::MokshaWalletError;
 
+#[cfg(not(target_os = "espidf"))]
 #[cfg(not(target_arch = "wasm32"))]
 pub mod sqlite;
 
@@ -15,6 +16,7 @@ pub struct WalletKeyset {
     pub mint_url: String,
 }
 
+#[cfg(not(target_os = "espidf"))]
 #[cfg(not(target_arch = "wasm32"))]
 #[async_trait(?Send)]
 pub trait LocalStore {
