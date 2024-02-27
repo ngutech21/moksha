@@ -414,29 +414,6 @@ where
         }
         tx.commit().await?;
         Ok(melt_response)
-
-        // match self
-        //     .melt_token(melt_quote.quote, ln_amount, &total_proofs, msgs)
-        //     .await
-        // {
-        //     Ok(response) => {
-        //         if !response.paid {
-        //             self.localstore.add_proofs(&total_proofs).await?;
-        //         }
-        //         let change_proofs = self.create_proofs_from_blinded_signatures(
-        //             response.clone().change,
-        //             secrets,
-        //             outputs,
-        //         )?;
-        //         self.localstore.add_proofs(&change_proofs).await?;
-
-        //         Ok(response)
-        //     }
-        //     Err(e) => {
-        //         self.localstore.add_proofs(&total_proofs).await?;
-        //         Err(e)
-        //     }
-        // }
     }
 
     pub async fn split_tokens(

@@ -18,7 +18,7 @@ impl LocalStore for SqliteLocalStore {
     type DB = sqlx::Sqlite;
 
     async fn begin_tx(&self) -> Result<sqlx::Transaction<'_, Self::DB>, MokshaWalletError> {
-        Ok(self.pool.begin().await.unwrap())
+        Ok(self.pool.begin().await?)
     }
 
     async fn delete_proofs(
@@ -36,8 +36,7 @@ impl LocalStore for SqliteLocalStore {
         sqlx::query("DELETE FROM proofs WHERE secret in (?);")
             .bind(proof_secrets)
             .execute(&mut **tx)
-            .await
-            .unwrap();
+            .await?;
         Ok(())
     }
 
@@ -52,11 +51,11 @@ impl LocalStore for SqliteLocalStore {
                 "#,
             )
             .bind(proof.keyset_id)
-            .bind(proof.amount as i64) // FIXME use u64
+            .bind(proof.amount as i64)
             .bind(proof.c.to_string())
             .bind(proof.secret)
             .execute(&mut **tx)
-            .await.unwrap();
+            .await?;
         }
         Ok(())
     }
@@ -67,8 +66,7 @@ impl LocalStore for SqliteLocalStore {
     ) -> Result<Proofs, MokshaWalletError> {
         let rows = sqlx::query("SELECT * FROM proofs;")
             .fetch_all(&mut **tx)
-            .await
-            .unwrap();
+            .await?;
 
         Ok(rows
             .iter()
@@ -81,13 +79,12 @@ impl LocalStore for SqliteLocalStore {
                 Ok(Proof {
                     keyset_id: id,
                     amount: amount as u64,
-                    c: c.parse().unwrap(),
+                    c: c.parse().expect("Invalid Pubkey"),
                     secret,
                     script: None,
                 })
             })
-            .collect::<Result<Vec<Proof>, SqliteError>>()
-            .unwrap()
+            .collect::<Result<Vec<Proof>, SqliteError>>()?
             .into())
     }
 
@@ -99,16 +96,14 @@ impl LocalStore for SqliteLocalStore {
         .bind(keyset.id.to_owned())
         .bind(keyset.mint_url.to_owned())
         .execute(&self.pool)
-        .await
-        .unwrap();
+        .await?;
         Ok(())
     }
 
     async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
         let rows = sqlx::query("SELECT * FROM keysets;")
             .fetch_all(&self.pool)
-            .await
-            .unwrap();
+            .await?;
 
         Ok(rows
             .iter()
@@ -117,8 +112,7 @@ impl LocalStore for SqliteLocalStore {
                 let mint_url: String = row.get(1);
                 Ok(WalletKeyset { id, mint_url })
             })
-            .collect::<Result<Vec<WalletKeyset>, SqliteError>>()
-            .unwrap())
+            .collect::<Result<Vec<WalletKeyset>, SqliteError>>()?)
     }
 }
 
@@ -127,44 +121,31 @@ impl SqliteLocalStore {
         Self::with_connection_string(&format!("sqlite://{absolute_path}?mode=rwc")).await
     }
 
-    async fn with_connection_string(connection_string: &str) -> Result<Self, MokshaWalletError> {
-        // creates db-file if not already exists
-        let pool = sqlx::SqlitePool::connect(connection_string).await.unwrap();
-
-        sqlx::query("PRAGMA journal_mode=WAL")
-            .execute(&pool)
-            .await
-            .unwrap();
-        let store = Self { pool };
-        store.migrate().await.unwrap();
-        Ok(store)
-    }
-
     pub async fn with_in_memory() -> Result<Self, MokshaWalletError> {
         Self::with_connection_string("sqlite::memory:").await
     }
 
-    async fn migrate(&self) -> Result<(), sqlx::Error> {
-        Ok(sqlx::migrate!("./migrations").run(&self.pool).await?)
+    async fn with_connection_string(connection_string: &str) -> Result<Self, MokshaWalletError> {
+        // creates db-file if not already exists
+        let pool = sqlx::SqlitePool::connect(connection_string).await?;
+
+        sqlx::query("PRAGMA journal_mode=WAL")
+            .execute(&pool)
+            .await?;
+        sqlx::migrate!("./migrations").run(&pool).await?;
+        Ok(Self { pool })
     }
 }
 
 #[cfg(test)]
 mod tests {
-
-    use moksha_core::{fixture::read_fixture, token::TokenV3};
-
     use super::SqliteLocalStore;
     use crate::localstore::LocalStore;
+    use moksha_core::{fixture::read_fixture, token::TokenV3};
 
     #[tokio::test]
-    async fn test_sqlite() -> anyhow::Result<()> {
-        let tmp = tempfile::tempdir()?;
-        let tmp_dir = tmp.path().to_str().expect("Could not create tmp dir");
-
-        let db = SqliteLocalStore::with_path(format!("{tmp_dir}/test_wallet.db")).await?;
-        db.migrate().await?;
-
+    async fn test_add_proofs() -> anyhow::Result<()> {
+        let db = SqliteLocalStore::with_in_memory().await?;
         let mut tx = db.begin_tx().await?;
         let tokens: TokenV3 = read_fixture("token_60.cashu")?
             .trim()
@@ -180,7 +161,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_delete_tokens() -> anyhow::Result<()> {
+    async fn test_delete_proofs() -> anyhow::Result<()> {
         let localstore = SqliteLocalStore::with_in_memory().await?;
         let mut tx = localstore.begin_tx().await?;
 

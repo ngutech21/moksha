@@ -38,5 +38,5 @@ tokio = { version = "1.35.1", features = ["rt", "rt-multi-thread", "macros"] }
 sqlx = { version = "0.7.3", default-features = false, features = ["sqlite", "runtime-tokio", "tls-rustls", "migrate", "macros"] }
 
 [dev-dependencies]
-tempfile = "3.9.0"
+tempfile = "3.10.1"
 mockall = "0.12.1"
