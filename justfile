@@ -1,5 +1,3 @@
-export CFLAGS := ""
-
 DB_URL := "postgres://postgres:postgres@localhost/moksha-mint"
 
 # list all tasks
