@@ -16,6 +16,7 @@ use crate::{config::DatabaseConfig, error::MokshaMintError, model::Invoice};
 
 use super::Database;
 
+#[derive(Clone)]
 pub struct PostgresDB {
     pool: sqlx::Pool<sqlx::Postgres>,
 }
@@ -36,27 +37,23 @@ impl PostgresDB {
             .await
             .expect("Could not run migrations");
     }
-
-    pub async fn start_transaction(
-        &self,
-    ) -> Result<sqlx::Transaction<'_, sqlx::Postgres>, sqlx::Error> {
-        self.pool.begin().await
-    }
-
-    pub async fn commit_transaction(
-        &self,
-        transaction: sqlx::Transaction<'_, sqlx::Postgres>,
-    ) -> Result<(), sqlx::Error> {
-        transaction.commit().await
-    }
 }
 
 #[async_trait]
 impl Database for PostgresDB {
+    type DB = sqlx::Postgres;
+
+    async fn begin_tx(&self) -> Result<sqlx::Transaction<Self::DB>, sqlx::Error> {
+        self.pool.begin().await
+    }
+
     #[instrument(level = "debug", skip(self), err)]
-    async fn get_used_proofs(&self) -> Result<Proofs, MokshaMintError> {
+    async fn get_used_proofs(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+    ) -> Result<Proofs, MokshaMintError> {
         let proofs = sqlx::query!("SELECT * FROM used_proofs")
-            .fetch_all(&self.pool)
+            .fetch_all(&mut **tx)
             .await?
             .into_iter()
             .map(|row| Proof {
@@ -72,7 +69,11 @@ impl Database for PostgresDB {
     }
 
     #[instrument(level = "debug", skip(self), err)]
-    async fn add_used_proofs(&self, proofs: &Proofs) -> Result<(), MokshaMintError> {
+    async fn add_used_proofs(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        proofs: &Proofs,
+    ) -> Result<(), MokshaMintError> {
         for proof in proofs.proofs() {
             sqlx::query!(
                 "INSERT INTO used_proofs (amount, secret, c, keyset_id) VALUES ($1, $2, $3, $4)",
@@ -81,7 +82,7 @@ impl Database for PostgresDB {
                 proof.c.to_string(),
                 proof.keyset_id.to_string()
             )
-            .execute(&self.pool)
+            .execute(&mut **tx)
             .await?;
         }
 
@@ -89,7 +90,11 @@ impl Database for PostgresDB {
     }
 
     #[instrument(level = "debug", skip(self))]
-    async fn get_pending_invoice(&self, key: String) -> Result<Invoice, MokshaMintError> {
+    async fn get_pending_invoice(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        key: String,
+    ) -> Result<Invoice, MokshaMintError> {
         let invoice: Invoice = sqlx::query!(
             "SELECT amount, payment_request FROM pending_invoices WHERE key = $1",
             key
@@ -98,7 +103,7 @@ impl Database for PostgresDB {
             amount: row.amount as u64,
             payment_request: row.payment_request,
         })
-        .fetch_one(&self.pool)
+        .fetch_one(&mut **tx)
         .await?;
 
         Ok(invoice)
@@ -107,6 +112,7 @@ impl Database for PostgresDB {
     #[instrument(level = "debug", skip(self))]
     async fn add_pending_invoice(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         key: String,
         invoice: &Invoice,
     ) -> Result<(), MokshaMintError> {
@@ -116,22 +122,30 @@ impl Database for PostgresDB {
             invoice.amount as i64,
             invoice.payment_request
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await?;
 
         Ok(())
     }
 
     #[instrument(level = "debug", skip(self), err)]
-    async fn delete_pending_invoice(&self, key: String) -> Result<(), MokshaMintError> {
+    async fn delete_pending_invoice(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        key: String,
+    ) -> Result<(), MokshaMintError> {
         sqlx::query!("DELETE FROM pending_invoices WHERE key = $1", key)
-            .execute(&self.pool)
+            .execute(&mut **tx)
             .await?;
         Ok(())
     }
 
     #[instrument(level = "debug", skip(self), err)]
-    async fn get_bolt11_mint_quote(&self, id: &Uuid) -> Result<Bolt11MintQuote, MokshaMintError> {
+    async fn get_bolt11_mint_quote(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        id: &Uuid,
+    ) -> Result<Bolt11MintQuote, MokshaMintError> {
         let quote: Bolt11MintQuote = sqlx::query!(
             "SELECT id, payment_request, expiry, paid FROM bolt11_mint_quotes WHERE id = $1",
             id
@@ -142,13 +156,17 @@ impl Database for PostgresDB {
             expiry: row.expiry as u64,
             paid: row.paid,
         })
-        .fetch_one(&self.pool)
+        .fetch_one(&mut **tx)
         .await?;
         Ok(quote)
     }
 
     #[instrument(level = "debug", skip(self), err)]
-    async fn add_bolt11_mint_quote(&self, quote: &Bolt11MintQuote) -> Result<(), MokshaMintError> {
+    async fn add_bolt11_mint_quote(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        quote: &Bolt11MintQuote,
+    ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "INSERT INTO bolt11_mint_quotes (id, payment_request, expiry, paid) VALUES ($1, $2, $3, $4)",
             quote.quote_id,
@@ -156,7 +174,7 @@ impl Database for PostgresDB {
             quote.expiry as i64,
             quote.paid
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await?;
         Ok(())
     }
@@ -164,6 +182,7 @@ impl Database for PostgresDB {
     #[instrument(level = "debug", skip(self), err)]
     async fn update_bolt11_mint_quote(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         quote: &Bolt11MintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
@@ -171,7 +190,7 @@ impl Database for PostgresDB {
             quote.paid,
             quote.quote_id
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await?;
         Ok(())
     }
@@ -179,19 +198,24 @@ impl Database for PostgresDB {
     #[instrument(level = "debug", skip(self), err)]
     async fn delete_bolt11_mint_quote(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         quote: &Bolt11MintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "DELETE FROM bolt11_mint_quotes WHERE id = $1",
             quote.quote_id
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await?;
         Ok(())
     }
 
     #[instrument(level = "debug", skip(self), err)]
-    async fn get_bolt11_melt_quote(&self, key: &Uuid) -> Result<Bolt11MeltQuote, MokshaMintError> {
+    async fn get_bolt11_melt_quote(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        key: &Uuid,
+    ) -> Result<Bolt11MeltQuote, MokshaMintError> {
         let quote: Bolt11MeltQuote = sqlx::query!(
             "SELECT id, payment_request, expiry, paid, amount, fee_reserve FROM bolt11_melt_quotes WHERE id = $1",
             key
@@ -204,14 +228,18 @@ impl Database for PostgresDB {
             amount: row.amount as u64,
             fee_reserve: row.fee_reserve as u64,
         })
-        .fetch_one(&self.pool)
+        .fetch_one(&mut **tx)
         .await?;
 
         Ok(quote)
     }
 
     #[instrument(level = "debug", skip(self), err)]
-    async fn add_bolt11_melt_quote(&self, quote: &Bolt11MeltQuote) -> Result<(), MokshaMintError> {
+    async fn add_bolt11_melt_quote(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        quote: &Bolt11MeltQuote,
+    ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "INSERT INTO bolt11_melt_quotes (id, payment_request, expiry, paid, amount, fee_reserve) VALUES ($1, $2, $3, $4, $5, $6)",
             quote.quote_id,
@@ -221,7 +249,7 @@ impl Database for PostgresDB {
             quote.amount as i64,
             quote.fee_reserve as i64
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await?;
         Ok(())
     }
@@ -229,6 +257,7 @@ impl Database for PostgresDB {
     #[instrument(level = "debug", skip(self), err)]
     async fn update_bolt11_melt_quote(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         quote: &Bolt11MeltQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
@@ -236,7 +265,7 @@ impl Database for PostgresDB {
             quote.paid,
             quote.quote_id
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await?;
         Ok(())
     }
@@ -244,13 +273,14 @@ impl Database for PostgresDB {
     #[instrument(level = "debug", skip(self), err)]
     async fn delete_bolt11_melt_quote(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         quote: &Bolt11MeltQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "DELETE FROM bolt11_melt_quotes WHERE id = $1",
             quote.quote_id
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await?;
         Ok(())
     }
@@ -258,6 +288,7 @@ impl Database for PostgresDB {
     #[instrument(level = "debug", skip(self), err)]
     async fn get_onchain_mint_quote(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         key: &Uuid,
     ) -> Result<OnchainMintQuote, MokshaMintError> {
         let quote: OnchainMintQuote = sqlx::query!(
@@ -272,7 +303,7 @@ impl Database for PostgresDB {
             amount: row.amount as u64,
             unit: CurrencyUnit::Sat,
         })
-        .fetch_one(&self.pool)
+        .fetch_one(&mut **tx)
         .await?;
 
         Ok(quote)
@@ -281,6 +312,7 @@ impl Database for PostgresDB {
     #[instrument(level = "debug", skip(self), err)]
     async fn add_onchain_mint_quote(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         quote: &OnchainMintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
@@ -291,7 +323,7 @@ impl Database for PostgresDB {
             quote.expiry as i64,
             quote.paid,
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await?;
         Ok(())
     }
@@ -299,6 +331,7 @@ impl Database for PostgresDB {
     #[instrument(level = "debug", skip(self), err)]
     async fn update_onchain_mint_quote(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         quote: &OnchainMintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
@@ -306,7 +339,7 @@ impl Database for PostgresDB {
             quote.paid,
             quote.quote_id
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await?;
         Ok(())
     }
@@ -314,13 +347,14 @@ impl Database for PostgresDB {
     #[instrument(level = "debug", skip(self), err)]
     async fn delete_onchain_mint_quote(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         quote: &OnchainMintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "DELETE FROM onchain_mint_quotes WHERE id = $1",
             quote.quote_id
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await?;
         Ok(())
     }
@@ -328,6 +362,7 @@ impl Database for PostgresDB {
     #[instrument(level = "debug", skip(self), err)]
     async fn get_onchain_melt_quote(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         key: &Uuid,
     ) -> Result<OnchainMeltQuote, MokshaMintError> {
         let quote: OnchainMeltQuote = sqlx::query!(
@@ -343,7 +378,7 @@ impl Database for PostgresDB {
             expiry: row.expiry as u64,
             paid: row.paid,
         })
-        .fetch_one(&self.pool)
+        .fetch_one(&mut **tx)
         .await?;
 
         Ok(quote)
@@ -352,6 +387,7 @@ impl Database for PostgresDB {
     #[instrument(level = "debug", skip(self), err)]
     async fn add_onchain_melt_quote(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         quote: &OnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
@@ -364,7 +400,7 @@ impl Database for PostgresDB {
             quote.expiry as i64,
             quote.paid,
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await?;
         Ok(())
     }
@@ -372,6 +408,7 @@ impl Database for PostgresDB {
     #[instrument(level = "debug", skip(self), err)]
     async fn update_onchain_melt_quote(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         quote: &OnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
@@ -379,7 +416,7 @@ impl Database for PostgresDB {
             quote.paid,
             quote.quote_id
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await?;
         Ok(())
     }
@@ -387,13 +424,14 @@ impl Database for PostgresDB {
     #[instrument(level = "debug", skip(self), err)]
     async fn delete_onchain_melt_quote(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         quote: &OnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "DELETE FROM onchain_melt_quotes WHERE id = $1",
             quote.quote_id
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await?;
         Ok(())
     }

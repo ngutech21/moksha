@@ -343,7 +343,12 @@ async fn get_health() -> impl IntoResponse {
 mod tests {
     use std::{collections::HashMap, sync::Arc};
 
-    use crate::{btconchain::MockBtcOnchain, config::MintConfig, server::app};
+    use crate::{
+        btconchain::MockBtcOnchain,
+        config::{DatabaseConfig, MintConfig},
+        database::postgres::PostgresDB,
+        server::app,
+    };
     use axum::{
         body::Body,
         http::{Request, StatusCode},
@@ -358,14 +363,13 @@ mod tests {
 
     use crate::{
         config::MintInfoConfig,
-        database::MockDatabase,
         lightning::{LightningType, MockLightning},
         mint::Mint,
     };
 
     #[tokio::test]
     async fn test_get_keys() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()));
+        let app = app(create_mock_mint(Default::default()).await?);
         let response = app
             .oneshot(Request::builder().uri("/keys").body(Body::empty())?)
             .await?;
@@ -379,7 +383,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keysets() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()));
+        let app = app(create_mock_mint(Default::default()).await?);
         let response = app
             .oneshot(Request::builder().uri("/keysets").body(Body::empty())?)
             .await?;
@@ -400,7 +404,7 @@ mod tests {
             description_long: Some("A mint for testing long".to_string()),
             ..Default::default()
         };
-        let app = app(create_mock_mint(mint_info_settings));
+        let app = app(create_mock_mint(mint_info_settings).await?);
         let response = app
             .oneshot(Request::builder().uri("/info").body(Body::empty())?)
             .await?;
@@ -419,11 +423,15 @@ mod tests {
         Ok(())
     }
 
-    fn create_mock_mint(info: MintInfoConfig) -> Mint {
-        let db = Arc::new(MockDatabase::new());
+    async fn create_mock_mint(info: MintInfoConfig) -> anyhow::Result<Mint> {
+        // FIXME create mock PostgresDB
+        let db = PostgresDB::new(&DatabaseConfig {
+            db_url: "postgres://localhost/moksha".to_string(),
+        })
+        .await?;
         let lightning = Arc::new(MockLightning::new());
 
-        Mint::new(
+        Ok(Mint::new(
             lightning,
             LightningType::Lnbits(Default::default()),
             db,
@@ -434,14 +442,14 @@ mod tests {
             },
             Default::default(),
             Some(Arc::new(MockBtcOnchain::default())),
-        )
+        ))
     }
 
     // ################ v1 api tests #####################
 
     #[tokio::test]
     async fn test_get_keys_v1() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()));
+        let app = app(create_mock_mint(Default::default()).await?);
         let response = app
             .oneshot(Request::builder().uri("/v1/keys").body(Body::empty())?)
             .await?;
@@ -459,7 +467,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keysets_v1() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()));
+        let app = app(create_mock_mint(Default::default()).await?);
         let response = app
             .oneshot(Request::builder().uri("/v1/keysets").body(Body::empty())?)
             .await?;
@@ -476,7 +484,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_v1_keys() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()));
+        let app = app(create_mock_mint(Default::default()).await?);
         let response = app
             .oneshot(Request::builder().uri("/v1/keys").body(Body::empty())?)
             .await?;
@@ -495,7 +503,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_v1_keys_id_invalid() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()));
+        let app = app(create_mock_mint(Default::default()).await?);
         let response = app
             .oneshot(
                 Request::builder()
@@ -510,7 +518,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_v1_keys_id() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()));
+        let app = app(create_mock_mint(Default::default()).await?);
         let response = app
             .oneshot(
                 Request::builder()
@@ -536,7 +544,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_v1_keysets() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()));
+        let app = app(create_mock_mint(Default::default()).await?);
         let response = app
             .oneshot(Request::builder().uri("/v1/keysets").body(Body::empty())?)
             .await?;
@@ -554,7 +562,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_health() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()));
+        let app = app(create_mock_mint(Default::default()).await?);
         let response = app
             .oneshot(Request::builder().uri("/health").body(Body::empty())?)
             .await?;

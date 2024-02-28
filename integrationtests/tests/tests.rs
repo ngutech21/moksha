@@ -4,6 +4,7 @@ use moksha_wallet::client::CashuClient;
 use moksha_wallet::http::CrossPlatformHttpClient;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::wallet::WalletBuilder;
+use mokshamint::database::postgres::PostgresDB;
 use mokshamint::lightning::lnbits::LnbitsLightningSettings;
 use mokshamint::lightning::LightningType;
 use mokshamint::mint::Mint;
@@ -35,19 +36,26 @@ pub fn test_integration() -> anyhow::Result<()> {
     // Create a channel to signal when the server has started
     let _server_thread = thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+
         rt.block_on(async {
+            let db_config = DatabaseConfig {
+                db_url: format!(
+                    "postgres://postgres:postgres@localhost:{}/moksha-mint",
+                    host_port
+                ),
+            };
+
+            let db = PostgresDB::new(&db_config)
+                .await
+                .expect("Could not create db");
+            db.migrate().await;
             let mint = Mint::builder()
                 .with_private_key("my_private_key".to_string())
                 .with_server(Some(ServerConfig {
                     host_port: "127.0.0.1:8686".parse().expect("invalid address"),
                     ..Default::default()
                 }))
-                .with_db(DatabaseConfig {
-                    db_url: format!(
-                        "postgres://postgres:postgres@localhost:{}/moksha-mint",
-                        host_port
-                    ),
-                })
+                .with_db(Some(db))
                 .with_lightning(LightningType::Lnbits(LnbitsLightningSettings::new(
                     "my_admin_key",
                     "http://127.0.0.1:6100",
