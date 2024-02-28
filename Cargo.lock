@@ -1786,6 +1786,8 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tempfile",
+ "testcontainers",
+ "testcontainers-modules",
  "thiserror",
  "tokio",
  "tonic 0.8.3",
@@ -3417,6 +3419,15 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+]
+
+[[package]]
+name = "testcontainers-modules"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c391cd115649a8a14e5638d0606648d5348b216700a31f402987f57e58693766"
+dependencies = [
+ "testcontainers",
 ]
 
 [[package]]

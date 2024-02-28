@@ -285,9 +285,6 @@ where
 }
 
 #[derive(Debug, Default)]
-// pub struct MintBuilder<DB = PostgresDB>
-// where
-//     DB: Database,
 pub struct MintBuilder {
     private_key: Option<String>,
     derivation_path: Option<String>,
@@ -301,9 +298,6 @@ pub struct MintBuilder {
     tracing_config: Option<TracingConfig>,
 }
 
-// impl<DB> MintBuilder<DB>
-// where
-//     DB: Database,
 impl MintBuilder {
     pub fn new() -> Self {
         MintBuilder {
@@ -453,7 +447,7 @@ mod tests {
     use crate::lightning::error::LightningError;
     use crate::lightning::{LightningType, MockLightning};
     use crate::mint::Mint;
-    use crate::model::PayInvoiceResult;
+    use crate::model::{Invoice, PayInvoiceResult};
     use moksha_core::blind::{BlindedMessage, TotalAmount};
     use moksha_core::dhke;
     use moksha_core::primitives::PostSplitRequest;
@@ -461,10 +455,21 @@ mod tests {
     use moksha_core::token::TokenV3;
     use std::str::FromStr;
     use std::sync::Arc;
+    use testcontainers::clients::Cli;
+    use testcontainers::RunnableImage;
+    use testcontainers_modules::postgres::Postgres;
 
     #[tokio::test]
     async fn test_fee_reserve() -> anyhow::Result<()> {
-        let mint = create_mint_from_mocks(None, None).await?;
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
+        let mint = create_mint_from_mocks(
+            create_mock_db_empty(node.get_host_port_ipv4(5432)).await?,
+            None,
+        )
+        .await?;
         let fee = mint.fee_reserve(10000);
         assert_eq!(4000, fee);
         Ok(())
@@ -472,7 +477,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_blindsignatures() -> anyhow::Result<()> {
-        let mint = create_mint_from_mocks(None, None).await?;
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
+        let mint = create_mint_from_mocks(
+            create_mock_db_empty(node.get_host_port_ipv4(5432)).await?,
+            None,
+        )
+        .await?;
 
         let blinded_messages = vec![BlindedMessage {
             amount: 8,
@@ -497,9 +510,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_mint_empty() -> anyhow::Result<()> {
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
         let mut lightning = MockLightning::new();
         lightning.expect_is_invoice_paid().returning(|_| Ok(true));
-        let mint = create_mint_from_mocks(Some(create_mock_db().await?), Some(lightning)).await?;
+        let mint = create_mint_from_mocks(
+            create_mock_db_pending_invoice(node.get_host_port_ipv4(5432)).await?,
+            Some(lightning),
+        )
+        .await?;
 
         let mut tx = mint.db.begin_tx().await?;
         let outputs = vec![];
@@ -519,9 +540,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_mint_valid() -> anyhow::Result<()> {
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
         let mut lightning = MockLightning::new();
         lightning.expect_is_invoice_paid().returning(|_| Ok(true));
-        let mint = create_mint_from_mocks(Some(create_mock_db().await?), Some(lightning)).await?;
+        let mint = create_mint_from_mocks(
+            create_mock_db_pending_invoice(node.get_host_port_ipv4(5432)).await?,
+            Some(lightning),
+        )
+        .await?;
 
         let outputs = create_blinded_msgs_from_fixture("blinded_messages_40.json".to_string())?;
         let mut tx = mint.db.begin_tx().await?;
@@ -541,9 +570,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_split_zero() -> anyhow::Result<()> {
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
         let blinded_messages = vec![];
-        let mint =
-            create_mint_from_mocks(Some(create_mock_db_get_used_proofs().await?), None).await?;
+        let mint = create_mint_from_mocks(
+            create_mock_db_empty(node.get_host_port_ipv4(5432)).await?,
+            None,
+        )
+        .await?;
 
         let proofs = Proofs::empty();
         let result = mint
@@ -556,8 +592,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_split_64_in_20() -> anyhow::Result<()> {
-        let mint =
-            create_mint_from_mocks(Some(create_mock_db_get_used_proofs().await?), None).await?;
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
+        let mint = create_mint_from_mocks(
+            create_mock_db_empty(node.get_host_port_ipv4(5432)).await?,
+            None,
+        )
+        .await?;
         let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
 
         let result = mint
@@ -575,8 +618,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_split_duplicate_key() -> anyhow::Result<()> {
-        let mint =
-            create_mint_from_mocks(Some(create_mock_db_get_used_proofs().await?), None).await?;
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+        let mint = create_mint_from_mocks(
+            create_mock_db_empty(node.get_host_port_ipv4(5432)).await?,
+            None,
+        )
+        .await?;
         let request =
             create_request_from_fixture("post_split_request_duplicate_key.json".to_string())?;
 
@@ -591,6 +640,9 @@ mod tests {
     /// melt 20 sats with 60 tokens and receive 40 tokens as change
     async fn test_melt_overpay() -> anyhow::Result<()> {
         use lightning_invoice::Bolt11Invoice as LNInvoice;
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
 
         let mut lightning = MockLightning::new();
 
@@ -608,7 +660,7 @@ mod tests {
             .map_err(|_err: LightningError| MokshaMintError::InvoiceNotFound("".to_string()))
         });
 
-        let db = create_mock_db_get_used_proofs().await?;
+        let db = create_mock_db_empty(node.get_host_port_ipv4(5432)).await?;
 
         let mint = Mint::new(
             // "TEST_PRIVATE_KEY".to_string(),
@@ -665,20 +717,9 @@ mod tests {
     }
 
     async fn create_mint_from_mocks(
-        mock_db: Option<PostgresDB>,
+        mock_db: PostgresDB,
         mock_ln: Option<MockLightning>,
     ) -> anyhow::Result<Mint> {
-        let db = match mock_db {
-            Some(db) => db,
-            None => {
-                PostgresDB::new(&DatabaseConfig {
-                    // FIXME use different port
-                    db_url: "postgres://localhost:5432".to_string(),
-                })
-                .await?
-            }
-        };
-
         let lightning = match mock_ln {
             Some(ln) => Arc::new(ln),
             None => Arc::new(MockLightning::new()),
@@ -687,7 +728,7 @@ mod tests {
         Ok(Mint::new(
             lightning,
             LightningType::Lnbits(Default::default()),
-            db,
+            mock_db,
             MintConfig {
                 privatekey: "TEST_PRIVATE_KEY".to_string(),
                 derivation_path: Some("0/0/0/0".to_string()),
@@ -698,41 +739,33 @@ mod tests {
         ))
     }
 
-    async fn create_mock_db_get_used_proofs() -> anyhow::Result<PostgresDB> {
-        // let mut mock_db = MockDatabase::new();
-        // mock_db
-        //     .expect_get_used_proofs()
-        //     .returning(|| Ok(Proofs::empty()));
-        // mock_db.expect_add_used_proofs().returning(|_| Ok(()));
-        // mock_db
-        // FIXME
-        Ok(PostgresDB::new(&DatabaseConfig {
-            db_url: "postgres://localhost:5432".to_string(),
+    async fn create_mock_db_empty(port: u16) -> anyhow::Result<PostgresDB> {
+        let connection_string =
+            &format!("postgres://postgres:postgres@127.0.0.1:{}/postgres", port);
+        let db = PostgresDB::new(&DatabaseConfig {
+            db_url: connection_string.to_owned(),
         })
-        .await?)
+        .await?;
+        db.migrate().await;
+        Ok(db)
     }
 
-    async fn create_mock_db() -> anyhow::Result<PostgresDB> {
-        // FIXME start postgres db and use different port
-        Ok(PostgresDB::new(&DatabaseConfig {
-            db_url: "postgres://localhost:5432".to_string(),
-        })
-        .await?)
-        // let mut mock_db = MockDatabase::new();
-        // let invoice = Invoice{
-        //     amount: 100,
-        //     payment_request: "lnbcrt1u1pjgamjepp5cr2dzhcuy9tjwl7u45kxa9h02khvsd2a7f2x9yjxgst8trduld4sdqqcqzzsxqyz5vqsp5kaclwkq79ylef295qj7x6c9kvhaq6272ge4tgz7stlzv46csrzks9qyyssq9szxlvhh0uen2jmh07hp242nj5529wje3x5e434kepjzeqaq5hnsje8rzrl97s0j8cxxt3kgz5gfswrrchr45u8fq3twz2jjc029klqpd6jmgv".to_string(),
-        // };
-        // mock_db
-        //     .expect_get_used_proofs()
-        //     .returning(|| Ok(Proofs::empty()));
-        // mock_db
-        //     .expect_delete_pending_invoice()
-        //     .returning(|_| Ok(()));
-        // mock_db
-        //     .expect_get_pending_invoice()
-        //     .returning(move |_| Ok(invoice.clone()));
-        // mock_db.expect_add_used_proofs().returning(|_| Ok(()));
-        // mock_db
+    async fn create_mock_db_pending_invoice(port: u16) -> anyhow::Result<PostgresDB> {
+        let db = create_mock_db_empty(port).await?;
+
+        let mut tx = db.begin_tx().await?;
+        let invoice = Invoice{
+            amount: 100,
+            payment_request: "lnbcrt1u1pjgamjepp5cr2dzhcuy9tjwl7u45kxa9h02khvsd2a7f2x9yjxgst8trduld4sdqqcqzzsxqyz5vqsp5kaclwkq79ylef295qj7x6c9kvhaq6272ge4tgz7stlzv46csrzks9qyyssq9szxlvhh0uen2jmh07hp242nj5529wje3x5e434kepjzeqaq5hnsje8rzrl97s0j8cxxt3kgz5gfswrrchr45u8fq3twz2jjc029klqpd6jmgv".to_string(),
+        };
+        db.add_pending_invoice(&mut tx, "somehash".to_string(), &invoice)
+            .await?;
+        tx.commit().await?;
+        Ok(db)
+    }
+
+    fn create_postgres_image() -> RunnableImage<Postgres> {
+        let node = Postgres::default().with_host_auth();
+        RunnableImage::from(node).with_tag("16.2-alpine")
     }
 }
