@@ -9,11 +9,10 @@ use mokshamint::lightning::lnbits::LnbitsLightningSettings;
 use mokshamint::lightning::LightningType;
 use mokshamint::mint::MintBuilder;
 use reqwest::Url;
-use std::collections::HashMap;
 use std::thread;
 use std::time::Duration;
-use testcontainers::core::WaitFor;
-use testcontainers::{clients, Image};
+use testcontainers::{clients, RunnableImage};
+use testcontainers_modules::postgres::Postgres;
 use tokio::runtime::Runtime;
 use tokio::time::{sleep_until, Instant};
 
@@ -23,7 +22,9 @@ pub fn test_integration() -> anyhow::Result<()> {
 
     // create postgres container that will be destroyed after the test is done
     let docker = clients::Cli::default();
-    let node = docker.run(Postgres::default());
+    let node = Postgres::default().with_host_auth();
+    let img = RunnableImage::from(node).with_tag("16.2-alpine");
+    let node = docker.run(img);
     let host_port = node.get_host_port_ipv4(5432);
 
     // start lnbits
@@ -41,7 +42,7 @@ pub fn test_integration() -> anyhow::Result<()> {
         rt.block_on(async {
             let db_config = DatabaseConfig {
                 db_url: format!(
-                    "postgres://postgres:postgres@localhost:{}/test-db",
+                    "postgres://postgres:postgres@localhost:{}/postgres",
                     host_port
                 ),
             };
@@ -163,42 +164,4 @@ fn read_fixture(name: &str) -> anyhow::Result<String> {
     let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
     let raw_token = std::fs::read_to_string(format!("{base_dir}/tests/fixtures/{name}"))?;
     Ok(raw_token.trim().to_string())
-}
-
-#[derive(Debug)]
-pub struct Postgres {
-    env_vars: HashMap<String, String>,
-}
-
-impl Default for Postgres {
-    fn default() -> Self {
-        let mut env_vars = HashMap::new();
-        env_vars.insert("POSTGRES_DB".to_owned(), "postgres".to_owned());
-        env_vars.insert("POSTGRES_HOST_AUTH_METHOD".into(), "trust".into());
-        env_vars.insert("POSTGRES_DB".into(), "test-db".into());
-
-        Self { env_vars }
-    }
-}
-
-impl Image for Postgres {
-    type Args = ();
-
-    fn name(&self) -> String {
-        "postgres".to_owned()
-    }
-
-    fn tag(&self) -> String {
-        "15.3".to_owned()
-    }
-
-    fn ready_conditions(&self) -> Vec<WaitFor> {
-        vec![WaitFor::message_on_stderr(
-            "database system is ready to accept connections",
-        )]
-    }
-
-    fn env_vars(&self) -> Box<dyn Iterator<Item = (&String, &String)> + '_> {
-        Box::new(self.env_vars.iter())
-    }
 }

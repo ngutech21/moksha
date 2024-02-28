@@ -1757,6 +1757,7 @@ dependencies = [
  "serde",
  "tempfile",
  "testcontainers",
+ "testcontainers-modules",
  "tokio",
  "tracing",
 ]
