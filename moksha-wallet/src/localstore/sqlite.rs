@@ -17,13 +17,13 @@ pub struct SqliteLocalStore {
 impl LocalStore for SqliteLocalStore {
     type DB = sqlx::Sqlite;
 
-    async fn begin_tx(&self) -> Result<sqlx::Transaction<'_, Self::DB>, MokshaWalletError> {
+    async fn begin_tx(&self) -> Result<sqlx::Transaction<Self::DB>, MokshaWalletError> {
         Ok(self.pool.begin().await?)
     }
 
     async fn delete_proofs(
         &self,
-        tx: &mut sqlx::Transaction<'_, Self::DB>,
+        tx: &mut sqlx::Transaction<Self::DB>,
         proofs: &Proofs,
     ) -> Result<(), MokshaWalletError> {
         let proof_secrets = proofs
@@ -42,7 +42,7 @@ impl LocalStore for SqliteLocalStore {
 
     async fn add_proofs(
         &self,
-        tx: &mut sqlx::Transaction<'_, Self::DB>,
+        tx: &mut sqlx::Transaction<Self::DB>,
         proofs: &Proofs,
     ) -> Result<(), MokshaWalletError> {
         for proof in proofs.proofs() {
@@ -62,7 +62,7 @@ impl LocalStore for SqliteLocalStore {
 
     async fn get_proofs(
         &self,
-        tx: &mut sqlx::Transaction<'_, Self::DB>,
+        tx: &mut sqlx::Transaction<Self::DB>,
     ) -> Result<Proofs, MokshaWalletError> {
         let rows = sqlx::query("SELECT * FROM proofs;")
             .fetch_all(&mut **tx)

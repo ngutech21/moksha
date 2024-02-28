@@ -19,20 +19,20 @@ pub struct WalletKeyset {
 #[async_trait(?Send)]
 pub trait LocalStore {
     type DB: sqlx::Database;
-    async fn begin_tx(&self) -> Result<sqlx::Transaction<'_, Self::DB>, MokshaWalletError>;
+    async fn begin_tx(&self) -> Result<sqlx::Transaction<Self::DB>, MokshaWalletError>;
     async fn delete_proofs(
         &self,
-        tx: &mut sqlx::Transaction<'_, Self::DB>,
+        tx: &mut sqlx::Transaction<Self::DB>,
         proofs: &Proofs,
     ) -> Result<(), MokshaWalletError>;
     async fn add_proofs(
         &self,
-        tx: &mut sqlx::Transaction<'_, Self::DB>,
+        tx: &mut sqlx::Transaction<Self::DB>,
         proofs: &Proofs,
     ) -> Result<(), MokshaWalletError>;
     async fn get_proofs(
         &self,
-        tx: &mut sqlx::Transaction<'_, Self::DB>,
+        tx: &mut sqlx::Transaction<Self::DB>,
     ) -> Result<Proofs, MokshaWalletError>;
 
     async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError>;
