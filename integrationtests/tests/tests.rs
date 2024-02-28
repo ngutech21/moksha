@@ -21,6 +21,7 @@ use tokio::time::{sleep_until, Instant};
 pub fn test_integration() -> anyhow::Result<()> {
     use mokshamint::config::{DatabaseConfig, ServerConfig};
 
+    // create postgres container that will be destroyed after the test is done
     let docker = clients::Cli::default();
     let node = docker.run(Postgres::default());
     let host_port = node.get_host_port_ipv4(5432);
@@ -40,7 +41,7 @@ pub fn test_integration() -> anyhow::Result<()> {
         rt.block_on(async {
             let db_config = DatabaseConfig {
                 db_url: format!(
-                    "postgres://postgres:postgres@localhost:{}/moksha-mint",
+                    "postgres://postgres:postgres@localhost:{}/test-db",
                     host_port
                 ),
             };
@@ -174,7 +175,7 @@ impl Default for Postgres {
         let mut env_vars = HashMap::new();
         env_vars.insert("POSTGRES_DB".to_owned(), "postgres".to_owned());
         env_vars.insert("POSTGRES_HOST_AUTH_METHOD".into(), "trust".into());
-        env_vars.insert("POSTGRES_DB".into(), "moksha-mint".into());
+        env_vars.insert("POSTGRES_DB".into(), "test-db".into());
 
         Self { env_vars }
     }
