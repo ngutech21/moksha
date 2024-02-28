@@ -359,6 +359,8 @@ mod tests {
         primitives::{CurrencyUnit, KeysResponse, MintLegacyInfoResponse},
     };
     use secp256k1::PublicKey;
+    use testcontainers::{clients::Cli, RunnableImage};
+    use testcontainers_modules::postgres::Postgres;
     use tower::ServiceExt;
 
     use crate::{
@@ -369,7 +371,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keys() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()).await?);
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
+        let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
             .oneshot(Request::builder().uri("/keys").body(Body::empty())?)
             .await?;
@@ -383,7 +389,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keysets() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()).await?);
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
+        let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
             .oneshot(Request::builder().uri("/keysets").body(Body::empty())?)
             .await?;
@@ -397,6 +407,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_info() -> anyhow::Result<()> {
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
         let mint_info_settings = MintInfoConfig {
             name: Some("Bob's Cashu mint".to_string()),
             version: true,
@@ -404,7 +418,7 @@ mod tests {
             description_long: Some("A mint for testing long".to_string()),
             ..Default::default()
         };
-        let app = app(create_mock_mint(mint_info_settings).await?);
+        let app = app(create_mock_mint(mint_info_settings, node.get_host_port_ipv4(5432)).await?);
         let response = app
             .oneshot(Request::builder().uri("/info").body(Body::empty())?)
             .await?;
@@ -423,12 +437,25 @@ mod tests {
         Ok(())
     }
 
-    async fn create_mock_mint(info: MintInfoConfig) -> anyhow::Result<Mint> {
-        // FIXME create mock PostgresDB
+    // FIXME remove duplicated code from mint.rs
+    async fn create_mock_db_empty(port: u16) -> anyhow::Result<PostgresDB> {
+        let connection_string =
+            &format!("postgres://postgres:postgres@127.0.0.1:{}/postgres", port);
         let db = PostgresDB::new(&DatabaseConfig {
-            db_url: "postgres://localhost/moksha".to_string(),
+            db_url: connection_string.to_owned(),
         })
         .await?;
+        db.migrate().await;
+        Ok(db)
+    }
+
+    fn create_postgres_image() -> RunnableImage<Postgres> {
+        let node = Postgres::default().with_host_auth();
+        RunnableImage::from(node).with_tag("16.2-alpine")
+    }
+
+    async fn create_mock_mint(info: MintInfoConfig, db_port: u16) -> anyhow::Result<Mint> {
+        let db = create_mock_db_empty(db_port).await?;
         let lightning = Arc::new(MockLightning::new());
 
         Ok(Mint::new(
@@ -449,7 +476,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keys_v1() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()).await?);
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
+        let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
             .oneshot(Request::builder().uri("/v1/keys").body(Body::empty())?)
             .await?;
@@ -467,7 +498,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_keysets_v1() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()).await?);
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
+        let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
             .oneshot(Request::builder().uri("/v1/keysets").body(Body::empty())?)
             .await?;
@@ -484,7 +519,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_v1_keys() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()).await?);
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
+        let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
             .oneshot(Request::builder().uri("/v1/keys").body(Body::empty())?)
             .await?;
@@ -503,7 +542,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_v1_keys_id_invalid() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()).await?);
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
+        let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
             .oneshot(
                 Request::builder()
@@ -518,7 +561,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_v1_keys_id() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()).await?);
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
+        let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
             .oneshot(
                 Request::builder()
@@ -544,7 +591,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_v1_keysets() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()).await?);
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
+        let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
             .oneshot(Request::builder().uri("/v1/keysets").body(Body::empty())?)
             .await?;
@@ -562,7 +613,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_health() -> anyhow::Result<()> {
-        let app = app(create_mock_mint(Default::default()).await?);
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
+        let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
             .oneshot(Request::builder().uri("/health").body(Body::empty())?)
             .await?;
