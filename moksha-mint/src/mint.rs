@@ -74,10 +74,6 @@ where
         }
     }
 
-    pub fn builder() -> MintBuilder<DB> {
-        MintBuilder::new()
-    }
-
     pub fn fee_reserve(&self, amount_msat: u64) -> u64 {
         let fee_percent = self.config.lightning_fee.fee_percent as f64 / 100.0;
         let fee_reserve = (amount_msat as f64 * fee_percent) as u64;
@@ -289,14 +285,15 @@ where
 }
 
 #[derive(Debug, Default)]
-pub struct MintBuilder<DB = PostgresDB>
-where
-    DB: Database,
-{
+// pub struct MintBuilder<DB = PostgresDB>
+// where
+//     DB: Database,
+pub struct MintBuilder {
     private_key: Option<String>,
     derivation_path: Option<String>,
     lightning_type: Option<LightningType>,
-    db: Option<DB>,
+
+    db_config: Option<DatabaseConfig>,
     fee_config: Option<LightningFeeConfig>,
     mint_info_settings: Option<MintInfoConfig>,
     server_config: Option<ServerConfig>,
@@ -304,16 +301,16 @@ where
     tracing_config: Option<TracingConfig>,
 }
 
-impl<DB> MintBuilder<DB>
-where
-    DB: Database,
-{
+// impl<DB> MintBuilder<DB>
+// where
+//     DB: Database,
+impl MintBuilder {
     pub fn new() -> Self {
         MintBuilder {
             private_key: None,
             derivation_path: None,
             lightning_type: None,
-            db: None,
+            db_config: None,
             fee_config: None,
             mint_info_settings: None,
             server_config: None,
@@ -322,8 +319,8 @@ where
         }
     }
 
-    pub fn with_db(mut self, db: Option<DB>) -> Self {
-        self.db = db;
+    pub fn with_db(mut self, db_config: Option<DatabaseConfig>) -> Self {
+        self.db_config = db_config;
         self
     }
 
@@ -367,7 +364,7 @@ where
         self
     }
 
-    pub async fn build(self) -> Result<Mint<DB>, MokshaMintError> {
+    pub async fn build(self) -> Result<Mint<PostgresDB>, MokshaMintError> {
         let ln: Arc<dyn Lightning + Send + Sync> = match self.lightning_type.clone() {
             Some(LightningType::Lnbits(lnbits_settings)) => Arc::new(LnbitsLightning::new(
                 lnbits_settings.admin_key.expect("LNBITS_ADMIN_KEY not set"),
@@ -418,13 +415,16 @@ where
                 )),
                 _ => None,
             };
+        let db_config = self.db_config.expect("db-config not set");
+        let db = PostgresDB::new(&db_config).await?;
+        db.migrate().await;
 
         Ok(Mint::new(
             ln,
             self.lightning_type
                 .clone()
                 .expect("Lightning backend not set"),
-            self.db.expect("Database not set"),
+            db,
             // FIXME simplify config creation
             MintConfig::new(
                 self.private_key.expect("private-key not set"),
@@ -432,6 +432,7 @@ where
                 self.mint_info_settings.unwrap_or_default(),
                 self.fee_config.expect("fee-config not set"),
                 self.server_config.unwrap_or_default(),
+                db_config,
                 self.btc_onchain_config,
                 self.lightning_type,
                 self.tracing_config,
@@ -498,7 +499,7 @@ mod tests {
     async fn test_mint_empty() -> anyhow::Result<()> {
         let mut lightning = MockLightning::new();
         lightning.expect_is_invoice_paid().returning(|_| Ok(true));
-        let mint = create_mint_from_mocks(Some(create_mock_mint().await?), Some(lightning)).await?;
+        let mint = create_mint_from_mocks(Some(create_mock_db().await?), Some(lightning)).await?;
 
         let mut tx = mint.db.begin_tx().await?;
         let outputs = vec![];
@@ -520,7 +521,7 @@ mod tests {
     async fn test_mint_valid() -> anyhow::Result<()> {
         let mut lightning = MockLightning::new();
         lightning.expect_is_invoice_paid().returning(|_| Ok(true));
-        let mint = create_mint_from_mocks(Some(create_mock_mint().await?), Some(lightning)).await?;
+        let mint = create_mint_from_mocks(Some(create_mock_db().await?), Some(lightning)).await?;
 
         let outputs = create_blinded_msgs_from_fixture("blinded_messages_40.json".to_string())?;
         let mut tx = mint.db.begin_tx().await?;
@@ -586,52 +587,61 @@ mod tests {
         Ok(())
     }
 
-    // FIXME
-    // #[tokio::test]
-    // /// melt 20 sats with 60 tokens and receive 40 tokens as change
-    // async fn test_melt_overpay() -> anyhow::Result<()> {
-    //     use lightning_invoice::Bolt11Invoice as LNInvoice;
+    #[tokio::test]
+    /// melt 20 sats with 60 tokens and receive 40 tokens as change
+    async fn test_melt_overpay() -> anyhow::Result<()> {
+        use lightning_invoice::Bolt11Invoice as LNInvoice;
 
-    //     let mut lightning = MockLightning::new();
+        let mut lightning = MockLightning::new();
 
-    //     lightning.expect_decode_invoice().returning(|_| {
-    //         Ok(
-    //             // 20 sat
-    //             LNInvoice::from_str("lnbc200n1pj9eanxsp5agdl4rd0twdljpcgmg67dwj9mseu5m4lwfhslkws4uh4m5f5pcrqpp5lvspx676rykr64l02s97wjztcxe355qck0naydrsvvkqw42cc35sdq2f38xy6t5wvxqzjccqpjrzjq027t9tsc6jn5ve2k6gnn689unn8h239juuf9s3ce09aty6ed73t5z7nqsqqsygqqyqqqqqqqqqqqqgq9q9qyysgqs5msn4j9v53fq000zhw0gulkcx2dlnfdt953v2ur7z765jj3m0fx6cppkpjwntq5nsqm273u4eevva508pvepg8mh27sqcd29sfjr4cq255a40").expect("invalid invoice")
-    //         )
-    //     });
-    //     lightning.expect_pay_invoice().returning(|_| {
-    //         Ok(PayInvoiceResult {
-    //             payment_hash: "hash".to_string(),
-    //             total_fees: 2,
-    //         })
-    //         .map_err(|_err: LightningError| MokshaMintError::InvoiceNotFound("".to_string()))
-    //     });
+        lightning.expect_decode_invoice().returning(|_| {
+            Ok(
+                // 20 sat
+                LNInvoice::from_str("lnbc200n1pj9eanxsp5agdl4rd0twdljpcgmg67dwj9mseu5m4lwfhslkws4uh4m5f5pcrqpp5lvspx676rykr64l02s97wjztcxe355qck0naydrsvvkqw42cc35sdq2f38xy6t5wvxqzjccqpjrzjq027t9tsc6jn5ve2k6gnn689unn8h239juuf9s3ce09aty6ed73t5z7nqsqqsygqqyqqqqqqqqqqqqgq9q9qyysgqs5msn4j9v53fq000zhw0gulkcx2dlnfdt953v2ur7z765jj3m0fx6cppkpjwntq5nsqm273u4eevva508pvepg8mh27sqcd29sfjr4cq255a40").expect("invalid invoice")
+            )
+        });
+        lightning.expect_pay_invoice().returning(|_| {
+            Ok(PayInvoiceResult {
+                payment_hash: "hash".to_string(),
+                total_fees: 2,
+            })
+            .map_err(|_err: LightningError| MokshaMintError::InvoiceNotFound("".to_string()))
+        });
 
-    //     let mint = Mint::new(
-    //         // "TEST_PRIVATE_KEY".to_string(),
-    //         // "0/0/0/0".to_string(),
-    //         Arc::new(lightning),
-    //         LightningType::Lnbits(Default::default()),
-    //         Arc::new(create_mock_db_get_used_proofs()),
-    //         Default::default(),
-    //         Default::default(),
-    //         Some(Arc::new(MockBtcOnchain::default())),
-    //     );
+        let db = create_mock_db_get_used_proofs().await?;
 
-    //     let tokens = create_token_from_fixture("token_60.cashu".to_string())?;
-    //     let invoice = "some invoice".to_string();
-    //     let change =
-    //         create_blinded_msgs_from_fixture("blinded_messages_blank_4000.json".to_string())?;
+        let mint = Mint::new(
+            // "TEST_PRIVATE_KEY".to_string(),
+            // "0/0/0/0".to_string(),
+            Arc::new(lightning),
+            LightningType::Lnbits(Default::default()),
+            db,
+            Default::default(),
+            Default::default(),
+            Some(Arc::new(MockBtcOnchain::default())),
+        );
 
-    //     let (paid, _payment_hash, change) = mint
-    //         .melt_bolt11(invoice, 4, &tokens.proofs(), &change, &mint.keyset_legacy)
-    //         .await?;
+        let tokens = create_token_from_fixture("token_60.cashu".to_string())?;
+        let invoice = "some invoice".to_string();
+        let change =
+            create_blinded_msgs_from_fixture("blinded_messages_blank_4000.json".to_string())?;
 
-    //     assert!(paid);
-    //     assert!(change.total_amount() == 2);
-    //     Ok(())
-    // }
+        let mut tx = mint.db.begin_tx().await?;
+        let (paid, _payment_hash, change) = mint
+            .melt_bolt11(
+                &mut tx,
+                invoice,
+                4,
+                &tokens.proofs(),
+                &change,
+                &mint.keyset_legacy,
+            )
+            .await?;
+
+        assert!(paid);
+        assert!(change.total_amount() == 2);
+        Ok(())
+    }
 
     // FIXME refactor helper functions
     fn create_token_from_fixture(fixture: String) -> Result<TokenV3, anyhow::Error> {
@@ -702,7 +712,7 @@ mod tests {
         .await?)
     }
 
-    async fn create_mock_mint() -> anyhow::Result<PostgresDB> {
+    async fn create_mock_db() -> anyhow::Result<PostgresDB> {
         // FIXME start postgres db and use different port
         Ok(PostgresDB::new(&DatabaseConfig {
             db_url: "postgres://localhost:5432".to_string(),

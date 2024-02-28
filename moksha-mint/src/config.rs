@@ -75,6 +75,7 @@ pub struct MintConfig {
     pub btconchain_backend: Option<BtcOnchainConfig>,
     pub lightning_backend: Option<LightningType>,
     pub tracing: Option<TracingConfig>,
+    pub database: DatabaseConfig,
 }
 
 impl From<(Opts, LightningType, Option<BtcOnchainConfig>)> for MintConfig {
@@ -88,6 +89,7 @@ impl From<(Opts, LightningType, Option<BtcOnchainConfig>)> for MintConfig {
             btconchain_backend: btc,
             lightning_backend: Some(ln),
             tracing: opts.tracing,
+            database: opts.database,
         }
     }
 }
@@ -127,6 +129,7 @@ impl MintConfig {
         info: MintInfoConfig,
         lightning_fee: LightningFeeConfig,
         server: ServerConfig,
+        database: DatabaseConfig,
         btconchain_backend: Option<BtcOnchainConfig>,
         lightning_backend: Option<LightningType>,
         tracing: Option<TracingConfig>,
@@ -140,6 +143,7 @@ impl MintConfig {
             btconchain_backend,
             lightning_backend,
             tracing,
+            database,
         }
     }
 }

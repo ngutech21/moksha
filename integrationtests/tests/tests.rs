@@ -4,10 +4,10 @@ use moksha_wallet::client::CashuClient;
 use moksha_wallet::http::CrossPlatformHttpClient;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::wallet::WalletBuilder;
-use mokshamint::database::postgres::PostgresDB;
+
 use mokshamint::lightning::lnbits::LnbitsLightningSettings;
 use mokshamint::lightning::LightningType;
-use mokshamint::mint::Mint;
+use mokshamint::mint::MintBuilder;
 use reqwest::Url;
 use std::collections::HashMap;
 use std::thread;
@@ -45,17 +45,13 @@ pub fn test_integration() -> anyhow::Result<()> {
                 ),
             };
 
-            let db = PostgresDB::new(&db_config)
-                .await
-                .expect("Could not create db");
-            db.migrate().await;
-            let mint = Mint::builder()
+            let mint = MintBuilder::new()
                 .with_private_key("my_private_key".to_string())
                 .with_server(Some(ServerConfig {
                     host_port: "127.0.0.1:8686".parse().expect("invalid address"),
                     ..Default::default()
                 }))
-                .with_db(Some(db))
+                .with_db(Some(db_config))
                 .with_lightning(LightningType::Lnbits(LnbitsLightningSettings::new(
                     "my_admin_key",
                     "http://127.0.0.1:6100",

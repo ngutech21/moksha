@@ -1,8 +1,4 @@
-use mokshamint::{
-    config::{DatabaseConfig, MintConfig},
-    database::postgres::PostgresDB,
-    mint::MintBuilder,
-};
+use mokshamint::{config::MintConfig, mint::MintBuilder};
 use std::{env, fmt};
 
 #[tokio::main]
@@ -30,22 +26,15 @@ pub async fn main() -> anyhow::Result<()> {
         btconchain_backend,
         lightning_backend,
         tracing,
+        database,
     } = MintConfig::read_config_with_defaults();
-
-    // FIXME
-    let db_config = DatabaseConfig {
-        db_url: env::var("MINT_DB_URL").expect("MINT_DB_URL not set"),
-    };
-
-    let db = PostgresDB::new(&db_config).await?;
-    db.migrate().await;
 
     let mint = MintBuilder::new()
         .with_mint_info(Some(info))
         .with_server(Some(server))
         .with_private_key(privatekey)
         .with_derivation_path(derivation_path)
-        .with_db(Some(db))
+        .with_db(Some(database))
         .with_lightning(lightning_backend.expect("lightning not set"))
         .with_btc_onchain(btconchain_backend)
         .with_fee(Some(lightning_fee))
