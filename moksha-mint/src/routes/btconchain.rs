@@ -11,6 +11,7 @@ use moksha_core::primitives::{
 use tracing::{info, instrument};
 use uuid::Uuid;
 
+use crate::database::Database;
 use crate::{error::MokshaMintError, mint::Mint};
 use chrono::{Duration, Utc};
 use std::str::FromStr;
@@ -65,7 +66,9 @@ pub async fn post_mint_quote_btconchain(
         paid: false,
     };
 
-    mint.db.add_onchain_mint_quote(&quote).await?;
+    let mut tx = mint.db.begin_tx().await?;
+    mint.db.add_onchain_mint_quote(&mut tx, &quote).await?;
+    tx.commit().await?;
     Ok(Json(quote.into()))
 }
 
@@ -86,10 +89,12 @@ pub async fn get_mint_quote_btconchain(
 ) -> Result<Json<PostMintQuoteOnchainResponse>, MokshaMintError> {
     info!("get_quote onchain: {}", quote_id);
 
+    let mut tx = mint.db.begin_tx().await?;
     let quote = mint
         .db
-        .get_onchain_mint_quote(&Uuid::from_str(quote_id.as_str())?)
+        .get_onchain_mint_quote(&mut tx, &Uuid::from_str(quote_id.as_str())?)
         .await?;
+    tx.commit().await?;
 
     let min_confs = mint
         .config
@@ -120,8 +125,10 @@ pub async fn post_mint_btconchain(
     State(mint): State<Mint>,
     Json(request): Json<PostMintOnchainRequest>,
 ) -> Result<Json<PostMintOnchainResponse>, MokshaMintError> {
+    let mut tx = mint.db.begin_tx().await?;
     let signatures = mint
         .mint_tokens(
+            &mut tx,
             PaymentMethod::BtcOnchain,
             request.quote.clone(),
             &request.outputs,
@@ -132,15 +139,19 @@ pub async fn post_mint_btconchain(
 
     let old_quote = &mint
         .db
-        .get_onchain_mint_quote(&Uuid::from_str(request.quote.as_str())?)
+        .get_onchain_mint_quote(&mut tx, &Uuid::from_str(request.quote.as_str())?)
         .await?;
 
     mint.db
-        .update_onchain_mint_quote(&OnchainMintQuote {
-            paid: true,
-            ..old_quote.clone()
-        })
+        .update_onchain_mint_quote(
+            &mut tx,
+            &OnchainMintQuote {
+                paid: true,
+                ..old_quote.clone()
+            },
+        )
         .await?;
+    tx.commit().await?;
     Ok(Json(PostMintOnchainResponse { signatures }))
 }
 
@@ -202,7 +213,9 @@ pub async fn post_melt_quote_btconchain(
         paid: false,
     };
 
-    mint.db.add_onchain_melt_quote(&quote).await?;
+    let mut tx = mint.db.begin_tx().await?;
+    mint.db.add_onchain_melt_quote(&mut tx, &quote).await?;
+    tx.commit().await?;
 
     Ok(Json(vec![("1 sat per vbyte".to_owned(), quote).into()])) // FIXME return correct comment
 }
@@ -223,18 +236,22 @@ pub async fn get_melt_quote_btconchain(
     State(mint): State<Mint>,
 ) -> Result<Json<PostMeltQuoteOnchainResponse>, MokshaMintError> {
     info!("get_melt_quote onchain: {}", quote_id);
+    let mut tx = mint.db.begin_tx().await?;
     let quote = mint
         .db
-        .get_onchain_melt_quote(&Uuid::from_str(quote_id.as_str())?)
+        .get_onchain_melt_quote(&mut tx, &Uuid::from_str(quote_id.as_str())?)
         .await?;
 
     let paid = is_onchain_paid(&mint, &quote).await?;
     if paid {
         mint.db
-            .update_onchain_melt_quote(&OnchainMeltQuote {
-                paid,
-                ..quote.clone()
-            })
+            .update_onchain_melt_quote(
+                &mut tx,
+                &OnchainMeltQuote {
+                    paid,
+                    ..quote.clone()
+                },
+            )
             .await?;
     }
 
@@ -260,17 +277,19 @@ pub async fn post_melt_btconchain(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltOnchainRequest>,
 ) -> Result<Json<PostMeltOnchainResponse>, MokshaMintError> {
+    let mut tx = mint.db.begin_tx().await?;
     let quote = mint
         .db
-        .get_onchain_melt_quote(&Uuid::from_str(melt_request.quote.as_str())?)
+        .get_onchain_melt_quote(&mut tx, &Uuid::from_str(melt_request.quote.as_str())?)
         .await?;
 
     let txid = mint.melt_onchain(&quote, &melt_request.inputs).await?;
     let paid = is_onchain_paid(&mint, &quote).await?;
 
     mint.db
-        .update_onchain_melt_quote(&OnchainMeltQuote { paid, ..quote })
+        .update_onchain_melt_quote(&mut tx, &OnchainMeltQuote { paid, ..quote })
         .await?;
+    tx.commit().await?;
 
     Ok(Json(PostMeltOnchainResponse { paid, txid }))
 }

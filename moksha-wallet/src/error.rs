@@ -1,7 +1,6 @@
 use std::string::FromUtf8Error;
 
 use lightning_invoice::ParseOrSemanticError;
-use sqlx::migrate::MigrateError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -38,7 +37,7 @@ pub enum MokshaWalletError {
 
     #[cfg(not(target_arch = "wasm32"))]
     #[error("Migrate Error {0}")]
-    Migrate(#[from] MigrateError),
+    Migrate(#[from] sqlx::migrate::MigrateError),
 
     #[cfg(not(target_arch = "wasm32"))]
     #[error("Sqlite Error {0}")]

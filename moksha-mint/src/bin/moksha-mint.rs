@@ -23,10 +23,10 @@ pub async fn main() -> anyhow::Result<()> {
         info,
         lightning_fee,
         server,
-        database,
         btconchain_backend,
         lightning_backend,
         tracing,
+        database,
     } = MintConfig::read_config_with_defaults();
 
     let mint = MintBuilder::new()
@@ -34,7 +34,7 @@ pub async fn main() -> anyhow::Result<()> {
         .with_server(Some(server))
         .with_private_key(privatekey)
         .with_derivation_path(derivation_path)
-        .with_db(database)
+        .with_db(Some(database))
         .with_lightning(lightning_backend.expect("lightning not set"))
         .with_btc_onchain(btconchain_backend)
         .with_fee(Some(lightning_fee))

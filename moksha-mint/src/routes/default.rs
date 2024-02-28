@@ -15,6 +15,7 @@ use moksha_core::{
 use tracing::{debug, instrument};
 use uuid::Uuid;
 
+use crate::database::Database;
 use crate::{
     config::{BtcOnchainConfig, MintConfig},
     error::MokshaMintError,
@@ -131,7 +132,9 @@ pub async fn post_mint_quote_bolt11(
         paid: false,
     };
 
-    mint.db.add_bolt11_mint_quote(&quote).await?;
+    let mut tx = mint.db.begin_tx().await?;
+    mint.db.add_bolt11_mint_quote(&mut tx, &quote).await?;
+    tx.commit().await?;
     Ok(Json(quote.into()))
 }
 
@@ -151,8 +154,10 @@ pub async fn post_mint_bolt11(
     State(mint): State<Mint>,
     Json(request): Json<PostMintBolt11Request>,
 ) -> Result<Json<PostMintBolt11Response>, MokshaMintError> {
+    let mut tx = mint.db.begin_tx().await?;
     let signatures = mint
         .mint_tokens(
+            &mut tx,
             PaymentMethod::Bolt11,
             request.quote.clone(),
             &request.outputs,
@@ -163,15 +168,19 @@ pub async fn post_mint_bolt11(
 
     let old_quote = &mint
         .db
-        .get_bolt11_mint_quote(&Uuid::from_str(request.quote.as_str())?)
+        .get_bolt11_mint_quote(&mut tx, &Uuid::from_str(request.quote.as_str())?)
         .await?;
 
     mint.db
-        .update_bolt11_mint_quote(&Bolt11MintQuote {
-            paid: true,
-            ..old_quote.clone()
-        })
+        .update_bolt11_mint_quote(
+            &mut tx,
+            &Bolt11MintQuote {
+                paid: true,
+                ..old_quote.clone()
+            },
+        )
         .await?;
+    tx.commit().await?;
     Ok(Json(PostMintBolt11Response { signatures }))
 }
 
@@ -208,7 +217,9 @@ pub async fn post_melt_quote_bolt11(
         payment_request: melt_request.request.clone(),
         paid: false,
     };
-    mint.db.add_bolt11_melt_quote(&quote).await?;
+    let mut tx = mint.db.begin_tx().await?;
+    mint.db.add_bolt11_melt_quote(&mut tx, &quote).await?;
+    tx.commit().await?;
 
     Ok(Json(quote.into()))
 }
@@ -232,15 +243,17 @@ pub async fn post_melt_bolt11(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltBolt11Request>,
 ) -> Result<Json<PostMeltBolt11Response>, MokshaMintError> {
+    let mut tx = mint.db.begin_tx().await?;
     let quote = mint
         .db
-        .get_bolt11_melt_quote(&Uuid::from_str(melt_request.quote.as_str())?)
+        .get_bolt11_melt_quote(&mut tx, &Uuid::from_str(melt_request.quote.as_str())?)
         .await?;
 
     debug!("post_melt_bolt11 fee_reserve: {:#?}", &quote);
 
     let (paid, payment_preimage, change) = mint
         .melt_bolt11(
+            &mut tx,
             quote.payment_request.to_owned(),
             quote.fee_reserve,
             &melt_request.inputs,
@@ -249,8 +262,9 @@ pub async fn post_melt_bolt11(
         )
         .await?;
     mint.db
-        .update_bolt11_melt_quote(&Bolt11MeltQuote { paid, ..quote })
+        .update_bolt11_melt_quote(&mut tx, &Bolt11MeltQuote { paid, ..quote })
         .await?;
+    tx.commit().await?;
 
     Ok(Json(PostMeltBolt11Response {
         paid,
@@ -276,10 +290,12 @@ pub async fn get_mint_quote_bolt11(
 ) -> Result<Json<PostMintQuoteBolt11Response>, MokshaMintError> {
     debug!("get_quote: {}", quote_id);
 
+    let mut tx = mint.db.begin_tx().await?;
     let quote = mint
         .db
-        .get_bolt11_mint_quote(&Uuid::from_str(quote_id.as_str())?)
+        .get_bolt11_mint_quote(&mut tx, &Uuid::from_str(quote_id.as_str())?)
         .await?;
+    tx.commit().await?;
 
     let paid = mint
         .lightning
@@ -305,11 +321,13 @@ pub async fn get_melt_quote_bolt11(
     State(mint): State<Mint>,
 ) -> Result<Json<PostMeltQuoteBolt11Response>, MokshaMintError> {
     debug!("get_melt_quote: {}", quote_id);
+    let mut tx = mint.db.begin_tx().await?;
     let quote = mint
         .db
-        .get_bolt11_melt_quote(&Uuid::from_str(quote_id.as_str())?)
+        .get_bolt11_melt_quote(&mut tx, &Uuid::from_str(quote_id.as_str())?)
         .await?;
 
+    tx.commit().await?;
     // FIXME check for paid?
     Ok(Json(quote.into()))
 }

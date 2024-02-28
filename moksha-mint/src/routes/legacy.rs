@@ -14,6 +14,7 @@ use moksha_core::{
 use secp256k1::PublicKey;
 use tracing::{event, Level};
 
+use crate::database::Database;
 use crate::{
     error::MokshaMintError,
     mint::Mint,
@@ -51,9 +52,11 @@ pub async fn post_legacy_mint(
         Level::INFO,
         "post_mint: {mint_query:#?} {blinded_messages:#?}"
     );
+    let mut tx = mint.db.begin_tx().await?;
 
     let promises = mint
         .mint_tokens(
+            &mut tx,
             PaymentMethod::Bolt11,
             mint_query.hash,
             &blinded_messages.outputs,
@@ -83,8 +86,10 @@ pub async fn post_legacy_melt(
     State(mint): State<Mint>,
     Json(melt_request): Json<PostMeltRequest>,
 ) -> Result<Json<PostMeltResponse>, MokshaMintError> {
+    let mut tx = mint.db.begin_tx().await?;
     let (paid, preimage, change) = mint
         .melt_bolt11(
+            &mut tx,
             melt_request.pr,
             0, // FIXME set correct fee reserve for legacy api
             &melt_request.proofs,
@@ -93,6 +98,7 @@ pub async fn post_legacy_melt(
         )
         .await?;
 
+    tx.commit().await?;
     Ok(Json(PostMeltResponse {
         paid,
         preimage,

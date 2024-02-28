@@ -4,9 +4,10 @@ use moksha_wallet::client::CashuClient;
 use moksha_wallet::http::CrossPlatformHttpClient;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::wallet::WalletBuilder;
+
 use mokshamint::lightning::lnbits::LnbitsLightningSettings;
 use mokshamint::lightning::LightningType;
-use mokshamint::mint::Mint;
+use mokshamint::mint::MintBuilder;
 use reqwest::Url;
 use std::collections::HashMap;
 use std::thread;
@@ -20,6 +21,7 @@ use tokio::time::{sleep_until, Instant};
 pub fn test_integration() -> anyhow::Result<()> {
     use mokshamint::config::{DatabaseConfig, ServerConfig};
 
+    // create postgres container that will be destroyed after the test is done
     let docker = clients::Cli::default();
     let node = docker.run(Postgres::default());
     let host_port = node.get_host_port_ipv4(5432);
@@ -35,19 +37,22 @@ pub fn test_integration() -> anyhow::Result<()> {
     // Create a channel to signal when the server has started
     let _server_thread = thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+
         rt.block_on(async {
-            let mint = Mint::builder()
+            let db_config = DatabaseConfig {
+                db_url: format!(
+                    "postgres://postgres:postgres@localhost:{}/test-db",
+                    host_port
+                ),
+            };
+
+            let mint = MintBuilder::new()
                 .with_private_key("my_private_key".to_string())
                 .with_server(Some(ServerConfig {
                     host_port: "127.0.0.1:8686".parse().expect("invalid address"),
                     ..Default::default()
                 }))
-                .with_db(DatabaseConfig {
-                    db_url: format!(
-                        "postgres://postgres:postgres@localhost:{}/moksha-mint",
-                        host_port
-                    ),
-                })
+                .with_db(Some(db_config))
                 .with_lightning(LightningType::Lnbits(LnbitsLightningSettings::new(
                     "my_admin_key",
                     "http://127.0.0.1:6100",
@@ -170,7 +175,7 @@ impl Default for Postgres {
         let mut env_vars = HashMap::new();
         env_vars.insert("POSTGRES_DB".to_owned(), "postgres".to_owned());
         env_vars.insert("POSTGRES_HOST_AUTH_METHOD".into(), "trust".into());
-        env_vars.insert("POSTGRES_DB".into(), "moksha-mint".into());
+        env_vars.insert("POSTGRES_DB".into(), "test-db".into());
 
         Self { env_vars }
     }
