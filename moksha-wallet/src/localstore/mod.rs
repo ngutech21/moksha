@@ -3,11 +3,10 @@ use moksha_core::proof::Proofs;
 
 use crate::error::MokshaWalletError;
 
-#[cfg(not(target_os = "espidf"))]
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(any(target_arch = "wasm32", target_os = "espidf")))]
 pub mod sqlite;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(any(target_arch = "wasm32", target_os = "espidf"))]
 pub mod rexie;
 
 #[derive(Debug, Clone)]
@@ -16,8 +15,7 @@ pub struct WalletKeyset {
     pub mint_url: String,
 }
 
-#[cfg(not(target_os = "espidf"))]
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(any(target_arch = "wasm32", target_os = "espidf")))]
 #[async_trait(?Send)]
 pub trait LocalStore {
     type DB: sqlx::Database;
@@ -41,17 +39,17 @@ pub trait LocalStore {
     async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), MokshaWalletError>;
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(any(target_arch = "wasm32", target_os = "espidf"))]
 pub struct RexieTransaction {}
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(any(target_arch = "wasm32", target_os = "espidf"))]
 impl RexieTransaction {
     pub async fn commit(&self) -> Result<(), MokshaWalletError> {
         Ok(())
     }
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(any(target_arch = "wasm32", target_os = "espidf"))]
 #[async_trait(?Send)]
 pub trait LocalStore {
     async fn begin_tx(&self) -> Result<RexieTransaction, MokshaWalletError> {
