@@ -49,7 +49,7 @@ impl RexieTransaction {
     }
 }
 
-#[cfg(any(target_arch = "wasm32", target_os = "espidf"))]
+#[cfg(target_arch = "wasm32")]
 #[async_trait(?Send)]
 pub trait LocalStore {
     async fn begin_tx(&self) -> Result<RexieTransaction, MokshaWalletError> {
@@ -70,4 +70,26 @@ pub trait LocalStore {
 
     async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError>;
     async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), MokshaWalletError>;
+}
+
+#[cfg(target_os = "espidf")]
+pub trait LocalStore {
+    fn begin_tx(&self) -> Result<RexieTransaction, MokshaWalletError> {
+        Ok(RexieTransaction {})
+    }
+
+    fn delete_proofs(
+        &self,
+        tx: &mut RexieTransaction,
+        proofs: &Proofs,
+    ) -> Result<(), MokshaWalletError>;
+    fn add_proofs(
+        &self,
+        tx: &mut RexieTransaction,
+        proofs: &Proofs,
+    ) -> Result<(), MokshaWalletError>;
+    fn get_proofs(&self, tx: &mut RexieTransaction) -> Result<Proofs, MokshaWalletError>;
+
+    fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError>;
+    fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), MokshaWalletError>;
 }

@@ -9,7 +9,7 @@ async fn execute_request(url: &str) -> Result<String, MokshaWalletError> {
         Ok(response.text().await?)
     }
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(any(target_arch = "wasm32", target_os = "espidf"))]
     {
         let resp = gloo_net::http::Request::get(url).send().await.unwrap();
         Ok(resp.text().await?)

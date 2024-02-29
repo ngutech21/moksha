@@ -76,6 +76,59 @@ where
         self
     }
 
+    #[cfg(target_os = "espidf")]
+    pub fn build(self) -> Result<Wallet<L, C>, MokshaWalletError> {
+        let client = self.client.unwrap_or_default();
+        let localstore = self.localstore.expect("localstore is required");
+        let mint_url = self.mint_url.expect("mint_url is required");
+
+        if !client.is_v1_supported(&mint_url).unwrap() {
+            return Err(MokshaWalletError::UnsupportedApiVersion);
+        }
+
+        let load_keysets = localstore.get_keysets().unwrap();
+
+        let mint_keysets = client.get_keysets(&mint_url).unwrap();
+        if load_keysets.is_empty() {
+            let wallet_keysets = mint_keysets
+                .keysets
+                .iter()
+                .map(|m| WalletKeyset {
+                    id: m.clone().id,
+                    mint_url: mint_url.to_string(),
+                })
+                .collect::<Vec<WalletKeyset>>();
+
+            for wkeyset in wallet_keysets {
+                localstore.add_keyset(&wkeyset);
+            }
+        }
+
+        // FIXME store all keysets
+        let keys = client.get_keys(&mint_url).unwrap();
+
+        let key_response = keys
+            .keysets
+            .iter()
+            .find(|k| k.id.starts_with("00"))
+            .expect("no valid keyset found");
+
+        let mks = mint_keysets
+            .keysets
+            .iter()
+            .find(|k| k.id.starts_with("00"))
+            .expect("no valid keyset found");
+
+        Ok(Wallet::new(
+            client as C,
+            mks.clone(),
+            key_response.clone(),
+            localstore,
+            mint_url,
+        ))
+    }
+
+    #[cfg(target_arch = "wasm32")]
     pub async fn build(self) -> Result<Wallet<L, C>, MokshaWalletError> {
         let client = self.client.unwrap_or_default();
         let localstore = self.localstore.expect("localstore is required");

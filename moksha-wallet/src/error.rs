@@ -5,7 +5,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum MokshaWalletError {
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(any(target_arch = "wasm32", target_os = "espidf"))]
     #[error("GlooNetError - {0}")]
     GlooNet(#[from] gloo_net::Error),
 

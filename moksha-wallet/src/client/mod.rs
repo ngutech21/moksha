@@ -20,6 +20,7 @@ pub mod crossplatform;
 #[cfg(test)]
 use mockall::automock;
 
+#[cfg(not(target_os = "espidf"))]
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait CashuClient {
@@ -127,6 +128,118 @@ pub trait CashuClient {
     ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError>;
 
     async fn get_melt_onchain(
+        &self,
+        mint_url: &Url,
+        txid: String,
+    ) -> Result<GetMeltOnchainResponse, MokshaWalletError>;
+}
+
+#[cfg(target_os = "espidf")]
+pub trait CashuClient {
+    fn get_keys(&self, mint_url: &Url) -> Result<KeysResponse, MokshaWalletError>;
+
+    fn get_keys_by_id(
+        &self,
+        mint_url: &Url,
+        keyset_id: String,
+    ) -> Result<KeysResponse, MokshaWalletError>;
+
+    fn get_keysets(&self, mint_url: &Url) -> Result<V1Keysets, MokshaWalletError>;
+
+    fn post_swap(
+        &self,
+        mint_url: &Url,
+        proofs: Proofs,
+        output: Vec<BlindedMessage>,
+    ) -> Result<PostSwapResponse, MokshaWalletError>;
+
+    fn post_melt_bolt11(
+        &self,
+        mint_url: &Url,
+        proofs: Proofs,
+        quote: String,
+        outputs: Vec<BlindedMessage>,
+    ) -> Result<PostMeltBolt11Response, MokshaWalletError>;
+
+    fn post_melt_quote_bolt11(
+        &self,
+        mint_url: &Url,
+        payment_request: String,
+        unit: CurrencyUnit,
+    ) -> Result<PostMeltQuoteBolt11Response, MokshaWalletError>;
+
+    fn get_melt_quote_bolt11(
+        &self,
+        mint_url: &Url,
+        quote: String,
+    ) -> Result<PostMeltQuoteBolt11Response, MokshaWalletError>;
+
+    fn post_mint_bolt11(
+        &self,
+        mint_url: &Url,
+        quote: String,
+        blinded_messages: Vec<BlindedMessage>,
+    ) -> Result<PostMintBolt11Response, MokshaWalletError>;
+
+    fn post_mint_quote_bolt11(
+        &self,
+        mint_url: &Url,
+        amount: u64,
+        unit: CurrencyUnit,
+    ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError>;
+
+    fn get_mint_quote_bolt11(
+        &self,
+        mint_url: &Url,
+        quote: String,
+    ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError>;
+
+    fn get_info(&self, mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError>;
+
+    fn is_v1_supported(&self, mint_url: &Url) -> Result<bool, MokshaWalletError>;
+
+    fn post_mint_onchain(
+        &self,
+        mint_url: &Url,
+        quote: String,
+        blinded_messages: Vec<BlindedMessage>,
+    ) -> Result<PostMintOnchainResponse, MokshaWalletError>;
+
+    fn post_mint_quote_onchain(
+        &self,
+        mint_url: &Url,
+        amount: u64,
+        unit: CurrencyUnit,
+    ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError>;
+
+    fn get_mint_quote_onchain(
+        &self,
+        mint_url: &Url,
+        quote: String,
+    ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError>;
+
+    fn post_melt_onchain(
+        &self,
+        mint_url: &Url,
+        proofs: Proofs,
+        quote: String,
+    ) -> Result<PostMeltOnchainResponse, MokshaWalletError>;
+
+    fn post_melt_quote_onchain(
+        &self,
+        mint_url: &Url,
+        address: String,
+        amount: u64,
+        unit: CurrencyUnit,
+    ) -> Result<Vec<PostMeltQuoteOnchainResponse>, MokshaWalletError>;
+
+    fn get_melt_quote_onchain(
+        &self,
+        mint_url: &Url,
+        quote: String,
+    ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError>;
+
+    fn get_melt_onchain(
         &self,
         mint_url: &Url,
         txid: String,
