@@ -32,9 +32,9 @@ services:
     environment:
       - MINT_DB_URL=postgres://postgres:postgres@database/moksha-mint
       - MINT_LIGHTNING_BACKEND=Lnd
-      - LND_MACAROON_PATH=/app/admin.macaroon
-      - LND_TLS_CERT_PATH=/app/tls.cert
-      - LND_GRPC_HOST=https://mutinynet.moksha.cash:10009
+      - MINT_LND_MACAROON_PATH=/app/admin.macaroon
+      - MINT_LND_TLS_CERT_PATH=/app/tls.cert
+      - MINT_LND_GRPC_HOST=https://mutinynet.moksha.cash:10009
       - MINT_PRIVATE_KEY=supersecretkey
     profiles:
       - app
