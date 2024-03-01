@@ -217,6 +217,7 @@ where
         WalletBuilder::default()
     }
 
+    #[cfg(not(target_os = "espidf"))]
     pub async fn create_quote_bolt11(
         &self,
         amount: u64,
@@ -225,7 +226,17 @@ where
             .post_mint_quote_bolt11(&self.mint_url, amount, CurrencyUnit::Sat)
             .await
     }
+    #[cfg(target_os = "espidf")]
+    pub fn create_quote_bolt11(
+        &self,
+        amount: u64,
+    ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError> {
+        self.client
+            .post_mint_quote_bolt11(&self.mint_url, amount, CurrencyUnit::Sat)
+    }
+    
 
+    #[cfg(not(target_os = "espidf"))]
     pub async fn create_quote_onchain(
         &self,
         amount: u64,
@@ -234,7 +245,16 @@ where
             .post_mint_quote_onchain(&self.mint_url, amount, CurrencyUnit::Sat)
             .await
     }
+    #[cfg(target_os = "espidf")]
+    pub fn create_quote_onchain(
+        &self,
+        amount: u64,
+    ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError> {
+        self.client
+            .post_mint_quote_onchain(&self.mint_url, amount, CurrencyUnit::Sat)
+    }
 
+    #[cfg(not(target_os = "espidf"))]
     pub async fn is_quote_paid(
         &self,
         payment_method: &PaymentMethod,
@@ -256,7 +276,30 @@ where
             }
         })
     }
+    #[cfg(target_os = "espidf")]
+    pub fn is_quote_paid(
+        &self,
+        payment_method: &PaymentMethod,
+        quote: String,
+    ) -> Result<bool, MokshaWalletError> {
+        Ok(match payment_method {
+            PaymentMethod::Bolt11 => {
+                self.client
+                    .get_mint_quote_bolt11(&self.mint_url, quote)
+                    .unwrap()
+                    .paid
+            }
 
+            PaymentMethod::BtcOnchain => {
+                self.client
+                    .get_mint_quote_onchain(&self.mint_url, quote)
+                    .unwrap()
+                    .paid
+            }
+        })
+    }
+
+    #[cfg(not(target_os = "espidf"))]
     pub async fn is_onchain_paid(&self, quote: String) -> Result<bool, MokshaWalletError> {
         Ok(self
             .client
@@ -264,7 +307,16 @@ where
             .await?
             .paid)
     }
+    #[cfg(target_os = "espidf")]
+    pub fn is_onchain_paid(&self, quote: String) -> Result<bool, MokshaWalletError> {
+        Ok(self
+            .client
+            .get_melt_quote_onchain(&self.mint_url, quote)
+            .unwrap()
+            .paid)
+    }
 
+    #[cfg(not(target_os = "espidf"))]
     pub async fn is_onchain_tx_paid(&self, txid: String) -> Result<bool, MokshaWalletError> {
         Ok(self
             .client
@@ -272,12 +324,27 @@ where
             .await?
             .paid)
     }
+    #[cfg(target_os = "espidf")]
+    pub async fn is_onchain_tx_paid(&self, txid: String) -> Result<bool, MokshaWalletError> {
+        Ok(self
+            .client
+            .get_melt_onchain(&self.mint_url, txid)
+            .unwrap()
+            .paid)
+    }
 
+    #[cfg(not(target_os = "espidf"))]
     pub async fn get_balance(&self) -> Result<u64, MokshaWalletError> {
         let mut tx = self.localstore.begin_tx().await?;
         Ok(self.localstore.get_proofs(&mut tx).await?.total_amount())
     }
+    #[cfg(target_os = "espidf")]
+    pub fn get_balance(&self) -> Result<u64, MokshaWalletError> {
+        let mut tx = self.localstore.begin_tx().await?;
+        Ok(self.localstore.get_proofs(&mut tx).unwrap().total_amount())
+    }
 
+    #[cfg(not(target_os = "espidf"))]
     pub async fn send_tokens(&self, amount: u64) -> Result<TokenV3, MokshaWalletError> {
         let balance = self.get_balance().await?;
         if amount > balance {
@@ -298,6 +365,30 @@ where
             .add_proofs(&mut tx, &remaining_tokens.proofs())
             .await?;
         tx.commit().await?;
+
+        Ok(result)
+    }
+    #[cfg(target_os = "espidf")]
+    pub fn send_tokens(&self, amount: u64) -> Result<TokenV3, MokshaWalletError> {
+        let balance = self.get_balance().unwrap();
+        if amount > balance {
+            return Err(MokshaWalletError::NotEnoughTokens);
+        }
+
+        let mut tx = self.localstore.begin_tx().unwrap();
+        let all_proofs = self.localstore.get_proofs(&mut tx).unwrap();
+        let selected_proofs = all_proofs.proofs_for_amount(amount)?;
+        let selected_tokens = (self.mint_url.to_owned(), selected_proofs.clone()).into();
+
+        let (remaining_tokens, result) = self.split_tokens(&selected_tokens, amount.into()).unwrap();
+
+        self.localstore
+            .delete_proofs(&mut tx, &selected_proofs)
+            .unwrap();
+        self.localstore
+            .add_proofs(&mut tx, &remaining_tokens.proofs())
+            .unwrap();
+        tx.commit().unwrap();
 
         Ok(result)
     }

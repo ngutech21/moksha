@@ -42,9 +42,15 @@ pub trait LocalStore {
 #[cfg(any(target_arch = "wasm32", target_os = "espidf"))]
 pub struct RexieTransaction {}
 
-#[cfg(any(target_arch = "wasm32", target_os = "espidf"))]
+#[cfg(target_arch = "wasm32")]
 impl RexieTransaction {
     pub async fn commit(&self) -> Result<(), MokshaWalletError> {
+        Ok(())
+    }
+}
+#[cfg(target_os = "espidf")]
+impl RexieTransaction {
+    pub fn commit(&self) -> Result<(), MokshaWalletError> {
         Ok(())
     }
 }
