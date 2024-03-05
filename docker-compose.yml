@@ -9,32 +9,64 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: moksha-mint
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
-    ports:
-      - 16686:16686
-      - 4317:4317
-      - 4318:4318
-      - 14268:14268
-      - 6831:6831/udp
-      - 6832:6832/udp
-    restart: always
-  app:
-    image: "docker.io/ngutech21/moksha-mint:latest"
-    #image: "moksha-mint:latest" # for local testing
-    ports:
-      - 3338:3338
+  prometheus:
+    image: "prom/prometheus:v2.45.0"
+    command:
+      - "--config.file=/etc/prometheus.yaml"
+      - "--enable-feature=exemplar-storage"
+      - "--web.enable-remote-write-receiver"
     volumes:
-      - ./data/mutinynet/admin.macaroon:/app/admin.macaroon
-      - ./data/mutinynet/tls.cert:/app/tls.cert
+      - "./conf/prometheus.yaml:/etc/prometheus.yaml"
+    ports:
+      - "127.0.0.1:9090:9090"
+  tempo:
+    image: "grafana/tempo:2.4.0"
+    command:
+      - "-config.file=/etc/tempo.yaml"
+    volumes:
+      - "./conf/tempo.yaml:/etc/tempo.yaml"
+    ports:
+      - "127.0.0.1:3200:3200" # Tempo
+      - "127.0.0.1:4317:4317" # OTLP GRPC
+      - "127.0.0.1:4318:4318" # OTLP HTTP
+  grafana:
+    image: "grafana/grafana:10.2.4"
+    volumes:
+      - "./conf/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml"
     environment:
-      - MINT_DB_URL=postgres://postgres:postgres@database/moksha-mint
-      - MINT_LIGHTNING_BACKEND=Lnd
-      - MINT_LND_MACAROON_PATH=/app/admin.macaroon
-      - MINT_LND_TLS_CERT_PATH=/app/tls.cert
-      - MINT_LND_GRPC_HOST=https://mutinynet.moksha.cash:10009
-      - MINT_PRIVATE_KEY=supersecretkey
-    profiles:
-      - app
+      - "GF_AUTH_ANONYMOUS_ENABLED=true"
+      - "GF_AUTH_ANONYMOUS_ORG_ROLE=Admin"
+      - "GF_AUTH_DISABLE_LOGIN_FORM=true"
+      - "GF_FEATURE_TOGGLES_ENABLE=traceqlEditor"
+    ports:
+      - "127.0.0.1:3000:3000"
+
+  # jaeger:
+  #   image: jaegertracing/all-in-one:latest
+  #   environment:
+  #     - COLLECTOR_OTLP_ENABLED=true
+  #   ports:
+  #     - 16686:16686
+  #     - 4317:4317
+  #     - 4318:4318
+  #     - 14268:14268
+  #     - 6831:6831/udp
+  #     - 6832:6832/udp
+  #   restart: always
+  # app:
+  #   image: "docker.io/ngutech21/moksha-mint:latest"
+  #   #image: "moksha-mint:latest" # for local testing
+  #   ports:
+  #     - 3338:3338
+  #   volumes:
+  #     - ./data/mutinynet/admin.macaroon:/app/admin.macaroon
+  #     - ./data/mutinynet/tls.cert:/app/tls.cert
+  #   environment:
+  #     - MINT_DB_URL=postgres://postgres:postgres@database/moksha-mint
+  #     - MINT_LIGHTNING_BACKEND=Lnd
+  #     - MINT_LND_MACAROON_PATH=/app/admin.macaroon
+  #     - MINT_LND_TLS_CERT_PATH=/app/tls.cert
+  #     - MINT_LND_GRPC_HOST=https://mutinynet.moksha.cash:10009
+  #     - MINT_PRIVATE_KEY=supersecretkey
+  #   profiles:
+  #     - app

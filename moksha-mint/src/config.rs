@@ -61,8 +61,8 @@ impl FromStr for LightningTypeVariant {
 
 #[derive(Debug, Clone, Default, Parser)]
 pub struct TracingConfig {
-    #[clap(long, env = "MINT_TRACING_JAEGER_ENDPOINT")]
-    pub jaeger_endpoint: Option<String>,
+    #[clap(long, env = "MINT_TRACING_ENDPOINT")]
+    pub endpoint: String,
 }
 
 #[derive(Debug, Clone, Default)]

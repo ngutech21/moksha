@@ -20,6 +20,8 @@ use moksha_core::keyset::{V1Keyset, V1Keysets};
 use moksha_core::proof::Proofs;
 use moksha_core::proof::{P2SHScript, Proof};
 
+use opentelemetry::KeyValue;
+use opentelemetry_sdk::trace::Sampler;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::mint::Mint;
@@ -45,6 +47,8 @@ use utoipa::OpenApi;
 
 use tracing_subscriber::{filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
+use opentelemetry_otlp::WithExportConfig;
+
 use crate::routes::legacy::{
     get_legacy_keys, get_legacy_keysets, get_legacy_mint, post_legacy_check_fees, post_legacy_melt,
     post_legacy_mint, post_legacy_split,
@@ -53,19 +57,23 @@ use crate::routes::legacy::{
 pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
     let config = mint.config.clone();
 
-    let jaeger = if config.tracing.is_some() {
-        let tracer = opentelemetry_jaeger::new_agent_pipeline()
-            .with_service_name("moksha-mint")
-            .with_endpoint(
-                config
-                    .tracing
-                    .unwrap_or_default()
-                    .jaeger_endpoint
-                    .unwrap_or_default(),
+    let otlp_tracer = if config.tracing.is_some() {
+        let tracer = opentelemetry_otlp::new_pipeline()
+            .tracing()
+            .with_exporter(
+                opentelemetry_otlp::new_exporter()
+                    .http()
+                    .with_endpoint(config.tracing.unwrap_or_default().endpoint),
             )
-            .install_simple()
-            .unwrap();
-
+            .with_trace_config(
+                opentelemetry_sdk::trace::config()
+                    .with_sampler(Sampler::AlwaysOn)
+                    .with_resource(opentelemetry_sdk::Resource::new(vec![KeyValue::new(
+                        "service.name",
+                        "moksha-mint",
+                    )])),
+            )
+            .install_batch(opentelemetry_sdk::runtime::Tokio)?;
         Some(tracing_opentelemetry::layer().with_tracer(tracer))
     } else {
         None
@@ -74,7 +82,7 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
     tracing_subscriber::registry()
         .with(fmt::layer().pretty())
         .with(EnvFilter::from_default_env())
-        .with(jaeger)
+        .with(otlp_tracer)
         .try_init()?;
 
     if let Some(ref buildtime) = mint.build_params.build_time {
