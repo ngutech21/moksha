@@ -31,7 +31,7 @@ tower-http = { version = "0.5.0", features = ["cors", "fs", "set-header"] }
 secp256k1 = { version = "0.28.2", default-features = false, features = ["rand", "serde"] }
 thiserror = "1.0.50"
 moksha-core = { path = "../moksha-core", version = "0.2.1" }
-lightning-invoice = "0.26.0"
+lightning-invoice = "0.29.0"
 reqwest = { version = "0.11.23", default-features = false, features = ["serde_json", "json", "rustls-tls", "socks"] }
 url = "2.4.1"
 dotenvy = "0.15.7"
