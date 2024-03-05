@@ -3,10 +3,10 @@ use moksha_core::proof::Proofs;
 
 use crate::error::MokshaWalletError;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(any(target_arch = "wasm32", target_os = "espidf")))]
 pub mod sqlite;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(any(target_arch = "wasm32", target_os = "espidf"))]
 pub mod rexie;
 
 #[derive(Debug, Clone)]
@@ -15,7 +15,7 @@ pub struct WalletKeyset {
     pub mint_url: String,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(any(target_arch = "wasm32", target_os = "espidf")))]
 #[async_trait(?Send)]
 pub trait LocalStore {
     type DB: sqlx::Database;
@@ -39,12 +39,18 @@ pub trait LocalStore {
     async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), MokshaWalletError>;
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(any(target_arch = "wasm32", target_os = "espidf"))]
 pub struct RexieTransaction {}
 
 #[cfg(target_arch = "wasm32")]
 impl RexieTransaction {
     pub async fn commit(&self) -> Result<(), MokshaWalletError> {
+        Ok(())
+    }
+}
+#[cfg(target_os = "espidf")]
+impl RexieTransaction {
+    pub fn commit(&self) -> Result<(), MokshaWalletError> {
         Ok(())
     }
 }
@@ -70,4 +76,26 @@ pub trait LocalStore {
 
     async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError>;
     async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), MokshaWalletError>;
+}
+
+#[cfg(target_os = "espidf")]
+pub trait LocalStore {
+    fn begin_tx(&self) -> Result<RexieTransaction, MokshaWalletError> {
+        Ok(RexieTransaction {})
+    }
+
+    fn delete_proofs(
+        &self,
+        tx: &mut RexieTransaction,
+        proofs: &Proofs,
+    ) -> Result<(), MokshaWalletError>;
+    fn add_proofs(
+        &self,
+        tx: &mut RexieTransaction,
+        proofs: &Proofs,
+    ) -> Result<(), MokshaWalletError>;
+    fn get_proofs(&self, tx: &mut RexieTransaction) -> Result<Proofs, MokshaWalletError>;
+
+    fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError>;
+    fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), MokshaWalletError>;
 }

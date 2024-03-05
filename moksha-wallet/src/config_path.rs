@@ -1,3 +1,4 @@
+#[cfg(not(target_os = "espidf"))]
 use dirs::home_dir;
 use std::{fs::create_dir, path::PathBuf};
 
@@ -15,6 +16,7 @@ pub const ENV_DB_PATH: &str = "WALLET_DB_PATH";
 /// let db_path = moksha_wallet::config_path::db_path();
 /// println!("Database path: {}", db_path);
 /// ```
+#[cfg(not(target_os = "espidf"))]
 pub fn db_path() -> String {
     std::env::var(ENV_DB_PATH).map_or_else(
         |_| {
@@ -43,6 +45,7 @@ pub fn db_path() -> String {
     )
 }
 
+#[cfg(not(target_os = "espidf"))]
 pub fn config_dir() -> PathBuf {
     let home = home_dir()
         .expect("home dir not found")

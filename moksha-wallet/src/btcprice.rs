@@ -1,6 +1,7 @@
 use crate::error::MokshaWalletError;
 
 async fn execute_request(url: &str) -> Result<String, MokshaWalletError> {
+    #[cfg(not(target_os = "espidf"))]
     #[cfg(not(target_arch = "wasm32"))]
     {
         let request_client = reqwest::Client::new();
@@ -8,7 +9,7 @@ async fn execute_request(url: &str) -> Result<String, MokshaWalletError> {
         Ok(response.text().await?)
     }
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(any(target_arch = "wasm32", target_os = "espidf"))]
     {
         let resp = gloo_net::http::Request::get(url).send().await.unwrap();
         Ok(resp.text().await?)
