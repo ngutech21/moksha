@@ -42,7 +42,7 @@ utoipa-swagger-ui = { version = "6.0.0", features = ["axum"] }
 sqlx = { version = "0.7.3", default-features = false, features = ["postgres", "runtime-tokio", "tls-native-tls", "migrate", "macros", "uuid"] }
 chrono = "0.4.31"
 cln-grpc = "0.1.7"
-tonic = { version = "0.8", features = ["transport", "tls"] }
+tonic = { version = "0.10", features = ["transport", "tls"] }
 
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
