@@ -443,6 +443,7 @@ mod tests {
             &format!("postgres://postgres:postgres@127.0.0.1:{}/postgres", port);
         let db = PostgresDB::new(&DatabaseConfig {
             db_url: connection_string.to_owned(),
+            ..Default::default()
         })
         .await?;
         db.migrate().await;

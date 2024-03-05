@@ -45,6 +45,7 @@ pub fn test_integration() -> anyhow::Result<()> {
                     "postgres://postgres:postgres@localhost:{}/postgres",
                     host_port
                 ),
+                ..Default::default()
             };
 
             let mint = MintBuilder::new()

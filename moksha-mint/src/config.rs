@@ -235,10 +235,22 @@ impl From<BtcOnchainConfig> for Nut15 {
     }
 }
 
-#[derive(Debug, Clone, Default, Parser)]
+#[derive(Debug, Clone, Parser)]
 pub struct DatabaseConfig {
     #[clap(long, env = "MINT_DB_URL")]
     pub db_url: String,
+
+    #[clap(long, default_value_t = 5, env = "MINT_DB_MAX_CONNECTIONS")]
+    pub max_connections: u32,
+}
+
+impl Default for DatabaseConfig {
+    fn default() -> Self {
+        Self {
+            db_url: "".to_owned(),
+            max_connections: 5,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Parser)]

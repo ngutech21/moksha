@@ -25,7 +25,7 @@ impl PostgresDB {
     pub async fn new(config: &DatabaseConfig) -> Result<Self, sqlx::Error> {
         Ok(Self {
             pool: PgPoolOptions::new()
-                .max_connections(5) // FIXME make max connections configurable
+                .max_connections(config.max_connections)
                 .connect(config.db_url.as_str())
                 .await?,
         })
