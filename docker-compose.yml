@@ -2,13 +2,15 @@ version: "3"
 
 services:
   database:
-    image: "postgres:16.2"
+    image: "postgres:16.2-alpine"
     ports:
       - 5432:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: moksha-mint
+    profiles:
+      - itest
   prometheus:
     image: "prom/prometheus:v2.45.0"
     command:
@@ -41,23 +43,23 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
 
-  # app:
-  #   image: "docker.io/ngutech21/moksha-mint:latest"
-  #   #image: "moksha-mint:latest" # for local testing
-  #   ports:
-  #     - 3338:3338
-  #   volumes:
-  #     - ./data/mutinynet/admin.macaroon:/app/admin.macaroon
-  #     - ./data/mutinynet/tls.cert:/app/tls.cert
-  #   environment:
-  #     - MINT_DB_URL=postgres://postgres:postgres@database/moksha-mint
-  #     - MINT_LIGHTNING_BACKEND=Lnd
-  #     - MINT_LND_MACAROON_PATH=/app/admin.macaroon
-  #     - MINT_LND_TLS_CERT_PATH=/app/tls.cert
-  #     - MINT_LND_GRPC_HOST=https://mutinynet.moksha.cash:10009
-  #     - MINT_PRIVATE_KEY=supersecretkey
-  #   profiles:
-  #     - app
+  app:
+    image: "docker.io/ngutech21/moksha-mint:latest"
+    #image: "moksha-mint:latest" # for local testing
+    ports:
+      - 3338:3338
+    volumes:
+      - ./data/mutinynet/admin.macaroon:/app/admin.macaroon
+      - ./data/mutinynet/tls.cert:/app/tls.cert
+    environment:
+      - MINT_DB_URL=postgres://postgres:postgres@database/moksha-mint
+      - MINT_LIGHTNING_BACKEND=Lnd
+      - MINT_LND_MACAROON_PATH=/app/admin.macaroon
+      - MINT_LND_TLS_CERT_PATH=/app/tls.cert
+      - MINT_LND_GRPC_HOST=https://mutinynet.moksha.cash:10009
+      - MINT_PRIVATE_KEY=supersecretkey
+    profiles:
+      - app
 
   # query for testing
   #curl --user polaruser:polarpass --data-binary '{"jsonrpc": "1.0", "id": "curltest", "method": "getblockchaininfo", "params": []}' -H 'content-type: text/plain;' http://127.0.0.1:18443
@@ -86,7 +88,13 @@ services:
       - "19444:18444"
       - "28334:28334"
       - "29335:28335"
+    
   lnd1:
+    environment:
+      USERID: ${USERID:-1000}
+      GROUPID: ${GROUPID:-1000}
+    depends_on: 
+      - bitcoind
     stop_grace_period: 2m
     image: lightninglabs/lnd:v0.17.4-beta
     container_name: lnd1
@@ -103,7 +111,7 @@ services:
       --bitcoind.zmqpubrawtx=tcp://bitcoind:28335
     restart: always
     volumes:
-      - ./data/lnd1:/home/lnd/.lnd
+      - ./data/lnd1:/root/.lnd
     expose:
       - "8080"
       - "10009"
@@ -112,3 +120,4 @@ services:
       - "8085:8080"
       - "10001:10009"
       - "9735:9735"
+    
