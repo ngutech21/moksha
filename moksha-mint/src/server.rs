@@ -61,9 +61,13 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         let tracer = opentelemetry_otlp::new_pipeline()
             .tracing()
             .with_exporter(
-                opentelemetry_otlp::new_exporter()
-                    .http()
-                    .with_endpoint(config.tracing.unwrap_or_default().endpoint),
+                opentelemetry_otlp::new_exporter().http().with_endpoint(
+                    config
+                        .tracing
+                        .unwrap_or_default()
+                        .endpoint
+                        .expect("No endpoint for tracing found"),
+                ),
             )
             .with_trace_config(
                 opentelemetry_sdk::trace::config()
