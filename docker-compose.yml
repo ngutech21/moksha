@@ -113,12 +113,21 @@ services:
     container_name: lnd1
     hostname: lnd1
     command: >-
-      lnd --noseedbackup --trickledelay=5000 --alias=lnd1 --externalip=lnd1
-      --tlsextradomain=lnd1 --tlsextradomain=lnd1
-      --tlsextradomain=host.docker.internal --listen=0.0.0.0:9735
-      --rpclisten=0.0.0.0:10009 --restlisten=0.0.0.0:8080 --bitcoin.active
-      --bitcoin.regtest --bitcoin.node=bitcoind
-      --bitcoind.rpchost=bitcoind --bitcoind.rpcuser=polaruser
+      lnd 
+      --noseedbackup 
+      --trickledelay=5000 
+      --alias=lnd1 
+      --externalip=lnd1
+      --tlsextradomain=lnd1 
+      --tlsextradomain=lnd1
+      --tlsextradomain=host.docker.internal 
+      --listen=0.0.0.0:9735
+      --rpclisten=0.0.0.0:10009 
+      --bitcoin.active
+      --bitcoin.regtest 
+      --bitcoin.node=bitcoind
+      --bitcoind.rpchost=bitcoind 
+      --bitcoind.rpcuser=polaruser
       --bitcoind.rpcpass=polarpass
       --bitcoind.zmqpubrawblock=tcp://bitcoind:28334
       --bitcoind.zmqpubrawtx=tcp://bitcoind:28335
@@ -126,10 +135,8 @@ services:
     volumes:
       - ./data/lnd1:/root/.lnd
     expose:
-      - "8080"
       - "10009"
-      - "9735"
+      #- "9735"
     ports:
-      - "8085:8080"
       - "10001:10009"
-      - "9735:9735"
+      #- "9735:9735"
