@@ -11,7 +11,7 @@ pub struct BitcoinClient {
 
 impl BitcoinClient {
     pub fn new_local() -> anyhow::Result<Self> {
-        let wallet_name = "mokshamint";
+        let wallet_name = "testwallet";
         let client = Client::new(
             &format!("http://localhost:18443/wallet/{}", wallet_name),
             Auth::UserPass("polaruser".to_string(), "polarpass".to_string()),

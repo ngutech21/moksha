@@ -9,7 +9,7 @@ pub struct LndClient(Arc<Mutex<Client>>);
 
 pub const LND_CERT_FILE: &str = "./data/lnd1/tls.cert";
 pub const LND_MACAROON_FILE: &str = "./data/lnd1/data/chain/bitcoin/regtest/admin.macaroon";
-pub const LND_ADDRESS: &str = "https://localhost:10001";
+pub const LND_ADDRESS: &str = "https://localhost:11001";
 
 impl LndClient {
     pub async fn new(
