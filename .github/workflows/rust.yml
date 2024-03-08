@@ -25,9 +25,9 @@ jobs:
       - name: Build
         run: cargo build --verbose
       - name: Set permissions for admin.macaroon
-        run: chmod 644 ./data/lnd1/data/chain/bitcoin/regtest/admin.macaroon
+        run: sudo chmod 644 ./data/lnd1/data/chain/bitcoin/regtest/admin.macaroon
       - name: Set permissions for tls.cert
-        run: chmod 644 ./data/lnd1/tls.cert
+        run: sudo chmod 644 ./data/lnd1/tls.cert
       - name: Run tests
         run: just run-tests
       - name: Run itests
