@@ -6,7 +6,6 @@ members = [
     "moksha-cli",
     "moksha-wallet",
     "moksha-mint",
-    "integrationtests",
 ]
 
 [profile.dev]
