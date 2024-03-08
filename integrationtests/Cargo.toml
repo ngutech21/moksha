@@ -1,5 +1,5 @@
 [package]
-name = "moksha-integrationtests"
+name = "integrationtests"
 version = "0.2.1"
 edition = "2021"
 repository = "https://github.com/ngutech21/moksha"
@@ -43,5 +43,3 @@ moksha-mint = { path = "../moksha-mint" }
 moksha-wallet = { path = "../moksha-wallet" }
 moksha-core = { path = "../moksha-core" }
 tempfile = "3.9.0"
-
-[workspace]
