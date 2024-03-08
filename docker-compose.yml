@@ -90,7 +90,7 @@ services:
       -txindex=1
 
     volumes:
-      - ./data/bitcoind:/home/bitcoin/.bitcoin
+      - ${HOST_PROJECT_PATH:-.}/data/bitcoind:/home/bitcoin/.bitcoin
     expose:
       - "18443"
       - "18444"
@@ -133,7 +133,7 @@ services:
       --bitcoind.zmqpubrawtx=tcp://bitcoind:28335
     restart: always
     volumes:
-      - ./data/lnd1:/root/.lnd
+      - ${HOST_PROJECT_PATH:-.}/data/lnd1:/root/.lnd
     expose:
       - "10009"
       #- "9735"
