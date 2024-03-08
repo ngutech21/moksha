@@ -18,7 +18,7 @@ use std::thread;
 
 use testcontainers::{clients, RunnableImage};
 use testcontainers_modules::postgres::Postgres;
-use tokio::runtime::Runtime;
+use tokio::runtime::Runtime; 
 
 #[test]
 pub fn test_integration() -> anyhow::Result<()> {
