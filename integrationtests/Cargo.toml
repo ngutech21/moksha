@@ -14,16 +14,12 @@ name = "integrationtests"
 path = "tests/tests.rs"
 
 [lib]
-name = "lnbitsmock"
-path = "src/lnbitsmock.rs"
+name = "itests"
+path = "src/lib.rs"
 
 [[bin]]
-name = "bitcoin_client"
-path = "bin/bitcoin_client.rs"
-
-[[bin]]
-name = "lnd_client"
-path = "bin/lnd_client.rs"
+name = "runner"
+path = "bin/runner.rs"
 
 [dependencies]
 rand = "0.8.5"
