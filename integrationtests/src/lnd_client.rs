@@ -7,6 +7,10 @@ use fedimint_tonic_lnd::lnrpc::{AddressType, NewAddressRequest};
 
 pub struct LndClient(Arc<Mutex<Client>>);
 
+pub const LND_CERT_FILE: &str = "./data/lnd1/tls.cert";
+pub const LND_MACAROON_FILE: &str = "./data/lnd1/data/chain/bitcoin/regtest/admin.macaroon";
+pub const LND_ADDRESS: &str = "https://localhost:10001";
+
 impl LndClient {
     pub async fn new(
         address: Url,
@@ -20,9 +24,16 @@ impl LndClient {
     }
 
     pub async fn new_local() -> anyhow::Result<Self> {
-        let url = Url::parse("https://localhost:10001").unwrap();
-        let cert_file = PathBuf::from("./data/lnd1/tls.cert");
-        let macaroon_file = PathBuf::from("./data/lnd1/data/chain/bitcoin/regtest/admin.macaroon");
+        let url = Url::parse(LND_ADDRESS)?;
+        let cert_file = LND_CERT_FILE.into();
+        let macaroon_file = LND_MACAROON_FILE.into();
+        Self::new(url, &cert_file, &macaroon_file).await
+    }
+
+    pub async fn new_local_itest() -> anyhow::Result<Self> {
+        let url = Url::parse(LND_ADDRESS)?;
+        let cert_file = "../data/lnd1/tls.cert".into();
+        let macaroon_file = "../data/lnd1/data/chain/bitcoin/regtest/admin.macaroon".into();
         Self::new(url, &cert_file, &macaroon_file).await
     }
 

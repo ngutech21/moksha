@@ -32,6 +32,17 @@ pub struct LndLightningSettings {
     #[clap(long, env = "MINT_LND_MACAROON_PATH")]
     pub macaroon_path: Option<PathBuf>,
 }
+
+impl LndLightningSettings {
+    pub fn new(grpc_host: Url, tls_cert_path: PathBuf, macaroon_path: PathBuf) -> Self {
+        Self {
+            grpc_host: Some(grpc_host),
+            tls_cert_path: Some(tls_cert_path),
+            macaroon_path: Some(macaroon_path),
+        }
+    }
+}
+
 impl fmt::Display for LndLightningSettings {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
