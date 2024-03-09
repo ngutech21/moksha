@@ -2,13 +2,15 @@ version: "3"
 
 services:
   database:
-    image: "postgres:16.2"
+    image: "postgres:16.2-alpine"
     ports:
       - 5432:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: moksha-mint
+    profiles:
+      - itest
   prometheus:
     image: "prom/prometheus:v2.45.0"
     command:
@@ -41,32 +43,97 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
 
-  # jaeger:
-  #   image: jaegertracing/all-in-one:latest
-  #   environment:
-  #     - COLLECTOR_OTLP_ENABLED=true
-  #   ports:
-  #     - 16686:16686
-  #     - 4317:4317
-  #     - 4318:4318
-  #     - 14268:14268
-  #     - 6831:6831/udp
-  #     - 6832:6832/udp
-  #   restart: always
-  # app:
-  #   image: "docker.io/ngutech21/moksha-mint:latest"
-  #   #image: "moksha-mint:latest" # for local testing
-  #   ports:
-  #     - 3338:3338
-  #   volumes:
-  #     - ./data/mutinynet/admin.macaroon:/app/admin.macaroon
-  #     - ./data/mutinynet/tls.cert:/app/tls.cert
-  #   environment:
-  #     - MINT_DB_URL=postgres://postgres:postgres@database/moksha-mint
-  #     - MINT_LIGHTNING_BACKEND=Lnd
-  #     - MINT_LND_MACAROON_PATH=/app/admin.macaroon
-  #     - MINT_LND_TLS_CERT_PATH=/app/tls.cert
-  #     - MINT_LND_GRPC_HOST=https://mutinynet.moksha.cash:10009
-  #     - MINT_PRIVATE_KEY=supersecretkey
-  #   profiles:
-  #     - app
+  app:
+    image: "docker.io/ngutech21/moksha-mint:latest"
+    #image: "moksha-mint:latest" # for local testing
+    ports:
+      - 3338:3338
+    volumes:
+      - ./data/mutinynet/admin.macaroon:/app/admin.macaroon
+      - ./data/mutinynet/tls.cert:/app/tls.cert
+    environment:
+      - MINT_DB_URL=postgres://postgres:postgres@database/moksha-mint
+      - MINT_LIGHTNING_BACKEND=Lnd
+      - MINT_LND_MACAROON_PATH=/app/admin.macaroon
+      - MINT_LND_TLS_CERT_PATH=/app/tls.cert
+      - MINT_LND_GRPC_HOST=https://mutinynet.moksha.cash:10009
+      - MINT_PRIVATE_KEY=supersecretkey
+    profiles:
+      - app
+
+  # query for testing
+  #curl --user polaruser:polarpass --data-binary '{"jsonrpc": "1.0", "id": "curltest", "method": "getblockchaininfo", "params": []}' -H 'content-type: text/plain;' http://127.0.0.1:18443
+  bitcoind:
+    stop_grace_period: 5m
+    image: btcpayserver/bitcoin:0.21.0
+    container_name: bitcoind
+    hostname: bitcoind
+    command: >-
+      bitcoind 
+      -server=1 
+      -regtest=1
+      -rpcauth=polaruser:5e5e98c21f5c814568f8b55d83b23c1c$$066b03f92df30b11de8e4b1b1cd5b1b4281aa25205bd57df9be82caf97a05526
+      -debug=1 
+      -zmqpubrawblock=tcp://0.0.0.0:28334
+      -zmqpubrawtx=tcp://0.0.0.0:28335 
+      -zmqpubhashblock=tcp://0.0.0.0:28336
+      -txindex=1 
+      -dnsseed=0 
+      -upnp=0 
+      -rpcbind=0.0.0.0 
+      -rpcallowip=0.0.0.0/0
+      -rpcport=18443 
+      -listen=1 
+      -listenonion=0 
+      -fallbackfee=0.0002
+      -blockfilterindex=1
+      -txindex=1
+
+    volumes:
+      - ${HOST_PROJECT_PATH:-.}/data/bitcoind:/home/bitcoin/.bitcoin
+    expose:
+      - "18443"
+      - "18444"
+      - "28334"
+      - "28335"
+    ports:
+      - "18443:18443" #json rpc
+      - "19444:18444"
+      - "28334:28334"
+      - "29335:28335"
+
+  lnd1:
+    depends_on:
+      - bitcoind
+    stop_grace_period: 2m
+    image: lightninglabs/lnd:v0.17.4-beta
+    container_name: lnd1
+    hostname: lnd1
+    command: >-
+      lnd 
+      --noseedbackup 
+      --trickledelay=5000 
+      --alias=lnd1 
+      --externalip=lnd1
+      --tlsextradomain=lnd1 
+      --tlsextradomain=lnd1
+      --tlsextradomain=host.docker.internal 
+      --listen=0.0.0.0:9735
+      --rpclisten=0.0.0.0:10009 
+      --bitcoin.active
+      --bitcoin.regtest 
+      --bitcoin.node=bitcoind
+      --bitcoind.rpchost=bitcoind 
+      --bitcoind.rpcuser=polaruser
+      --bitcoind.rpcpass=polarpass
+      --bitcoind.zmqpubrawblock=tcp://bitcoind:28334
+      --bitcoind.zmqpubrawtx=tcp://bitcoind:28335
+    restart: always
+    volumes:
+      - ${HOST_PROJECT_PATH:-.}/data/lnd1:/root/.lnd
+    expose:
+      - "10009"
+      #- "9735"
+    ports:
+      - "11001:10009"
+      #- "9735:9735"

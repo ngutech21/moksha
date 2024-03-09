@@ -31,7 +31,7 @@ pub fn test_integration() -> anyhow::Result<()> {
     let _lnbits_thread = thread::spawn(|| {
         let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
         rt.block_on(async {
-            let _ = lnbitsmock::run_server(6100).await;
+            let _ = itests::lnbitsmock::run_server(6100).await;
         });
     });
 

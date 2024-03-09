@@ -1,5 +1,5 @@
 [package]
-name = "moksha-integrationtests"
+name = "integrationtests"
 version = "0.2.1"
 edition = "2021"
 repository = "https://github.com/ngutech21/moksha"
@@ -14,8 +14,8 @@ name = "integrationtests"
 path = "tests/tests.rs"
 
 [lib]
-name = "lnbitsmock"
-path = "src/lnbitsmock.rs"
+name = "itests"
+path = "src/lib.rs"
 
 [dependencies]
 rand = "0.8.5"
@@ -28,9 +28,12 @@ secp256k1 = { version = "0.27.0", default-features = false, features = ["recover
 tracing = "0.1.40"
 testcontainers = "0.15.0"
 testcontainers-modules = { version = "0.3.4", features = ["postgres"] }
+bitcoincore-rpc = "0.18.0"
+fedimint-tonic-lnd = { version = "0.2.0", features = ["lightningrpc", "walletrpc"] }
+url = "2.5.0"
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
-tokio = { version = "1.35.1", features = ["sync", "rt"] }
+tokio = { version = "1.35.1", features = ["sync", "rt-multi-thread"] }
 
 [dev-dependencies]
 anyhow = { version = "1.0.80", features = ["backtrace"] }

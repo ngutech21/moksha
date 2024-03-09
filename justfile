@@ -14,6 +14,8 @@ clean:
   cargo clean
 
 
+
+
 # check code for typos
 [no-exit-message]
 typos:
@@ -59,10 +61,13 @@ run-cli *ARGS:
   RUST_BACKTRACE=1 cargo run --bin moksha-cli -- -m http://127.0.0.1:3338 -d ./data/wallet  {{ARGS}} 
 
 
+run-tests:
+  cargo test --workspace --exclude integrationtests
+
+
 # run integrationtests
 run-itests:
-    cd integrationtests && \
-    cargo test
+    cargo test -p integrationtests
 
 # build the mint docker-image
 build-docker:
