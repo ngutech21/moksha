@@ -76,11 +76,17 @@ impl BtcOnchain for LndBtcOnchain {
 
         let response = self.wallet_lock().await?.list_unspent(request).await?;
 
-        Ok(response.get_ref().utxos.iter().any(|utxo| {
-            utxo.address == address
-                && utxo.amount_sat >= amount as i64
-                && utxo.confirmations >= min_confirmations as i64
-        }))
+        let amount_in_sat = response
+            .get_ref()
+            .utxos
+            .iter()
+            .filter(|utxo| {
+                utxo.address == address && utxo.confirmations >= min_confirmations as i64
+            })
+            .map(|utxo| utxo.amount_sat)
+            .sum::<i64>();
+        // allow overpaying for privacy reasons
+        Ok(amount_in_sat as u64 >= amount)
     }
 
     #[instrument(level = "debug", skip(self), err)]
