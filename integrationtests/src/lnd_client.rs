@@ -33,14 +33,9 @@ impl LndClient {
     pub async fn new_local_itest() -> anyhow::Result<Self> {
         let url = Url::parse(LND_ADDRESS)?;
         let project_dir = std::env::var("CARGO_MANIFEST_DIR")?;
-        println!("project_dir: {:?}", project_dir);
-        let data_dir: PathBuf = (project_dir.clone() + "../data/").into();
-        println!("data_dir: {:?}", data_dir.exists());
         let cert_file: PathBuf = (project_dir.clone() + "../data/lnd1/tls.cert").into();
-        println!("cert_file: {:?}", cert_file.exists());
         let macaroon_file: PathBuf =
             (project_dir + "../data/lnd1/data/chain/bitcoin/regtest/admin.macaroon").into();
-        println!("mac_file: {:?}", macaroon_file.exists());
         Self::new(url, &cert_file, &macaroon_file).await
     }
 
