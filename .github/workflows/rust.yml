@@ -24,10 +24,6 @@ jobs:
         run: docker compose up lnd1 -d
       - name: Build
         run: cargo build --verbose
-      # - name: Set permissions for admin.macaroon
-      #   run: sudo chmod a+rw ./data/lnd1/data/chain/bitcoin/regtest/admin.macaroon
-      # - name: Set permissions for tls.cert
-      #   run: sudo chmod a+rw ./data/lnd1/tls.cert
       - name: chmod data-dir
         run: sudo chmod -R a+rwx ./data
       - name: Run tests
@@ -53,6 +49,10 @@ jobs:
       - name: cargo generate-lockfile
         if: hashFiles('Cargo.lock') == ''
         run: cargo generate-lockfile
+      - name: Run Docker Compose
+        run: docker compose up lnd1
+      - name: chmod data-dir
+        run: sudo chmod -R a+rwx ./data
       - name: cargo llvm-cov
         run: cargo llvm-cov --locked --all-features --lcov --output-path lcov.info
       - name: Upload to codecov.io
