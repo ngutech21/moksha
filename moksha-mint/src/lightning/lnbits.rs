@@ -1,6 +1,7 @@
 use std::fmt::{self, Formatter};
 
 use async_trait::async_trait;
+
 use clap::Parser;
 use hyper::{header::CONTENT_TYPE, http::HeaderValue};
 use serde::{Deserialize, Serialize};

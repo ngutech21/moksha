@@ -19,7 +19,7 @@ path = "src/lib.rs"
 
 [dependencies]
 rand = "0.8.5"
-axum = "0.7.3"
+axum = "0.7.4"
 anyhow = { version = "1.0.80", features = ["backtrace"] }
 serde = { version = "1.0.197", features = ["derive"] }
 lightning-invoice = "0.29.0"
@@ -38,7 +38,7 @@ tokio = { version = "1.35.1", features = ["sync", "rt-multi-thread"] }
 [dev-dependencies]
 anyhow = { version = "1.0.80", features = ["backtrace"] }
 tokio = { version = "1.36.0", features = ["full"] }
-reqwest = { version = "0.11.24", default-features = false }
+reqwest = { version = "0.11.25", default-features = false }
 moksha-mint = { path = "../moksha-mint" }
 moksha-wallet = { path = "../moksha-wallet" }
 moksha-core = { path = "../moksha-core" }
