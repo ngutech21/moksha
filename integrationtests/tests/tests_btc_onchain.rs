@@ -18,7 +18,7 @@ use std::thread;
 
 use testcontainers::{clients, RunnableImage};
 use testcontainers_modules::postgres::Postgres;
-use tokio::runtime::Runtime; 
+use tokio::runtime::Runtime;
 
 #[test]
 pub fn test_integration() -> anyhow::Result<()> {
@@ -40,7 +40,7 @@ pub fn test_integration() -> anyhow::Result<()> {
         rt.block_on(async {
             let current_dir = std::env::current_dir().expect("msg");
             println!("current_dir: {:?}", current_dir);
-            let lnd_client = LndClient::new_local_itest().await.expect("msg");
+            let lnd_client = LndClient::new_local().await.expect("msg");
             let lnd_address = lnd_client.new_address().await.expect("msg");
             println!("lnd address: {}", lnd_address);
             btc_client
@@ -132,7 +132,7 @@ pub fn test_integration() -> anyhow::Result<()> {
         assert_eq!(0, balance, "Initial balance should be 0");
 
         // mint 6_000 sats bitcoin onchain
-        let mint_amount = 6_000;
+        let mint_amount = 60_000;
         let mint_quote = wallet.create_quote_onchain(mint_amount).await.unwrap();
 
         let btc_client = BitcoinClient::new_local().expect("Can not connect to bitcoin backend");
@@ -152,48 +152,26 @@ pub fn test_integration() -> anyhow::Result<()> {
             .await
             .expect("Could not mint tokens");
         let balance = wallet.get_balance().await.expect("Could not get balance");
-        assert_eq!(6_000, balance);
+        assert_eq!(mint_amount, balance);
 
-        // assert_eq!(6_000, mint_result.total_amount());
+        let btc_address = btc_client
+            .get_new_address()
+            .expect("Can not get new address");
 
-        // let balance = wallet.get_balance().await.expect("Could not get balance");
-        // assert_eq!(6_000, balance);
+        let melt_amount = 3_000;
+        let melt_quotes = wallet
+            .get_melt_quote_btconchain(btc_address.clone(), melt_amount)
+            .await
+            .expect("msg");
 
-        // // pay ln-invoice
-        // let invoice_1000 = read_fixture("invoice_1000.txt").unwrap();
-        // let quote = wallet
-        //     .get_melt_quote_bolt11(invoice_1000.clone(), CurrencyUnit::Sat)
-        //     .await
-        //     .expect("Could not get melt quote");
-        // let result_pay_invoice = wallet.pay_invoice(&quote, invoice_1000).await;
-        // if result_pay_invoice.is_err() {
-        //     println!("error in pay_invoice{:?}", result_pay_invoice);
-        // }
-        // assert!(result_pay_invoice.is_ok());
-        // let balance = wallet.get_balance().await.expect("Could not get balance");
-        // assert_eq!(5_000, balance);
+        let first_quote = melt_quotes.first().unwrap();
+        println!("first_quote: {:?}", first_quote);
+        let result = wallet.pay_onchain(first_quote).await.expect("msg");
+        assert!(!result.paid);
+        btc_client.mine_blocks(1).unwrap();
 
-        // // receive 10 sats
-        // let token_10: moksha_core::token::TokenV3 =
-        //     read_fixture("token_10.cashu").unwrap().try_into().unwrap();
-        // let result_receive = wallet.receive_tokens(&token_10).await;
-        // assert!(result_receive.is_ok());
-        // let balance = wallet.get_balance().await.expect("Could not get balance");
-        // assert_eq!(5_010, balance);
-
-        // // send 10 tokens
-        // let result_send = wallet.send_tokens(10).await;
-        // assert!(result_send.is_ok());
-        // assert_eq!(10, result_send.unwrap().total_amount());
-        // let balance = wallet.get_balance().await.expect("Could not get balance");
-        // assert_eq!(5_000, balance);
-
-        // // get info
-        // let info = wallet
-        //     .get_mint_info()
-        //     .await
-        //     .expect("Could not get mint info");
-        // assert!(!info.nuts.nut4.disabled);
+        let is_tx_paid = wallet.is_onchain_tx_paid(result.txid).await.unwrap();
+        assert!(is_tx_paid);
     });
 
     Ok(())
