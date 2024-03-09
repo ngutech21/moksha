@@ -337,6 +337,6 @@ async fn is_onchain_paid(mint: &Mint, quote: &OnchainMeltQuote) -> Result<bool, 
 
 fn quote_onchain_expiry() -> u64 {
     // FIXME add config option for expiry
-    let now = Utc::now() + Duration::minutes(5);
+    let now = Utc::now() + Duration::try_minutes(5).expect("invlid duration");
     now.timestamp() as u64
 }

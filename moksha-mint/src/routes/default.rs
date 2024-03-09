@@ -226,7 +226,7 @@ pub async fn post_melt_quote_bolt11(
 
 fn quote_expiry() -> u64 {
     // FIXME add config option for expiry
-    let now = Utc::now() + Duration::minutes(30);
+    let now = Utc::now() + Duration::try_minutes(30).expect("invalid duration");
     now.timestamp() as u64
 }
 
