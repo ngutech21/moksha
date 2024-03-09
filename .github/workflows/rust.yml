@@ -24,10 +24,12 @@ jobs:
         run: docker compose up lnd1 -d
       - name: Build
         run: cargo build --verbose
-      - name: Set permissions for admin.macaroon
-        run: sudo chmod 644 ./data/lnd1/data/chain/bitcoin/regtest/admin.macaroon
-      - name: Set permissions for tls.cert
-        run: sudo chmod 644 ./data/lnd1/tls.cert
+      # - name: Set permissions for admin.macaroon
+      #   run: sudo chmod a+rw ./data/lnd1/data/chain/bitcoin/regtest/admin.macaroon
+      # - name: Set permissions for tls.cert
+      #   run: sudo chmod a+rw ./data/lnd1/tls.cert
+      - name: chmod data-dir
+        run: sudo chmod -R a+rwx ./data
       - name: Run tests
         run: just run-tests
       - name: Run itests

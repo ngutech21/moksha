@@ -103,9 +103,6 @@ services:
       - "29335:28335"
 
   lnd1:
-    environment:
-      USERID: ${USERID:-1000}
-      GROUPID: ${GROUPID:-1000}
     depends_on:
       - bitcoind
     stop_grace_period: 2m
