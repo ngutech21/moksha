@@ -289,6 +289,12 @@ pub struct MintInfoConfig {
     #[clap(long, env = "MINT_INFO_CONTACT_EMAIL")]
     pub contact_email: Option<String>,
 
+    #[clap(long, env = "MINT_INFO_CONTACT_TWITTER")]
+    pub contact_twitter: Option<String>,
+
+    #[clap(long, env = "MINT_INFO_CONTACT_NOSTR")]
+    pub contact_nostr: Option<String>,
+
     #[clap(long, env = "MINT_INFO_MOTD")]
     pub motd: Option<String>,
     // FIXME add missing fields for v1/info endpoint nut4/nut5 payment_methods, nut4 disabled flag

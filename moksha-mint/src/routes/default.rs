@@ -343,13 +343,23 @@ pub async fn get_melt_quote_bolt11(
 pub async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, MokshaMintError> {
     // TODO implement From-trait
 
-    let contact = mint
-        .config
-        .clone()
-        .info
-        .contact_email
-        .map(|contact| vec![vec!["email".to_owned(), contact]]);
-    // FIXME
+    let mint_info = mint.config.info.clone();
+    let contact = Some(
+        vec![
+            mint_info
+                .contact_email
+                .map(|email| vec!["email".to_owned(), email]),
+            mint_info
+                .contact_twitter
+                .map(|twitter| vec!["twitter".to_owned(), twitter]),
+            mint_info
+                .contact_nostr
+                .map(|nostr| vec!["nostr".to_owned(), nostr]),
+        ]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<Vec<String>>>(),
+    );
 
     let mint_info = MintInfoResponse {
         nuts: get_nuts(&mint.config),
