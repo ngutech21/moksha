@@ -13,12 +13,11 @@ impl BitcoinClient {
     pub fn new_local() -> anyhow::Result<Self> {
         let wallet_name = "testwallet";
         let client = Client::new(
-            &format!("http://localhost:18443/wallet/{}", wallet_name),
+            &format!("http://localhost:18453/wallet/{}", wallet_name),
             Auth::UserPass("polaruser".to_string(), "polarpass".to_string()),
         )?;
         let wallet = client.list_wallets()?;
         if !wallet.contains(&wallet_name.to_owned()) {
-            println!("create wallet");
             client.create_wallet(wallet_name, None, None, None, None)?;
         }
         Ok(Self { client })
@@ -46,17 +45,7 @@ impl BitcoinClient {
         let adr = adr.require_network(bitcoincore_rpc::bitcoin::Network::Regtest)?;
         let _old_block_height = self.client.get_block_count()?;
         let _hashes = self.client.generate_to_address(block_num, &adr)?;
-        // println!("old block height: {:?}", old_block_height);
-
-        // let last_block = self
-        //     .client
-        //     .get_block_header_info(hashes.first().expect("no block mined"))?;
-
-        // println!("last block: {:?}", last_block.height);
-
         std::thread::sleep(std::time::Duration::from_secs(1));
-        // let new_block_height = self.client.get_block_count()?;
-        // println!("new block height: {:?}", new_block_height);
         Ok(())
     }
 

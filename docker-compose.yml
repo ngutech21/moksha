@@ -61,8 +61,6 @@ services:
     profiles:
       - app
 
-  # query for testing
-  #curl --user polaruser:polarpass --data-binary '{"jsonrpc": "1.0", "id": "curltest", "method": "getblockchaininfo", "params": []}' -H 'content-type: text/plain;' http://127.0.0.1:18443
   bitcoind:
     stop_grace_period: 5m
     image: btcpayserver/bitcoin:0.21.0
@@ -97,10 +95,7 @@ services:
       - "28334"
       - "28335"
     ports:
-      - "18443:18443" #json rpc
-      - "19444:18444"
-      - "28334:28334"
-      - "29335:28335"
+      - "18453:18443" #json rpc
 
   lnd1:
     depends_on:
@@ -133,7 +128,5 @@ services:
       - ${HOST_PROJECT_PATH:-.}/data/lnd1:/root/.lnd
     expose:
       - "10009"
-      #- "9735"
     ports:
       - "11001:10009"
-      #- "9735:9735"
