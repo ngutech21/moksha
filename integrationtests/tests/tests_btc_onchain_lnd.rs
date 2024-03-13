@@ -1,5 +1,6 @@
 use itests::{
     bitcoin_client::BitcoinClient,
+    lnd_client,
     setup::{fund_lnd, start_mint},
 };
 use moksha_core::amount::Amount;
@@ -10,6 +11,10 @@ use moksha_wallet::http::CrossPlatformHttpClient;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::wallet::WalletBuilder;
 
+use mokshamint::{
+    config::{BtcOnchainConfig, BtcOnchainType},
+    lightning::{lnd::LndLightningSettings, LightningType},
+};
 use reqwest::Url;
 
 use testcontainers::{clients, RunnableImage};
@@ -28,7 +33,22 @@ async fn test_integration() -> anyhow::Result<()> {
 
     // start mint server
     tokio::spawn(async move {
-        start_mint(host_port).await.expect("msg");
+        let lnd_settings = LndLightningSettings::new(
+            lnd_client::LND_ADDRESS.parse().expect("invalid url"),
+            "../data/lnd1/tls.cert".into(),
+            "../data/lnd1/data/chain/bitcoin/regtest/admin.macaroon".into(),
+        );
+
+        let ln_type = LightningType::Lnd(lnd_settings.clone());
+
+        let onchain = Some(BtcOnchainConfig {
+            onchain_type: Some(BtcOnchainType::Lnd(lnd_settings)),
+            ..Default::default()
+        });
+
+        start_mint(host_port, ln_type, onchain)
+            .await
+            .expect("Could not start mint server");
     });
 
     // Wait for the server to start

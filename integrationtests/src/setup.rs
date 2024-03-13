@@ -1,10 +1,7 @@
-use crate::{
-    bitcoin_client::BitcoinClient,
-    lnd_client::{self, LndClient},
-};
+use crate::{bitcoin_client::BitcoinClient, lnd_client::LndClient};
 use mokshamint::{
-    config::{BtcOnchainConfig, BtcOnchainType, DatabaseConfig, ServerConfig},
-    lightning::{lnd::LndLightningSettings, LightningType},
+    config::{BtcOnchainConfig, DatabaseConfig, ServerConfig},
+    lightning::LightningType,
     mint::MintBuilder,
 };
 
@@ -20,7 +17,11 @@ pub async fn fund_lnd(amount: u64) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn start_mint(host_port: u16) -> anyhow::Result<()> {
+pub async fn start_mint(
+    host_port: u16,
+    ln: LightningType,
+    btc_onchain: Option<BtcOnchainConfig>,
+) -> anyhow::Result<()> {
     let db_config = DatabaseConfig {
         db_url: format!(
             "postgres://postgres:postgres@localhost:{}/postgres",
@@ -29,13 +30,6 @@ pub async fn start_mint(host_port: u16) -> anyhow::Result<()> {
         ..Default::default()
     };
 
-    // FIXME clean up
-    let lnd_settings = LndLightningSettings::new(
-        lnd_client::LND_ADDRESS.parse().expect("invalid url"),
-        "../data/lnd1/tls.cert".into(),
-        "../data/lnd1/data/chain/bitcoin/regtest/admin.macaroon".into(),
-    );
-
     let mint = MintBuilder::new()
         .with_private_key("my_private_key".to_string())
         .with_server(Some(ServerConfig {
@@ -43,11 +37,8 @@ pub async fn start_mint(host_port: u16) -> anyhow::Result<()> {
             ..Default::default()
         }))
         .with_db(Some(db_config))
-        .with_lightning(LightningType::Lnd(lnd_settings.clone()))
-        .with_btc_onchain(Some(BtcOnchainConfig {
-            onchain_type: Some(BtcOnchainType::Lnd(lnd_settings)),
-            ..Default::default()
-        }))
+        .with_lightning(ln)
+        .with_btc_onchain(btc_onchain)
         .with_fee(Some((0.0, 0).into()))
         .build();
 
