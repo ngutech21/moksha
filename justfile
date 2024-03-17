@@ -58,7 +58,7 @@ run-mint *ARGS:
 run-cli *ARGS:
   RUST_BACKTRACE=1 cargo run --bin moksha-cli -- -m http://127.0.0.1:3338 -d ./data/wallet  {{ARGS}} 
 
-
+# runs all tests
 run-tests:
   cargo test --workspace --exclude integrationtests
 

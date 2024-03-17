@@ -78,14 +78,6 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 
 ### Deploy mint
 
-#### Railway
-
-The easiest way to deploy the mint is to use [Railway](https://railway.app/). Railway is a platform that allows you to deploy your apps to the cloud with just a few clicks. You can use the following template to setup a mint that uses LNbits as backend:
-
-(coming soon)
-
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/7UYgl2)
-
 #### Docker-compose
 
 docker-compose simplifies the process of running multi-container Docker applications. Here's how you can use it to run the moksha -mint:
@@ -188,23 +180,23 @@ To run coverage, check for typos etc. use the just commands:
 
 ```bash
 Available recipes:
-    build-docker    # build the mint docker-image
-    build-wasm      # compile all rust crates, that are relevant for the client, to wasm
-    clean           # clean cargo
-    db-create       # creates the postgres database
-    db-migrate      # runs sqlx prepare
-    db-prepare      # runs sqlx prepare
-    db-secrets      # creates the fly.io secrets used for LND
-    default         # list all tasks
-    deps            # install all dependencies
-    final-check     # format code, check typos and run tests
-    run-cli *ARGS   # run cli-wallet with the given args
-    run-coverage    # run coverage
-    run-itests      # run integrationtests
-    run-mint        # run the cashu-mint
-    start-fly-proxy # starts the fly.io database proxy
-    typos           # check code for typos
-    typos-fix-all   # fix all typos
+    build-docker   # build the mint docker-image
+    build-wasm     # compile all rust crates, that are relevant for the client, to wasm
+    clean          # clean cargo
+    db-create      # creates the postgres database
+    db-migrate     # runs sqlx prepare
+    db-prepare     # runs sqlx prepare
+    default        # list all tasks
+    deps           # install all dependencies
+    final-check    # format code, check typos and run tests
+    publish        # publish everything on crates.io
+    run-cli *ARGS  # run cli-wallet with the given args
+    run-coverage   # run coverage
+    run-itests     # run integrationtests
+    run-mint *ARGS # run the cashu-mint
+    run-tests      # runs all tests
+    typos          # check code for typos
+    typos-fix-all  # fix all typos
 ```
 
 ## License
