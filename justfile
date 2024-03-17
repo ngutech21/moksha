@@ -14,8 +14,6 @@ clean:
   cargo clean
 
 
-
-
 # check code for typos
 [no-exit-message]
 typos:
@@ -95,15 +93,6 @@ db-migrate:
 db-create:
   cd moksha-mint && \
   cargo sqlx database create --database-url {{ DB_URL }}
-
-# starts the fly.io database proxy
-start-fly-proxy:
-  flyctl proxy 6542:5432 -a moksha-mint-db
-
-# creates the fly.io secrets used for LND
-db-secrets:
-  flyctl secrets set LND_MACAROON="$(cat data/mutinynet/admin.macaroon)"
-  flyctl secrets set LND_TLS_CERT="$(cat data/mutinynet/tls.cert)"
 
 
 # publish everything on crates.io
