@@ -3,6 +3,7 @@ version: "3"
 services:
   database:
     image: "postgres:16.2-alpine"
+    container_name: moksha-mint-db
     ports:
       - 5432:5432
     environment:
@@ -44,20 +45,17 @@ services:
       - "127.0.0.1:3000:3000"
 
   app:
-    image: "docker.io/ngutech21/moksha-mint:latest"
-    #image: "moksha-mint:latest" # for local testing
+    #image: "docker.io/ngutech21/moksha-mint:latest"
+    image: "moksha-mint:latest" # for local testing
+    container_name: moksha-mint
     ports:
       - 3338:3338
-    volumes:
-      - ./data/mutinynet/admin.macaroon:/app/admin.macaroon
-      - ./data/mutinynet/tls.cert:/app/tls.cert
     environment:
-      - MINT_DB_URL=postgres://postgres:postgres@database/moksha-mint
+      - MINT_DB_URL=postgres://postgres:postgres@moksha-mint-db/moksha-mint
       - MINT_LIGHTNING_BACKEND=Lnd
-      - MINT_LND_MACAROON_PATH=/app/admin.macaroon
-      - MINT_LND_TLS_CERT_PATH=/app/tls.cert
-      - MINT_LND_GRPC_HOST=https://mutinynet.moksha.cash:10009
       - MINT_PRIVATE_KEY=supersecretkey
+    depends_on:
+      - database
     profiles:
       - app
 

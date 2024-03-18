@@ -30,6 +30,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile.alpine
           push: true
           build-args: |
             COMMITHASH=${{ steps.sha.outputs.sha }}
