@@ -12,53 +12,6 @@ services:
       POSTGRES_DB: moksha-mint
     profiles:
       - itest
-  prometheus:
-    image: "prom/prometheus:v2.45.0"
-    command:
-      - "--config.file=/etc/prometheus.yaml"
-      - "--enable-feature=exemplar-storage"
-      - "--web.enable-remote-write-receiver"
-    volumes:
-      - "./conf/prometheus.yaml:/etc/prometheus.yaml"
-    ports:
-      - "127.0.0.1:9090:9090"
-  tempo:
-    image: "grafana/tempo:2.4.0"
-    command:
-      - "-config.file=/etc/tempo.yaml"
-    volumes:
-      - "./conf/tempo.yaml:/etc/tempo.yaml"
-    ports:
-      - "127.0.0.1:3200:3200" # Tempo
-      - "127.0.0.1:4317:4317" # OTLP GRPC
-      - "127.0.0.1:4318:4318" # OTLP HTTP
-  grafana:
-    image: "grafana/grafana:10.2.4"
-    volumes:
-      - "./conf/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml"
-    environment:
-      - "GF_AUTH_ANONYMOUS_ENABLED=true"
-      - "GF_AUTH_ANONYMOUS_ORG_ROLE=Admin"
-      - "GF_AUTH_DISABLE_LOGIN_FORM=true"
-      - "GF_FEATURE_TOGGLES_ENABLE=traceqlEditor"
-    ports:
-      - "127.0.0.1:3000:3000"
-
-  app:
-    #image: "docker.io/ngutech21/moksha-mint:latest"
-    image: "moksha-mint:latest" # for local testing
-    container_name: moksha-mint
-    ports:
-      - 3338:3338
-    environment:
-      - MINT_DB_URL=postgres://postgres:postgres@moksha-mint-db/moksha-mint
-      - MINT_LIGHTNING_BACKEND=Lnd
-      - MINT_PRIVATE_KEY=supersecretkey
-    depends_on:
-      - database
-    profiles:
-      - app
-
   bitcoind:
     stop_grace_period: 5m
     image: btcpayserver/bitcoin:0.21.0
@@ -94,6 +47,8 @@ services:
       - "28335"
     ports:
       - "18453:18443" #json rpc
+    profiles:
+      - itest
 
   lnd1:
     depends_on:
@@ -128,3 +83,75 @@ services:
       - "10009"
     ports:
       - "11001:10009"
+    profiles:
+      - itest
+
+  nutshell:
+    image: cashubtc/nutshell:0.15.1
+    container_name: nutshell
+    ports:
+      - "2228:3338"
+    environment:
+      - MINT_LIGHTNING_BACKEND=FakeWallet
+      - MINT_LISTEN_HOST=0.0.0.0
+      - MINT_LISTEN_PORT=3338
+      - MINT_PRIVATE_KEY=TEST_PRIVATE_KEY
+      - MINT_INFO_NAME=nutshell
+    command: ["poetry", "run", "mint"]
+    profiles:
+      - itest
+
+  prometheus:
+    image: "prom/prometheus:v2.45.0"
+    command:
+      - "--config.file=/etc/prometheus.yaml"
+      - "--enable-feature=exemplar-storage"
+      - "--web.enable-remote-write-receiver"
+    volumes:
+      - "./conf/prometheus.yaml:/etc/prometheus.yaml"
+    ports:
+      - "127.0.0.1:9090:9090"
+    profiles:
+      - tracing
+
+  tempo:
+    image: "grafana/tempo:2.4.0"
+    command:
+      - "-config.file=/etc/tempo.yaml"
+    volumes:
+      - "./conf/tempo.yaml:/etc/tempo.yaml"
+    ports:
+      - "127.0.0.1:3200:3200" # Tempo
+      - "127.0.0.1:4317:4317" # OTLP GRPC
+      - "127.0.0.1:4318:4318" # OTLP HTTP
+    profiles:
+      - tracing
+
+  grafana:
+    image: "grafana/grafana:10.2.4"
+    volumes:
+      - "./conf/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml"
+    environment:
+      - "GF_AUTH_ANONYMOUS_ENABLED=true"
+      - "GF_AUTH_ANONYMOUS_ORG_ROLE=Admin"
+      - "GF_AUTH_DISABLE_LOGIN_FORM=true"
+      - "GF_FEATURE_TOGGLES_ENABLE=traceqlEditor"
+    ports:
+      - "127.0.0.1:3000:3000"
+    profiles:
+      - tracing
+
+  app:
+    #image: "docker.io/ngutech21/moksha-mint:latest"
+    image: "moksha-mint:latest" # for local testing
+    container_name: moksha-mint
+    ports:
+      - 3338:3338
+    environment:
+      - MINT_DB_URL=postgres://postgres:postgres@moksha-mint-db/moksha-mint
+      - MINT_LIGHTNING_BACKEND=Lnd
+      - MINT_PRIVATE_KEY=supersecretkey
+    depends_on:
+      - database
+    profiles:
+      - app

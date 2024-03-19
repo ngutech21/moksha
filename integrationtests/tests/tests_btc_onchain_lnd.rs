@@ -21,7 +21,7 @@ use testcontainers::{clients, RunnableImage};
 use testcontainers_modules::postgres::Postgres;
 
 #[tokio::test(flavor = "multi_thread")]
-async fn test_integration() -> anyhow::Result<()> {
+async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
     // create postgres container that will be destroyed after the test is done
     let docker = clients::Cli::default();
     let node = Postgres::default().with_host_auth();

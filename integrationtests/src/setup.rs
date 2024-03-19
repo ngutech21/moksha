@@ -46,3 +46,9 @@ pub async fn start_mint(
         .await?;
     Ok(())
 }
+
+pub fn read_fixture(name: &str) -> anyhow::Result<String> {
+    let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
+    let raw_token = std::fs::read_to_string(format!("{base_dir}/tests/fixtures/{name}"))?;
+    Ok(raw_token.trim().to_string())
+}

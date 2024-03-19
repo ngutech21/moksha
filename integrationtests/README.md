@@ -14,7 +14,7 @@ Before running the tests, ensure that you have the following software installed 
 Before running the tests you have to start docker containers for the services that the tests depend on. You can do this by running the following command:
 
 ```bash
-docker compose up lnd1 -d
+docker compose --profile itest up -d
 ```
 
 To run the integration tests, use the `itests` command in your terminal:

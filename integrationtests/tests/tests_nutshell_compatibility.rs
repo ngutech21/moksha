@@ -1,48 +1,19 @@
-use itests::setup::{read_fixture, start_mint};
+use itests::setup::read_fixture;
 use moksha_core::primitives::{CurrencyUnit, PaymentMethod};
-
 use moksha_wallet::client::CashuClient;
 use moksha_wallet::http::CrossPlatformHttpClient;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::wallet::WalletBuilder;
-
-use mokshamint::lightning::{lnbits::LnbitsLightningSettings, LightningType};
-use reqwest::Url;
 use std::time::Duration;
-use testcontainers::{clients, RunnableImage};
-use testcontainers_modules::postgres::Postgres;
+
+use reqwest::Url;
+
 use tokio::time::{sleep_until, Instant};
 
 #[tokio::test(flavor = "multi_thread")]
-pub async fn test_bolt11_lnbitsmock() -> anyhow::Result<()> {
-    // create postgres container that will be destroyed after the test is done
-    let docker = clients::Cli::default();
-    let node = Postgres::default().with_host_auth();
-    let img = RunnableImage::from(node).with_tag("16.2-alpine");
-    let node = docker.run(img);
-    let host_port = node.get_host_port_ipv4(5432);
-
-    // start lnbits
-    let _lnbits_thread = tokio::spawn(async {
-        let _ = itests::lnbitsmock::run_server(6100).await;
-    });
-
-    let _server_thread = tokio::spawn(async move {
-        let ln = LightningType::Lnbits(LnbitsLightningSettings::new(
-            "my_admin_key",
-            "http://127.0.0.1:6100",
-        ));
-
-        start_mint(host_port, ln, None)
-            .await
-            .expect("Could not start mint server");
-    });
-
-    // Wait for the server to start
-    std::thread::sleep(std::time::Duration::from_millis(800));
-
+pub async fn test_nutshell_compatibility() -> anyhow::Result<()> {
     let client = CrossPlatformHttpClient::new();
-    let mint_url = Url::parse("http://127.0.0.1:8686")?;
+    let mint_url = Url::parse("http://127.0.0.1:2228")?;
     let keys = client.get_keys(&mint_url).await;
     assert!(keys.is_ok());
 
@@ -56,6 +27,10 @@ pub async fn test_bolt11_lnbitsmock() -> anyhow::Result<()> {
         .with_mint_url(mint_url)
         .build()
         .await?;
+
+    // check if mint info is correct
+    let mint_info = wallet.get_mint_info().await?;
+    assert_eq!(Some("nutshell".to_owned()), mint_info.name);
 
     // get initial balance
     let balance = wallet.get_balance().await?;
@@ -87,23 +62,5 @@ pub async fn test_bolt11_lnbitsmock() -> anyhow::Result<()> {
     assert!(result_pay_invoice.is_ok());
     let balance = wallet.get_balance().await?;
     assert_eq!(5_000, balance);
-
-    // receive 10 sats
-    let token_10: moksha_core::token::TokenV3 = read_fixture("token_10.cashu")?.try_into()?;
-    let result_receive = wallet.receive_tokens(&token_10).await;
-    assert!(result_receive.is_ok());
-    let balance = wallet.get_balance().await?;
-    assert_eq!(5_010, balance);
-
-    // send 10 tokens
-    let result_send = wallet.send_tokens(10).await;
-    assert!(result_send.is_ok());
-    assert_eq!(10, result_send.unwrap().total_amount());
-    let balance = wallet.get_balance().await?;
-    assert_eq!(5_000, balance);
-
-    // get info
-    let info = wallet.get_mint_info().await?;
-    assert!(!info.nuts.nut4.disabled);
     Ok(())
 }

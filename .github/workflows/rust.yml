@@ -21,7 +21,7 @@ jobs:
       - name: Install just
         run: cargo install just
       - name: Run Docker Compose
-        run: docker compose up lnd1 -d
+        run: docker compose --profile itest up -d
       - name: Build
         run: cargo build --verbose
       - name: chmod data-dir
@@ -39,7 +39,7 @@ jobs:
         with:
           submodules: true
       - name: Run Docker Compose
-        run: docker compose up lnd1 -d
+        run: docker compose --profile itest up -d
       - name: Install protobuf-compiler
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       - name: Install stable
