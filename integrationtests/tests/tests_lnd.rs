@@ -3,10 +3,10 @@ use std::time::Duration;
 use itests::{
     bitcoin_client::BitcoinClient,
     lnd_client,
-    setup::{fund_lnd, read_fixture, start_mint},
+    setup::{fund_lnd, start_mint},
 };
+use moksha_core::amount::Amount;
 use moksha_core::primitives::PaymentMethod;
-use moksha_core::{amount::Amount, primitives::CurrencyUnit};
 
 use moksha_wallet::client::CashuClient;
 use moksha_wallet::http::CrossPlatformHttpClient;
