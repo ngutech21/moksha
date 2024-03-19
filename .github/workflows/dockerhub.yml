@@ -26,7 +26,18 @@ jobs:
         id: sha
         run: echo "::set-output name=sha::$(git rev-parse --short HEAD)"
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image bullseye
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          build-args: |
+            COMMITHASH=${{ steps.sha.outputs.sha }}
+            BUILDTIME=${{ steps.date.outputs.date }}
+          tags: docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:${{ steps.sha.outputs.sha }}-bullseye, docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:bullseye
+
+      - name: Build and push Docker image alpine
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -35,8 +46,7 @@ jobs:
           build-args: |
             COMMITHASH=${{ steps.sha.outputs.sha }}
             BUILDTIME=${{ steps.date.outputs.date }}
-
-          tags: docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:latest, docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:${{ steps.sha.outputs.sha }}
+          tags: docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:latest, docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:${{ steps.sha.outputs.sha }}-alpine
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push
