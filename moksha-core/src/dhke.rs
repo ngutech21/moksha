@@ -184,6 +184,17 @@ mod tests {
     }
 
     #[test]
+    fn test_hash_to_curve_two() -> anyhow::Result<()> {
+        let input_str =
+            hex_to_string("0000000000000000000000000000000000000000000000000000000000000002");
+        let expected_result = "026cdbe15362df59cd1dd3c9c11de8aedac2106eca69236ecd9fbe117af897be4f";
+
+        let pk = Dhke::hash_to_curve(input_str.as_bytes())?.to_string();
+        assert_eq!(pk, expected_result);
+        Ok(())
+    }
+
+    #[test]
     fn test_step1_alice() -> anyhow::Result<()> {
         let dhke = Dhke::new();
         let blinding_factor =
