@@ -1,10 +1,12 @@
+use std::time::Duration;
+
 use itests::{
     bitcoin_client::BitcoinClient,
     lnd_client,
-    setup::{fund_lnd, start_mint},
+    setup::{fund_lnd, read_fixture, start_mint},
 };
-use moksha_core::amount::Amount;
 use moksha_core::primitives::PaymentMethod;
+use moksha_core::{amount::Amount, primitives::CurrencyUnit};
 
 use moksha_wallet::client::CashuClient;
 use moksha_wallet::http::CrossPlatformHttpClient;
@@ -19,6 +21,7 @@ use reqwest::Url;
 
 use testcontainers::{clients, RunnableImage};
 use testcontainers_modules::postgres::Postgres;
+use tokio::time::{sleep_until, Instant};
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
@@ -109,6 +112,69 @@ async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
 
     let is_tx_paid = wallet.is_onchain_tx_paid(result.txid).await?;
     assert!(is_tx_paid);
+
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn test_bolt11_mint() -> anyhow::Result<()> {
+    // create postgres container that will be destroyed after the test is done
+    let docker = clients::Cli::default();
+    let node = Postgres::default().with_host_auth();
+    let img = RunnableImage::from(node).with_tag("16.2-alpine");
+    let node = docker.run(img);
+    let host_port = node.get_host_port_ipv4(5432);
+
+    // start mint server
+    tokio::spawn(async move {
+        let lnd_settings = LndLightningSettings::new(
+            lnd_client::LND_ADDRESS.parse().expect("invalid url"),
+            "../data/lnd1/tls.cert".into(),
+            "../data/lnd1/data/chain/bitcoin/regtest/admin.macaroon".into(),
+        );
+
+        start_mint(host_port, LightningType::Lnd(lnd_settings.clone()), None)
+            .await
+            .expect("Could not start mint server");
+    });
+
+    // Wait for the server to start
+    std::thread::sleep(std::time::Duration::from_millis(800));
+
+    let client = CrossPlatformHttpClient::new();
+    let mint_url = Url::parse("http://127.0.0.1:8686")?;
+    let keys = client.get_keys(&mint_url).await;
+    assert!(keys.is_ok());
+
+    let keysets = client.get_keysets(&mint_url).await;
+    assert!(keysets.is_ok());
+
+    // create wallet
+    let localstore = SqliteLocalStore::with_in_memory().await?;
+    let wallet = WalletBuilder::default()
+        .with_client(client)
+        .with_localstore(localstore)
+        .with_mint_url(mint_url)
+        .build()
+        .await?;
+
+    // get initial balance
+    let balance = wallet.get_balance().await?;
+    assert_eq!(0, balance, "Initial balance should be 0");
+
+    // mint some tokens
+    let mint_amount = 6_000;
+    let mint_quote = wallet.create_quote_bolt11(mint_amount).await?;
+    let hash = mint_quote.clone().quote;
+
+    sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
+    let mint_result = wallet
+        .mint_tokens(&PaymentMethod::Bolt11, mint_amount.into(), hash.clone())
+        .await?;
+    assert_eq!(6_000, mint_result.total_amount());
+
+    let balance = wallet.get_balance().await?;
+    assert_eq!(6_000, balance);
 
     Ok(())
 }
