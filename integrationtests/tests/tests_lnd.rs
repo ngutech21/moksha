@@ -125,7 +125,7 @@ async fn test_bolt11_mint() -> anyhow::Result<()> {
     let node = docker.run(img);
     let host_port = node.get_host_port_ipv4(5432);
 
-    fund_mint_lnd(2_000_000).await?;
+    //fund_mint_lnd(2_000_000).await?;
     open_channel_with_wallet(500_000).await?;
 
     // start mint server

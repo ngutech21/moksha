@@ -7,13 +7,14 @@ use mokshamint::{
 
 pub async fn fund_mint_lnd(amount: u64) -> anyhow::Result<()> {
     let btc_client = BitcoinClient::new_local()?;
-    btc_client.mine_blocks(101)?;
+    btc_client.mine_blocks(108)?;
     let lnd_client = LndClient::new_mint_lnd().await?;
     let lnd_address = lnd_client.new_address().await?;
     btc_client.send_to_address(
         &lnd_address,
         bitcoincore_rpc::bitcoin::Amount::from_sat(amount),
     )?;
+    std::thread::sleep(std::time::Duration::from_millis(3_000));
     Ok(())
 }
 

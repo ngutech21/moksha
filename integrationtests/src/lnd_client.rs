@@ -85,7 +85,7 @@ impl LndClient {
             if self.is_node_synced().await? {
                 return Ok(());
             }
-            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(1_500)).await;
         }
     }
 
