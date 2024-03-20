@@ -60,12 +60,12 @@ run-cli *ARGS:
 
 # runs all tests
 run-tests:
-  cargo test --workspace --exclude integrationtests
+  RUST_BACKTRACE=1 cargo test --workspace --exclude integrationtests
 
 
 # run integrationtests
 run-itests:
-    cargo test -p integrationtests
+    RUST_BACKTRACE=1 cargo test -p integrationtests
 
 # build the mint docker-image
 build-docker:
