@@ -2,16 +2,16 @@ use std::time::Duration;
 
 use itests::{
     bitcoin_client::BitcoinClient,
-    lnd_client,
-    setup::{fund_lnd, start_mint},
+    lnd_client::{self, LndClient},
+    setup::{fund_mint_lnd, open_channel_with_wallet, start_mint},
 };
 use moksha_core::amount::Amount;
 use moksha_core::primitives::PaymentMethod;
 
-use moksha_wallet::client::CashuClient;
 use moksha_wallet::http::CrossPlatformHttpClient;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::wallet::WalletBuilder;
+use moksha_wallet::{client::CashuClient, wallet};
 
 use mokshamint::{
     config::{BtcOnchainConfig, BtcOnchainType},
@@ -32,14 +32,14 @@ async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
     let node = docker.run(img);
     let host_port = node.get_host_port_ipv4(5432);
 
-    fund_lnd(2_000_000).await?;
+    fund_mint_lnd(2_000_000).await?;
 
     // start mint server
     tokio::spawn(async move {
         let lnd_settings = LndLightningSettings::new(
-            lnd_client::LND_ADDRESS.parse().expect("invalid url"),
-            "../data/lnd1/tls.cert".into(),
-            "../data/lnd1/data/chain/bitcoin/regtest/admin.macaroon".into(),
+            lnd_client::LND_MINT_ADDRESS.parse().expect("invalid url"),
+            "../data/lnd-mint/tls.cert".into(),
+            "../data/lnd-mint/data/chain/bitcoin/regtest/admin.macaroon".into(),
         );
 
         let ln_type = LightningType::Lnd(lnd_settings.clone());
@@ -128,9 +128,9 @@ async fn test_bolt11_mint() -> anyhow::Result<()> {
     // start mint server
     tokio::spawn(async move {
         let lnd_settings = LndLightningSettings::new(
-            lnd_client::LND_ADDRESS.parse().expect("invalid url"),
-            "../data/lnd1/tls.cert".into(),
-            "../data/lnd1/data/chain/bitcoin/regtest/admin.macaroon".into(),
+            lnd_client::LND_MINT_ADDRESS.parse().expect("invalid url"),
+            "../data/lnd-mint/tls.cert".into(),
+            "../data/lnd-mint/data/chain/bitcoin/regtest/admin.macaroon".into(),
         );
 
         start_mint(host_port, LightningType::Lnd(lnd_settings.clone()), None)
@@ -175,6 +175,38 @@ async fn test_bolt11_mint() -> anyhow::Result<()> {
 
     let balance = wallet.get_balance().await?;
     assert_eq!(6_000, balance);
+
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn test_lnd_nodes() -> anyhow::Result<()> {
+    // create postgres container that will be destroyed after the test is done
+    let docker = clients::Cli::default();
+    let node = Postgres::default().with_host_auth();
+    let img = RunnableImage::from(node).with_tag("16.2-alpine");
+    let node = docker.run(img);
+    let host_port = node.get_host_port_ipv4(5432);
+
+    fund_mint_lnd(2_000_000).await?;
+
+    // start mint server
+    tokio::spawn(async move {
+        let lnd_settings = LndLightningSettings::new(
+            lnd_client::LND_MINT_ADDRESS.parse().expect("invalid url"),
+            "../data/lnd-mint/tls.cert".into(),
+            "../data/lnd-mint/data/chain/bitcoin/regtest/admin.macaroon".into(),
+        );
+
+        start_mint(host_port, LightningType::Lnd(lnd_settings.clone()), None)
+            .await
+            .expect("Could not start mint server");
+    });
+
+    std::thread::sleep(std::time::Duration::from_millis(800));
+
+    open_channel_with_wallet().await?;
+    let wallet_lnd = LndClient::new_wallet_lnd().await?;
 
     Ok(())
 }

@@ -5,15 +5,29 @@ use mokshamint::{
     mint::MintBuilder,
 };
 
-pub async fn fund_lnd(amount: u64) -> anyhow::Result<()> {
+pub async fn fund_mint_lnd(amount: u64) -> anyhow::Result<()> {
     let btc_client = BitcoinClient::new_local()?;
     btc_client.mine_blocks(101)?;
-    let lnd_client = LndClient::new_local().await?;
+    let lnd_client = LndClient::new_mint_lnd().await?;
     let lnd_address = lnd_client.new_address().await?;
     btc_client.send_to_address(
         &lnd_address,
         bitcoincore_rpc::bitcoin::Amount::from_sat(amount),
     )?;
+    Ok(())
+}
+
+pub async fn open_channel_with_wallet() -> anyhow::Result<()> {
+    let wallet_lnd = LndClient::new_wallet_lnd().await?;
+    let wallet_pubkey = wallet_lnd.get_pubkey().await?;
+
+    let mint_lnd = LndClient::new_mint_lnd().await?;
+    mint_lnd.connect(&wallet_pubkey, "lnd-wallet:9735").await?;
+    let mine_blocks = mint_lnd.open_channel(&wallet_pubkey, 500_000).await?;
+    if mine_blocks {
+        let btc_client = BitcoinClient::new_local()?;
+        btc_client.mine_blocks(3)?;
+    }
     Ok(())
 }
 

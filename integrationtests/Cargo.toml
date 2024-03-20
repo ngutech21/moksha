@@ -27,6 +27,7 @@ bitcoincore-rpc = "0.18.0"
 fedimint-tonic-lnd = { version = "0.2.0", features = ["lightningrpc", "walletrpc"] }
 url = "2.5.0"
 moksha-mint = { path = "../moksha-mint" }
+hex = "0.4.3"
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
 tokio = { version = "1.35.1", features = ["sync", "rt-multi-thread"] }

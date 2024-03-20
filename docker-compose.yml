@@ -50,21 +50,21 @@ services:
     profiles:
       - itest
 
-  lnd1:
+  lnd-mint:
     depends_on:
       - bitcoind
     stop_grace_period: 2m
     image: lightninglabs/lnd:v0.17.4-beta
-    container_name: lnd1
-    hostname: lnd1
+    container_name: lnd-mint
+    hostname: lnd-mint
     command: >-
       lnd 
       --noseedbackup 
       --trickledelay=5000 
-      --alias=lnd1 
-      --externalip=lnd1
-      --tlsextradomain=lnd1 
-      --tlsextradomain=lnd1
+      --alias=lnd-mint 
+      --externalip=lnd-mint
+      --tlsextradomain=lnd-mint 
+      --tlsextradomain=lnd-mint
       --tlsextradomain=host.docker.internal 
       --listen=0.0.0.0:9735
       --rpclisten=0.0.0.0:10009 
@@ -78,11 +78,47 @@ services:
       --bitcoind.zmqpubrawtx=tcp://bitcoind:28335
     restart: always
     volumes:
-      - ${HOST_PROJECT_PATH:-.}/data/lnd1:/root/.lnd
+      - ${HOST_PROJECT_PATH:-.}/data/lnd-mint:/root/.lnd
     expose:
       - "10009"
     ports:
       - "11001:10009"
+    profiles:
+      - itest
+
+  lnd-wallet:
+    depends_on:
+      - bitcoind
+    stop_grace_period: 2m
+    image: lightninglabs/lnd:v0.17.4-beta
+    container_name: lnd-wallet
+    hostname: lnd-wallet
+    command: >-
+      lnd 
+      --noseedbackup 
+      --trickledelay=5000 
+      --alias=lnd-wallet
+      --externalip=lnd-wallet
+      --tlsextradomain=lnd-wallet 
+      --tlsextradomain=lnd-wallet
+      --tlsextradomain=host.docker.internal 
+      --listen=0.0.0.0:9735
+      --rpclisten=0.0.0.0:10009 
+      --bitcoin.active
+      --bitcoin.regtest 
+      --bitcoin.node=bitcoind
+      --bitcoind.rpchost=bitcoind 
+      --bitcoind.rpcuser=polaruser
+      --bitcoind.rpcpass=polarpass
+      --bitcoind.zmqpubrawblock=tcp://bitcoind:28334
+      --bitcoind.zmqpubrawtx=tcp://bitcoind:28335
+    restart: always
+    volumes:
+      - ${HOST_PROJECT_PATH:-.}/data/lnd-wallet:/root/.lnd
+    expose:
+      - "10009"
+    ports:
+      - "12001:10009"
     profiles:
       - itest
 
