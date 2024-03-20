@@ -13,12 +13,16 @@ impl BitcoinClient {
     pub fn new_local() -> anyhow::Result<Self> {
         let wallet_name = "testwallet";
         let client = Client::new(
-            &format!("http://localhost:18453/wallet/{}", wallet_name),
+            "http://localhost:18453/",
             Auth::UserPass("polaruser".to_string(), "polarpass".to_string()),
         )?;
+
         let wallet = client.list_wallets()?;
         if !wallet.contains(&wallet_name.to_owned()) {
-            client.create_wallet(wallet_name, None, None, None, None)?;
+            let create_wallet = client.create_wallet(wallet_name, None, None, None, None);
+            if create_wallet.is_err() {
+                client.load_wallet(wallet_name)?;
+            }
         }
         Ok(Self { client })
     }
