@@ -93,7 +93,7 @@ impl LndClient {
         Ok(amount_in_sat as u64)
     }
 
-    pub async fn connect(&self, peer_pubkey: &str, host_port: &str) -> anyhow::Result<()> {
+    pub async fn connect_to_peer(&self, peer_pubkey: &str, host_port: &str) -> anyhow::Result<()> {
         let mut client = self.client_lock().await?;
 
         let peers = client.list_peers(ListPeersRequest::default()).await?;
@@ -155,11 +155,29 @@ impl LndClient {
         Ok(response.identity_pubkey)
     }
 
-    pub async fn get_uri(&self) -> anyhow::Result<String> {
+    pub async fn create_invoice(&self, amount: u64) -> anyhow::Result<String> {
         let mut client = self.client_lock().await?;
-        let request = GetInfoRequest::default();
+        let request = fedimint_tonic_lnd::lnrpc::Invoice {
+            value: amount as i64,
+            ..Default::default()
+        };
 
-        let response = client.get_info(request).await?.into_inner();
-        Ok(response.uris[0].clone())
+        let response = client.add_invoice(request).await?.into_inner();
+        Ok(response.payment_request)
+    }
+
+    pub async fn pay_invoice(&self, payment_request: &str) -> anyhow::Result<()> {
+        self.client_lock()
+            .await?
+            .send_payment_sync(fedimint_tonic_lnd::tonic::Request::new(
+                fedimint_tonic_lnd::lnrpc::SendRequest {
+                    payment_request: payment_request.to_string(),
+                    ..Default::default()
+                },
+            ))
+            .await?
+            .into_inner();
+
+        Ok(())
     }
 }

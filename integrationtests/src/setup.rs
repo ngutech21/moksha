@@ -17,13 +17,15 @@ pub async fn fund_mint_lnd(amount: u64) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn open_channel_with_wallet() -> anyhow::Result<()> {
+pub async fn open_channel_with_wallet(amount: u64) -> anyhow::Result<()> {
     let wallet_lnd = LndClient::new_wallet_lnd().await?;
     let wallet_pubkey = wallet_lnd.get_pubkey().await?;
 
     let mint_lnd = LndClient::new_mint_lnd().await?;
-    mint_lnd.connect(&wallet_pubkey, "lnd-wallet:9735").await?;
-    let mine_blocks = mint_lnd.open_channel(&wallet_pubkey, 500_000).await?;
+    mint_lnd
+        .connect_to_peer(&wallet_pubkey, "lnd-wallet:9735")
+        .await?;
+    let mine_blocks = mint_lnd.open_channel(&wallet_pubkey, amount).await?;
     if mine_blocks {
         let btc_client = BitcoinClient::new_local()?;
         btc_client.mine_blocks(3)?;
