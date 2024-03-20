@@ -71,6 +71,24 @@ impl LndClient {
         Ok(response.address)
     }
 
+    async fn is_node_synced(&self) -> anyhow::Result<bool> {
+        let mut client = self.client_lock().await?;
+        let info = client
+            .get_info(GetInfoRequest::default())
+            .await?
+            .into_inner();
+        Ok(info.synced_to_chain)
+    }
+
+    pub async fn wait_for_node_sync(&self) -> anyhow::Result<()> {
+        loop {
+            if self.is_node_synced().await? {
+                return Ok(());
+            }
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        }
+    }
+
     pub async fn get_balance(&self, address: &str, min_confirmations: u32) -> anyhow::Result<u64> {
         let request = ListUnspentRequest {
             min_confs: 0,
@@ -94,6 +112,7 @@ impl LndClient {
     }
 
     pub async fn connect_to_peer(&self, peer_pubkey: &str, host_port: &str) -> anyhow::Result<()> {
+        self.wait_for_node_sync().await?;
         let mut client = self.client_lock().await?;
 
         let peers = client.list_peers(ListPeersRequest::default()).await?;
@@ -118,6 +137,7 @@ impl LndClient {
     }
 
     pub async fn open_channel(&self, peer_pubkey: &str, amount: u64) -> anyhow::Result<bool> {
+        self.wait_for_node_sync().await?;
         let mut client = self.client_lock().await?;
 
         let open_channels_with_peer = client
