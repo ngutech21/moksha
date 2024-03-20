@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: moksha-mint
     profiles:
-      - itest
+      - tracing
   bitcoind:
     stop_grace_period: 5m
     image: btcpayserver/bitcoin:0.21.0
