@@ -39,7 +39,7 @@ pub async fn test_bolt11_lnbitsmock() -> anyhow::Result<()> {
     });
 
     // Wait for the server to start
-    std::thread::sleep(std::time::Duration::from_millis(800));
+    tokio::time::sleep(Duration::from_millis(800)).await;
 
     let client = CrossPlatformHttpClient::new();
     let mint_url = Url::parse("http://127.0.0.1:8686")?;

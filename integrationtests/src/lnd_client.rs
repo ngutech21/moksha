@@ -3,7 +3,7 @@ use fedimint_tonic_lnd::{
     walletrpc::ListUnspentRequest,
     Client,
 };
-use std::{path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc, time::Duration};
 use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
 use url::Url;
 
@@ -85,7 +85,7 @@ impl LndClient {
             if self.is_node_synced().await? {
                 return Ok(());
             }
-            tokio::time::sleep(tokio::time::Duration::from_millis(1_500)).await;
+            tokio::time::sleep(Duration::from_millis(1_500)).await;
         }
     }
 
@@ -176,6 +176,7 @@ impl LndClient {
     }
 
     pub async fn create_invoice(&self, amount: u64) -> anyhow::Result<String> {
+        self.wait_for_node_sync().await?;
         let mut client = self.client_lock().await?;
         let request = fedimint_tonic_lnd::lnrpc::Invoice {
             value: amount as i64,
@@ -187,6 +188,7 @@ impl LndClient {
     }
 
     pub async fn pay_invoice(&self, payment_request: &str) -> anyhow::Result<()> {
+        self.wait_for_node_sync().await?;
         self.client_lock()
             .await?
             .send_payment_sync(fedimint_tonic_lnd::tonic::Request::new(

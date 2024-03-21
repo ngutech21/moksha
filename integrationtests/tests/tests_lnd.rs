@@ -55,7 +55,7 @@ async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
     });
 
     // Wait for the server to start
-    std::thread::sleep(std::time::Duration::from_millis(800));
+    tokio::time::sleep(Duration::from_millis(800)).await;
 
     let client = CrossPlatformHttpClient::new();
     let mint_url = Url::parse("http://127.0.0.1:8686")?;
@@ -83,10 +83,12 @@ async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
     let mint_quote = wallet.create_quote_onchain(mint_amount).await?;
 
     let btc_client = BitcoinClient::new_local()?;
-    btc_client.send_to_address(
-        &mint_quote.address,
-        bitcoincore_rpc::bitcoin::Amount::from_sat(mint_amount),
-    )?;
+    btc_client
+        .send_to_address(
+            &mint_quote.address,
+            bitcoincore_rpc::bitcoin::Amount::from_sat(mint_amount),
+        )
+        .await?;
 
     let _mint_response = wallet
         .mint_tokens(
@@ -108,7 +110,7 @@ async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
     let first_quote = melt_quotes.first().unwrap();
     let result = wallet.pay_onchain(first_quote).await?;
     assert!(!result.paid);
-    btc_client.mine_blocks(1)?;
+    btc_client.mine_blocks(1).await?;
 
     let is_tx_paid = wallet.is_onchain_tx_paid(result.txid).await?;
     assert!(is_tx_paid);
@@ -142,7 +144,7 @@ async fn test_bolt11_mint() -> anyhow::Result<()> {
     });
 
     // Wait for the server to start
-    std::thread::sleep(std::time::Duration::from_millis(800));
+    tokio::time::sleep(Duration::from_millis(800)).await;
 
     let client = CrossPlatformHttpClient::new();
     let mint_url = Url::parse("http://127.0.0.1:8686")?;

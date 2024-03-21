@@ -3,7 +3,7 @@ use bitcoincore_rpc::{
     json::AddressType,
     Auth, Client, RpcApi,
 };
-use std::str::FromStr;
+use std::{str::FromStr, time::Duration};
 
 pub struct BitcoinClient {
     pub client: Client,
@@ -38,22 +38,22 @@ impl BitcoinClient {
         Ok(new_address.assume_checked().to_string())
     }
 
-    pub fn mine_blocks(&self, block_num: u64) -> anyhow::Result<()> {
+    pub async fn mine_blocks(&self, block_num: u64) -> anyhow::Result<()> {
         let new_adr = self.get_new_address()?;
-        self.generate_to_address(block_num, &new_adr)?;
+        self.generate_to_address(block_num, &new_adr).await?;
         Ok(())
     }
 
-    pub fn generate_to_address(&self, block_num: u64, address: &str) -> anyhow::Result<()> {
+    pub async fn generate_to_address(&self, block_num: u64, address: &str) -> anyhow::Result<()> {
         let adr = Address::from_str(address)?;
         let adr = adr.require_network(bitcoincore_rpc::bitcoin::Network::Regtest)?;
         let _old_block_height = self.client.get_block_count()?;
         let _hashes = self.client.generate_to_address(block_num, &adr)?;
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        tokio::time::sleep(Duration::from_secs(5)).await;
         Ok(())
     }
 
-    pub fn send_to_address(&self, address: &str, amount: Amount) -> anyhow::Result<()> {
+    pub async fn send_to_address(&self, address: &str, amount: Amount) -> anyhow::Result<()> {
         let adr = Address::from_str(address)?;
         let adr = adr.require_network(bitcoincore_rpc::bitcoin::Network::Regtest)?;
         self.client.send_to_address(
@@ -67,7 +67,7 @@ impl BitcoinClient {
             None,
         )?;
 
-        self.mine_blocks(1)?;
+        self.mine_blocks(1).await?;
         Ok(())
     }
 
