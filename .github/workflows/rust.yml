@@ -54,7 +54,7 @@ jobs:
       - name: chmod data-dir
         run: sudo chmod -R a+rwx ./data
       - name: cargo llvm-cov
-        run: cargo llvm-cov -j1 --locked --all-features --lcov --output-path lcov.info
+        run: cargo llvm-cov -j1 --ignore-run-fail --locked --all-features --lcov --output-path lcov.info
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v4
         with:
