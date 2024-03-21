@@ -53,8 +53,10 @@ jobs:
         run: cargo generate-lockfile
       - name: chmod data-dir
         run: sudo chmod -R a+rwx ./data
+      - name: Run tests
+        run: cargo test -- --test-threads=1
       - name: cargo llvm-cov
-        run: cargo llvm-cov --locked --all-features --lcov --output-path lcov.info
+        run: cargo llvm-cov --no-run --locked --all-features --lcov --output-path lcov.info
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v4
         with:
