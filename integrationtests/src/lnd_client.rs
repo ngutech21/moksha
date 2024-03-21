@@ -161,6 +161,7 @@ impl LndClient {
             min_confs: 0,
             sat_per_vbyte: 100,
             push_sat: amount as i64 / 2,
+            spend_unconfirmed: true,
             ..Default::default()
         };
         client.open_channel(request).await?;

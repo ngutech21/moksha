@@ -67,7 +67,7 @@ impl BitcoinClient {
             None,
         )?;
 
-        self.mine_blocks(1).await?;
+        self.mine_blocks(5).await?;
         Ok(())
     }
 
