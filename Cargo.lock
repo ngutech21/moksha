@@ -1827,7 +1827,7 @@ dependencies = [
  "fedimint-tonic-lnd",
  "hex",
  "http-body-util",
- "hyper 0.14.28",
+ "hyper 1.2.0",
  "lightning-invoice 0.26.0",
  "mockall",
  "moksha-core",
