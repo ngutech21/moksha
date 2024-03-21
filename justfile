@@ -65,7 +65,9 @@ run-tests:
 
 # run integrationtests
 run-itests:
-    RUST_BACKTRACE=1 cargo test -p integrationtests
+    docker compose --profile itest up -d
+    RUST_BACKTRACE=1 cargo test -p integrationtests -- --test-threads=1
+    docker compose --profile itest down
 
 # build the mint docker-image
 build-docker:
