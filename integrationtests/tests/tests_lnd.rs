@@ -82,7 +82,7 @@ async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
     let mint_amount = 60_000;
     let mint_quote = wallet.create_quote_onchain(mint_amount).await?;
 
-    let btc_client = BitcoinClient::new_local()?;
+    let btc_client = BitcoinClient::new_local().await?;
     btc_client
         .send_to_address(
             &mint_quote.address,

@@ -8,7 +8,7 @@ use mokshamint::{
 };
 
 pub async fn fund_mint_lnd(amount: u64) -> anyhow::Result<()> {
-    let btc_client = BitcoinClient::new_local()?;
+    let btc_client = BitcoinClient::new_local().await?;
     btc_client.mine_blocks(108).await?;
 
     let lnd_wallet = LndClient::new_wallet_lnd().await?;
@@ -38,7 +38,7 @@ pub async fn open_channel_with_wallet(amount: u64) -> anyhow::Result<()> {
         .await?;
     let mine_blocks = mint_lnd.open_channel(&wallet_pubkey, amount).await?;
     if mine_blocks {
-        let btc_client = BitcoinClient::new_local()?;
+        let btc_client = BitcoinClient::new_local().await?;
         btc_client.mine_blocks(5).await?;
     }
     Ok(())

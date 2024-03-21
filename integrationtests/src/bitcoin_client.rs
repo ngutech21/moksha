@@ -10,21 +10,31 @@ pub struct BitcoinClient {
 }
 
 impl BitcoinClient {
-    pub fn new_local() -> anyhow::Result<Self> {
-        let wallet_name = "testwallet";
+    pub async fn new_local() -> anyhow::Result<Self> {
         let client = Client::new(
             "http://localhost:18453/",
             Auth::UserPass("polaruser".to_string(), "polarpass".to_string()),
         )?;
 
-        let wallet = client.list_wallets()?;
-        if !wallet.contains(&wallet_name.to_owned()) {
-            let create_wallet = client.create_wallet(wallet_name, None, None, None, None);
-            if create_wallet.is_err() {
-                client.load_wallet(wallet_name)?;
-            }
+        let wallets = client.list_wallets()?;
+        if wallets.is_empty() {
+            Self::create_wallet_autoload().await?;
         }
         Ok(Self { client })
+    }
+
+    // creates a wallet and loads it on startup
+    pub async fn create_wallet_autoload() -> anyhow::Result<()> {
+        let _ = reqwest::Client::new()
+            .post("http://localhost:18453/")
+            .basic_auth("polaruser", Some("polarpass"))
+            .body(
+                r#"{"jsonrpc": "1.0", "method": "createwallet", "params": ["testwallet", null, null, null, null, null, true]}"#
+                    .to_string(),
+            )
+            .send()
+            .await?;
+        Ok(())
     }
 
     pub fn get_block_height(&self) -> anyhow::Result<u64> {
