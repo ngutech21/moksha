@@ -189,10 +189,7 @@ async fn main() -> anyhow::Result<()> {
 
             let mut lock = stdout().lock();
             loop {
-                tokio::time::sleep_until(
-                    tokio::time::Instant::now() + std::time::Duration::from_millis(2_000),
-                )
-                .await;
+                tokio::time::sleep(std::time::Duration::from_millis(2_000)).await;
 
                 if paid || wallet.is_onchain_tx_paid(txid.clone()).await? {
                     println!(
