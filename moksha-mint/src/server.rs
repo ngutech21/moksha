@@ -77,9 +77,7 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
 
     info!("tracing jaeger-endpoint: {:?}", mint.config.tracing);
 
-    let listener = tokio::net::TcpListener::bind(&mint.config.server.host_port)
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind(&mint.config.server.host_port).await?;
 
     axum::serve(
         listener,
