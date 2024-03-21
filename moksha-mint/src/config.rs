@@ -1,7 +1,9 @@
 use std::{env, net::SocketAddr, path::PathBuf, str::FromStr};
 
 use clap::Parser;
-use moksha_core::primitives::{CurrencyUnit, Nut14, Nut15, PaymentMethod, PaymentMethodConfig};
+use moksha_core::primitives::{
+    CurrencyUnit, Nut14, Nut15, PaymentMethod, PaymentMethodConfigBtcOnchain,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::lightning::{
@@ -211,7 +213,7 @@ impl From<BtcOnchainConfig> for Nut14 {
     fn from(settings: BtcOnchainConfig) -> Self {
         Self {
             supported: true,
-            payment_methods: vec![PaymentMethodConfig {
+            payment_methods: vec![PaymentMethodConfigBtcOnchain {
                 payment_method: PaymentMethod::BtcOnchain,
                 unit: CurrencyUnit::Sat,
                 min_amount: settings.min_amount,
@@ -225,7 +227,7 @@ impl From<BtcOnchainConfig> for Nut15 {
     fn from(settings: BtcOnchainConfig) -> Self {
         Self {
             supported: true,
-            payment_methods: vec![PaymentMethodConfig {
+            payment_methods: vec![PaymentMethodConfigBtcOnchain {
                 payment_method: PaymentMethod::BtcOnchain,
                 unit: CurrencyUnit::Sat,
                 min_amount: settings.min_amount,
