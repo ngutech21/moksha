@@ -23,7 +23,7 @@ use testcontainers::{clients, RunnableImage};
 use testcontainers_modules::postgres::Postgres;
 use tokio::time::{sleep_until, Instant};
 
-#[tokio::test(flavor = "multi_thread")]
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
     // create postgres container that will be destroyed after the test is done
     let docker = clients::Cli::default();
@@ -118,7 +118,7 @@ async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::test(flavor = "multi_thread")]
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_bolt11_mint() -> anyhow::Result<()> {
     // create postgres container that will be destroyed after the test is done
     let docker = clients::Cli::default();

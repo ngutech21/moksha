@@ -13,7 +13,7 @@ use testcontainers::{clients, RunnableImage};
 use testcontainers_modules::postgres::Postgres;
 use tokio::time::{sleep_until, Instant};
 
-#[tokio::test(flavor = "multi_thread")]
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 pub async fn test_bolt11_lnbitsmock() -> anyhow::Result<()> {
     // create postgres container that will be destroyed after the test is done
     let docker = clients::Cli::default();

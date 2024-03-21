@@ -10,7 +10,7 @@ use reqwest::Url;
 
 use tokio::time::{sleep_until, Instant};
 
-#[tokio::test(flavor = "multi_thread")]
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 pub async fn test_nutshell_compatibility() -> anyhow::Result<()> {
     let client = CrossPlatformHttpClient::new();
     let mint_url = Url::parse("http://127.0.0.1:2228")?;
