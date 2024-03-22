@@ -423,14 +423,20 @@ pub struct Nuts {
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct Nut4 {
-    pub methods: Vec<(PaymentMethod, CurrencyUnit)>,
+    #[serde(rename = "methods")]
+    pub payment_methods: Vec<PaymentMethodConfig>,
     pub disabled: bool,
 }
 
 impl Default for Nut4 {
     fn default() -> Self {
         Self {
-            methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
+            payment_methods: vec![PaymentMethodConfig {
+                payment_method: PaymentMethod::Bolt11,
+                unit: CurrencyUnit::Sat,
+                min_amount: Some(1),
+                max_amount: Some(10_000_000),
+            }],
             disabled: false,
         }
     }
@@ -438,13 +444,21 @@ impl Default for Nut4 {
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct Nut5 {
-    pub methods: Vec<(PaymentMethod, CurrencyUnit)>,
+    #[serde(rename = "methods")]
+    pub payment_methods: Vec<PaymentMethodConfig>,
+    pub disabled: bool,
 }
 
 impl Default for Nut5 {
     fn default() -> Self {
         Self {
-            methods: vec![(PaymentMethod::Bolt11, CurrencyUnit::Sat)],
+            payment_methods: vec![PaymentMethodConfig {
+                payment_method: PaymentMethod::Bolt11,
+                unit: CurrencyUnit::Sat,
+                min_amount: Some(1),
+                max_amount: Some(10_000_000),
+            }],
+            disabled: false,
         }
     }
 }
@@ -489,11 +503,21 @@ pub struct Nut12 {
 pub struct Nut14 {
     pub supported: bool,
     #[serde(rename = "methods")]
-    pub payment_methods: Vec<PaymentMethodConfig>,
+    pub payment_methods: Vec<PaymentMethodConfigBtcOnchain>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct PaymentMethodConfig {
+    #[serde(rename = "method")]
+    pub payment_method: PaymentMethod,
+    pub unit: CurrencyUnit,
+    pub min_amount: Option<u64>,
+    pub max_amount: Option<u64>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
+pub struct PaymentMethodConfigBtcOnchain {
+    #[serde(rename = "method")]
     pub payment_method: PaymentMethod,
     pub unit: CurrencyUnit,
     pub min_amount: u64,
@@ -504,7 +528,7 @@ impl Default for Nut14 {
     fn default() -> Self {
         Self {
             supported: true,
-            payment_methods: vec![PaymentMethodConfig {
+            payment_methods: vec![PaymentMethodConfigBtcOnchain {
                 payment_method: PaymentMethod::BtcOnchain,
                 unit: CurrencyUnit::Sat,
                 min_amount: 1_000,
@@ -518,14 +542,14 @@ impl Default for Nut14 {
 pub struct Nut15 {
     pub supported: bool,
     #[serde(rename = "methods")]
-    pub payment_methods: Vec<PaymentMethodConfig>,
+    pub payment_methods: Vec<PaymentMethodConfigBtcOnchain>,
 }
 
 impl Default for Nut15 {
     fn default() -> Self {
         Self {
             supported: true,
-            payment_methods: vec![PaymentMethodConfig {
+            payment_methods: vec![PaymentMethodConfigBtcOnchain {
                 payment_method: PaymentMethod::BtcOnchain,
                 unit: CurrencyUnit::Sat,
                 min_amount: 1_000,
