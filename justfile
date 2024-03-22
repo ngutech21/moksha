@@ -45,7 +45,7 @@ run-coverage:
   mkdir -p target/coverage
   RUST_BACKTRACE=1 CARGO_INCREMENTAL=0 RUSTFLAGS='-Cinstrument-coverage' LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw' cargo test -- --test-threads=1
   docker compose --profile itest down
-  grcov . --binary-path ./target/debug/deps/ -s . -t lcov,html --branch --ignore-not-existing --ignore '../*' --ignore "/*" --ignore "./data" -o target/coverage/
+  grcov . --binary-path ./target/debug/deps/ -s . -t lcov,html --branch --ignore-not-existing --ignore '../*' --ignore "/*" --ignore "./data/*" -o target/coverage/
   find . -name '*.profraw' -exec rm -r {} \;
   >&2 echo '💡 Created the report in html-format target/coverage/html/index.html'
 
