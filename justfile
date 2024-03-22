@@ -49,7 +49,6 @@ run-coverage:
   find . -name '*.profraw' -exec rm -r {} \;
   >&2 echo '💡 Created the report in target/coverage/html`'
 
-
 # run the cashu-mint
 run-mint *ARGS:
   RUST_BACKTRACE=1 MINT_APP_ENV=dev cargo run --bin moksha-mint -- {{ARGS}}
@@ -63,8 +62,26 @@ run-tests:
   RUST_BACKTRACE=1 cargo test --workspace --exclude integrationtests
 
 
+# checks if docker and docker compose is installed and running
+_check-docker:
+  #!/usr/bin/env bash
+  if ! command -v docker &> /dev/null; then
+    >&2 echo 'Error: Docker is not installed.';
+    exit 1;
+  fi
+
+  if ! command -v docker compose &> /dev/null; then
+   >&2 echo 'Error: Docker Compose is not installed.' >&2;
+   exit 1;
+  fi
+
+  if ! command docker info &> /dev/null; then
+    >&2 echo 'Error: Docker is not running.';
+    exit 1;
+  fi
+
 # run integrationtests
-run-itests:
+run-itests: _check-docker
     docker compose --profile itest up -d
     RUST_BACKTRACE=1 cargo test -p integrationtests -- --test-threads=1
     docker compose --profile itest down

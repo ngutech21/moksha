@@ -11,13 +11,7 @@ Before running the tests, ensure that you have the following software installed 
 
 ## Running the Tests
 
-Before running the tests you have to start docker containers for the services that the tests depend on. You can do this by running the following command:
-
-```bash
-docker compose --profile itest up -d
-```
-
-To run the integration tests, use the `itests` command in your terminal:
+To run the integration tests, use the `itests` command in your terminal. This command will start the required services using Docker Compose and run the tests.
 
 ```bash
 just run-itests
