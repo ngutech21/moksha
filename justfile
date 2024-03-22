@@ -38,16 +38,26 @@ final-check:
   just run-itests
   just build-wasm
 
+
 # run coverage and create a report in html and lcov format
 run-coverage:
-  #!/usr/bin/env bash
+  just run-coverage-tests
+  just run-coverage-report
+
+# runs all tests with coverage instrumentation
+run-coverage-tests:
   docker compose --profile itest up -d
-  mkdir -p target/coverage
   RUST_BACKTRACE=1 CARGO_INCREMENTAL=0 RUSTFLAGS='-Cinstrument-coverage' LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw' cargo test -- --test-threads=1
   docker compose --profile itest down
-  grcov . --binary-path ./target/debug/deps/ -s . -t lcov,html --branch --ignore-not-existing --ignore '../*' --ignore "/*" --ignore "./data" -o target/coverage/
+
+# creates a coverage report in html and lcov format
+run-coverage-report:
+  #!/usr/bin/env bash
+  mkdir -p target/coverage
+  grcov . --binary-path ./target/debug/ -s . -t lcov,html --branch --ignore-not-existing --ignore "*cargo*" --ignore "./data/*" -o target/coverage/
   find . -name '*.profraw' -exec rm -r {} \;
   >&2 echo '💡 Created the report in html-format target/coverage/html/index.html'
+
 
 # run the cashu-mint
 run-mint *ARGS:

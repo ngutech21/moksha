@@ -49,16 +49,17 @@ jobs:
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: llvm-tools-preview
-      - name: cargo install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-      - name: cargo generate-lockfile
-        if: hashFiles('Cargo.lock') == ''
-        run: cargo generate-lockfile
+          toolchain: stable
+      - name: Install llvm-tools-preview
+        run: rustup component add llvm-tools-preview
       - name: chmod data-dir
         run: sudo chmod -R a+rwx ./data
-      - name: run coverage
-        run: just run-coverage
+      - name: run coverage test
+        run: just run-coverage-tests
+      - name: delete data-dir
+        run: sudo rm -rf ./data
+      - name: run coverage-report
+        run: just run-coverage-report
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v4
         with:
