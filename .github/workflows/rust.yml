@@ -52,11 +52,6 @@ jobs:
           toolchain: stable
       - name: Install llvm-tools-preview
         run: rustup component add llvm-tools-preview
-      - name: cargo install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-      - name: cargo generate-lockfile
-        if: hashFiles('Cargo.lock') == ''
-        run: cargo generate-lockfile
       - name: chmod data-dir
         run: sudo chmod -R a+rwx ./data
       - name: run coverage test
