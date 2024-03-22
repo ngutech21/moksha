@@ -41,24 +41,16 @@ final-check:
 
 # run coverage and create a report in html and lcov format
 run-coverage:
-  #!/usr/bin/env bash
-  docker compose --profile itest up -d
-  mkdir -p target/coverage
-  RUST_BACKTRACE=1 CARGO_INCREMENTAL=0 RUSTFLAGS='-Cinstrument-coverage' LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw' cargo test -- --test-threads=1
-  docker compose --profile itest down
-  grcov . --binary-path ./target/debug/ -s . -t lcov,html --branch --ignore-not-existing --ignore "*cargo*" --ignore "./data/*" -o target/coverage/
-  find . -name '*.profraw' -exec rm -r {} \;
-  >&2 echo '💡 Created the report in html-format target/coverage/html/index.html'
+  just run-coverage-tests
+  just run-coverage-report
 
-
-# run coverage and create a report in html and lcov format
+# runs all tests with coverage instrumentation
 run-coverage-tests:
   docker compose --profile itest up -d
   RUST_BACKTRACE=1 CARGO_INCREMENTAL=0 RUSTFLAGS='-Cinstrument-coverage' LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw' cargo test -- --test-threads=1
   docker compose --profile itest down
 
-
-# run coverage and create a report in html and lcov format
+# creates a coverage report in html and lcov format
 run-coverage-report:
   #!/usr/bin/env bash
   mkdir -p target/coverage
