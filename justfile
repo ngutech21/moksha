@@ -38,17 +38,16 @@ final-check:
   just run-itests
   just build-wasm
 
-
-#RUST_BACKTRACE=1 cargo test -p integrationtests -- --test-threads=1
-
-#run coverage
+# run coverage and create a report in html and lcov format
 run-coverage:
   #!/usr/bin/env bash
+  docker compose --profile itest up -d
   mkdir -p target/coverage
   RUST_BACKTRACE=1 CARGO_INCREMENTAL=0 RUSTFLAGS='-Cinstrument-coverage' LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw' cargo test -- --test-threads=1
-  grcov . --binary-path ./target/debug/deps/ -s . -t lcov,html --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o target/coverage/
+  docker compose --profile itest down
+  grcov . --binary-path ./target/debug/deps/ -s . -t lcov,html --branch --ignore-not-existing --ignore '../*' --ignore "/*" --ignore "./data" -o target/coverage/
   find . -name '*.profraw' -exec rm -r {} \;
-  >&2 echo '💡 Created the report in target/coverage/`'
+  >&2 echo '💡 Created the report in html-format target/coverage/html/index.html'
 
 # run the cashu-mint
 run-mint *ARGS:
@@ -81,7 +80,7 @@ _check-docker:
     exit 1;
   fi
 
-# run integrationtests
+# starts bitcoind, nutshell, 2 lnd nodes via docker and runs the integration tests
 run-itests: _check-docker
     docker compose --profile itest up -d
     RUST_BACKTRACE=1 cargo test -p integrationtests -- --test-threads=1
