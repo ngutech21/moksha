@@ -40,6 +40,10 @@ jobs:
           submodules: true
       - name: Run Docker Compose
         run: docker compose --profile itest up -d
+      - name: Install just
+        run: cargo install just
+      - name: Install grcov
+        run: cargo install grcov
       - name: Install protobuf-compiler
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       - name: Install stable
@@ -53,10 +57,11 @@ jobs:
         run: cargo generate-lockfile
       - name: chmod data-dir
         run: sudo chmod -R a+rwx ./data
-      - name: cargo llvm-cov
-        run: cargo llvm-cov -j1 --ignore-run-fail --locked --all-features --lcov --output-path lcov.info
+      - name: run coverage
+        run: just run-coverage
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
+          files: target/coverage/lcov

@@ -39,15 +39,16 @@ final-check:
   just build-wasm
 
 
+#RUST_BACKTRACE=1 cargo test -p integrationtests -- --test-threads=1
+
 #run coverage
 run-coverage:
   #!/usr/bin/env bash
   mkdir -p target/coverage
-  CARGO_INCREMENTAL=0 RUSTFLAGS='-Cinstrument-coverage' LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw' cargo test
-  grcov . --binary-path ./target/debug/deps/ -s . -t lcov --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o target/coverage/tests.lcov
-  grcov . --binary-path ./target/debug/deps/ -s . -t html --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o target/coverage/html
+  RUST_BACKTRACE=1 CARGO_INCREMENTAL=0 RUSTFLAGS='-Cinstrument-coverage' LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw' cargo test -- --test-threads=1
+  grcov . --binary-path ./target/debug/deps/ -s . -t lcov,html --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o target/coverage/
   find . -name '*.profraw' -exec rm -r {} \;
-  >&2 echo '💡 Created the report in target/coverage/html`'
+  >&2 echo '💡 Created the report in target/coverage/`'
 
 # run the cashu-mint
 run-mint *ARGS:
