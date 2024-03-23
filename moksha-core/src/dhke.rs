@@ -269,7 +269,7 @@ mod tests {
         // # assert verify(a, C + C, secret_msg) == False  # adding C twice shouldn't pass
         // # assert verify(a, A, secret_msg) == False  # A shouldn't pass
 
-        let dhke = Dhke::new();
+        let dhke = Dhke::default();
 
         // Generate Alice's private key and public key
         let a = pk_from_hex("0000000000000000000000000000000000000000000000000000000000000001");

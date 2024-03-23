@@ -167,6 +167,8 @@ impl From<(Url, Proofs)> for TokenV3 {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use serde_json::{json, Value};
     use url::Url;
 
@@ -244,6 +246,9 @@ mod tests {
         let token = serde_json::from_value::<super::Token>(js)?;
         assert_eq!(token.mint, Some(Url::parse("https://8333.space:3338")?));
         assert_eq!(token.proofs.len(), 2);
+
+        let v3 = TokenV3::new(token);
+        assert_eq!(v3.mint(), Some(Url::parse("https://8333.space:3338")?));
         Ok(())
     }
 
@@ -284,7 +289,7 @@ mod tests {
     #[test]
     fn test_tokens_deserialize() -> anyhow::Result<()> {
         let input = read_fixture("token_nut_example.cashu")?;
-        let tokens = TokenV3::deserialize(input)?;
+        let tokens = TokenV3::from_str(&input)?;
         assert_eq!(tokens.memo, Some("Thank you.".to_string()),);
         assert_eq!(tokens.tokens.len(), 1);
         Ok(())
@@ -312,6 +317,14 @@ mod tests {
         let input = read_fixture("token_invalid.cashu")?;
         let tokens = TokenV3::deserialize(input);
         assert!(tokens.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_empty_token() -> anyhow::Result<()> {
+        let tokens = TokenV3::empty();
+        assert!(tokens.tokens.is_empty());
+        assert!(tokens.memo.is_none());
         Ok(())
     }
 }
