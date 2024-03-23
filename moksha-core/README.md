@@ -8,4 +8,5 @@ To use Moksha Core in your Rust project, simply add it as a dependency in your `
 
 ```toml
 [dependencies]
-moksha-core = "0.1.0"
+moksha-core = "0.2.1"
+```
