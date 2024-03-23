@@ -71,7 +71,6 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 - [moksha-wallet](./moksha-wallet) Cashu wallet library
 - [moksha-cli](./moksha-wallet) Cashu cli wallet
 - [moksha-mint](./moksha-mint) Cashu mint server. Handles minting, melting and token requests.
-- [moksha-fedimint](./moksha-fedimint) Fedimint wrapper for the cashu wallet
 - [integrationtests](./integrationtests) Spins up a mint and runs integration tests against it.
 
 ## Usage
