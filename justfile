@@ -54,7 +54,7 @@ run-coverage-tests:
 run-coverage-report:
   #!/usr/bin/env bash
   mkdir -p target/coverage
-  grcov . --binary-path ./target/debug/ -s . -t lcov,html --branch --ignore-not-existing --ignore "*cargo*" --ignore "./data/*" -o target/coverage/
+  grcov . --binary-path ./target/debug/ -s . -t lcov,html --branch --ignore-not-existing --ignore "*cargo*" --ignore "./data/*" --ignore "*/examples/*" -o target/coverage/
   find . -name '*.profraw' -exec rm -r {} \;
   >&2 echo '💡 Created the report in html-format target/coverage/html/index.html'
 

@@ -41,3 +41,4 @@ moksha-mint = { path = "../moksha-mint" }
 moksha-wallet = { path = "../moksha-wallet" }
 moksha-core = { path = "../moksha-core" }
 tempfile = "3.9.0"
+assert_cmd = "2.0.14"
