@@ -52,6 +52,8 @@ jobs:
           toolchain: stable
       - name: Install llvm-tools-preview
         run: rustup component add llvm-tools-preview
+      - name: Build
+        run: cargo build --verbose
       - name: chmod data-dir
         run: sudo chmod -R a+rwx ./data
       - name: run coverage test
