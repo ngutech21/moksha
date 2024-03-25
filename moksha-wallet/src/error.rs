@@ -1,6 +1,5 @@
 use std::string::FromUtf8Error;
 
-use bdk::{bitcoin::bip32, keys::bip39};
 use lightning_invoice::ParseOrSemanticError;
 use thiserror::Error;
 

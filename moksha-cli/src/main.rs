@@ -97,22 +97,23 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Command::Seed => {
-            let master = deterministic_secrets::generate_master_key().unwrap();
-            let first = deterministic_secrets::derive_private_key(
-                master,
-                0,
-                0,
-                deterministic_secrets::DerivationType::Secret,
-            );
-            println!("Seed: {}", master);
-            println!("first: {:?}", first);
-            let second = deterministic_secrets::derive_private_key(
-                master,
-                0,
-                1,
-                deterministic_secrets::DerivationType::Secret,
-            );
-            println!("second: {:?}", second);
+            // FIXME
+            // let master = deterministic_secrets::generate_master_key().unwrap();
+            // let first = deterministic_secrets::derive_private_key(
+            //     master,
+            //     0,
+            //     0,
+            //     deterministic_secrets::DerivationType::Secret,
+            // );
+            // println!("Seed: {}", master);
+            // println!("first: {:?}", first);
+            // let second = deterministic_secrets::derive_private_key(
+            //     master,
+            //     0,
+            //     1,
+            //     deterministic_secrets::DerivationType::Secret,
+            // );
+            // println!("second: {:?}", second);
         }
         Command::Info => {
             let wallet_version = env!("CARGO_PKG_VERSION");
