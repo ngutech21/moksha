@@ -6,8 +6,8 @@ use bip39::Mnemonic;
 use rand::Rng;
 
 pub enum DerivationType {
-    Blinding = 0,
-    Secret = 1,
+    Secret = 0,
+    Blinding = 1,
 }
 
 pub fn derive_private_key(
@@ -31,10 +31,24 @@ pub fn generate_mnemonic() -> Result<Mnemonic, bip39::Error> {
     Mnemonic::from_entropy(&entropy)
 }
 
+pub fn convert_hex_to_int(keyset_id_hex: &str) -> anyhow::Result<u32> {
+    let bytes = hex::decode(keyset_id_hex)?;
+    let bytes_array: [u8; 8] = bytes[0..8].try_into()?;
+    let num = u64::from_be_bytes(bytes_array);
+    Ok((num % (2u64.pow(31) - 1)) as u32)
+}
+
 #[cfg(test)]
 mod tests {
 
-    use super::{derive_private_key, DerivationType};
+    use super::{convert_hex_to_int, derive_private_key, DerivationType};
+
+    #[test]
+    fn test_keyset_id_conversion() -> anyhow::Result<()> {
+        let int_value = convert_hex_to_int("009a1f293253e41e")?;
+        assert_eq!(864559728, int_value);
+        Ok(())
+    }
 
     #[test]
     fn test_() -> anyhow::Result<()> {
@@ -55,7 +69,7 @@ mod tests {
         ];
 
         for (i, secret) in secrets.iter().enumerate() {
-            let key = derive_private_key(phrase, 864559728, i as u32, DerivationType::Blinding)?;
+            let key = derive_private_key(phrase, 864559728, i as u32, DerivationType::Secret)?;
             assert_eq!(secret.to_owned(), key);
         }
 
@@ -68,7 +82,7 @@ mod tests {
         ];
 
         for (i, factor) in blinding_factors.iter().enumerate() {
-            let key = derive_private_key(phrase, 864559728, i as u32, DerivationType::Secret)?;
+            let key = derive_private_key(phrase, 864559728, i as u32, DerivationType::Blinding)?;
             assert_eq!(factor.to_owned(), key);
         }
         Ok(())
