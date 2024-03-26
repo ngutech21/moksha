@@ -24,7 +24,7 @@ async-trait = "0.1.77"
 lightning-invoice = "0.29.0"
 url = "2.5.0"
 dirs = "5.0.1"
-bip32 = { version = "0.5.1", features = ["secp256k1"] }
+bip32 = { version = "0.5.1", features = ["secp256k1", "std"] }
 bip39 = "2.0.0"
 hex = "0.4.3"
 rand = "0.8.5"

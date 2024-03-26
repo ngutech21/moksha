@@ -17,29 +17,18 @@ pub fn derive_private_key(
     secret_or_blinding: DerivationType,
 ) -> Result<String, MokshaWalletError> {
     let secret_or_blinding = secret_or_blinding as u32;
-    let derivation_path = format!(
-        "m/129372'/0'/{keyset_id}'/{counter}'/{secret_or_blinding}",
-        keyset_id = keyset_id,
-        counter = counter,
-        secret_or_blinding = secret_or_blinding
-    );
-
+    let derivation_path = format!("m/129372'/0'/{keyset_id}'/{counter}'/{secret_or_blinding}");
     let mnemonic = Mnemonic::from_str(seed_words)?;
     let seed = Seed::new(mnemonic.to_seed(""));
-    let derivation_path = bip32::DerivationPath::from_str(&derivation_path).unwrap();
-    let signing_key = XPrv::derive_from_path(seed, &derivation_path).unwrap();
-
-    let priv_key = signing_key.private_key().to_bytes();
-    let out = hex::encode(priv_key);
-
-    Ok(out)
+    let derivation_path = bip32::DerivationPath::from_str(&derivation_path)?;
+    let key = XPrv::derive_from_path(seed, &derivation_path)?;
+    Ok(hex::encode(key.private_key().to_bytes()))
 }
 
 pub fn generate_mnemonic() -> Result<Mnemonic, bip39::Error> {
     let mut rng = rand::thread_rng();
     let entropy: [u8; 16] = rng.gen(); // 16 bytes for 12 words mnemonic
-    let mnemonic = Mnemonic::from_entropy(&entropy)?;
-    Ok(mnemonic)
+    Mnemonic::from_entropy(&entropy)
 }
 
 #[cfg(test)]
