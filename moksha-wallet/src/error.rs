@@ -68,4 +68,7 @@ pub enum MokshaWalletError {
 
     #[error("Bip39Error {0}")]
     Bip39(#[from] bip39::Error),
+
+    #[error("Secp256k1 {0}")]
+    Secp256k1(#[from] secp256k1::Error),
 }
