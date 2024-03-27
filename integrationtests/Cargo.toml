@@ -15,7 +15,7 @@ path = "src/lib.rs"
 
 [dependencies]
 rand = "0.8.5"
-axum = "0.7.4"
+axum = "0.7.5"
 anyhow = { version = "1.0.80", features = ["backtrace"] }
 serde = { version = "1.0.197", features = ["derive"] }
 lightning-invoice = "0.29.0"
