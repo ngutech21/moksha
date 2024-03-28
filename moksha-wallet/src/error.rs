@@ -62,4 +62,16 @@ pub enum MokshaWalletError {
 
     #[error("Unsupported version: Only mints with /v1 api are supported")]
     UnsupportedApiVersion,
+
+    #[error("Bip32Error {0}")]
+    Bip32(#[from] bip32::Error),
+
+    #[error("Bip39Error {0}")]
+    Bip39(#[from] bip39::Error),
+
+    #[error("Secp256k1 {0}")]
+    Secp256k1(#[from] secp256k1::Error),
+
+    #[error("Primarykey not set for keyset")]
+    IdNotSet,
 }

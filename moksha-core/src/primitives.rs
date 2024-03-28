@@ -136,6 +136,16 @@ pub enum CurrencyUnit {
     Usd,
 }
 
+impl From<String> for CurrencyUnit {
+    fn from(unit: String) -> Self {
+        match unit.to_lowercase().as_str() {
+            "sat" => Self::Sat,
+            "usd" => Self::Usd,
+            _ => panic!("Unknown currency unit: {}", unit),
+        }
+    }
+}
+
 impl Display for CurrencyUnit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
