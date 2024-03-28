@@ -9,8 +9,12 @@ CREATE TABLE IF NOT EXISTS proofs (
 );
 
 CREATE TABLE IF NOT EXISTS keysets (
-                id TEXT NOT NULL,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 mint_url TEXT NOT NULL,
+                keyset_id TEXT NOT NULL,
+                currency_unit TEXT NOT NULL,
                 active BOOL DEFAULT TRUE,
-                UNIQUE (id, mint_url)
+                last_index INTEGER,
+                public_keys JSON CHECK (json_valid(public_keys)),
+                UNIQUE (keyset_id, mint_url)
 );

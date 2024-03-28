@@ -1,5 +1,9 @@
+use std::collections::HashMap;
+
 use async_trait::async_trait;
 use moksha_core::proof::{Proof, Proofs};
+use secp256k1::PublicKey;
+use url::Url;
 
 use crate::error::MokshaWalletError;
 use crate::localstore::{LocalStore, WalletKeyset};
@@ -89,14 +93,18 @@ impl LocalStore for SqliteLocalStore {
     }
 
     async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), MokshaWalletError> {
-        sqlx::query(
-            r#"INSERT INTO keysets (id, mint_url) VALUES ($1, $2);
-            "#,
-        )
-        .bind(keyset.id.to_owned())
-        .bind(keyset.mint_url.to_owned())
-        .execute(&self.pool)
+        let row: (i64,) = sqlx::query_as(
+            r#"INSERT INTO keysets (keyset_id, mint_url, currency_unit, last_index, public_keys, active) VALUES ($1, $2, $3, $4, $5, $6);SELECT last_insert_rowid() as id;
+            "#)
+        .bind(keyset.keyset_id.to_owned())
+        .bind(keyset.mint_url.as_str())
+        .bind(keyset.currency_unit.to_string())
+        .bind(keyset.last_index as i64)
+        .bind(serde_json::to_string(&keyset.public_keys)?)
+        .bind(keyset.active)
+        .fetch_one(&self.pool)
         .await?;
+        println!("row: {:?}", row.0);
         Ok(())
     }
 
@@ -108,11 +116,42 @@ impl LocalStore for SqliteLocalStore {
         Ok(rows
             .iter()
             .map(|row| {
-                let id = row.get(0);
-                let mint_url: String = row.get(1);
-                Ok(WalletKeyset { id, mint_url })
+                let id: i64 = row.get(0);
+                let mint_url: Url = Url::parse(row.get(1)).unwrap(); // FIXME
+                let keyset_id: String = row.get(2);
+                let currency_unit: String = row.get(3);
+                let active: bool = row.get(4);
+                let last_index: i64 = row.get(5);
+                let public_keys: HashMap<u64, PublicKey> =
+                    serde_json::from_str(row.get(6)).unwrap(); // FIXME unwrap
+                Ok(WalletKeyset {
+                    id: Some(id as u64),
+                    mint_url,
+                    keyset_id,
+                    currency_unit: currency_unit.into(),
+                    active,
+                    last_index: last_index as u64,
+                    public_keys,
+                })
             })
             .collect::<Result<Vec<WalletKeyset>, SqliteError>>()?)
+    }
+
+    async fn update_keyset_last_index(
+        &self,
+        keyset: &WalletKeyset,
+    ) -> Result<(), MokshaWalletError> {
+        let id = match keyset.id {
+            None => return Err(MokshaWalletError::IdNotSet),
+            Some(id) => id as i64,
+        };
+
+        sqlx::query(r#"UPDATE keysets SET last_index = $1 WHERE id = $2;"#)
+            .bind(keyset.last_index as i64)
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
     }
 }
 
