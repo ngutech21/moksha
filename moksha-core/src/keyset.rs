@@ -185,6 +185,41 @@ fn derive_keyset_id(keys: &HashMap<u64, PublicKey>) -> String {
     let hashed_pubkeys: String = sha256::Hash::hash(pubkeys.as_slice()).encode_hex();
     format!("00{}", &hashed_pubkeys[0..14])
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeysetId(KeysetIdType, String);
+
+impl KeysetId {
+    pub fn new(id_type: KeysetIdType, id: String) -> Result<Self, MokshaCoreError> {
+        if id.len() != 14 {
+            return Err(MokshaCoreError::InvalidKeysetid);
+        }
+        Ok(Self(id_type, id))
+    }
+}
+
+impl ToString for KeysetId {
+    fn to_string(&self) -> String {
+        format!("{:?}{}", self.0, self.1)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum KeysetIdType {
+    Sat,
+    UsdCent,
+}
+
+impl From<String> for KeysetIdType {
+    fn from(id: String) -> Self {
+        match id.as_str() {
+            "00" => KeysetIdType::Sat,
+            "01" => KeysetIdType::UsdCent,
+            _ => panic!("Invalid Keyset ID"),
+        }
+    }
+}
+
 ///
 /// # Arguments
 ///
