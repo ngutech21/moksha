@@ -42,6 +42,7 @@ pub enum MokshaWalletError {
     #[cfg(not(target_arch = "wasm32"))]
     #[error("Sqlite Error {0}")]
     Sqlite(#[from] sqlx::sqlite::SqliteError),
+
     #[error("Utf8 Error {0}")]
     Utf8(#[from] FromUtf8Error),
 

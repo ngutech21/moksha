@@ -85,33 +85,27 @@ where
             return Err(MokshaWalletError::UnsupportedApiVersion);
         }
 
-        let load_keysets = localstore.get_keysets().await?;
-
+        let mut tx = localstore.begin_tx().await?;
         let mint_keysets = client.get_keysets(&mint_url).await?;
-        if load_keysets.is_empty() {
-            for m in mint_keysets.keysets.iter() {
-                let public_keys = client
-                    .get_keys_by_id(&mint_url, m.id.clone())
-                    .await?
-                    .keysets
-                    .into_iter()
-                    .find(|k| k.id == m.id)
-                    .expect("no valid keyset found")
-                    .keys
-                    .clone();
 
-                let wallet_keyset = WalletKeyset {
-                    id: None,
-                    keyset_id: m.clone().id,
-                    mint_url: mint_url.clone(),
-                    currency_unit: m.unit.clone(),
-                    last_index: 0,
-                    public_keys,
-                    active: true,
-                };
-                localstore.add_keyset(&wallet_keyset).await?;
-            }
+        for m in mint_keysets.keysets.iter() {
+            let public_keys = client
+                .get_keys_by_id(&mint_url, m.id.clone())
+                .await?
+                .keysets
+                .into_iter()
+                .find(|k| k.id == m.id)
+                .expect("no valid keyset found")
+                .keys
+                .clone();
+
+            let wallet_keyset = WalletKeyset::new(&m.id, &mint_url, &m.unit, 0, public_keys, true);
+            localstore.upsert_keyset(&mut tx, &wallet_keyset).await?;
         }
+
+        let load_keysets = localstore.get_keysets(&mut tx).await?;
+        print!("keysets {:?}", load_keysets);
+        tx.commit().await?;
 
         // FIXME store all keysets
         let keys = client.get_keys(&mint_url).await?;

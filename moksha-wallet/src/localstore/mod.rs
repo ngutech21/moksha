@@ -26,6 +26,27 @@ pub struct WalletKeyset {
     pub active: bool,
 }
 
+impl WalletKeyset {
+    pub fn new(
+        keyset_id: &str,
+        mint_url: &Url,
+        currency_unit: &CurrencyUnit,
+        last_index: u64,
+        public_keys: HashMap<u64, PublicKey>,
+        active: bool,
+    ) -> Self {
+        Self {
+            id: None,
+            keyset_id: keyset_id.to_owned(),
+            mint_url: mint_url.to_owned(),
+            currency_unit: currency_unit.clone(),
+            last_index,
+            public_keys,
+            active,
+        }
+    }
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 #[async_trait(?Send)]
 pub trait LocalStore {
@@ -46,10 +67,18 @@ pub trait LocalStore {
         tx: &mut sqlx::Transaction<Self::DB>,
     ) -> Result<Proofs, MokshaWalletError>;
 
-    async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError>;
-    async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), MokshaWalletError>;
+    async fn get_keysets(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+    ) -> Result<Vec<WalletKeyset>, MokshaWalletError>;
+    async fn upsert_keyset(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        keyset: &WalletKeyset,
+    ) -> Result<(), MokshaWalletError>;
     async fn update_keyset_last_index(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         keyset: &WalletKeyset,
     ) -> Result<(), MokshaWalletError>;
 }

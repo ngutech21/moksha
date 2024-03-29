@@ -92,9 +92,15 @@ impl LocalStore for SqliteLocalStore {
             .into())
     }
 
-    async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), MokshaWalletError> {
+    async fn upsert_keyset(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        keyset: &WalletKeyset,
+    ) -> Result<(), MokshaWalletError> {
         let row: (i64,) = sqlx::query_as(
-            r#"INSERT INTO keysets (keyset_id, mint_url, currency_unit, last_index, public_keys, active) VALUES ($1, $2, $3, $4, $5, $6);SELECT last_insert_rowid() as id;
+            r#"INSERT INTO keysets (keyset_id, mint_url, currency_unit, last_index, public_keys, active) VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT(keyset_id, mint_url) DO UPDATE SET currency_unit = $3, last_index = $4, public_keys = $5, active = $6;
+            SELECT last_insert_rowid() as id;
             "#)
         .bind(keyset.keyset_id.to_owned())
         .bind(keyset.mint_url.as_str())
@@ -102,28 +108,31 @@ impl LocalStore for SqliteLocalStore {
         .bind(keyset.last_index as i64)
         .bind(serde_json::to_string(&keyset.public_keys)?)
         .bind(keyset.active)
-        .fetch_one(&self.pool)
+        .fetch_one(&mut **tx)
         .await?;
         println!("row: {:?}", row.0);
         Ok(())
     }
 
-    async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
+    async fn get_keysets(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+    ) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
         let rows = sqlx::query("SELECT * FROM keysets;")
-            .fetch_all(&self.pool)
+            .fetch_all(&mut **tx)
             .await?;
 
         Ok(rows
             .iter()
             .map(|row| {
                 let id: i64 = row.get(0);
-                let mint_url: Url = Url::parse(row.get(1)).unwrap(); // FIXME
+                let mint_url: Url = Url::parse(row.get(1)).expect("invalid url in localstore");
                 let keyset_id: String = row.get(2);
                 let currency_unit: String = row.get(3);
                 let active: bool = row.get(4);
                 let last_index: i64 = row.get(5);
                 let public_keys: HashMap<u64, PublicKey> =
-                    serde_json::from_str(row.get(6)).unwrap(); // FIXME unwrap
+                    serde_json::from_str(row.get(6)).expect("invalid json in localstore");
                 Ok(WalletKeyset {
                     id: Some(id as u64),
                     mint_url,
@@ -139,6 +148,7 @@ impl LocalStore for SqliteLocalStore {
 
     async fn update_keyset_last_index(
         &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
         keyset: &WalletKeyset,
     ) -> Result<(), MokshaWalletError> {
         let id = match keyset.id {
@@ -149,7 +159,7 @@ impl LocalStore for SqliteLocalStore {
         sqlx::query(r#"UPDATE keysets SET last_index = $1 WHERE id = $2;"#)
             .bind(keyset.last_index as i64)
             .bind(id)
-            .execute(&self.pool)
+            .execute(&mut **tx)
             .await?;
         Ok(())
     }
