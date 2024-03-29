@@ -421,14 +421,14 @@ pub struct Nuts {
     /// DLEQ proofs
     pub nut12: Nut12,
 
-    // TODO remove this if nut-14 and nut-15 are merged
-    #[serde(rename = "14", skip_serializing_if = "Option::is_none")]
+    // TODO remove this if nut-17 and nut-18 are merged
+    #[serde(rename = "17", skip_serializing_if = "Option::is_none")]
     /// minting tokens onchain
-    pub nut14: Option<Nut14>,
+    pub nut17: Option<Nut17>,
 
-    #[serde(rename = "15", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "18", skip_serializing_if = "Option::is_none")]
     /// melting tokens onchain
-    pub nut15: Option<Nut15>,
+    pub nut18: Option<Nut18>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
@@ -510,7 +510,7 @@ pub struct Nut12 {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
-pub struct Nut14 {
+pub struct Nut17 {
     pub supported: bool,
     #[serde(rename = "methods")]
     pub payment_methods: Vec<PaymentMethodConfigBtcOnchain>,
@@ -534,7 +534,7 @@ pub struct PaymentMethodConfigBtcOnchain {
     pub max_amount: u64,
 }
 
-impl Default for Nut14 {
+impl Default for Nut17 {
     fn default() -> Self {
         Self {
             supported: true,
@@ -549,13 +549,13 @@ impl Default for Nut14 {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
-pub struct Nut15 {
+pub struct Nut18 {
     pub supported: bool,
     #[serde(rename = "methods")]
     pub payment_methods: Vec<PaymentMethodConfigBtcOnchain>,
 }
 
-impl Default for Nut15 {
+impl Default for Nut18 {
     fn default() -> Self {
         Self {
             supported: true,

@@ -152,7 +152,7 @@ async fn main() -> anyhow::Result<()> {
         Command::PayOnchain { address, amount } => {
             let info = wallet.get_mint_info().await?;
 
-            if info.nuts.nut15.map_or(true, |nut15| !nut15.supported) {
+            if info.nuts.nut18.map_or(true, |nut18| !nut18.supported) {
                 println!("Error: onchain-payments are not supported by this mint");
                 return Ok(());
             }
@@ -207,13 +207,13 @@ async fn main() -> anyhow::Result<()> {
         Command::Mint { amount } => {
             let info = wallet.get_mint_info().await?;
 
-            let payment_method = info.nuts.nut14.as_ref().map_or_else(
+            let payment_method = info.nuts.nut17.as_ref().map_or_else(
                 || {
                     println!("Only bolt11 minting is supported");
                     PaymentMethod::Bolt11
                 },
-                |nut14| {
-                    if !nut14.supported {
+                |nut17| {
+                    if !nut17.supported {
                         println!("Only bolt11 minting is supported");
                         PaymentMethod::Bolt11
                     } else {
@@ -232,8 +232,8 @@ async fn main() -> anyhow::Result<()> {
 
             let quote = match payment_method {
                 PaymentMethod::BtcOnchain => {
-                    let nut14 = info.nuts.nut14.expect("nut14 is None");
-                    let payment_method = nut14.payment_methods.first().expect("no payment methods");
+                    let nut17 = info.nuts.nut17.expect("nut17 is None");
+                    let payment_method = nut17.payment_methods.first().expect("no payment methods");
                     if amount < payment_method.min_amount {
                         println!(
                             "Amount too low. Minimum amount is {} (sat)",

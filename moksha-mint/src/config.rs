@@ -2,7 +2,7 @@ use std::{env, net::SocketAddr, path::PathBuf, str::FromStr};
 
 use clap::Parser;
 use moksha_core::primitives::{
-    CurrencyUnit, Nut14, Nut15, PaymentMethod, PaymentMethodConfigBtcOnchain,
+    CurrencyUnit, Nut17, Nut18, PaymentMethod, PaymentMethodConfigBtcOnchain,
 };
 use serde::{Deserialize, Serialize};
 
@@ -209,7 +209,7 @@ impl FromStr for BtcOnchainTypeVariant {
     }
 }
 
-impl From<BtcOnchainConfig> for Nut14 {
+impl From<BtcOnchainConfig> for Nut17 {
     fn from(settings: BtcOnchainConfig) -> Self {
         Self {
             supported: true,
@@ -223,7 +223,7 @@ impl From<BtcOnchainConfig> for Nut14 {
     }
 }
 
-impl From<BtcOnchainConfig> for Nut15 {
+impl From<BtcOnchainConfig> for Nut18 {
     fn from(settings: BtcOnchainConfig) -> Self {
         Self {
             supported: true,
