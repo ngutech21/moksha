@@ -42,6 +42,7 @@ pub enum MokshaWalletError {
     #[cfg(not(target_arch = "wasm32"))]
     #[error("Sqlite Error {0}")]
     Sqlite(#[from] sqlx::sqlite::SqliteError),
+
     #[error("Utf8 Error {0}")]
     Utf8(#[from] FromUtf8Error),
 
@@ -62,4 +63,19 @@ pub enum MokshaWalletError {
 
     #[error("Unsupported version: Only mints with /v1 api are supported")]
     UnsupportedApiVersion,
+
+    #[error("Bip32Error {0}")]
+    Bip32(#[from] bip32::Error),
+
+    #[error("Bip39Error {0}")]
+    Bip39(#[from] bip39::Error),
+
+    #[error("Secp256k1 {0}")]
+    Secp256k1(#[from] secp256k1::Error),
+
+    #[error("Primarykey not set for keyset")]
+    IdNotSet,
+
+    #[error("Found multiple seeds in the database. This is not supported.")]
+    MultipleSeeds,
 }

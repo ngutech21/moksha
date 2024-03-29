@@ -20,6 +20,7 @@ use crate::{
     error::MokshaWalletError,
     http::CrossPlatformHttpClient,
     localstore::{LocalStore, WalletKeyset},
+    secret::{self, DeterministicSecret},
 };
 use lightning_invoice::Bolt11Invoice as LNInvoice;
 use std::str::FromStr;
@@ -36,6 +37,7 @@ where
     dhke: Dhke,
     localstore: L,
     mint_url: Url,
+    secret: DeterministicSecret,
 }
 
 pub struct WalletBuilder<L, C: CashuClient = CrossPlatformHttpClient>
@@ -85,23 +87,33 @@ where
             return Err(MokshaWalletError::UnsupportedApiVersion);
         }
 
-        let load_keysets = localstore.get_keysets().await?;
+        let mut tx = localstore.begin_tx().await?;
+
+        let seed_words = localstore.get_seed(&mut tx).await?;
+        if seed_words.is_none() {
+            let seed = DeterministicSecret::generate_random_seed_words()?;
+            println!("Generated new seed: {:?}", seed);
+            localstore.add_seed(&mut tx, &seed).await?;
+        }
 
         let mint_keysets = client.get_keysets(&mint_url).await?;
-        if load_keysets.is_empty() {
-            let wallet_keysets = mint_keysets
-                .keysets
-                .iter()
-                .map(|m| WalletKeyset {
-                    id: m.clone().id,
-                    mint_url: mint_url.to_string(),
-                })
-                .collect::<Vec<WalletKeyset>>();
 
-            for wkeyset in wallet_keysets {
-                localstore.add_keyset(&wkeyset).await?;
-            }
+        for m in mint_keysets.keysets.iter() {
+            let public_keys = client
+                .get_keys_by_id(&mint_url, m.id.clone())
+                .await?
+                .keysets
+                .into_iter()
+                .find(|k| k.id == m.id)
+                .expect("no valid keyset found")
+                .keys
+                .clone();
+
+            let wallet_keyset = WalletKeyset::new(&m.id, &mint_url, &m.unit, 0, public_keys, true);
+            localstore.upsert_keyset(&mut tx, &wallet_keyset).await?;
         }
+        let seed = localstore.get_seed(&mut tx).await?.expect("seed not found");
+        tx.commit().await?;
 
         // FIXME store all keysets
         let keys = client.get_keys(&mint_url).await?;
@@ -124,6 +136,7 @@ where
             key_response.clone(),
             localstore,
             mint_url,
+            DeterministicSecret::from_seed_words(&seed)?,
         ))
     }
 }
@@ -149,6 +162,7 @@ where
         key_response: KeyResponse,
         localstore: L,
         mint_url: Url,
+        secret: DeterministicSecret,
     ) -> Self {
         Self {
             client,
@@ -157,6 +171,7 @@ where
             dhke: Dhke::new(),
             localstore,
             mint_url,
+            secret,
         }
     }
 
@@ -416,6 +431,38 @@ where
         Ok(melt_response)
     }
 
+    async fn create_secrets(
+        &self,
+        amount: u32,
+    ) -> Result<Vec<(String, SecretKey)>, MokshaWalletError> {
+        let keyset_id = self.keyset_id.clone().id;
+        let keyset_id_int = secret::convert_hex_to_int(&keyset_id).unwrap(); // FIXME
+
+        let mut tx = self.localstore.begin_tx().await?;
+        let all_keysets = self.localstore.get_keysets(&mut tx).await?;
+        let keyset = all_keysets
+            .iter()
+            .find(|k| k.keyset_id == keyset_id)
+            .expect("keyset not found");
+
+        let start_index = (keyset.last_index + 1) as u32;
+        let secret_range = self
+            .secret
+            .derive_range(keyset_id_int, start_index, amount)?;
+
+        self.localstore
+            .update_keyset_last_index(
+                &mut tx,
+                &WalletKeyset {
+                    last_index: (start_index + amount) as u64,
+                    ..keyset.clone()
+                },
+            )
+            .await?;
+        tx.commit().await?;
+        Ok(secret_range)
+    }
+
     pub async fn split_tokens(
         &self,
         tokens: &TokenV3,
@@ -423,13 +470,17 @@ where
     ) -> Result<(TokenV3, TokenV3), MokshaWalletError> {
         let total_token_amount = tokens.total_amount();
         let first_amount: Amount = (total_token_amount - splt_amount.0).into();
-        let first_secrets = first_amount.split().create_secrets();
+        let first_secrets = self
+            .create_secrets(first_amount.split().len() as u32)
+            .await?;
         let first_outputs = self.create_blinded_messages(first_amount, &first_secrets)?;
 
         // ############################################################################
 
         let second_amount = splt_amount.clone();
-        let second_secrets = second_amount.split().create_secrets();
+        let second_secrets = self
+            .create_secrets(second_amount.split().len() as u32)
+            .await?;
         let second_outputs = self.create_blinded_messages(second_amount, &second_secrets)?;
 
         let mut total_outputs = vec![];
@@ -452,6 +503,8 @@ where
         let len_first = first_secrets.len();
         let secrets = [first_secrets, second_secrets].concat();
         let outputs = [first_outputs, second_outputs].concat();
+
+        let secrets = secrets.into_iter().map(|(s, _)| s).collect::<Vec<String>>();
 
         let proofs = self
             .create_proofs_from_blinded_signatures(split_result.signatures, secrets, outputs)?
@@ -520,13 +573,42 @@ where
         quote_id: String,
     ) -> Result<TokenV3, MokshaWalletError> {
         let split_amount = amount.split();
-        let secrets = split_amount.create_secrets();
+
+        // FIXME cleanup code
+        let keyset_id = self.keyset_id.clone().id;
+        let keyset_id_int = secret::convert_hex_to_int(&keyset_id).unwrap(); // FIXME
+
+        let mut tx = self.localstore.begin_tx().await?;
+        let all_keysets = self.localstore.get_keysets(&mut tx).await?;
+        let keyset = all_keysets
+            .iter()
+            .find(|k| k.keyset_id == keyset_id)
+            .expect("keyset not found");
+
+        let start_index = (keyset.last_index + 1) as u32;
+        let secret_range =
+            self.secret
+                .derive_range(keyset_id_int, start_index, split_amount.len() as u32)?;
+
+        self.localstore
+            .update_keyset_last_index(
+                &mut tx,
+                &WalletKeyset {
+                    last_index: (start_index + split_amount.len() as u32) as u64,
+                    ..keyset.clone()
+                },
+            )
+            .await?;
+        tx.commit().await?;
 
         let blinded_messages = split_amount
             .into_iter()
-            .zip(secrets.clone())
-            .map(|(amount, secret)| {
-                let (b_, alice_secret_key) = self.dhke.step1_alice(secret, None).unwrap(); // FIXME
+            .zip(secret_range)
+            .map(|(amount, (secret, blinding_factor))| {
+                let (b_, alice_secret_key) = self
+                    .dhke
+                    .step1_alice(&secret, Some(&blinding_factor.secret_bytes()))
+                    .unwrap(); // FIXME
                 (
                     BlindedMessage {
                         amount,
@@ -534,9 +616,10 @@ where
                         id: self.keyset_id.clone().id,
                     },
                     alice_secret_key,
+                    secret,
                 )
             })
-            .collect::<Vec<(BlindedMessage, SecretKey)>>();
+            .collect::<Vec<(BlindedMessage, SecretKey, String)>>();
 
         let signatures = match payment_method {
             PaymentMethod::Bolt11 => {
@@ -548,7 +631,7 @@ where
                         blinded_messages
                             .clone()
                             .into_iter()
-                            .map(|(msg, _)| msg)
+                            .map(|(msg, _, _)| msg)
                             .collect::<Vec<BlindedMessage>>(),
                     )
                     .await?;
@@ -563,7 +646,7 @@ where
                         blinded_messages
                             .clone()
                             .into_iter()
-                            .map(|(msg, _)| msg)
+                            .map(|(msg, _, _)| msg)
                             .collect::<Vec<BlindedMessage>>(),
                     )
                     .await?;
@@ -574,17 +657,10 @@ where
         // step 3: unblind signatures
         let current_keyset_id = self.keyset_id.clone().id; // FIXME
 
-        let private_keys = blinded_messages
-            .clone()
-            .into_iter()
-            .map(|(_, secret)| secret)
-            .collect::<Vec<SecretKey>>();
-
         let proofs = signatures
             .iter()
-            .zip(private_keys)
-            .zip(secrets)
-            .map(|((p, priv_key), secret)| {
+            .zip(blinded_messages)
+            .map(|(p, (_, priv_key, secret))| {
                 let key = self
                     .keyset
                     .keys
@@ -610,15 +686,18 @@ where
     fn create_blinded_messages(
         &self,
         amount: Amount,
-        secrets: &[String],
+        secrets_factors: &Vec<(String, SecretKey)>,
     ) -> Result<Vec<(BlindedMessage, SecretKey)>, MokshaWalletError> {
         let split_amount = amount.split();
 
         Ok(split_amount
             .into_iter()
-            .zip(secrets)
-            .map(|(amount, secret)| {
-                let (b_, alice_secret_key) = self.dhke.step1_alice(secret, None).unwrap(); // FIXME
+            .zip(secrets_factors)
+            .map(|(amount, (secret, blinding_factor))| {
+                let (b_, alice_secret_key) = self
+                    .dhke
+                    .step1_alice(secret, Some(&blinding_factor.secret_bytes()))
+                    .unwrap(); // FIXME
                 (
                     BlindedMessage {
                         amount,
@@ -694,7 +773,8 @@ mod tests {
             id: keys.keyset_id.clone(),
             unit: CurrencyUnit::Sat,
         };
-        let keys_response = KeysResponse::new(key_response);
+        let keys_response = KeysResponse::new(key_response.clone());
+        let keys_by_id_response = keys_response.clone();
         let keysets = V1Keysets::new(keys.keyset_id, CurrencyUnit::Sat, true);
 
         let mut client = MockCashuClient::default();
@@ -704,6 +784,9 @@ mod tests {
         client
             .expect_get_keysets()
             .returning(move |_| Ok(keysets.clone()));
+        client
+            .expect_get_keys_by_id()
+            .returning(move |_, _| Ok(keys_by_id_response.clone()));
         client.expect_is_v1_supported().returning(move |_| Ok(true));
         client
     }

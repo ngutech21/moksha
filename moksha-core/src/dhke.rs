@@ -89,6 +89,7 @@ impl Dhke {
             .ok_or(MokshaCoreError::NoValidPointFound)
     }
 
+    // FIXME: use SecretKey instead of &[u8] for blinding factor
     pub fn step1_alice(
         &self,
         secret_msg: impl Into<String>,
