@@ -62,8 +62,12 @@ Implemented [NUTs](https://github.com/cashubtc/nuts/):
 - [ ] [NUT-10](https://github.com/cashubtc/nuts/blob/main/10.md)
 - [ ] [NUT-11](https://github.com/cashubtc/nuts/blob/main/11.md)
 - [ ] [NUT-12](https://github.com/cashubtc/nuts/blob/main/12.md)
-- [x] NUT-14 on-chain mint (unofficial nut)
-- [x] NUT-15 on-chain melt (unofficial nut)
+- [x] [NUT-13](https://github.com/cashubtc/nuts/blob/main/13.md)
+- [ ] [NUT-14](https://github.com/cashubtc/nuts/blob/main/14.md)
+- [ ] [NUT-15](https://github.com/cashubtc/nuts/blob/main/15.md)
+- [ ] [NUT-16](https://github.com/cashubtc/nuts/blob/main/16.md)
+- [x] NUT-17 on-chain mint (unofficial nut)
+- [x] NUT-18 on-chain melt (unofficial nut)
 
 ## Crates
 
