@@ -15,6 +15,14 @@ pub struct DeterministicSecret {
     pub seed: Seed,
 }
 
+impl Clone for DeterministicSecret {
+    fn clone(&self) -> Self {
+        Self {
+            seed: Seed::new(*self.seed.as_bytes()),
+        }
+    }
+}
+
 impl DeterministicSecret {
     pub fn from_seed_words(seed_words: &str) -> Result<Self, MokshaWalletError> {
         let mnemonic = Mnemonic::from_str(seed_words)?;
@@ -53,6 +61,21 @@ impl DeterministicSecret {
     pub fn derive_secret(&self, keyset_id: u32, counter: u32) -> Result<String, MokshaWalletError> {
         let key = self.derive_private_key(keyset_id, counter, DerivationType::Secret)?;
         Ok(hex::encode(key))
+    }
+
+    pub fn derive_range(
+        &self,
+        keyset_id: u32,
+        start: u32,
+        length: u32,
+    ) -> Result<Vec<(String, SecretKey)>, MokshaWalletError> {
+        Ok((start..start + length)
+            .map(|i| {
+                let key = self.derive_secret(keyset_id, i).unwrap();
+                let blinding_factor = self.derive_blinding_factor(keyset_id, i).unwrap();
+                (key, blinding_factor)
+            })
+            .collect::<Vec<(String, SecretKey)>>())
     }
 
     pub fn derive_blinding_factor(

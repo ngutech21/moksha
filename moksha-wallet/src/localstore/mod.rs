@@ -124,8 +124,33 @@ pub trait LocalStore {
     ) -> Result<(), MokshaWalletError>;
     async fn get_proofs(&self, tx: &mut RexieTransaction) -> Result<Proofs, MokshaWalletError>;
 
-    async fn get_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError>;
-    async fn add_keyset(&self, keyset: &WalletKeyset) -> Result<(), MokshaWalletError>;
+    async fn get_keysets(
+        &self,
+        _tx: &mut RexieTransaction,
+    ) -> Result<Vec<WalletKeyset>, MokshaWalletError>;
+
+    async fn upsert_keyset(
+        &self,
+        _tx: &mut RexieTransaction,
+        keyset: &WalletKeyset,
+    ) -> Result<(), MokshaWalletError>;
+
+    async fn update_keyset_last_index(
+        &self,
+        _tx: &mut RexieTransaction,
+        keyset: &WalletKeyset,
+    ) -> Result<(), MokshaWalletError>;
+
+    async fn add_seed(
+        &self,
+        _tx: &mut RexieTransaction,
+        seed_words: &str,
+    ) -> Result<(), MokshaWalletError>;
+
+    async fn get_seed(
+        &self,
+        _tx: &mut RexieTransaction,
+    ) -> Result<Option<String>, MokshaWalletError>;
 }
 
 #[cfg(test)]

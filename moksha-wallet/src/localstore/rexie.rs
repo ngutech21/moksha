@@ -110,19 +110,41 @@ impl LocalStore for RexieLocalStore {
         Ok(())
     }
 
-    async fn get_keysets(&self) -> std::result::Result<Vec<WalletKeyset>, MokshaWalletError> {
-        // FIXME todo implement
-        Ok(vec![WalletKeyset {
-            id: "id".to_string(),
-            mint_url: "mint_url".to_string(),
-        }])
+    async fn get_keysets(
+        &self,
+        _tx: &mut RexieTransaction,
+    ) -> std::result::Result<Vec<WalletKeyset>, MokshaWalletError> {
+        todo!()
     }
 
-    async fn add_keyset(
+    async fn upsert_keyset(
         &self,
+        _tx: &mut RexieTransaction,
         _keyset: &WalletKeyset,
     ) -> std::result::Result<(), MokshaWalletError> {
-        // FIXME todo implement
-        Ok(())
+        todo!()
+    }
+
+    async fn update_keyset_last_index(
+        &self,
+        _tx: &mut RexieTransaction,
+        _keyset: &WalletKeyset,
+    ) -> std::result::Result<(), MokshaWalletError> {
+        todo!()
+    }
+
+    async fn add_seed(
+        &self,
+        _tx: &mut RexieTransaction,
+        _seed_words: &str,
+    ) -> std::result::Result<(), MokshaWalletError> {
+        todo!()
+    }
+
+    async fn get_seed(
+        &self,
+        _tx: &mut RexieTransaction,
+    ) -> std::result::Result<Option<String>, MokshaWalletError> {
+        todo!()
     }
 }
