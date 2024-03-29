@@ -459,6 +459,7 @@ where
                 },
             )
             .await?;
+        tx.commit().await?;
         Ok(secret_range)
     }
 
@@ -772,7 +773,8 @@ mod tests {
             id: keys.keyset_id.clone(),
             unit: CurrencyUnit::Sat,
         };
-        let keys_response = KeysResponse::new(key_response);
+        let keys_response = KeysResponse::new(key_response.clone());
+        let keys_by_id_response = keys_response.clone();
         let keysets = V1Keysets::new(keys.keyset_id, CurrencyUnit::Sat, true);
 
         let mut client = MockCashuClient::default();
@@ -782,6 +784,9 @@ mod tests {
         client
             .expect_get_keysets()
             .returning(move |_| Ok(keysets.clone()));
+        client
+            .expect_get_keys_by_id()
+            .returning(move |_, _| Ok(keys_by_id_response.clone()));
         client.expect_is_v1_supported().returning(move |_| Ok(true));
         client
     }
