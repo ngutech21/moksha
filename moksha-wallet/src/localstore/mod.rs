@@ -76,11 +76,23 @@ pub trait LocalStore {
         tx: &mut sqlx::Transaction<Self::DB>,
         keyset: &WalletKeyset,
     ) -> Result<(), MokshaWalletError>;
+
     async fn update_keyset_last_index(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
         keyset: &WalletKeyset,
     ) -> Result<(), MokshaWalletError>;
+
+    async fn add_seed(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        seed_words: &str,
+    ) -> Result<(), MokshaWalletError>;
+
+    async fn get_seed(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+    ) -> Result<Option<String>, MokshaWalletError>;
 }
 
 #[cfg(target_arch = "wasm32")]

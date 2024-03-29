@@ -75,4 +75,7 @@ pub enum MokshaWalletError {
 
     #[error("Primarykey not set for keyset")]
     IdNotSet,
+
+    #[error("Found multiple seeds in the database. This is not supported.")]
+    MultipleSeeds,
 }

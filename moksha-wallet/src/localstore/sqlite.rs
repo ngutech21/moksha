@@ -110,7 +110,7 @@ impl LocalStore for SqliteLocalStore {
         .bind(keyset.active)
         .fetch_one(&mut **tx)
         .await?;
-        println!("row: {:?}", row.0);
+        // FIXME do we need the id?
         Ok(())
     }
 
@@ -162,6 +162,32 @@ impl LocalStore for SqliteLocalStore {
             .execute(&mut **tx)
             .await?;
         Ok(())
+    }
+
+    async fn add_seed(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        seed_words: &str,
+    ) -> Result<(), MokshaWalletError> {
+        sqlx::query("INSERT INTO seed (seed_words) VALUES ($1);")
+            .bind(seed_words)
+            .execute(&mut **tx)
+            .await?;
+        Ok(())
+    }
+
+    async fn get_seed(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+    ) -> Result<Option<String>, MokshaWalletError> {
+        let row = sqlx::query("SELECT seed_words FROM seed;")
+            .fetch_all(&mut **tx)
+            .await?;
+        match row.len() {
+            0 => Ok(None),
+            1 => Ok(Some(row[0].get(0))),
+            _ => Err(MokshaWalletError::MultipleSeeds),
+        }
     }
 }
 

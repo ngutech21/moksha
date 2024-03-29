@@ -20,6 +20,7 @@ use crate::{
     error::MokshaWalletError,
     http::CrossPlatformHttpClient,
     localstore::{LocalStore, WalletKeyset},
+    secret::DeterministicSecret,
 };
 use lightning_invoice::Bolt11Invoice as LNInvoice;
 use std::str::FromStr;
@@ -86,6 +87,14 @@ where
         }
 
         let mut tx = localstore.begin_tx().await?;
+
+        let seed_words = localstore.get_seed(&mut tx).await?;
+        if seed_words.is_none() {
+            let seed = DeterministicSecret::generate_random_seed_words()?;
+            println!("Generated new seed: {:?}", seed);
+            localstore.add_seed(&mut tx, &seed).await?;
+        }
+
         let mint_keysets = client.get_keysets(&mint_url).await?;
 
         for m in mint_keysets.keysets.iter() {
@@ -102,9 +111,6 @@ where
             let wallet_keyset = WalletKeyset::new(&m.id, &mint_url, &m.unit, 0, public_keys, true);
             localstore.upsert_keyset(&mut tx, &wallet_keyset).await?;
         }
-
-        let load_keysets = localstore.get_keysets(&mut tx).await?;
-        print!("keysets {:?}", load_keysets);
         tx.commit().await?;
 
         // FIXME store all keysets

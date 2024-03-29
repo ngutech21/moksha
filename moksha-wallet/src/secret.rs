@@ -30,6 +30,13 @@ impl DeterministicSecret {
         Ok(Self { seed })
     }
 
+    pub fn generate_random_seed_words() -> Result<String, MokshaWalletError> {
+        let mut rng = rand::thread_rng();
+        let entropy: [u8; 16] = rng.gen(); // 16 bytes for 12 words mnemonic
+        let mnemonic = Mnemonic::from_entropy(&entropy)?;
+        Ok(mnemonic.word_iter().collect::<Vec<&str>>().join(" "))
+    }
+
     fn derive_private_key(
         &self,
         keyset_id: u32,
@@ -74,6 +81,14 @@ mod tests {
     fn test_keyset_id_conversion() -> anyhow::Result<()> {
         let int_value = convert_hex_to_int("009a1f293253e41e")?;
         assert_eq!(864559728, int_value);
+        Ok(())
+    }
+
+    #[test]
+    fn test_generate_seed_words() -> anyhow::Result<()> {
+        let seed_words = DeterministicSecret::generate_random_seed_words()?;
+        println!("{}", seed_words);
+        assert_eq!(12, seed_words.split_whitespace().count());
         Ok(())
     }
 
