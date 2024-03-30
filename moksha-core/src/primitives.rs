@@ -541,7 +541,7 @@ impl Default for Nut17 {
             payment_methods: vec![PaymentMethodConfigBtcOnchain {
                 payment_method: PaymentMethod::BtcOnchain,
                 unit: CurrencyUnit::Sat,
-                min_amount: 1_000,
+                min_amount: 10_000,
                 max_amount: 1_000_000,
             }],
         }
@@ -562,7 +562,7 @@ impl Default for Nut18 {
             payment_methods: vec![PaymentMethodConfigBtcOnchain {
                 payment_method: PaymentMethod::BtcOnchain,
                 unit: CurrencyUnit::Sat,
-                min_amount: 1_000,
+                min_amount: 10_000,
                 max_amount: 1_000_000,
             }],
         }

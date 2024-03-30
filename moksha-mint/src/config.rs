@@ -164,7 +164,7 @@ pub struct BtcOnchainConfig {
 
     #[clap(
         long,
-        default_value_t = 1_000,
+        default_value_t = 10_000,
         env = "MINT_BTC_ONCHAIN_BACKEND_MIN_AMOUNT"
     )]
     pub min_amount: u64,
@@ -182,7 +182,7 @@ impl Default for BtcOnchainConfig {
         Self {
             onchain_type: None,
             min_confirmations: 1,
-            min_amount: 1_000,
+            min_amount: 10_000,
             max_amount: 1_000_000,
         }
     }
