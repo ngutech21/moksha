@@ -88,7 +88,7 @@ impl DeterministicSecret {
     }
 }
 
-pub fn convert_hex_to_int(keyset_id_hex: &str) -> anyhow::Result<u32> {
+pub fn convert_hex_to_int(keyset_id_hex: &str) -> Result<u32, MokshaWalletError> {
     let bytes = hex::decode(keyset_id_hex)?;
     let bytes_array: [u8; 8] = bytes[0..8].try_into()?;
     let num = u64::from_be_bytes(bytes_array);

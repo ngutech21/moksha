@@ -78,4 +78,10 @@ pub enum MokshaWalletError {
 
     #[error("Found multiple seeds in the database. This is not supported.")]
     MultipleSeeds,
+
+    #[error("Not valid hex string")]
+    Hex(#[from] hex::FromHexError),
+
+    #[error("Invalid Keyset-ID")]
+    Slice(#[from] std::array::TryFromSliceError),
 }

@@ -92,7 +92,6 @@ where
         let seed_words = localstore.get_seed(&mut tx).await?;
         if seed_words.is_none() {
             let seed = DeterministicSecret::generate_random_seed_words()?;
-            println!("Generated new seed: {:?}", seed);
             localstore.add_seed(&mut tx, &seed).await?;
         }
 
