@@ -5,8 +5,8 @@ use moksha_core::{
     keyset::V1Keyset,
     primitives::{
         CurrencyUnit, KeyResponse, MintInfoResponse, PaymentMethod, PostMeltBolt11Response,
-        PostMeltOnchainResponse, PostMeltQuoteBolt11Response, PostMeltQuoteOnchainResponse,
-        PostMintQuoteBolt11Response, PostMintQuoteOnchainResponse,
+        PostMeltBtcOnchainResponse, PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainResponse,
+        PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainResponse,
     },
     proof::{Proof, Proofs},
     token::TokenV3,
@@ -190,7 +190,7 @@ where
     pub async fn create_quote_onchain(
         &self,
         amount: u64,
-    ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError> {
+    ) -> Result<PostMintQuoteBtcOnchainResponse, MokshaWalletError> {
         self.client
             .post_mint_quote_onchain(&self.mint_url, amount, CurrencyUnit::Sat)
             .await
@@ -375,7 +375,7 @@ where
         &self,
         address: String,
         amount: u64,
-    ) -> Result<Vec<PostMeltQuoteOnchainResponse>, MokshaWalletError> {
+    ) -> Result<Vec<PostMeltQuoteBtcOnchainResponse>, MokshaWalletError> {
         self.client
             .post_melt_quote_onchain(&self.mint_url, address, amount, CurrencyUnit::Sat)
             .await
@@ -384,8 +384,8 @@ where
     pub async fn pay_onchain(
         &self,
 
-        melt_quote: &PostMeltQuoteOnchainResponse,
-    ) -> Result<PostMeltOnchainResponse, MokshaWalletError> {
+        melt_quote: &PostMeltQuoteBtcOnchainResponse,
+    ) -> Result<PostMeltBtcOnchainResponse, MokshaWalletError> {
         let mut tx = self.localstore.begin_tx().await?;
         let all_proofs = self.localstore.get_proofs(&mut tx).await?;
 

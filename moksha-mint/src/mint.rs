@@ -5,7 +5,7 @@ use moksha_core::{
     blind::{BlindedMessage, BlindedSignature, TotalAmount},
     dhke::Dhke,
     keyset::MintKeyset,
-    primitives::{OnchainMeltQuote, PaymentMethod},
+    primitives::{BtcOnchainMeltQuote, PaymentMethod},
     proof::Proofs,
 };
 use sqlx::Transaction;
@@ -258,7 +258,7 @@ where
     #[instrument(level = "debug", skip(self, proofs), err)]
     pub async fn melt_onchain(
         &self,
-        quote: &OnchainMeltQuote,
+        quote: &BtcOnchainMeltQuote,
         proofs: &Proofs,
     ) -> Result<String, MokshaMintError> {
         let proofs_amount = proofs.total_amount();

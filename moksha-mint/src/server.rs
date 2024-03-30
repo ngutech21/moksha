@@ -27,12 +27,12 @@ use crate::mint::Mint;
 use moksha_core::blind::BlindedMessage;
 use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
-    CurrencyUnit, GetMeltOnchainResponse, KeyResponse, KeysResponse, MintInfoResponse,
+    CurrencyUnit, GetMeltBtcOnchainResponse, KeyResponse, KeysResponse, MintInfoResponse,
     MintLegacyInfoResponse, Nut10, Nut11, Nut12, Nut17, Nut18, Nut4, Nut5, Nut7, Nut8, Nut9, Nuts,
     PaymentMethod, PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
-    PostMeltQuoteBolt11Response, PostMeltQuoteOnchainRequest, PostMeltQuoteOnchainResponse,
+    PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse,
     PostMintBolt11Request, PostMintBolt11Response, PostMintQuoteBolt11Request,
-    PostMintQuoteBolt11Response, PostMintQuoteOnchainRequest, PostMintQuoteOnchainResponse,
+    PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse,
     PostSwapRequest, PostSwapResponse,
 };
 
@@ -153,11 +153,11 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         P2SHScript,
         Nut17,
         Nut18,
-        PostMintQuoteOnchainRequest,
-        PostMintQuoteOnchainResponse,
-        PostMeltQuoteOnchainRequest,
-        PostMeltQuoteOnchainResponse,
-        GetMeltOnchainResponse
+        PostMintQuoteBtcOnchainRequest,
+        PostMintQuoteBtcOnchainResponse,
+        PostMeltQuoteBtcOnchainRequest,
+        PostMeltQuoteBtcOnchainResponse,
+        GetMeltBtcOnchainResponse
     ))
 )]
 struct ApiDoc;

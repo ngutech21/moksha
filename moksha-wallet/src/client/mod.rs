@@ -3,10 +3,10 @@ use moksha_core::{
     blind::BlindedMessage,
     keyset::V1Keysets,
     primitives::{
-        CurrencyUnit, GetMeltOnchainResponse, KeysResponse, MintInfoResponse,
-        PostMeltBolt11Response, PostMeltOnchainResponse, PostMeltQuoteBolt11Response,
-        PostMeltQuoteOnchainResponse, PostMintBolt11Response, PostMintOnchainResponse,
-        PostMintQuoteBolt11Response, PostMintQuoteOnchainResponse, PostSwapResponse,
+        CurrencyUnit, GetMeltBtcOnchainResponse, KeysResponse, MintInfoResponse,
+        PostMeltBolt11Response, PostMeltBtcOnchainResponse, PostMeltQuoteBolt11Response,
+        PostMeltQuoteBtcOnchainResponse, PostMintBolt11Response, PostMintBtcOnchainResponse,
+        PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainResponse, PostSwapResponse,
     },
     proof::Proofs,
 };
@@ -90,27 +90,27 @@ pub trait CashuClient {
         mint_url: &Url,
         quote: String,
         blinded_messages: Vec<BlindedMessage>,
-    ) -> Result<PostMintOnchainResponse, MokshaWalletError>;
+    ) -> Result<PostMintBtcOnchainResponse, MokshaWalletError>;
 
     async fn post_mint_quote_onchain(
         &self,
         mint_url: &Url,
         amount: u64,
         unit: CurrencyUnit,
-    ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError>;
+    ) -> Result<PostMintQuoteBtcOnchainResponse, MokshaWalletError>;
 
     async fn get_mint_quote_onchain(
         &self,
         mint_url: &Url,
         quote: String,
-    ) -> Result<PostMintQuoteOnchainResponse, MokshaWalletError>;
+    ) -> Result<PostMintQuoteBtcOnchainResponse, MokshaWalletError>;
 
     async fn post_melt_onchain(
         &self,
         mint_url: &Url,
         proofs: Proofs,
         quote: String,
-    ) -> Result<PostMeltOnchainResponse, MokshaWalletError>;
+    ) -> Result<PostMeltBtcOnchainResponse, MokshaWalletError>;
 
     async fn post_melt_quote_onchain(
         &self,
@@ -118,17 +118,17 @@ pub trait CashuClient {
         address: String,
         amount: u64,
         unit: CurrencyUnit,
-    ) -> Result<Vec<PostMeltQuoteOnchainResponse>, MokshaWalletError>;
+    ) -> Result<Vec<PostMeltQuoteBtcOnchainResponse>, MokshaWalletError>;
 
     async fn get_melt_quote_onchain(
         &self,
         mint_url: &Url,
         quote: String,
-    ) -> Result<PostMeltQuoteOnchainResponse, MokshaWalletError>;
+    ) -> Result<PostMeltQuoteBtcOnchainResponse, MokshaWalletError>;
 
     async fn get_melt_onchain(
         &self,
         mint_url: &Url,
         txid: String,
-    ) -> Result<GetMeltOnchainResponse, MokshaWalletError>;
+    ) -> Result<GetMeltBtcOnchainResponse, MokshaWalletError>;
 }

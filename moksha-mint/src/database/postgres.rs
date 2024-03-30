@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use moksha_core::{
     dhke,
     primitives::{
-        Bolt11MeltQuote, Bolt11MintQuote, CurrencyUnit, OnchainMeltQuote, OnchainMintQuote,
+        Bolt11MeltQuote, Bolt11MintQuote, BtcOnchainMeltQuote, BtcOnchainMintQuote, CurrencyUnit,
     },
     proof::{Proof, Proofs},
 };
@@ -290,12 +290,12 @@ impl Database for PostgresDB {
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
         key: &Uuid,
-    ) -> Result<OnchainMintQuote, MokshaMintError> {
-        let quote: OnchainMintQuote = sqlx::query!(
+    ) -> Result<BtcOnchainMintQuote, MokshaMintError> {
+        let quote: BtcOnchainMintQuote = sqlx::query!(
             "SELECT id, address, amount, expiry, paid  FROM onchain_mint_quotes WHERE id = $1",
             key
         )
-        .map(|row| OnchainMintQuote {
+        .map(|row| BtcOnchainMintQuote {
             quote_id: row.id,
             address: row.address,
             expiry: row.expiry as u64,
@@ -313,7 +313,7 @@ impl Database for PostgresDB {
     async fn add_onchain_mint_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &OnchainMintQuote,
+        quote: &BtcOnchainMintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "INSERT INTO onchain_mint_quotes (id, address, amount, expiry, paid) VALUES ($1, $2, $3, $4, $5)",
@@ -332,7 +332,7 @@ impl Database for PostgresDB {
     async fn update_onchain_mint_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &OnchainMintQuote,
+        quote: &BtcOnchainMintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "UPDATE onchain_mint_quotes SET paid = $1 WHERE id = $2",
@@ -348,7 +348,7 @@ impl Database for PostgresDB {
     async fn delete_onchain_mint_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &OnchainMintQuote,
+        quote: &BtcOnchainMintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "DELETE FROM onchain_mint_quotes WHERE id = $1",
@@ -364,12 +364,12 @@ impl Database for PostgresDB {
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
         key: &Uuid,
-    ) -> Result<OnchainMeltQuote, MokshaMintError> {
-        let quote: OnchainMeltQuote = sqlx::query!(
+    ) -> Result<BtcOnchainMeltQuote, MokshaMintError> {
+        let quote: BtcOnchainMeltQuote = sqlx::query!(
             "SELECT id, amount,address, fee_total, fee_sat_per_vbyte, expiry, paid  FROM onchain_melt_quotes WHERE id = $1",
             key
         )
-        .map(|row| OnchainMeltQuote {
+        .map(|row| BtcOnchainMeltQuote {
             quote_id: row.id,
             address: row.address,
             amount: row.amount as u64,
@@ -388,7 +388,7 @@ impl Database for PostgresDB {
     async fn add_onchain_melt_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &OnchainMeltQuote,
+        quote: &BtcOnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "INSERT INTO onchain_melt_quotes (id, amount, address, fee_total, fee_sat_per_vbyte, expiry, paid) VALUES ($1, $2, $3, $4, $5, $6, $7)",
@@ -409,7 +409,7 @@ impl Database for PostgresDB {
     async fn update_onchain_melt_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &OnchainMeltQuote,
+        quote: &BtcOnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "UPDATE onchain_melt_quotes SET paid = $1 WHERE id = $2",
@@ -425,7 +425,7 @@ impl Database for PostgresDB {
     async fn delete_onchain_melt_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &OnchainMeltQuote,
+        quote: &BtcOnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "DELETE FROM onchain_melt_quotes WHERE id = $1",

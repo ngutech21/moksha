@@ -283,7 +283,7 @@ pub struct MintInfoResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct OnchainMintQuote {
+pub struct BtcOnchainMintQuote {
     pub quote_id: Uuid,
     pub address: String,
     pub unit: CurrencyUnit,
@@ -292,8 +292,8 @@ pub struct OnchainMintQuote {
     pub paid: bool,
 }
 
-impl From<OnchainMintQuote> for PostMintQuoteOnchainResponse {
-    fn from(quote: OnchainMintQuote) -> Self {
+impl From<BtcOnchainMintQuote> for PostMintQuoteBtcOnchainResponse {
+    fn from(quote: BtcOnchainMintQuote) -> Self {
         Self {
             quote: quote.quote_id.to_string(),
             address: quote.address,
@@ -304,7 +304,7 @@ impl From<OnchainMintQuote> for PostMintQuoteOnchainResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct OnchainMeltQuote {
+pub struct BtcOnchainMeltQuote {
     pub quote_id: Uuid,
     pub amount: u64,
     pub address: String,
@@ -315,13 +315,13 @@ pub struct OnchainMeltQuote {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
-pub struct PostMintQuoteOnchainRequest {
+pub struct PostMintQuoteBtcOnchainRequest {
     pub amount: u64,
     pub unit: CurrencyUnit,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
-pub struct PostMintQuoteOnchainResponse {
+pub struct PostMintQuoteBtcOnchainResponse {
     pub quote: String,
     pub address: String,
     pub paid: bool,
@@ -329,18 +329,18 @@ pub struct PostMintQuoteOnchainResponse {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
-pub struct PostMintOnchainRequest {
+pub struct PostMintBtcOnchainRequest {
     pub quote: String,
     pub outputs: Vec<BlindedMessage>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
-pub struct PostMintOnchainResponse {
+pub struct PostMintBtcOnchainResponse {
     pub signatures: Vec<BlindedSignature>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
-pub struct PostMeltQuoteOnchainRequest {
+pub struct PostMeltQuoteBtcOnchainRequest {
     pub amount: u64,
     /// onchain address
     pub address: String,
@@ -348,7 +348,7 @@ pub struct PostMeltQuoteOnchainRequest {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
-pub struct PostMeltQuoteOnchainResponse {
+pub struct PostMeltQuoteBtcOnchainResponse {
     pub quote: String,
     pub description: String,
     pub amount: u64,
@@ -358,19 +358,19 @@ pub struct PostMeltQuoteOnchainResponse {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
-pub struct PostMeltOnchainRequest {
+pub struct PostMeltBtcOnchainRequest {
     pub quote: String,
     pub inputs: Proofs,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
-pub struct PostMeltOnchainResponse {
+pub struct PostMeltBtcOnchainResponse {
     pub paid: bool,
     pub txid: String,
 }
 
-impl From<(String, OnchainMeltQuote)> for PostMeltQuoteOnchainResponse {
-    fn from((description, quote): (String, OnchainMeltQuote)) -> Self {
+impl From<(String, BtcOnchainMeltQuote)> for PostMeltQuoteBtcOnchainResponse {
+    fn from((description, quote): (String, BtcOnchainMeltQuote)) -> Self {
         Self {
             description,
             quote: quote.quote_id.to_string(),
@@ -383,7 +383,7 @@ impl From<(String, OnchainMeltQuote)> for PostMeltQuoteOnchainResponse {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
-pub struct GetMeltOnchainResponse {
+pub struct GetMeltBtcOnchainResponse {
     pub paid: bool,
 }
 
@@ -423,11 +423,11 @@ pub struct Nuts {
 
     // TODO remove this if nut-17 and nut-18 are merged
     #[serde(rename = "17", skip_serializing_if = "Option::is_none")]
-    /// minting tokens onchain
+    /// minting tokens btc onchain
     pub nut17: Option<Nut17>,
 
     #[serde(rename = "18", skip_serializing_if = "Option::is_none")]
-    /// melting tokens onchain
+    /// melting tokens btc onchain
     pub nut18: Option<Nut18>,
 }
 

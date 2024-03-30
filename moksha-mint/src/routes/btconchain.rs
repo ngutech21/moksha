@@ -3,10 +3,10 @@ use axum::{
     Json,
 };
 use moksha_core::primitives::{
-    CurrencyUnit, GetMeltOnchainResponse, OnchainMeltQuote, OnchainMintQuote, PaymentMethod,
-    PostMeltOnchainRequest, PostMeltOnchainResponse, PostMeltQuoteOnchainRequest,
-    PostMeltQuoteOnchainResponse, PostMintOnchainRequest, PostMintOnchainResponse,
-    PostMintQuoteOnchainRequest, PostMintQuoteOnchainResponse,
+    BtcOnchainMeltQuote, BtcOnchainMintQuote, CurrencyUnit, GetMeltBtcOnchainResponse,
+    PaymentMethod, PostMeltBtcOnchainRequest, PostMeltBtcOnchainResponse,
+    PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse, PostMintBtcOnchainRequest,
+    PostMintBtcOnchainResponse, PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse,
 };
 use tracing::{info, instrument};
 use uuid::Uuid;
@@ -27,8 +27,8 @@ use std::str::FromStr;
 #[instrument(name = "post_mint_quote_btconchain", skip(mint), err)]
 pub async fn post_mint_quote_btconchain(
     State(mint): State<Mint>,
-    Json(request): Json<PostMintQuoteOnchainRequest>,
-) -> Result<Json<PostMintQuoteOnchainResponse>, MokshaMintError> {
+    Json(request): Json<PostMintQuoteBtcOnchainRequest>,
+) -> Result<Json<PostMintQuoteBtcOnchainResponse>, MokshaMintError> {
     let onchain_config = mint.config.btconchain_backend.unwrap_or_default();
 
     if request.unit != CurrencyUnit::Sat {
@@ -57,7 +57,7 @@ pub async fn post_mint_quote_btconchain(
         .new_address()
         .await?;
 
-    let quote = OnchainMintQuote {
+    let quote = BtcOnchainMintQuote {
         quote_id,
         address,
         unit: request.unit,
@@ -86,7 +86,7 @@ pub async fn post_mint_quote_btconchain(
 pub async fn get_mint_quote_btconchain(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
-) -> Result<Json<PostMintQuoteOnchainResponse>, MokshaMintError> {
+) -> Result<Json<PostMintQuoteBtcOnchainResponse>, MokshaMintError> {
     info!("get_quote onchain: {}", quote_id);
 
     let mut tx = mint.db.begin_tx().await?;
@@ -109,7 +109,7 @@ pub async fn get_mint_quote_btconchain(
         .is_paid(&quote.address, quote.amount, min_confs)
         .await?;
 
-    Ok(Json(OnchainMintQuote { paid, ..quote }.into()))
+    Ok(Json(BtcOnchainMintQuote { paid, ..quote }.into()))
 }
 
 #[utoipa::path(
@@ -123,8 +123,8 @@ pub async fn get_mint_quote_btconchain(
 #[instrument(name = "post_mint_btconchain", skip(mint), err)]
 pub async fn post_mint_btconchain(
     State(mint): State<Mint>,
-    Json(request): Json<PostMintOnchainRequest>,
-) -> Result<Json<PostMintOnchainResponse>, MokshaMintError> {
+    Json(request): Json<PostMintBtcOnchainRequest>,
+) -> Result<Json<PostMintBtcOnchainResponse>, MokshaMintError> {
     let mut tx = mint.db.begin_tx().await?;
     let signatures = mint
         .mint_tokens(
@@ -145,14 +145,14 @@ pub async fn post_mint_btconchain(
     mint.db
         .update_onchain_mint_quote(
             &mut tx,
-            &OnchainMintQuote {
+            &BtcOnchainMintQuote {
                 paid: true,
                 ..old_quote.clone()
             },
         )
         .await?;
     tx.commit().await?;
-    Ok(Json(PostMintOnchainResponse { signatures }))
+    Ok(Json(PostMintBtcOnchainResponse { signatures }))
 }
 
 #[utoipa::path(
@@ -166,9 +166,9 @@ pub async fn post_mint_btconchain(
 #[instrument(name = "post_melt_quote_btconchain", skip(mint), err)]
 pub async fn post_melt_quote_btconchain(
     State(mint): State<Mint>,
-    Json(melt_request): Json<PostMeltQuoteOnchainRequest>,
-) -> Result<Json<Vec<PostMeltQuoteOnchainResponse>>, MokshaMintError> {
-    let PostMeltQuoteOnchainRequest {
+    Json(melt_request): Json<PostMeltQuoteBtcOnchainRequest>,
+) -> Result<Json<Vec<PostMeltQuoteBtcOnchainResponse>>, MokshaMintError> {
+    let PostMeltQuoteBtcOnchainRequest {
         address,
         amount,
         unit,
@@ -203,7 +203,7 @@ pub async fn post_melt_quote_btconchain(
 
     info!("post_melt_quote_onchain fee_reserve: {:#?}", &fee_response);
 
-    let quote = OnchainMeltQuote {
+    let quote = BtcOnchainMeltQuote {
         quote_id: Uuid::new_v4(),
         address,
         amount,
@@ -234,7 +234,7 @@ pub async fn post_melt_quote_btconchain(
 pub async fn get_melt_quote_btconchain(
     Path(quote_id): Path<String>,
     State(mint): State<Mint>,
-) -> Result<Json<PostMeltQuoteOnchainResponse>, MokshaMintError> {
+) -> Result<Json<PostMeltQuoteBtcOnchainResponse>, MokshaMintError> {
     info!("get_melt_quote onchain: {}", quote_id);
     let mut tx = mint.db.begin_tx().await?;
     let quote = mint
@@ -247,7 +247,7 @@ pub async fn get_melt_quote_btconchain(
         mint.db
             .update_onchain_melt_quote(
                 &mut tx,
-                &OnchainMeltQuote {
+                &BtcOnchainMeltQuote {
                     paid,
                     ..quote.clone()
                 },
@@ -258,7 +258,7 @@ pub async fn get_melt_quote_btconchain(
     Ok(Json(
         (
             "1 sat per vbyte".to_owned(), // FIXME return correct comment
-            OnchainMeltQuote { paid, ..quote },
+            BtcOnchainMeltQuote { paid, ..quote },
         )
             .into(),
     ))
@@ -275,8 +275,8 @@ pub async fn get_melt_quote_btconchain(
 #[instrument(name = "post_melt_btconchain", skip(mint), err)]
 pub async fn post_melt_btconchain(
     State(mint): State<Mint>,
-    Json(melt_request): Json<PostMeltOnchainRequest>,
-) -> Result<Json<PostMeltOnchainResponse>, MokshaMintError> {
+    Json(melt_request): Json<PostMeltBtcOnchainRequest>,
+) -> Result<Json<PostMeltBtcOnchainResponse>, MokshaMintError> {
     let mut tx = mint.db.begin_tx().await?;
     let quote = mint
         .db
@@ -287,11 +287,11 @@ pub async fn post_melt_btconchain(
     let paid = is_onchain_paid(&mint, &quote).await?;
 
     mint.db
-        .update_onchain_melt_quote(&mut tx, &OnchainMeltQuote { paid, ..quote })
+        .update_onchain_melt_quote(&mut tx, &BtcOnchainMeltQuote { paid, ..quote })
         .await?;
     tx.commit().await?;
 
-    Ok(Json(PostMeltOnchainResponse { paid, txid }))
+    Ok(Json(PostMeltBtcOnchainResponse { paid, txid }))
 }
 
 #[utoipa::path(
@@ -308,7 +308,7 @@ pub async fn post_melt_btconchain(
 pub async fn get_melt_btconchain(
     Path(tx_id): Path<String>,
     State(mint): State<Mint>,
-) -> Result<Json<GetMeltOnchainResponse>, MokshaMintError> {
+) -> Result<Json<GetMeltBtcOnchainResponse>, MokshaMintError> {
     info!("is transaction paid: {}", tx_id);
     let paid = mint
         .onchain
@@ -317,10 +317,13 @@ pub async fn get_melt_btconchain(
         .is_transaction_paid(&tx_id)
         .await?;
 
-    Ok(Json(GetMeltOnchainResponse { paid }))
+    Ok(Json(GetMeltBtcOnchainResponse { paid }))
 }
 
-async fn is_onchain_paid(mint: &Mint, quote: &OnchainMeltQuote) -> Result<bool, MokshaMintError> {
+async fn is_onchain_paid(
+    mint: &Mint,
+    quote: &BtcOnchainMeltQuote,
+) -> Result<bool, MokshaMintError> {
     let min_confs = mint
         .config
         .btconchain_backend

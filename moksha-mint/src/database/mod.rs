@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use moksha_core::{
-    primitives::{Bolt11MeltQuote, Bolt11MintQuote, OnchainMeltQuote, OnchainMintQuote},
+    primitives::{Bolt11MeltQuote, Bolt11MintQuote, BtcOnchainMeltQuote, BtcOnchainMintQuote},
     proof::Proofs,
 };
 use uuid::Uuid;
@@ -87,47 +87,47 @@ pub trait Database {
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
         key: &Uuid,
-    ) -> Result<OnchainMintQuote, MokshaMintError>;
+    ) -> Result<BtcOnchainMintQuote, MokshaMintError>;
 
     async fn add_onchain_mint_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &OnchainMintQuote,
+        quote: &BtcOnchainMintQuote,
     ) -> Result<(), MokshaMintError>;
 
     async fn update_onchain_mint_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &OnchainMintQuote,
+        quote: &BtcOnchainMintQuote,
     ) -> Result<(), MokshaMintError>;
 
     async fn delete_onchain_mint_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &OnchainMintQuote,
+        quote: &BtcOnchainMintQuote,
     ) -> Result<(), MokshaMintError>;
 
     async fn get_onchain_melt_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
         key: &Uuid,
-    ) -> Result<OnchainMeltQuote, MokshaMintError>;
+    ) -> Result<BtcOnchainMeltQuote, MokshaMintError>;
 
     async fn add_onchain_melt_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &OnchainMeltQuote,
+        quote: &BtcOnchainMeltQuote,
     ) -> Result<(), MokshaMintError>;
 
     async fn update_onchain_melt_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &OnchainMeltQuote,
+        quote: &BtcOnchainMeltQuote,
     ) -> Result<(), MokshaMintError>;
 
     async fn delete_onchain_melt_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &OnchainMeltQuote,
+        quote: &BtcOnchainMeltQuote,
     ) -> Result<(), MokshaMintError>;
 }

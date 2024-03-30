@@ -1,8 +1,8 @@
 use clap::{Parser, Subcommand};
 use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 use moksha_core::primitives::{
-    CurrencyUnit, PaymentMethod, PostMeltOnchainResponse, PostMintQuoteBolt11Response,
-    PostMintQuoteOnchainResponse,
+    CurrencyUnit, PaymentMethod, PostMeltBtcOnchainResponse, PostMintQuoteBolt11Response,
+    PostMintQuoteBtcOnchainResponse,
 };
 use moksha_wallet::http::CrossPlatformHttpClient;
 use num_format::{Locale, ToFormattedString};
@@ -184,7 +184,7 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            let PostMeltOnchainResponse { paid, txid } = wallet.pay_onchain(quote).await?;
+            let PostMeltBtcOnchainResponse { paid, txid } = wallet.pay_onchain(quote).await?;
             println!("Created transaction: {}\n", &txid);
 
             let mut lock = stdout().lock();
@@ -250,7 +250,7 @@ async fn main() -> anyhow::Result<()> {
                         return Ok(());
                     }
 
-                    let PostMintQuoteOnchainResponse { address, quote, .. } =
+                    let PostMintQuoteBtcOnchainResponse { address, quote, .. } =
                         wallet.create_quote_onchain(amount).await?;
 
                     println!("Pay onchain to mint tokens:\n\n{address}");
