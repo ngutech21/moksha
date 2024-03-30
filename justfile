@@ -98,7 +98,7 @@ run-itests: _check-docker
 
 # build the mint docker-image
 build-docker:
-    docker build --build-arg COMMITHASH=$(git rev-parse HEAD) --build-arg BUILDTIME=$(date -u '+%F-%T') -t moksha-mint:latest .
+    docker build --file Dockerfile.alpine --build-arg COMMITHASH=$(git rev-parse HEAD) --build-arg BUILDTIME=$(date -u '+%F-%T') -t moksha-mint:latest .
 
 
 # compile all rust crates, that are relevant for the client, to wasm

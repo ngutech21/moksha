@@ -1,3 +1,7 @@
-target
+**/target
 data
 tmp
+conf
+.git
+
+

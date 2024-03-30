@@ -1,5 +1,5 @@
 # build backend
-FROM rust:1.76-slim-bullseye as rust-builder
+FROM rust:1.77.0-slim-bullseye as rust-builder
 RUN apt update && apt install -y musl-tools musl-dev make clang pkg-config protobuf-compiler
 RUN update-ca-certificates
 RUN rustup target add x86_64-unknown-linux-musl
@@ -10,7 +10,7 @@ COPY . /rust-app
 RUN cargo build  --package moksha-mint --release --target x86_64-unknown-linux-musl
 
 
-FROM alpine:latest
+FROM alpine:3.19.1
 RUN apk --no-cache add ca-certificates
 COPY --from=rust-builder /rust-app/target/x86_64-unknown-linux-musl/release/moksha-mint /app/
 
