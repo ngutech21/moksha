@@ -97,10 +97,9 @@ impl LocalStore for SqliteLocalStore {
         tx: &mut sqlx::Transaction<Self::DB>,
         keyset: &WalletKeyset,
     ) -> Result<(), MokshaWalletError> {
-        let row: (i64,) = sqlx::query_as(
+        sqlx::query(
             r#"INSERT INTO keysets (keyset_id, mint_url, currency_unit, last_index, public_keys, active) VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT(keyset_id, mint_url) DO UPDATE SET currency_unit = $3, last_index = $4, public_keys = $5, active = $6;
-            SELECT last_insert_rowid() as id;
             "#)
         .bind(keyset.keyset_id.to_owned())
         .bind(keyset.mint_url.as_str())
@@ -108,9 +107,8 @@ impl LocalStore for SqliteLocalStore {
         .bind(keyset.last_index as i64)
         .bind(serde_json::to_string(&keyset.public_keys)?)
         .bind(keyset.active)
-        .fetch_one(&mut **tx)
+        .execute(&mut **tx)
         .await?;
-        // FIXME do we need the id?
         Ok(())
     }
 
