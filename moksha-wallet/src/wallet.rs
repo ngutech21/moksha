@@ -97,18 +97,25 @@ where
 
         let mint_keysets = client.get_keysets(&mint_url).await?;
 
-        for m in mint_keysets.keysets.iter() {
+        for keyset in mint_keysets.keysets.iter() {
             let public_keys = client
-                .get_keys_by_id(&mint_url, m.id.clone())
+                .get_keys_by_id(&mint_url, keyset.id.clone())
                 .await?
                 .keysets
                 .into_iter()
-                .find(|k| k.id == m.id)
+                .find(|k| k.id == keyset.id)
                 .expect("no valid keyset found")
                 .keys
                 .clone();
 
-            let wallet_keyset = WalletKeyset::new(&m.id, &mint_url, &m.unit, 0, public_keys, true);
+            let wallet_keyset = WalletKeyset::new(
+                &keyset.id,
+                &mint_url,
+                &keyset.unit,
+                0,
+                public_keys,
+                keyset.active,
+            );
             localstore.upsert_keyset(&mut tx, &wallet_keyset).await?;
         }
         let seed = localstore.get_seed(&mut tx).await?.expect("seed not found");
