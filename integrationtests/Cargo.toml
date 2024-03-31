@@ -31,11 +31,11 @@ hex = "0.4.3"
 reqwest = { version = "0.12.1", default-features = false }
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
-tokio = { version = "1.35.1", features = ["sync", "rt-multi-thread"] }
+tokio = { version = "1.37.0", features = ["sync", "rt-multi-thread"] }
 
 [dev-dependencies]
 anyhow = { version = "1.0.80", features = ["backtrace"] }
-tokio = { version = "1.36.0", features = ["full"] }
+tokio = { version = "1.37.0", features = ["full"] }
 reqwest = { version = "0.12.1", default-features = false }
 moksha-mint = { path = "../moksha-mint" }
 moksha-wallet = { path = "../moksha-wallet" }
