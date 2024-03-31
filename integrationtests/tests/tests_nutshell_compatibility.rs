@@ -50,17 +50,20 @@ pub async fn test_nutshell_compatibility() -> anyhow::Result<()> {
     let balance = wallet.get_balance().await?;
     assert_eq!(6_000, balance);
 
-    // pay ln-invoice
+    // pay ln-invoice (10_000 invoice + 10 sats fee_reserve / 9 sats get returned)
     let invoice_1000 = read_fixture("invoice_1000.txt")?;
     let quote = wallet
         .get_melt_quote_bolt11(invoice_1000.clone(), CurrencyUnit::Sat)
         .await?;
+    assert_eq!(10, quote.fee_reserve);
     let result_pay_invoice = wallet.pay_invoice(&quote, invoice_1000).await;
+
     if result_pay_invoice.is_err() {
         println!("error in pay_invoice{:?}", result_pay_invoice);
     }
     assert!(result_pay_invoice.is_ok());
+    assert_eq!(9, result_pay_invoice?.1);
     let balance = wallet.get_balance().await?;
-    assert_eq!(5_000, balance);
+    assert_eq!(4_999, balance);
     Ok(())
 }

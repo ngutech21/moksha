@@ -102,7 +102,7 @@ async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
 
     let btc_address = btc_client.get_new_address()?;
 
-    let melt_amount = 3_000;
+    let melt_amount = 21_000;
     let melt_quotes = wallet
         .get_melt_quote_btconchain(btc_address.clone(), melt_amount)
         .await?;

@@ -122,7 +122,7 @@ services:
       - itest
 
   nutshell:
-    image: ngutech21/nutshell:latest
+    image: cashubtc/nutshell:0.15.2
     container_name: nutshell
     ports:
       - "2228:3338"
