@@ -34,13 +34,21 @@ impl LocalStore for SqliteLocalStore {
             .proofs()
             .iter()
             .map(|p| p.secret.to_owned())
-            .collect::<Vec<_>>()
-            .join(", ");
+            .collect::<Vec<_>>();
 
-        sqlx::query("DELETE FROM proofs WHERE secret in (?);")
-            .bind(proof_secrets)
-            .execute(&mut **tx)
-            .await?;
+        let placeholders: Vec<String> = (1..=proof_secrets.len())
+            .map(|i| format!("?{}", i))
+            .collect();
+        let sql = format!(
+            "DELETE FROM proofs WHERE secret IN ({})",
+            placeholders.join(",")
+        );
+        let mut query = sqlx::query(&sql);
+        for secret in &proof_secrets {
+            query = query.bind(secret);
+        }
+        query.execute(&mut **tx).await?;
+
         Ok(())
     }
 
@@ -99,7 +107,7 @@ impl LocalStore for SqliteLocalStore {
     ) -> Result<(), MokshaWalletError> {
         sqlx::query(
             r#"INSERT INTO keysets (keyset_id, mint_url, currency_unit, last_index, public_keys, active) VALUES ($1, $2, $3, $4, $5, $6)
-            ON CONFLICT(keyset_id, mint_url) DO UPDATE SET currency_unit = $3, last_index = $4, public_keys = $5, active = $6;
+            ON CONFLICT(keyset_id, mint_url) DO UPDATE SET currency_unit = $3, public_keys = $5, active = $6;
             "#)
         .bind(keyset.keyset_id.to_owned())
         .bind(keyset.mint_url.as_str())
@@ -259,6 +267,39 @@ mod tests {
 
         let result_tokens = localstore.get_proofs(&mut tx).await?;
         assert_eq!(56, result_tokens.total_amount());
+        tx.commit().await?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_delete_multiple_proofs() -> anyhow::Result<()> {
+        let localstore = SqliteLocalStore::with_in_memory().await?;
+        let mut tx = localstore.begin_tx().await?;
+
+        let tokens: TokenV3 = read_fixture("token_60.cashu")?
+            .trim()
+            .to_string()
+            .try_into()?;
+        localstore.add_proofs(&mut tx, &tokens.proofs()).await?;
+
+        let loaded_tokens = localstore.get_proofs(&mut tx).await?;
+
+        assert_eq!(tokens.proofs(), loaded_tokens);
+
+        let proofs = tokens
+            .tokens
+            .first()
+            .expect("Tokens is empty")
+            .proofs
+            .proofs();
+        let proof_4 = proofs.first().expect("Proof is empty").to_owned();
+        let proof_8 = proofs.get(1).expect("Proof is empty").to_owned();
+
+        let delete_proofs = vec![proof_4, proof_8].into();
+        localstore.delete_proofs(&mut tx, &delete_proofs).await?;
+
+        let result_tokens = localstore.get_proofs(&mut tx).await?;
+        assert_eq!(48, result_tokens.total_amount());
         tx.commit().await?;
         Ok(())
     }
