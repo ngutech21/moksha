@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
+use moksha_core::keyset::KeysetId;
 use moksha_core::proof::{Proof, Proofs};
 use secp256k1::PublicKey;
 use url::Url;
@@ -34,13 +35,21 @@ impl LocalStore for SqliteLocalStore {
             .proofs()
             .iter()
             .map(|p| p.secret.to_owned())
-            .collect::<Vec<_>>()
-            .join(", ");
+            .collect::<Vec<_>>();
 
-        sqlx::query("DELETE FROM proofs WHERE secret in (?);")
-            .bind(proof_secrets)
-            .execute(&mut **tx)
-            .await?;
+        let placeholders: Vec<String> = (1..=proof_secrets.len())
+            .map(|i| format!("?{}", i))
+            .collect();
+        let sql = format!(
+            "DELETE FROM proofs WHERE secret IN ({})",
+            placeholders.join(",")
+        );
+        let mut query = sqlx::query(&sql);
+        for secret in &proof_secrets {
+            query = query.bind(secret);
+        }
+        query.execute(&mut **tx).await?;
+
         Ok(())
     }
 
@@ -99,9 +108,9 @@ impl LocalStore for SqliteLocalStore {
     ) -> Result<(), MokshaWalletError> {
         sqlx::query(
             r#"INSERT INTO keysets (keyset_id, mint_url, currency_unit, last_index, public_keys, active) VALUES ($1, $2, $3, $4, $5, $6)
-            ON CONFLICT(keyset_id, mint_url) DO UPDATE SET currency_unit = $3, last_index = $4, public_keys = $5, active = $6;
+            ON CONFLICT(keyset_id, mint_url) DO UPDATE SET currency_unit = $3, public_keys = $5, active = $6;
             "#)
-        .bind(keyset.keyset_id.to_owned())
+        .bind(keyset.keyset_id.to_string())
         .bind(keyset.mint_url.as_str())
         .bind(keyset.currency_unit.to_string())
         .bind(keyset.last_index as i64)
@@ -125,7 +134,8 @@ impl LocalStore for SqliteLocalStore {
             .map(|row| {
                 let id: i64 = row.get(0);
                 let mint_url: Url = Url::parse(row.get(1)).expect("invalid url in localstore");
-                let keyset_id: String = row.get(2);
+                let keyset_id: KeysetId =
+                    KeysetId::new(row.get(2)).expect("invalid keyset_id in localstore");
                 let currency_unit: String = row.get(3);
                 let active: bool = row.get(4);
                 let last_index: i64 = row.get(5);
@@ -200,7 +210,12 @@ impl SqliteLocalStore {
 
     async fn with_connection_string(connection_string: &str) -> Result<Self, MokshaWalletError> {
         // creates db-file if not already exists
-        let pool = sqlx::SqlitePool::connect(connection_string).await?;
+        //let pool = sqlx::SqlitePool::connect(connection_string).await?;
+        let pool = sqlx::sqlite::SqlitePoolOptions::new()
+            .acquire_timeout(std::time::Duration::from_secs(5))
+            .idle_timeout(std::time::Duration::from_secs(5))
+            .connect(connection_string)
+            .await?;
 
         sqlx::query("PRAGMA journal_mode=WAL")
             .execute(&pool)
@@ -259,6 +274,39 @@ mod tests {
 
         let result_tokens = localstore.get_proofs(&mut tx).await?;
         assert_eq!(56, result_tokens.total_amount());
+        tx.commit().await?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_delete_multiple_proofs() -> anyhow::Result<()> {
+        let localstore = SqliteLocalStore::with_in_memory().await?;
+        let mut tx = localstore.begin_tx().await?;
+
+        let tokens: TokenV3 = read_fixture("token_60.cashu")?
+            .trim()
+            .to_string()
+            .try_into()?;
+        localstore.add_proofs(&mut tx, &tokens.proofs()).await?;
+
+        let loaded_tokens = localstore.get_proofs(&mut tx).await?;
+
+        assert_eq!(tokens.proofs(), loaded_tokens);
+
+        let proofs = tokens
+            .tokens
+            .first()
+            .expect("Tokens is empty")
+            .proofs
+            .proofs();
+        let proof_4 = proofs.first().expect("Proof is empty").to_owned();
+        let proof_8 = proofs.get(1).expect("Proof is empty").to_owned();
+
+        let delete_proofs = vec![proof_4, proof_8].into();
+        localstore.delete_proofs(&mut tx, &delete_proofs).await?;
+
+        let result_tokens = localstore.get_proofs(&mut tx).await?;
+        assert_eq!(48, result_tokens.total_amount());
         tx.commit().await?;
         Ok(())
     }

@@ -33,13 +33,14 @@ pub struct BlindedMessage {
     #[serde(rename = "B_")]
     #[schema(value_type=String)]
     pub b_: PublicKey,
+    // FIXME use KeysetId
     pub id: String,
 }
 
 impl BlindedMessage {
     pub fn blank(
         fee_reserve: Amount,
-        keyset_id: String,
+        keyset_id: String, // FIXME use KeysetId
     ) -> Result<Vec<(Self, SecretKey, String)>, MokshaCoreError> {
         if fee_reserve.0 == 0 {
             return Ok(vec![]);

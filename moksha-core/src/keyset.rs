@@ -95,7 +95,7 @@ pub struct V1Keysets {
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct V1Keyset {
-    pub id: String,
+    pub id: String, // FIXME use KeysetId
     pub unit: CurrencyUnit,
     pub active: bool,
 }
@@ -116,6 +116,59 @@ impl V1Keysets {
             Ok(computed_id)
         } else {
             Err(MokshaCoreError::InvalidKeysetid)
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+pub struct KeysetId(KeysetIdType, String);
+
+impl KeysetId {
+    // FIXME implement fromString
+    pub fn new(id: &str) -> Result<Self, MokshaCoreError> {
+        if id.len() != 16 {
+            return Err(MokshaCoreError::InvalidKeysetid);
+        }
+        let id_type = KeysetIdType::from(id[0..2].to_string());
+        let id = id[2..].to_string();
+        Ok(Self(id_type, id.to_owned()))
+    }
+
+    pub fn as_int(&self) -> Result<u32, MokshaCoreError> {
+        let bytes = hex::decode(self.to_string())?;
+        let bytes_array: [u8; 8] = bytes[0..8].try_into()?;
+        let num = u64::from_be_bytes(bytes_array);
+        Ok((num % (2u64.pow(31) - 1)) as u32)
+    }
+}
+
+impl ToString for KeysetId {
+    fn to_string(&self) -> String {
+        format!("{}{}", self.0.to_string(), self.1)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+pub enum KeysetIdType {
+    Sat,
+    UsdCent,
+}
+
+impl From<String> for KeysetIdType {
+    fn from(id: String) -> Self {
+        match id.as_str() {
+            "00" => KeysetIdType::Sat,
+            "01" => KeysetIdType::UsdCent,
+            _ => panic!("Invalid Keyset ID"),
+        }
+    }
+}
+
+impl ToString for KeysetIdType {
+    fn to_string(&self) -> String {
+        match self {
+            KeysetIdType::Sat => "00".to_string(),
+            KeysetIdType::UsdCent => "01".to_string(),
         }
     }
 }
@@ -202,7 +255,7 @@ pub fn derive_pubkey(seed: &str) -> Result<PublicKey, MokshaCoreError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::keyset::{derive_pubkey, generate_hash};
+    use crate::keyset::{derive_pubkey, generate_hash, KeysetId};
     use pretty_assertions::assert_eq;
     use secp256k1::PublicKey;
     use std::collections::HashMap;
@@ -211,6 +264,12 @@ mod tests {
         use hex::FromHex;
         let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
         secp256k1::PublicKey::from_slice(&input_vec).expect("Invalid Public Key")
+    }
+
+    #[test]
+    fn test_keyset_id() {
+        let keyset_id = KeysetId::new("009a1f293253e41e").unwrap();
+        assert_eq!(864559728, keyset_id.as_int().unwrap());
     }
 
     #[test]

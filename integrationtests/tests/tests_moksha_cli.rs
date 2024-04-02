@@ -39,9 +39,8 @@ async fn test_cli() -> anyhow::Result<()> {
 
     // compile the moksha-cli binary and run it
     let mut cmd = Command::cargo_bin("moksha-cli")?;
-    cmd.arg("-m").arg("http://127.0.0.1:8686").arg("info");
+    cmd.arg("info");
     let output = cmd.unwrap();
     assert!(output.status.success());
-    println!("output: {:?}", output.status);
     Ok(())
 }

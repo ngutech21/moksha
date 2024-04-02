@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use moksha_core::{primitives::CurrencyUnit, proof::Proofs};
+use moksha_core::{keyset::KeysetId, primitives::CurrencyUnit, proof::Proofs};
 use secp256k1::PublicKey;
 use url::Url;
 
@@ -17,7 +17,7 @@ pub mod rexie;
 pub struct WalletKeyset {
     /// primary key
     pub id: Option<u64>,
-    pub keyset_id: String,
+    pub keyset_id: KeysetId,
     pub mint_url: Url,
     pub currency_unit: CurrencyUnit,
     /// last index used for deriving keys from the master key
@@ -28,7 +28,7 @@ pub struct WalletKeyset {
 
 impl WalletKeyset {
     pub fn new(
-        keyset_id: &str,
+        keyset_id: &KeysetId,
         mint_url: &Url,
         currency_unit: &CurrencyUnit,
         last_index: u64,

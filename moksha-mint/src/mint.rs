@@ -608,11 +608,11 @@ mod tests {
             .await?;
         assert_eq!(result.total_amount(), 64);
 
-        let prv_lst = result.get(result.len() - 2).unwrap();
-        let lst = result.last().unwrap();
+        let prv_last = result.get(result.len() - 2).unwrap();
+        let last = result.last().unwrap();
 
-        assert_eq!(prv_lst.amount, 4);
-        assert_eq!(lst.amount, 16);
+        assert_eq!(prv_last.amount, 4);
+        assert_eq!(last.amount, 16);
         Ok(())
     }
 
