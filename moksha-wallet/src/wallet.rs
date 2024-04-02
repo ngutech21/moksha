@@ -276,13 +276,7 @@ where
         let selected_tokens = (wallet_keyset.mint_url.to_owned(), selected_proofs.clone()).into();
 
         let (remaining_tokens, result) = self
-            .split_tokens(
-                &wallet_keyset.mint_url,
-                &wallet_keyset.keyset_id,
-                &wallet_keyset.public_keys,
-                &selected_tokens,
-                amount.into(),
-            )
+            .split_tokens(wallet_keyset, &selected_tokens, amount.into())
             .await?;
 
         let mut tx = self.localstore.begin_tx().await?;
@@ -304,13 +298,7 @@ where
     ) -> Result<(), MokshaWalletError> {
         let total_amount = tokens.total_amount();
         let (_, redeemed_tokens) = self
-            .split_tokens(
-                &wallet_keyset.mint_url,
-                &wallet_keyset.keyset_id,
-                &wallet_keyset.public_keys,
-                tokens,
-                total_amount.into(),
-            )
+            .split_tokens(wallet_keyset, tokens, total_amount.into())
             .await?;
         let mut tx = self.localstore.begin_tx().await?;
         self.localstore
@@ -363,13 +351,7 @@ where
             let selected_tokens =
                 (wallet_keyset.mint_url.to_owned(), selected_proofs.clone()).into();
             let split_result = self
-                .split_tokens(
-                    &wallet_keyset.mint_url,
-                    &wallet_keyset.keyset_id,
-                    &wallet_keyset.public_keys,
-                    &selected_tokens,
-                    ln_amount.into(),
-                )
+                .split_tokens(wallet_keyset, &selected_tokens, ln_amount.into())
                 .await?;
 
             let mut tx = self.localstore.begin_tx().await?;
@@ -409,7 +391,6 @@ where
             .melt_token(
                 &wallet_keyset.mint_url,
                 melt_quote.to_owned().quote,
-                ln_amount,
                 &total_proofs,
                 msgs,
             )
@@ -471,13 +452,7 @@ where
             let selected_tokens =
                 (wallet_keyset.mint_url.to_owned(), selected_proofs.clone()).into();
             let split_result = self
-                .split_tokens(
-                    &wallet_keyset.mint_url,
-                    &wallet_keyset.keyset_id,
-                    &wallet_keyset.public_keys,
-                    &selected_tokens,
-                    ln_amount.into(),
-                )
+                .split_tokens(wallet_keyset, &selected_tokens, ln_amount.into())
                 .await?;
             self.localstore
                 .delete_proofs(&mut tx, &selected_proofs)
@@ -537,28 +512,26 @@ where
 
     pub async fn split_tokens(
         &self,
-        mint_url: &Url,
-        keyset_id: &KeysetId,
-        pub_keys: &HashMap<u64, PublicKey>,
+        wallet_keyset: &WalletKeyset,
         tokens: &TokenV3,
         splt_amount: Amount,
     ) -> Result<(TokenV3, TokenV3), MokshaWalletError> {
         let total_token_amount = tokens.total_amount();
         let first_amount: Amount = (total_token_amount - splt_amount.0).into();
         let first_secrets = self
-            .create_secrets(keyset_id, first_amount.split().len() as u32)
+            .create_secrets(&wallet_keyset.keyset_id, first_amount.split().len() as u32)
             .await?;
         let first_outputs =
-            self.create_blinded_messages(keyset_id, first_amount, &first_secrets)?;
+            self.create_blinded_messages(&wallet_keyset.keyset_id, first_amount, &first_secrets)?;
 
         // ############################################################################
 
         let second_amount = splt_amount.clone();
         let second_secrets = self
-            .create_secrets(keyset_id, second_amount.split().len() as u32)
+            .create_secrets(&wallet_keyset.keyset_id, second_amount.split().len() as u32)
             .await?;
         let second_outputs =
-            self.create_blinded_messages(keyset_id, second_amount, &second_secrets)?;
+            self.create_blinded_messages(&wallet_keyset.keyset_id, second_amount, &second_secrets)?;
 
         let mut total_outputs = vec![];
         total_outputs.extend(get_blinded_msg(first_outputs.clone()));
@@ -570,7 +543,7 @@ where
 
         let split_result = self
             .client
-            .post_swap(mint_url, tokens.proofs(), total_outputs)
+            .post_swap(&wallet_keyset.mint_url, tokens.proofs(), total_outputs)
             .await?;
 
         if split_result.signatures.is_empty() {
@@ -585,18 +558,21 @@ where
 
         let proofs = self
             .create_proofs_from_blinded_signatures(
-                keyset_id,
-                pub_keys,
+                &wallet_keyset.keyset_id,
+                &wallet_keyset.public_keys,
                 split_result.signatures,
                 secrets,
                 outputs,
             )?
             .proofs();
 
-        let first_tokens: TokenV3 =
-            (mint_url.to_owned(), proofs[0..len_first].to_vec().into()).into();
+        let first_tokens: TokenV3 = (
+            wallet_keyset.mint_url.to_owned(),
+            proofs[0..len_first].to_vec().into(),
+        )
+            .into();
         let second_tokens: TokenV3 = (
-            mint_url.to_owned(),
+            wallet_keyset.mint_url.to_owned(),
             proofs[len_first..proofs.len()].to_vec().into(),
         )
             .into();
@@ -624,7 +600,6 @@ where
         &self,
         mint_url: &Url,
         quote_id: String,
-        _invoice_amount: u64, // FIXME remove?
         proofs: &Proofs,
         fee_blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMeltBolt11Response, MokshaWalletError> {
@@ -918,15 +893,7 @@ mod tests {
             .await?;
 
         let tokens = read_fixture("token_64.cashu")?.try_into()?;
-        let result = wallet
-            .split_tokens(
-                &keyset.mint_url,
-                &keyset.keyset_id,
-                &keyset.public_keys,
-                &tokens,
-                20.into(),
-            )
-            .await?;
+        let result = wallet.split_tokens(&keyset, &tokens, 20.into()).await?;
         assert_eq!(24, result.0.total_amount());
         assert_eq!(40, result.1.total_amount());
         Ok(())
