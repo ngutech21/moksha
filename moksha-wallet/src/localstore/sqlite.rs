@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
+use moksha_core::keyset::KeysetId;
 use moksha_core::proof::{Proof, Proofs};
 use secp256k1::PublicKey;
 use url::Url;
@@ -109,7 +110,7 @@ impl LocalStore for SqliteLocalStore {
             r#"INSERT INTO keysets (keyset_id, mint_url, currency_unit, last_index, public_keys, active) VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT(keyset_id, mint_url) DO UPDATE SET currency_unit = $3, public_keys = $5, active = $6;
             "#)
-        .bind(keyset.keyset_id.to_owned())
+        .bind(keyset.keyset_id.to_string())
         .bind(keyset.mint_url.as_str())
         .bind(keyset.currency_unit.to_string())
         .bind(keyset.last_index as i64)
@@ -133,7 +134,8 @@ impl LocalStore for SqliteLocalStore {
             .map(|row| {
                 let id: i64 = row.get(0);
                 let mint_url: Url = Url::parse(row.get(1)).expect("invalid url in localstore");
-                let keyset_id: String = row.get(2);
+                let keyset_id: KeysetId =
+                    KeysetId::new(row.get(2)).expect("invalid keyset_id in localstore");
                 let currency_unit: String = row.get(3);
                 let active: bool = row.get(4);
                 let last_index: i64 = row.get(5);
@@ -208,7 +210,12 @@ impl SqliteLocalStore {
 
     async fn with_connection_string(connection_string: &str) -> Result<Self, MokshaWalletError> {
         // creates db-file if not already exists
-        let pool = sqlx::SqlitePool::connect(connection_string).await?;
+        //let pool = sqlx::SqlitePool::connect(connection_string).await?;
+        let pool = sqlx::sqlite::SqlitePoolOptions::new()
+            .acquire_timeout(std::time::Duration::from_secs(5))
+            .idle_timeout(std::time::Duration::from_secs(5))
+            .connect(connection_string)
+            .await?;
 
         sqlx::query("PRAGMA journal_mode=WAL")
             .execute(&pool)

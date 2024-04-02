@@ -2,9 +2,9 @@ use moksha_core::{
     amount::Amount,
     blind::{BlindedMessage, BlindedSignature, TotalAmount},
     dhke::Dhke,
-    keyset::V1Keyset,
+    keyset::KeysetId,
     primitives::{
-        CurrencyUnit, KeyResponse, MintInfoResponse, PaymentMethod, PostMeltBolt11Response,
+        CurrencyUnit, MintInfoResponse, PaymentMethod, PostMeltBolt11Response,
         PostMeltBtcOnchainResponse, PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainResponse,
         PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainResponse,
     },
@@ -12,7 +12,7 @@ use moksha_core::{
     token::TokenV3,
 };
 
-use secp256k1::SecretKey;
+use secp256k1::{PublicKey, SecretKey};
 use url::Url;
 
 use crate::{
@@ -20,10 +20,14 @@ use crate::{
     error::MokshaWalletError,
     http::CrossPlatformHttpClient,
     localstore::{LocalStore, WalletKeyset},
-    secret::{self, DeterministicSecret},
+    secret::DeterministicSecret,
 };
 use lightning_invoice::Bolt11Invoice as LNInvoice;
-use std::str::FromStr;
+use std::{
+    collections::{HashMap, HashSet},
+    str::FromStr,
+    vec,
+};
 
 #[derive(Clone)]
 pub struct Wallet<L, C>
@@ -32,11 +36,8 @@ where
     C: CashuClient,
 {
     client: C,
-    keyset_id: V1Keyset,
-    keyset: KeyResponse,
     dhke: Dhke,
     localstore: L,
-    mint_url: Url,
     secret: DeterministicSecret,
 }
 
@@ -47,7 +48,6 @@ where
 {
     client: Option<C>,
     localstore: Option<L>,
-    mint_url: Option<Url>,
 }
 
 impl<L, C> WalletBuilder<L, C>
@@ -59,7 +59,6 @@ where
         Self {
             client: Some(C::default()),
             localstore: None,
-            mint_url: None,
         }
     }
 
@@ -73,75 +72,26 @@ where
         self
     }
 
-    pub fn with_mint_url(mut self, mint_url: Url) -> Self {
-        self.mint_url = Some(mint_url);
-        self
-    }
-
     pub async fn build(self) -> Result<Wallet<L, C>, MokshaWalletError> {
         let client = self.client.unwrap_or_default();
         let localstore = self.localstore.expect("localstore is required");
-        let mint_url = self.mint_url.expect("mint_url is required");
-
-        if !client.is_v1_supported(&mint_url).await? {
-            return Err(MokshaWalletError::UnsupportedApiVersion);
-        }
 
         let mut tx = localstore.begin_tx().await?;
-
         let seed_words = localstore.get_seed(&mut tx).await?;
-        if seed_words.is_none() {
+        let seed = if seed_words.is_none() {
             let seed = DeterministicSecret::generate_random_seed_words()?;
             localstore.add_seed(&mut tx, &seed).await?;
-        }
+            seed
+        } else {
+            seed_words.expect("Seed words not found")
+            // FIXME clippy
+        };
 
-        let mint_keysets = client.get_keysets(&mint_url).await?;
-
-        for keyset in mint_keysets.keysets.iter() {
-            let public_keys = client
-                .get_keys_by_id(&mint_url, keyset.id.clone())
-                .await?
-                .keysets
-                .into_iter()
-                .find(|k| k.id == keyset.id)
-                .expect("no valid keyset found")
-                .keys
-                .clone();
-
-            let wallet_keyset = WalletKeyset::new(
-                &keyset.id,
-                &mint_url,
-                &keyset.unit,
-                0,
-                public_keys,
-                keyset.active,
-            );
-            localstore.upsert_keyset(&mut tx, &wallet_keyset).await?;
-        }
-        let seed = localstore.get_seed(&mut tx).await?.expect("seed not found");
         tx.commit().await?;
-
-        // FIXME store all keysets
-        let keys = client.get_keys(&mint_url).await?;
-
-        let key_response = keys
-            .keysets
-            .iter()
-            .find(|k| k.id.starts_with("00"))
-            .expect("no valid keyset found");
-
-        let mks = mint_keysets
-            .keysets
-            .iter()
-            .find(|k| k.id.starts_with("00"))
-            .expect("no valid keyset found");
 
         Ok(Wallet::new(
             client as C,
-            mks.clone(),
-            key_response.clone(),
             localstore,
-            mint_url,
             DeterministicSecret::from_seed_words(&seed)?,
         ))
     }
@@ -162,21 +112,11 @@ where
     C: CashuClient + Default,
     L: LocalStore,
 {
-    fn new(
-        client: C,
-        mint_keys: V1Keyset,
-        key_response: KeyResponse,
-        localstore: L,
-        mint_url: Url,
-        secret: DeterministicSecret,
-    ) -> Self {
+    fn new(client: C, localstore: L, secret: DeterministicSecret) -> Self {
         Self {
             client,
-            keyset_id: mint_keys,
-            keyset: key_response,
             dhke: Dhke::new(),
             localstore,
-            mint_url,
             secret,
         }
     }
@@ -187,66 +127,143 @@ where
 
     pub async fn create_quote_bolt11(
         &self,
+        mint_url: &Url,
         amount: u64,
     ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError> {
         self.client
-            .post_mint_quote_bolt11(&self.mint_url, amount, CurrencyUnit::Sat)
+            .post_mint_quote_bolt11(mint_url, amount, CurrencyUnit::Sat)
             .await
     }
 
     pub async fn create_quote_onchain(
         &self,
+        mint_url: &Url,
         amount: u64,
     ) -> Result<PostMintQuoteBtcOnchainResponse, MokshaWalletError> {
         self.client
-            .post_mint_quote_onchain(&self.mint_url, amount, CurrencyUnit::Sat)
+            .post_mint_quote_onchain(mint_url, amount, CurrencyUnit::Sat)
             .await
     }
 
     pub async fn is_quote_paid(
         &self,
+        mint_url: &Url,
         payment_method: &PaymentMethod,
         quote: String,
     ) -> Result<bool, MokshaWalletError> {
         Ok(match payment_method {
             PaymentMethod::Bolt11 => {
                 self.client
-                    .get_mint_quote_bolt11(&self.mint_url, quote)
+                    .get_mint_quote_bolt11(mint_url, quote)
                     .await?
                     .paid
             }
 
             PaymentMethod::BtcOnchain => {
                 self.client
-                    .get_mint_quote_onchain(&self.mint_url, quote)
+                    .get_mint_quote_onchain(mint_url, quote)
                     .await?
                     .paid
             }
         })
     }
 
-    pub async fn is_onchain_paid(&self, quote: String) -> Result<bool, MokshaWalletError> {
+    pub async fn is_onchain_paid(
+        &self,
+        mint_url: &Url,
+        quote: String,
+    ) -> Result<bool, MokshaWalletError> {
         Ok(self
             .client
-            .get_melt_quote_onchain(&self.mint_url, quote)
+            .get_melt_quote_onchain(mint_url, quote)
             .await?
             .paid)
     }
 
-    pub async fn is_onchain_tx_paid(&self, txid: String) -> Result<bool, MokshaWalletError> {
-        Ok(self
-            .client
-            .get_melt_onchain(&self.mint_url, txid)
-            .await?
-            .paid)
+    pub async fn is_onchain_tx_paid(
+        &self,
+        mint_url: &Url,
+        txid: String,
+    ) -> Result<bool, MokshaWalletError> {
+        Ok(self.client.get_melt_onchain(mint_url, txid).await?.paid)
+    }
+
+    pub async fn get_wallet_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
+        let mut tx = self.localstore.begin_tx().await?;
+        let keysets = self.localstore.get_keysets(&mut tx).await?;
+        tx.commit().await?;
+        Ok(keysets)
+    }
+
+    pub async fn get_mint_urls(&self) -> Result<Vec<Url>, MokshaWalletError> {
+        let keysets = self.get_wallet_keysets().await?;
+        let mints: HashSet<Url> = keysets.into_iter().map(|k| k.mint_url).collect();
+        Ok(mints.into_iter().collect())
+    }
+
+    /// Stores the mints keys in the localstore
+    pub async fn add_mint_keysets(
+        &self,
+        mint_url: &Url,
+    ) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
+        if !self.client.is_v1_supported(mint_url).await? {
+            return Err(MokshaWalletError::UnsupportedApiVersion);
+        }
+
+        // FIXME cleanup code
+        let mint_keysets = self.client.get_keysets(mint_url).await?;
+
+        let mut tx = self.localstore.begin_tx().await?;
+        let mut result = vec![];
+        for keyset in mint_keysets.keysets.iter() {
+            let public_keys = self
+                .client
+                .get_keys_by_id(mint_url, keyset.id.clone())
+                .await?
+                .keysets
+                .into_iter()
+                .find(|k| k.id == keyset.id)
+                .expect("no valid keyset found")
+                .keys
+                .clone();
+
+            // ignore legacy keysets
+            let keyset_id = match KeysetId::new(&keyset.id) {
+                Ok(id) => id,
+                Err(_) => {
+                    continue;
+                }
+            };
+
+            let wallet_keyset = WalletKeyset::new(
+                &keyset_id,
+                mint_url,
+                &keyset.unit,
+                0,
+                public_keys,
+                keyset.active,
+            );
+            result.push(wallet_keyset.clone());
+            self.localstore
+                .upsert_keyset(&mut tx, &wallet_keyset)
+                .await?;
+        }
+        tx.commit().await?;
+        Ok(result)
     }
 
     pub async fn get_balance(&self) -> Result<u64, MokshaWalletError> {
         let mut tx = self.localstore.begin_tx().await?;
-        Ok(self.localstore.get_proofs(&mut tx).await?.total_amount())
+        let total_amount = self.localstore.get_proofs(&mut tx).await?.total_amount();
+        tx.commit().await?;
+        Ok(total_amount)
     }
 
-    pub async fn send_tokens(&self, amount: u64) -> Result<TokenV3, MokshaWalletError> {
+    pub async fn send_tokens(
+        &self,
+        wallet_keyset: &WalletKeyset,
+        amount: u64,
+    ) -> Result<TokenV3, MokshaWalletError> {
         let balance = self.get_balance().await?;
         if amount > balance {
             return Err(MokshaWalletError::NotEnoughTokens);
@@ -254,25 +271,47 @@ where
 
         let mut tx = self.localstore.begin_tx().await?;
         let all_proofs = self.localstore.get_proofs(&mut tx).await?;
+        tx.commit().await?;
         let selected_proofs = all_proofs.proofs_for_amount(amount)?;
-        let selected_tokens = (self.mint_url.to_owned(), selected_proofs.clone()).into();
+        let selected_tokens = (wallet_keyset.mint_url.to_owned(), selected_proofs.clone()).into();
 
-        let (remaining_tokens, result) = self.split_tokens(&selected_tokens, amount.into()).await?;
+        let (remaining_tokens, result) = self
+            .split_tokens(
+                &wallet_keyset.mint_url,
+                &wallet_keyset.keyset_id,
+                &wallet_keyset.public_keys,
+                &selected_tokens,
+                amount.into(),
+            )
+            .await?;
 
+        let mut tx = self.localstore.begin_tx().await?;
         self.localstore
             .delete_proofs(&mut tx, &selected_proofs)
             .await?;
+
         self.localstore
             .add_proofs(&mut tx, &remaining_tokens.proofs())
             .await?;
         tx.commit().await?;
-
         Ok(result)
     }
 
-    pub async fn receive_tokens(&self, tokens: &TokenV3) -> Result<(), MokshaWalletError> {
+    pub async fn receive_tokens(
+        &self,
+        wallet_keyset: &WalletKeyset,
+        tokens: &TokenV3,
+    ) -> Result<(), MokshaWalletError> {
         let total_amount = tokens.total_amount();
-        let (_, redeemed_tokens) = self.split_tokens(tokens, total_amount.into()).await?;
+        let (_, redeemed_tokens) = self
+            .split_tokens(
+                &wallet_keyset.mint_url,
+                &wallet_keyset.keyset_id,
+                &wallet_keyset.public_keys,
+                tokens,
+                total_amount.into(),
+            )
+            .await?;
         let mut tx = self.localstore.begin_tx().await?;
         self.localstore
             .add_proofs(&mut tx, &redeemed_tokens.proofs())
@@ -283,31 +322,35 @@ where
 
     pub async fn get_mint_quote(
         &self,
+        mint_url: &Url,
         amount: Amount,
         currency: CurrencyUnit,
     ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError> {
         self.client
-            .post_mint_quote_bolt11(&self.mint_url, amount.0, currency)
+            .post_mint_quote_bolt11(mint_url, amount.0, currency)
             .await
     }
 
     pub async fn get_melt_quote_bolt11(
         &self,
+        mint_url: &Url,
         invoice: String,
         currency: CurrencyUnit,
     ) -> Result<PostMeltQuoteBolt11Response, MokshaWalletError> {
         self.client
-            .post_melt_quote_bolt11(&self.mint_url, invoice.clone(), currency)
+            .post_melt_quote_bolt11(mint_url, invoice.clone(), currency)
             .await
     }
 
     pub async fn pay_invoice(
         &self,
+        wallet_keyset: &WalletKeyset,
         melt_quote: &PostMeltQuoteBolt11Response,
         invoice: String,
     ) -> Result<(PostMeltBolt11Response, u64), MokshaWalletError> {
         let mut tx = self.localstore.begin_tx().await?;
         let all_proofs = self.localstore.get_proofs(&mut tx).await?;
+        tx.commit().await?;
 
         let ln_amount = Self::get_invoice_amount(&invoice)? + melt_quote.fee_reserve;
 
@@ -317,11 +360,19 @@ where
         let selected_proofs = all_proofs.proofs_for_amount(ln_amount)?;
 
         let total_proofs = {
-            let selected_tokens = (self.mint_url.to_owned(), selected_proofs.clone()).into();
+            let selected_tokens =
+                (wallet_keyset.mint_url.to_owned(), selected_proofs.clone()).into();
             let split_result = self
-                .split_tokens(&selected_tokens, ln_amount.into())
+                .split_tokens(
+                    &wallet_keyset.mint_url,
+                    &wallet_keyset.keyset_id,
+                    &wallet_keyset.public_keys,
+                    &selected_tokens,
+                    ln_amount.into(),
+                )
                 .await?;
 
+            let mut tx = self.localstore.begin_tx().await?;
             self.localstore
                 .delete_proofs(&mut tx, &selected_proofs)
                 .await?;
@@ -333,8 +384,10 @@ where
             split_result.1.proofs()
         };
 
-        let fee_blind =
-            BlindedMessage::blank(melt_quote.fee_reserve.into(), self.keyset_id.clone().id)?;
+        let fee_blind = BlindedMessage::blank(
+            melt_quote.fee_reserve.into(),
+            wallet_keyset.keyset_id.to_string(),
+        )?;
 
         let msgs = fee_blind
             .iter()
@@ -353,7 +406,13 @@ where
 
         let mut tx = self.localstore.begin_tx().await?;
         match self
-            .melt_token(melt_quote.to_owned().quote, ln_amount, &total_proofs, msgs)
+            .melt_token(
+                &wallet_keyset.mint_url,
+                melt_quote.to_owned().quote,
+                ln_amount,
+                &total_proofs,
+                msgs,
+            )
             .await
         {
             Ok(response) => {
@@ -361,6 +420,8 @@ where
                     self.localstore.add_proofs(&mut tx, &total_proofs).await?;
                 }
                 let change_proofs = self.create_proofs_from_blinded_signatures(
+                    &wallet_keyset.keyset_id,
+                    &wallet_keyset.public_keys,
                     response.clone().change,
                     secrets,
                     outputs,
@@ -380,21 +441,23 @@ where
 
     pub async fn get_melt_quote_btconchain(
         &self,
+        mint_url: &Url,
         address: String,
         amount: u64,
     ) -> Result<Vec<PostMeltQuoteBtcOnchainResponse>, MokshaWalletError> {
         self.client
-            .post_melt_quote_onchain(&self.mint_url, address, amount, CurrencyUnit::Sat)
+            .post_melt_quote_onchain(mint_url, address, amount, CurrencyUnit::Sat)
             .await
     }
 
     pub async fn pay_onchain(
         &self,
-
+        wallet_keyset: &WalletKeyset,
         melt_quote: &PostMeltQuoteBtcOnchainResponse,
     ) -> Result<PostMeltBtcOnchainResponse, MokshaWalletError> {
         let mut tx = self.localstore.begin_tx().await?;
         let all_proofs = self.localstore.get_proofs(&mut tx).await?;
+        tx.commit().await?;
 
         let ln_amount = melt_quote.amount + melt_quote.fee;
 
@@ -403,12 +466,19 @@ where
         }
         let selected_proofs = all_proofs.proofs_for_amount(ln_amount)?;
 
+        let mut tx = self.localstore.begin_tx().await?;
         let total_proofs = {
-            let selected_tokens = (self.mint_url.to_owned(), selected_proofs.clone()).into();
+            let selected_tokens =
+                (wallet_keyset.mint_url.to_owned(), selected_proofs.clone()).into();
             let split_result = self
-                .split_tokens(&selected_tokens, ln_amount.into())
+                .split_tokens(
+                    &wallet_keyset.mint_url,
+                    &wallet_keyset.keyset_id,
+                    &wallet_keyset.public_keys,
+                    &selected_tokens,
+                    ln_amount.into(),
+                )
                 .await?;
-
             self.localstore
                 .delete_proofs(&mut tx, &selected_proofs)
                 .await?;
@@ -422,7 +492,7 @@ where
         let melt_response = self
             .client
             .post_melt_onchain(
-                &self.mint_url,
+                &wallet_keyset.mint_url,
                 total_proofs.clone(),
                 melt_quote.quote.clone(),
             )
@@ -439,22 +509,18 @@ where
 
     async fn create_secrets(
         &self,
+        keyset_id: &KeysetId,
         amount: u32,
     ) -> Result<Vec<(String, SecretKey)>, MokshaWalletError> {
-        let keyset_id = self.keyset_id.clone().id;
-        let keyset_id_int = secret::convert_hex_to_int(&keyset_id).unwrap(); // FIXME
-
         let mut tx = self.localstore.begin_tx().await?;
         let all_keysets = self.localstore.get_keysets(&mut tx).await?;
         let keyset = all_keysets
             .iter()
-            .find(|k| k.keyset_id == keyset_id)
+            .find(|k| k.keyset_id == *keyset_id)
             .expect("keyset not found");
 
         let start_index = (keyset.last_index + 1) as u32;
-        let secret_range = self
-            .secret
-            .derive_range(keyset_id_int, start_index, amount)?;
+        let secret_range = self.secret.derive_range(keyset_id, start_index, amount)?;
 
         self.localstore
             .update_keyset_last_index(
@@ -471,23 +537,28 @@ where
 
     pub async fn split_tokens(
         &self,
+        mint_url: &Url,
+        keyset_id: &KeysetId,
+        pub_keys: &HashMap<u64, PublicKey>,
         tokens: &TokenV3,
         splt_amount: Amount,
     ) -> Result<(TokenV3, TokenV3), MokshaWalletError> {
         let total_token_amount = tokens.total_amount();
         let first_amount: Amount = (total_token_amount - splt_amount.0).into();
         let first_secrets = self
-            .create_secrets(first_amount.split().len() as u32)
+            .create_secrets(keyset_id, first_amount.split().len() as u32)
             .await?;
-        let first_outputs = self.create_blinded_messages(first_amount, &first_secrets)?;
+        let first_outputs =
+            self.create_blinded_messages(keyset_id, first_amount, &first_secrets)?;
 
         // ############################################################################
 
         let second_amount = splt_amount.clone();
         let second_secrets = self
-            .create_secrets(second_amount.split().len() as u32)
+            .create_secrets(keyset_id, second_amount.split().len() as u32)
             .await?;
-        let second_outputs = self.create_blinded_messages(second_amount, &second_secrets)?;
+        let second_outputs =
+            self.create_blinded_messages(keyset_id, second_amount, &second_secrets)?;
 
         let mut total_outputs = vec![];
         total_outputs.extend(get_blinded_msg(first_outputs.clone()));
@@ -499,7 +570,7 @@ where
 
         let split_result = self
             .client
-            .post_swap(&self.mint_url, tokens.proofs(), total_outputs)
+            .post_swap(mint_url, tokens.proofs(), total_outputs)
             .await?;
 
         if split_result.signatures.is_empty() {
@@ -513,42 +584,53 @@ where
         let secrets = secrets.into_iter().map(|(s, _)| s).collect::<Vec<String>>();
 
         let proofs = self
-            .create_proofs_from_blinded_signatures(split_result.signatures, secrets, outputs)?
+            .create_proofs_from_blinded_signatures(
+                keyset_id,
+                pub_keys,
+                split_result.signatures,
+                secrets,
+                outputs,
+            )?
             .proofs();
 
-        let first_tokens = (
-            self.mint_url.to_owned(),
-            proofs[0..len_first].to_vec().into(),
-        )
-            .into();
-        let second_tokens = (
-            self.mint_url.to_owned(),
+        let first_tokens: TokenV3 =
+            (mint_url.to_owned(), proofs[0..len_first].to_vec().into()).into();
+        let second_tokens: TokenV3 = (
+            mint_url.to_owned(),
             proofs[len_first..proofs.len()].to_vec().into(),
         )
             .into();
 
+        if tokens.total_amount() != first_tokens.total_amount() + second_tokens.total_amount() {
+            println!(
+                "Error in swap: input {:?} != output {:?} + {:?}",
+                tokens.total_amount(),
+                first_tokens.total_amount(),
+                second_tokens.total_amount()
+            );
+        }
+
         Ok((first_tokens, second_tokens))
     }
 
-    pub async fn get_mint_info(&self) -> Result<MintInfoResponse, MokshaWalletError> {
-        self.client.get_info(&self.mint_url).await
+    pub async fn get_mint_info(
+        &self,
+        mint_url: &Url,
+    ) -> Result<MintInfoResponse, MokshaWalletError> {
+        self.client.get_info(mint_url).await
     }
 
     async fn melt_token(
         &self,
+        mint_url: &Url,
         quote_id: String,
-        _invoice_amount: u64,
+        _invoice_amount: u64, // FIXME remove?
         proofs: &Proofs,
         fee_blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMeltBolt11Response, MokshaWalletError> {
         let melt_response = self
             .client
-            .post_melt_bolt11(
-                &self.mint_url,
-                proofs.clone(),
-                quote_id,
-                fee_blinded_messages,
-            )
+            .post_melt_bolt11(mint_url, proofs.clone(), quote_id, fee_blinded_messages)
             .await?;
 
         if melt_response.paid {
@@ -574,38 +656,16 @@ where
 
     pub async fn mint_tokens(
         &self,
+        wallet_keyset: &WalletKeyset,
         payment_method: &PaymentMethod,
         amount: Amount,
         quote_id: String,
     ) -> Result<TokenV3, MokshaWalletError> {
         let split_amount = amount.split();
 
-        // FIXME cleanup code
-        let keyset_id = self.keyset_id.clone().id;
-        let keyset_id_int = secret::convert_hex_to_int(&keyset_id).unwrap(); // FIXME
-
-        let mut tx = self.localstore.begin_tx().await?;
-        let all_keysets = self.localstore.get_keysets(&mut tx).await?;
-        let keyset = all_keysets
-            .iter()
-            .find(|k| k.keyset_id == keyset_id)
-            .expect("keyset not found");
-
-        let start_index = (keyset.last_index + 1) as u32;
-        let secret_range =
-            self.secret
-                .derive_range(keyset_id_int, start_index, split_amount.len() as u32)?;
-
-        self.localstore
-            .update_keyset_last_index(
-                &mut tx,
-                &WalletKeyset {
-                    last_index: (start_index + split_amount.len() as u32) as u64,
-                    ..keyset.clone()
-                },
-            )
+        let secret_range = self
+            .create_secrets(&wallet_keyset.keyset_id, split_amount.len() as u32)
             .await?;
-        tx.commit().await?;
 
         let blinded_messages = split_amount
             .into_iter()
@@ -619,7 +679,7 @@ where
                     BlindedMessage {
                         amount,
                         b_,
-                        id: self.keyset_id.clone().id,
+                        id: wallet_keyset.keyset_id.to_string(), // FIXME use keyset_id
                     },
                     alice_secret_key,
                     secret,
@@ -632,7 +692,7 @@ where
                 let post_mint_resp = self
                     .client
                     .post_mint_bolt11(
-                        &self.mint_url,
+                        &wallet_keyset.mint_url,
                         quote_id,
                         blinded_messages
                             .clone()
@@ -647,7 +707,7 @@ where
                 let post_mint_resp = self
                     .client
                     .post_mint_onchain(
-                        &self.mint_url,
+                        &wallet_keyset.mint_url,
                         quote_id,
                         blinded_messages
                             .clone()
@@ -661,15 +721,14 @@ where
         };
 
         // step 3: unblind signatures
-        let current_keyset_id = self.keyset_id.clone().id; // FIXME
+        let current_keyset_id = wallet_keyset.keyset_id.to_string(); // FIXME
 
         let proofs = signatures
             .iter()
             .zip(blinded_messages)
             .map(|(p, (_, priv_key, secret))| {
-                let key = self
-                    .keyset
-                    .keys
+                let key = wallet_keyset
+                    .public_keys
                     .get(&p.amount)
                     .expect("msg amount not found in mint keys");
                 let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
@@ -678,7 +737,7 @@ where
             .collect::<Vec<Proof>>()
             .into();
 
-        let tokens: TokenV3 = (self.mint_url.to_owned(), proofs).into();
+        let tokens: TokenV3 = (wallet_keyset.mint_url.to_owned(), proofs).into();
         let mut tx = self.localstore.begin_tx().await?;
         self.localstore
             .add_proofs(&mut tx, &tokens.proofs())
@@ -691,6 +750,7 @@ where
     // FIXME implement for Amount
     fn create_blinded_messages(
         &self,
+        keyset_id: &KeysetId,
         amount: Amount,
         secrets_factors: &Vec<(String, SecretKey)>,
     ) -> Result<Vec<(BlindedMessage, SecretKey)>, MokshaWalletError> {
@@ -708,7 +768,7 @@ where
                     BlindedMessage {
                         amount,
                         b_,
-                        id: self.keyset_id.clone().id,
+                        id: keyset_id.to_string(),
                     },
                     alice_secret_key,
                 )
@@ -718,11 +778,13 @@ where
 
     fn create_proofs_from_blinded_signatures(
         &self,
+        keyset_id: &KeysetId,
+        pub_keys: &HashMap<u64, PublicKey>,
         signatures: Vec<BlindedSignature>,
         secrets: Vec<String>,
         outputs: Vec<(BlindedMessage, SecretKey)>,
     ) -> Result<Proofs, MokshaWalletError> {
-        let current_keyset_id = self.keyset_id.clone().id; // FIXME
+        let current_keyset_id = keyset_id.to_string(); // FIXME
 
         let private_keys = outputs
             .into_iter()
@@ -734,9 +796,7 @@ where
             .zip(private_keys)
             .zip(secrets)
             .map(|((p, priv_key), secret)| {
-                let key = self
-                    .keyset
-                    .keys
+                let key = pub_keys
                     .get(&p.amount)
                     .expect("msg amount not found in mint keys");
                 let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
@@ -757,19 +817,22 @@ fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, SecretKey)>) -> Vec<Bl
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use crate::client::MockCashuClient;
     use crate::localstore::sqlite::SqliteLocalStore;
-    use crate::localstore::LocalStore;
+    use crate::localstore::{LocalStore, WalletKeyset};
     use crate::wallet::WalletBuilder;
 
     use moksha_core::fixture::{read_fixture, read_fixture_as};
-    use moksha_core::keyset::{MintKeyset, V1Keysets};
+    use moksha_core::keyset::{KeysetId, MintKeyset, V1Keysets};
     use moksha_core::primitives::{
         CurrencyUnit, KeyResponse, KeysResponse, PaymentMethod, PostMeltBolt11Response,
         PostMeltQuoteBolt11Response, PostMintBolt11Response, PostSwapResponse,
     };
 
     use moksha_core::token::TokenV3;
+    use secp256k1::PublicKey;
     use url::Url;
 
     fn create_mock() -> MockCashuClient {
@@ -808,21 +871,29 @@ mod tests {
             .returning(move |_, _, _| Ok(mint_response.clone()));
 
         let localstore = SqliteLocalStore::with_in_memory().await?;
-        let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
+        let wallet_keyset = create_test_wallet_keyset()?;
+        let mut tx = localstore.begin_tx().await?;
+        localstore.upsert_keyset(&mut tx, &wallet_keyset).await?;
+        tx.commit().await?;
 
         let wallet = WalletBuilder::new()
             .with_client(client)
             .with_localstore(localstore)
-            .with_mint_url(mint_url.clone())
             .build()
             .await?;
 
+        let wallet_keyset = create_test_wallet_keyset()?;
         let result = wallet
-            .mint_tokens(&PaymentMethod::Bolt11, 20.into(), "hash".to_string())
+            .mint_tokens(
+                &wallet_keyset,
+                &PaymentMethod::Bolt11,
+                20.into(),
+                "hash".to_string(),
+            )
             .await?;
         assert_eq!(20, result.total_amount());
         result.tokens.into_iter().for_each(|t| {
-            assert_eq!(mint_url, t.mint.expect("mint is empty"));
+            assert_eq!(wallet_keyset.mint_url, t.mint.expect("mint is empty"));
         });
         Ok(())
     }
@@ -835,17 +906,27 @@ mod tests {
             .expect_post_swap()
             .returning(move |_, _, _| Ok(split_response.clone()));
         let localstore = SqliteLocalStore::with_in_memory().await?;
+        let keyset = create_test_wallet_keyset()?;
+        let mut tx = localstore.begin_tx().await?;
+        localstore.upsert_keyset(&mut tx, &keyset).await?;
+        tx.commit().await?;
 
-        let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
         let wallet = WalletBuilder::new()
             .with_client(client)
             .with_localstore(localstore)
-            .with_mint_url(mint_url)
             .build()
             .await?;
 
         let tokens = read_fixture("token_64.cashu")?.try_into()?;
-        let result = wallet.split_tokens(&tokens, 20.into()).await?;
+        let result = wallet
+            .split_tokens(
+                &keyset.mint_url,
+                &keyset.keyset_id,
+                &keyset.public_keys,
+                &tokens,
+                20.into(),
+            )
+            .await?;
         assert_eq!(24, result.0.total_amount());
         assert_eq!(40, result.1.total_amount());
         Ok(())
@@ -860,11 +941,9 @@ mod tests {
         local_store.add_proofs(&mut tx, &fixture.proofs()).await?;
         tx.commit().await?;
 
-        let mint_url = Url::parse("http://localhost:8080/").expect("invalid url");
         let wallet = WalletBuilder::new()
             .with_client(create_mock())
             .with_localstore(local_store)
-            .with_mint_url(mint_url)
             .build()
             .await?;
 
@@ -882,6 +961,8 @@ mod tests {
         let fixture: TokenV3 = fixture.try_into()?;
         let mut tx = local_store.begin_tx().await?;
         local_store.add_proofs(&mut tx, &fixture.proofs()).await?;
+        let wallet_keyset = create_test_wallet_keyset()?;
+        local_store.upsert_keyset(&mut tx, &wallet_keyset).await?;
         tx.commit().await?;
 
         let melt_response =
@@ -906,18 +987,18 @@ mod tests {
         let wallet = WalletBuilder::new()
             .with_client(mock_client)
             .with_localstore(local_store)
-            .with_mint_url(mint_url)
             .build()
             .await?;
+
+        // FIXME fix mock response: Warning Error in swap: input 32 != output 24 + 40
 
         // 21 sats
         let invoice = "lnbcrt210n1pjg6mqhpp5pza5wzh0csjjuvfpjpv4zdjmg30vedj9ycv5tyfes9x7dp8axy0sdqqcqzzsxqyz5vqsp5vtxg4c5tw2s2zxxya2a7an0psn9mcfmlqctxzntm3sngnpyk3muq9qyyssqf8z5f90yu3wrmsufnnza25qjlnvc6ukdr094ckzn63ktcy6z5fw5mxf9skndpg2p4648gfjfvvx4qg2lqvlryyycg5k7x9h4dw70t4qq37pegm".to_string();
 
         let quote = wallet
-            .get_melt_quote_bolt11(invoice.clone(), CurrencyUnit::Sat)
+            .get_melt_quote_bolt11(&mint_url, invoice.clone(), CurrencyUnit::Sat)
             .await?;
-
-        let result = wallet.pay_invoice(&quote, invoice).await?;
+        let result = wallet.pay_invoice(&wallet_keyset, &quote, invoice).await?;
         assert!(result.0.paid);
         Ok(())
     }
@@ -934,6 +1015,8 @@ mod tests {
         let mut tx = localstore.begin_tx().await?;
         localstore.add_proofs(&mut tx, &tokens.proofs()).await?;
         assert_eq!(64, localstore.get_proofs(&mut tx).await?.total_amount());
+        let wallet_keyset = create_test_wallet_keyset()?;
+        localstore.upsert_keyset(&mut tx, &wallet_keyset).await?;
         tx.commit().await?;
 
         let melt_response =
@@ -957,7 +1040,6 @@ mod tests {
         let wallet = WalletBuilder::default()
             .with_client(mock_client)
             .with_localstore(localstore.clone())
-            .with_mint_url(Url::parse("http://localhost:8080").expect("invalid url"))
             .build()
             .await?;
 
@@ -965,13 +1047,32 @@ mod tests {
         let invoice = "lnbcrt210n1pjg6mqhpp5pza5wzh0csjjuvfpjpv4zdjmg30vedj9ycv5tyfes9x7dp8axy0sdqqcqzzsxqyz5vqsp5vtxg4c5tw2s2zxxya2a7an0psn9mcfmlqctxzntm3sngnpyk3muq9qyyssqf8z5f90yu3wrmsufnnza25qjlnvc6ukdr094ckzn63ktcy6z5fw5mxf9skndpg2p4648gfjfvvx4qg2lqvlryyycg5k7x9h4dw70t4qq37pegm".to_string();
 
         let quote = wallet
-            .get_melt_quote_bolt11(invoice.clone(), CurrencyUnit::Sat)
+            .get_melt_quote_bolt11(&wallet_keyset.mint_url, invoice.clone(), CurrencyUnit::Sat)
             .await?;
-        let result = wallet.pay_invoice(&quote, invoice).await?;
+
+        let wallet_keyset = create_test_wallet_keyset()?;
+
+        let result = wallet.pay_invoice(&wallet_keyset, &quote, invoice).await?;
         assert!(!result.0.paid);
         let mut tx = localstore.begin_tx().await?;
         assert_eq!(64, localstore.get_proofs(&mut tx).await?.total_amount());
         assert!(!result.0.paid);
         Ok(())
+    }
+
+    fn create_test_wallet_keyset() -> anyhow::Result<WalletKeyset> {
+        let pub_keys = read_fixture_as::<HashMap<u64, PublicKey>>("pub_keys.json")?;
+        let keyset_id = KeysetId::new("00d31cecf59d18c0")?;
+        let mint_url = Url::parse("http://127.0.0.1:3338")?;
+
+        let wallet_keyset = WalletKeyset::new(
+            &keyset_id,
+            &mint_url,
+            &CurrencyUnit::Sat,
+            0,
+            pub_keys.clone(),
+            true,
+        );
+        Ok(wallet_keyset)
     }
 }

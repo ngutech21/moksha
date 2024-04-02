@@ -53,9 +53,10 @@ pub async fn test_bolt11_lnbitsmock() -> anyhow::Result<()> {
     let wallet = WalletBuilder::default()
         .with_client(client)
         .with_localstore(localstore)
-        .with_mint_url(mint_url)
         .build()
         .await?;
+    let wallet_keysets = wallet.add_mint_keysets(&mint_url).await?;
+    let wallet_keyset = wallet_keysets.first().unwrap(); // FIXME
 
     // get initial balance
     let balance = wallet.get_balance().await?;
@@ -63,12 +64,17 @@ pub async fn test_bolt11_lnbitsmock() -> anyhow::Result<()> {
 
     // mint some tokens
     let mint_amount = 6_000;
-    let mint_quote = wallet.create_quote_bolt11(mint_amount).await?;
+    let mint_quote = wallet.create_quote_bolt11(&mint_url, mint_amount).await?;
     let hash = mint_quote.clone().quote;
 
     sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
     let mint_result = wallet
-        .mint_tokens(&PaymentMethod::Bolt11, mint_amount.into(), hash.clone())
+        .mint_tokens(
+            wallet_keyset,
+            &PaymentMethod::Bolt11,
+            mint_amount.into(),
+            hash.clone(),
+        )
         .await?;
     assert_eq!(6_000, mint_result.total_amount());
 
@@ -78,9 +84,11 @@ pub async fn test_bolt11_lnbitsmock() -> anyhow::Result<()> {
     // pay ln-invoice
     let invoice_1000 = read_fixture("invoice_1000.txt")?;
     let quote = wallet
-        .get_melt_quote_bolt11(invoice_1000.clone(), CurrencyUnit::Sat)
+        .get_melt_quote_bolt11(&mint_url, invoice_1000.clone(), CurrencyUnit::Sat)
         .await?;
-    let result_pay_invoice = wallet.pay_invoice(&quote, invoice_1000).await;
+    let result_pay_invoice = wallet
+        .pay_invoice(wallet_keyset, &quote, invoice_1000)
+        .await;
     if result_pay_invoice.is_err() {
         println!("error in pay_invoice{:?}", result_pay_invoice);
     }
@@ -90,20 +98,20 @@ pub async fn test_bolt11_lnbitsmock() -> anyhow::Result<()> {
 
     // receive 10 sats
     let token_10: moksha_core::token::TokenV3 = read_fixture("token_10.cashu")?.try_into()?;
-    let result_receive = wallet.receive_tokens(&token_10).await;
+    let result_receive = wallet.receive_tokens(wallet_keyset, &token_10).await;
     assert!(result_receive.is_ok());
     let balance = wallet.get_balance().await?;
     assert_eq!(5_010, balance);
 
     // send 10 tokens
-    let result_send = wallet.send_tokens(10).await;
+    let result_send = wallet.send_tokens(wallet_keyset, 10).await;
     assert!(result_send.is_ok());
     assert_eq!(10, result_send.unwrap().total_amount());
     let balance = wallet.get_balance().await?;
     assert_eq!(5_000, balance);
 
     // get info
-    let info = wallet.get_mint_info().await?;
+    let info = wallet.get_mint_info(&mint_url).await?;
     assert!(!info.nuts.nut4.disabled);
     Ok(())
 }

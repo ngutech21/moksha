@@ -31,4 +31,10 @@ pub enum MokshaCoreError {
 
     #[error("No valid point on curve secp256k1 found")]
     NoValidPointFound,
+
+    #[error("Invalid hex string")]
+    Hex(#[from] hex::FromHexError),
+
+    #[error("Invalid Keyset-ID")]
+    Slice(#[from] std::array::TryFromSliceError),
 }

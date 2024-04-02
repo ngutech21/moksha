@@ -24,12 +24,13 @@ pub async fn test_nutshell_compatibility() -> anyhow::Result<()> {
     let wallet = WalletBuilder::default()
         .with_client(client)
         .with_localstore(localstore)
-        .with_mint_url(mint_url)
         .build()
         .await?;
+    let wallet_keysets = wallet.add_mint_keysets(&mint_url).await?;
+    let wallet_keyset = wallet_keysets.first().unwrap(); // FIXME
 
     // check if mint info is correct
-    let mint_info = wallet.get_mint_info().await?;
+    let mint_info = wallet.get_mint_info(&mint_url).await?;
     assert_eq!(Some("nutshell".to_owned()), mint_info.name);
 
     // get initial balance
@@ -38,12 +39,17 @@ pub async fn test_nutshell_compatibility() -> anyhow::Result<()> {
 
     // mint some tokens
     let mint_amount = 6_000;
-    let mint_quote = wallet.create_quote_bolt11(mint_amount).await?;
+    let mint_quote = wallet.create_quote_bolt11(&mint_url, mint_amount).await?;
     let hash = mint_quote.clone().quote;
 
     sleep_until(Instant::now() + Duration::from_millis(1_000)).await;
     let mint_result = wallet
-        .mint_tokens(&PaymentMethod::Bolt11, mint_amount.into(), hash.clone())
+        .mint_tokens(
+            wallet_keyset,
+            &PaymentMethod::Bolt11,
+            mint_amount.into(),
+            hash.clone(),
+        )
         .await?;
     assert_eq!(6_000, mint_result.total_amount());
 
@@ -53,10 +59,12 @@ pub async fn test_nutshell_compatibility() -> anyhow::Result<()> {
     // pay ln-invoice (10_000 invoice + 10 sats fee_reserve / 9 sats get returned)
     let invoice_1000 = read_fixture("invoice_1000.txt")?;
     let quote = wallet
-        .get_melt_quote_bolt11(invoice_1000.clone(), CurrencyUnit::Sat)
+        .get_melt_quote_bolt11(&mint_url, invoice_1000.clone(), CurrencyUnit::Sat)
         .await?;
     assert_eq!(10, quote.fee_reserve);
-    let result_pay_invoice = wallet.pay_invoice(&quote, invoice_1000).await;
+    let result_pay_invoice = wallet
+        .pay_invoice(wallet_keyset, &quote, invoice_1000)
+        .await;
 
     if result_pay_invoice.is_err() {
         println!("error in pay_invoice{:?}", result_pay_invoice);

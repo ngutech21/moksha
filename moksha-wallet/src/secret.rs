@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use bip32::{Seed, XPrv};
 use bip39::Mnemonic;
+use moksha_core::keyset::KeysetId;
 use rand::Rng;
 use secp256k1::SecretKey;
 
@@ -65,10 +66,11 @@ impl DeterministicSecret {
 
     pub fn derive_range(
         &self,
-        keyset_id: u32,
+        keyset_id: &KeysetId,
         start: u32,
         length: u32,
     ) -> Result<Vec<(String, SecretKey)>, MokshaWalletError> {
+        let keyset_id = keyset_id.as_int()?;
         Ok((start..start + length)
             .map(|i| {
                 let key = self.derive_secret(keyset_id, i).unwrap();
@@ -97,6 +99,8 @@ pub fn convert_hex_to_int(keyset_id_hex: &str) -> Result<u32, MokshaWalletError>
 
 #[cfg(test)]
 mod tests {
+
+    use moksha_core::keyset::KeysetId;
 
     use super::{convert_hex_to_int, DeterministicSecret};
 
@@ -171,7 +175,9 @@ mod tests {
             "5f09bfbfe27c439a597719321e061e2e40aad4a36768bb2bcc3de547c9644bf9",
         ];
 
-        let range = deterministic_secret.derive_range(864559728, 0, 5)?;
+        let keyset_id = KeysetId::new("009a1f293253e41e")?;
+
+        let range = deterministic_secret.derive_range(&keyset_id, 0, 5)?;
 
         for (i, (secret, blinding_factor)) in range.iter().enumerate() {
             assert_eq!(secrets[i], secret);
