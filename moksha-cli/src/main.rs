@@ -13,6 +13,7 @@ use moksha_wallet::wallet::Wallet;
 use num_format::{Locale, ToFormattedString};
 use std::collections::HashSet;
 use std::io::Write;
+use std::process::exit;
 use std::str::FromStr;
 use std::{io::stdout, path::PathBuf};
 use url::Url;
@@ -147,13 +148,6 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::Send { amount } => {
             let mint_url = choose_mint_url(&wallet).await?;
-            let mint_url = match mint_url {
-                Some(url) => url,
-                None => {
-                    println!("No mints found.");
-                    return Ok(());
-                }
-            };
 
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
@@ -177,13 +171,6 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::Pay { invoice } => {
             let mint_url = choose_mint_url(&wallet).await?;
-            let mint_url = match mint_url {
-                Some(url) => url,
-                None => {
-                    println!("No mints found.");
-                    return Ok(());
-                }
-            };
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
                 .iter()
@@ -230,13 +217,6 @@ async fn main() -> anyhow::Result<()> {
         Command::PayOnchain { address, amount } => {
             // FIXME remove redundant code
             let mint_url = choose_mint_url(&wallet).await?;
-            let mint_url = match mint_url {
-                Some(url) => url,
-                None => {
-                    println!("No mints found.");
-                    return Ok(());
-                }
-            };
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
                 .iter()
@@ -300,13 +280,6 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::Mint { amount } => {
             let mint_url = choose_mint_url(&wallet).await?;
-            let mint_url = match mint_url {
-                Some(url) => url,
-                None => {
-                    println!("No mints found.");
-                    return Ok(());
-                }
-            };
 
             let info = wallet.get_mint_info(&mint_url).await?;
 
@@ -419,16 +392,18 @@ async fn main() -> anyhow::Result<()> {
 
 pub async fn choose_mint_url(
     wallet: &Wallet<SqliteLocalStore, CrossPlatformHttpClient>,
-) -> Result<Option<Url>, MokshaWalletError> {
+) -> Result<Url, MokshaWalletError> {
     let keysets = wallet.get_wallet_keysets().await?;
     if keysets.is_empty() {
-        return Ok(None);
+        println!("No keysets found.");
+        exit(1)
     }
     let mints: HashSet<Url> = keysets.into_iter().map(|k| k.mint_url).collect();
     let mints: Vec<Url> = mints.into_iter().collect();
 
     if mints.len() == 1 {
-        return Ok(Some(mints.first().expect("mint not found").clone()));
+        println!("No mints found.");
+        exit(1)
     }
 
     let selection = Select::with_theme(&ColorfulTheme::default())
@@ -438,5 +413,6 @@ pub async fn choose_mint_url(
         .interact()
         .unwrap();
     let url = mints[selection].clone();
-    Ok(Some(url))
+
+    Ok(url)
 }
