@@ -78,13 +78,13 @@ where
 
         let mut tx = localstore.begin_tx().await?;
         let seed_words = localstore.get_seed(&mut tx).await?;
-        let seed = if seed_words.is_none() {
-            let seed = DeterministicSecret::generate_random_seed_words()?;
-            localstore.add_seed(&mut tx, &seed).await?;
-            seed
-        } else {
-            seed_words.expect("Seed words not found")
-            // FIXME clippy
+        let seed = match seed_words {
+            Some(seed) => seed,
+            None => {
+                let seed = DeterministicSecret::generate_random_seed_words()?;
+                localstore.add_seed(&mut tx, &seed).await?;
+                seed
+            }
         };
 
         tx.commit().await?;

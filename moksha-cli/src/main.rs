@@ -19,7 +19,7 @@ use std::{io::stdout, path::PathBuf};
 use url::Url;
 
 #[derive(Parser)]
-#[command(version)]
+#[command(arg_required_else_help(true))]
 struct Opts {
     #[clap(short, long)]
     db_dir: Option<PathBuf>,
@@ -51,7 +51,7 @@ enum Command {
     /// Show version and configuration
     Info,
 
-    /// Mint tokens
+    /// Add a new mint to the wallet
     AddMint { mint_url: Url },
 }
 
@@ -95,7 +95,16 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::Info => {
             let wallet_version = env!("CARGO_PKG_VERSION");
+            let mint_urls = wallet.get_mint_urls().await?;
             println!("Version: {}\nDB: {}", wallet_version, db_path,);
+            if mint_urls.is_empty() {
+                println!("No mints found.");
+            } else {
+                println!("Mints:");
+                for mint in mint_urls {
+                    println!(" - {}", mint);
+                }
+            }
         }
         // checks if the mints keyset is already in the wallet, if not it adds it and then imports the tokens
         Command::Receive { token } => {
