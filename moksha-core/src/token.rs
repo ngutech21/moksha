@@ -165,6 +165,19 @@ impl From<(Url, Proofs)> for TokenV3 {
     }
 }
 
+impl From<(Url, CurrencyUnit, Proofs)> for TokenV3 {
+    fn from(from: (Url, CurrencyUnit, Proofs)) -> Self {
+        Self {
+            tokens: vec![Token {
+                mint: Some(from.0),
+                proofs: from.2,
+            }],
+            memo: None,
+            unit: Some(from.1),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;

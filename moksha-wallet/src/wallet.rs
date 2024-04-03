@@ -24,6 +24,7 @@ use crate::{
 };
 use lightning_invoice::Bolt11Invoice as LNInvoice;
 use std::{
+    any::Any,
     collections::{HashMap, HashSet},
     str::FromStr,
     vec,
@@ -573,11 +574,13 @@ where
 
         let first_tokens: TokenV3 = (
             wallet_keyset.mint_url.to_owned(),
+            wallet_keyset.keyset_id.keyset_type().into(),
             proofs[0..len_first].to_vec().into(),
         )
             .into();
         let second_tokens: TokenV3 = (
             wallet_keyset.mint_url.to_owned(),
+            wallet_keyset.keyset_id.keyset_type().into(),
             proofs[len_first..proofs.len()].to_vec().into(),
         )
             .into();
@@ -906,8 +909,16 @@ mod tests {
 
         let tokens = read_fixture("token_64.cashu")?.try_into()?;
         let result = wallet.split_tokens(&keyset, &tokens, 20.into()).await?;
-        assert_eq!(24, result.0.total_amount());
-        assert_eq!(40, result.1.total_amount());
+
+        let first = result.0;
+
+        assert_eq!(CurrencyUnit::Sat, first.clone().unit.unwrap());
+        assert_eq!(24, first.total_amount());
+
+        let second = result.1;
+
+        assert_eq!(CurrencyUnit::Sat, second.clone().unit.unwrap());
+        assert_eq!(40, second.total_amount());
         Ok(())
     }
 

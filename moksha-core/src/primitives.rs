@@ -11,6 +11,7 @@ use uuid::Uuid;
 
 use crate::{
     blind::{BlindedMessage, BlindedSignature},
+    keyset::KeysetIdType,
     proof::Proofs,
 };
 
@@ -142,6 +143,15 @@ impl From<String> for CurrencyUnit {
             "sat" => Self::Sat,
             "usd" => Self::Usd,
             _ => panic!("Unknown currency unit: {}", unit),
+        }
+    }
+}
+
+impl From<KeysetIdType> for CurrencyUnit {
+    fn from(keyset_id: KeysetIdType) -> Self {
+        match keyset_id {
+            KeysetIdType::Sat => Self::Sat,
+            KeysetIdType::UsdCent => Self::Usd,
         }
     }
 }
