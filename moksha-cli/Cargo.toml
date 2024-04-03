@@ -22,3 +22,4 @@ url = "2.4.1"
 anyhow = { version = "1.0.75", features = ["backtrace"] }
 dialoguer = "0.11.0"
 num-format = "0.4.4"
+qrcode = "0.14.0"

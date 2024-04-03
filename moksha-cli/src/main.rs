@@ -13,6 +13,8 @@ use moksha_wallet::http::CrossPlatformHttpClient;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::wallet::Wallet;
 use num_format::{Locale, ToFormattedString};
+use qrcode::render::unicode;
+use qrcode::QrCode;
 use std::io::Write;
 use std::process::exit;
 use std::str::FromStr;
@@ -95,15 +97,19 @@ async fn main() -> anyhow::Result<()> {
             println!("Mint added successfully ");
         }
         Command::Info => {
-            let wallet_version = env!("CARGO_PKG_VERSION");
+            let wallet_version = style(env!("CARGO_PKG_VERSION")).cyan();
             let mint_urls = wallet.get_mint_urls().await?;
-            println!("Version: {}\nDB: {}", wallet_version, db_path,);
+            let db_path = style(db_path).cyan();
+            let term = Term::stdout();
+            term.write_line(&format!("Version: {wallet_version}"))?;
+            term.write_line(&format!("DB: {db_path}"))?;
+
             if mint_urls.is_empty() {
-                println!("No mints found.");
+                term.write_line("No mints found.")?;
             } else {
-                println!("Mints:");
+                term.write_line("Mints:")?;
                 for mint in mint_urls {
-                    println!(" - {}", mint);
+                    term.write_line(&format!(" - {}", mint))?;
                 }
             }
         }
@@ -381,7 +387,17 @@ async fn main() -> anyhow::Result<()> {
                         quote,
                         ..
                     } = wallet.create_quote_bolt11(&mint_url, amount).await?;
-                    println!("Pay invoice to mint tokens:\n\n{payment_request}");
+
+                    let term = Term::stdout();
+                    term.write_line(&format!("Pay invoice to mint tokens:\n\n{payment_request}"))?;
+
+                    let image = QrCode::new(payment_request)?
+                        .render::<unicode::Dense1x2>()
+                        .dark_color(unicode::Dense1x2::Dark)
+                        .light_color(unicode::Dense1x2::Light)
+                        .build();
+
+                    term.write_line(&image)?;
                     quote
                 }
             };

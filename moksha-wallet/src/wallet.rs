@@ -24,7 +24,6 @@ use crate::{
 };
 use lightning_invoice::Bolt11Invoice as LNInvoice;
 use std::{
-    any::Any,
     collections::{HashMap, HashSet},
     str::FromStr,
     vec,
