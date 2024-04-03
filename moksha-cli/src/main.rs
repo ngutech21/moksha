@@ -151,7 +151,7 @@ async fn main() -> anyhow::Result<()> {
 
             wallet.receive_tokens(wallet_keyset, &token).await?;
             println!(
-                "Tokens received successfully.\nNew balance {} (sat)",
+                "Tokens received successfully.\nNew total balance {} (sat)",
                 wallet.get_balance().await?.to_formatted_string(&Locale::en)
             );
         }
@@ -177,13 +177,28 @@ async fn main() -> anyhow::Result<()> {
 
             println!("Result {amount} (sat):\n{ser}");
             println!(
-                "\nNew balance: {} (sat)",
+                "\nNew total balance: {} (sat)",
                 wallet.get_balance().await?.to_formatted_string(&Locale::en)
             );
         }
         Command::Balance => {
-            let balance = wallet.get_balance().await?.to_formatted_string(&Locale::en);
-            println!("Balance: {balance} (sat)");
+            let total_balance = wallet.get_balance().await?;
+
+            if total_balance > 0 {
+                let mints = get_mints_with_balance(&wallet, KeysetIdType::Sat).await?;
+                println!("You have balances in {} mints", mints.len());
+                for mint in mints {
+                    println!(
+                        " - {} {} (sat)",
+                        mint.0,
+                        mint.1.to_formatted_string(&Locale::en)
+                    );
+                }
+            }
+
+            let balance = total_balance.to_formatted_string(&Locale::en);
+
+            println!("\nTotal balance: {balance} (sat)");
         }
         Command::Pay { invoice } => {
             let mint_url = choose_mint(&wallet, KeysetIdType::Sat).await?.0;
@@ -223,7 +238,7 @@ async fn main() -> anyhow::Result<()> {
                     );
                 }
                 println!(
-                    "\nInvoice has been paid: Tokens melted successfully\nNew balance: {} (sat)",
+                    "\nInvoice has been paid: Tokens melted successfully\nNew total balance: {} (sat)",
                     wallet.get_balance().await?.to_formatted_string(&Locale::en)
                 );
             } else {
@@ -290,7 +305,7 @@ async fn main() -> anyhow::Result<()> {
 
                 if paid || wallet.is_onchain_tx_paid(&mint_url, txid.clone()).await? {
                     println!(
-                        "\nTokens melted successfully\nNew balance: {} (sat)",
+                        "\nTokens melted successfully\nNew total balance: {} (sat)",
                         wallet.get_balance().await?.to_formatted_string(&Locale::en)
                     );
                     break;
@@ -394,7 +409,7 @@ async fn main() -> anyhow::Result<()> {
                 match mint_result {
                     Ok(_) => {
                         println!(
-                            "Tokens minted successfully.\nNew balance {} (sat)",
+                            "Tokens minted successfully.\nNew total balance {} (sat)",
                             wallet.get_balance().await?.to_formatted_string(&Locale::en)
                         );
                         break;
@@ -417,32 +432,26 @@ pub async fn choose_mint(
     wallet: &Wallet<SqliteLocalStore, CrossPlatformHttpClient>,
     keysetid_type: KeysetIdType,
 ) -> Result<(Url, u64), MokshaWalletError> {
-    let all_proofs = wallet.get_proofs().await?;
+    let mints = get_mints_with_balance(wallet, keysetid_type).await?;
 
-    let keysets = wallet.get_wallet_keysets().await?;
-    if keysets.is_empty() {
-        println!("No keysets found.");
-        exit(1)
+    if mints.is_empty() {
+        println!("No mints found. Add a mint first with 'moksha-cli add-mint <mint-url>'");
+        exit(0)
     }
-    let mints: Vec<(Url, u64)> = keysets
-        .into_iter()
-        .filter(|k| k.keyset_id.keyset_type() == keysetid_type)
-        .map(|k| {
-            (
-                k.mint_url,
-                all_proofs.proofs_by_keyset(&k.keyset_id).total_amount(),
-            )
-        })
-        .collect();
 
     if mints.len() == 1 {
-        println!("No mints found.");
-        exit(1)
+        return Ok(mints[0].clone());
     }
 
     let mints_display = mints
         .iter()
-        .map(|(url, balance)| format!("{url} - {balance} (sat)"))
+        .map(|(url, balance)| {
+            format!(
+                "{} - {} (sat)",
+                url,
+                balance.to_formatted_string(&Locale::en)
+            )
+        })
         .collect::<Vec<String>>();
 
     let selection = Select::with_theme(&ColorfulTheme::default())
@@ -452,4 +461,27 @@ pub async fn choose_mint(
         .interact()
         .unwrap();
     Ok(mints[selection].clone())
+}
+
+pub async fn get_mints_with_balance(
+    wallet: &Wallet<SqliteLocalStore, CrossPlatformHttpClient>,
+    keysetid_type: KeysetIdType,
+) -> Result<Vec<(Url, u64)>, MokshaWalletError> {
+    let all_proofs = wallet.get_proofs().await?;
+
+    let keysets = wallet.get_wallet_keysets().await?;
+    if keysets.is_empty() {
+        println!("No mints found. Add a mint first with 'moksha-cli add-mint <mint-url>'");
+        exit(0)
+    }
+    Ok(keysets
+        .into_iter()
+        .filter(|k| k.keyset_id.keyset_type() == keysetid_type)
+        .map(|k| {
+            (
+                k.mint_url,
+                all_proofs.proofs_by_keyset(&k.keyset_id).total_amount(),
+            )
+        })
+        .collect::<Vec<(Url, u64)>>())
 }
