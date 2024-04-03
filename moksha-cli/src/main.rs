@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use console::{style, Term};
 use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 use moksha_core::keyset::KeysetIdType;
 use moksha_core::primitives::{
@@ -173,9 +174,9 @@ async fn main() -> anyhow::Result<()> {
 
             println!("Using tokens from mint: {mint_url}");
             let result = wallet.send_tokens(wallet_keyset, amount).await?;
-            let ser: String = result.try_into()?;
+            let tokens: String = result.try_into()?;
 
-            println!("Result {amount} (sat):\n{ser}");
+            println!("Result {amount} (sat):\n{tokens}");
             println!(
                 "\nNew total balance: {} (sat)",
                 wallet.get_balance().await?.to_formatted_string(&Locale::en)
@@ -184,21 +185,25 @@ async fn main() -> anyhow::Result<()> {
         Command::Balance => {
             let total_balance = wallet.get_balance().await?;
 
+            let term = Term::stdout();
             if total_balance > 0 {
                 let mints = get_mints_with_balance(&wallet, KeysetIdType::Sat).await?;
-                println!("You have balances in {} mints", mints.len());
+                term.write_line(&format!(
+                    "You have balances in {} mints",
+                    style(mints.len()).cyan()
+                ))?;
+
                 for mint in mints {
-                    println!(
+                    term.write_line(&format!(
                         " - {} {} (sat)",
                         mint.0,
-                        mint.1.to_formatted_string(&Locale::en)
-                    );
+                        style(mint.1.to_formatted_string(&Locale::en)).cyan()
+                    ))?;
                 }
             }
 
-            let balance = total_balance.to_formatted_string(&Locale::en);
-
-            println!("\nTotal balance: {balance} (sat)");
+            let balance = style(total_balance.to_formatted_string(&Locale::en)).cyan();
+            term.write_line(&format!("\nTotal balance: {balance} (sat)"))?;
         }
         Command::Pay { invoice } => {
             let mint_url = choose_mint(&wallet, KeysetIdType::Sat).await?.0;

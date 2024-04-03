@@ -45,7 +45,7 @@ Wallet Features:
 - [x] receiving tokens
 - [x] melting tokens
 - [ ] check if tokens are spent
-- [ ] multi mint support
+- [x] multi mint support
 
 Implemented [NUTs](https://github.com/cashubtc/nuts/):
 
