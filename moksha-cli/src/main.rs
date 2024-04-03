@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use dialoguer::{theme::ColorfulTheme, Confirm, Select};
+use moksha_core::keyset::KeysetIdType;
 use moksha_core::primitives::{
     CurrencyUnit, PaymentMethod, PostMeltBtcOnchainResponse, PostMintQuoteBolt11Response,
     PostMintQuoteBtcOnchainResponse,
@@ -11,7 +12,6 @@ use moksha_wallet::http::CrossPlatformHttpClient;
 use moksha_wallet::localstore::sqlite::SqliteLocalStore;
 use moksha_wallet::wallet::Wallet;
 use num_format::{Locale, ToFormattedString};
-use std::collections::HashSet;
 use std::io::Write;
 use std::process::exit;
 use std::str::FromStr;
@@ -156,7 +156,14 @@ async fn main() -> anyhow::Result<()> {
             );
         }
         Command::Send { amount } => {
-            let mint_url = choose_mint_url(&wallet).await?;
+            let mint_url = choose_mint(&wallet, KeysetIdType::Sat).await?;
+
+            if mint_url.1 < amount {
+                println!("Error: Not enough tokens in selected mint");
+                return Ok(());
+            }
+
+            let mint_url = mint_url.0;
 
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
@@ -179,7 +186,7 @@ async fn main() -> anyhow::Result<()> {
             println!("Balance: {balance} (sat)");
         }
         Command::Pay { invoice } => {
-            let mint_url = choose_mint_url(&wallet).await?;
+            let mint_url = choose_mint(&wallet, KeysetIdType::Sat).await?.0;
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
                 .iter()
@@ -225,7 +232,14 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::PayOnchain { address, amount } => {
             // FIXME remove redundant code
-            let mint_url = choose_mint_url(&wallet).await?;
+            let mint_url = choose_mint(&wallet, KeysetIdType::Sat).await?;
+
+            if mint_url.1 < amount {
+                println!("Error: Not enough tokens in selected mint");
+                return Ok(());
+            }
+            let mint_url = mint_url.0;
+
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
                 .iter()
@@ -288,7 +302,7 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Command::Mint { amount } => {
-            let mint_url = choose_mint_url(&wallet).await?;
+            let mint_url = choose_mint(&wallet, KeysetIdType::Sat).await?.0;
 
             let info = wallet.get_mint_info(&mint_url).await?;
 
@@ -399,29 +413,43 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn choose_mint_url(
+pub async fn choose_mint(
     wallet: &Wallet<SqliteLocalStore, CrossPlatformHttpClient>,
-) -> Result<Url, MokshaWalletError> {
+    keysetid_type: KeysetIdType,
+) -> Result<(Url, u64), MokshaWalletError> {
+    let all_proofs = wallet.get_proofs().await?;
+
     let keysets = wallet.get_wallet_keysets().await?;
     if keysets.is_empty() {
         println!("No keysets found.");
         exit(1)
     }
-    let mints: HashSet<Url> = keysets.into_iter().map(|k| k.mint_url).collect();
-    let mints: Vec<Url> = mints.into_iter().collect();
+    let mints: Vec<(Url, u64)> = keysets
+        .into_iter()
+        .filter(|k| k.keyset_id.keyset_type() == keysetid_type)
+        .map(|k| {
+            (
+                k.mint_url,
+                all_proofs.proofs_by_keyset(&k.keyset_id).total_amount(),
+            )
+        })
+        .collect();
 
     if mints.len() == 1 {
         println!("No mints found.");
         exit(1)
     }
 
+    let mints_display = mints
+        .iter()
+        .map(|(url, balance)| format!("{url} - {balance} (sat)"))
+        .collect::<Vec<String>>();
+
     let selection = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Choose a mint:")
         .default(0)
-        .items(&mints[..])
+        .items(&mints_display[..])
         .interact()
         .unwrap();
-    let url = mints[selection].clone();
-
-    Ok(url)
+    Ok(mints[selection].clone())
 }

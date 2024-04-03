@@ -270,8 +270,13 @@ where
         }
 
         let mut tx = self.localstore.begin_tx().await?;
-        let all_proofs = self.localstore.get_proofs(&mut tx).await?;
+        let all_proofs = self
+            .localstore
+            .get_proofs(&mut tx)
+            .await?
+            .proofs_by_keyset(&wallet_keyset.keyset_id);
         tx.commit().await?;
+
         let selected_proofs = all_proofs.proofs_for_amount(amount)?;
         let selected_tokens = (wallet_keyset.mint_url.to_owned(), selected_proofs.clone()).into();
 
@@ -779,6 +784,13 @@ where
             })
             .collect::<Vec<Proof>>()
             .into())
+    }
+
+    pub async fn get_proofs(&self) -> Result<Proofs, MokshaWalletError> {
+        let mut tx = self.localstore.begin_tx().await?;
+        let proofs = self.localstore.get_proofs(&mut tx).await?;
+        tx.commit().await?;
+        Ok(proofs)
     }
 }
 

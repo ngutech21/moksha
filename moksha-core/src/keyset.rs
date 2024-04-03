@@ -140,6 +140,10 @@ impl KeysetId {
         let num = u64::from_be_bytes(bytes_array);
         Ok((num % (2u64.pow(31) - 1)) as u32)
     }
+
+    pub fn keyset_type(&self) -> KeysetIdType {
+        self.0.clone()
+    }
 }
 
 impl ToString for KeysetId {

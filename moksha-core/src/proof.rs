@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use utoipa::ToSchema;
 
-use crate::error::MokshaCoreError;
+use crate::{error::MokshaCoreError, keyset::KeysetId};
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
@@ -75,6 +75,15 @@ impl Proofs {
 
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+    pub fn proofs_by_keyset(&self, keyset_id: &KeysetId) -> Self {
+        self.0
+            .iter()
+            .filter(|proof| proof.keyset_id == keyset_id.to_string())
+            .cloned()
+            .collect::<Vec<Proof>>()
+            .into()
     }
 
     pub fn proofs_for_amount(&self, amount: u64) -> Result<Self, MokshaCoreError> {
