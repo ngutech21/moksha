@@ -93,6 +93,7 @@ _check-docker:
 
 # starts bitcoind, nutshell, 2 lnd nodes via docker and runs the integration tests
 run-itests: _check-docker
+    cargo build 
     docker compose --profile itest up -d
     RUST_BACKTRACE=1 cargo test -p integrationtests -- --test-threads=1
     docker compose --profile itest down

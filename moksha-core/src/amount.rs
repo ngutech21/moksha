@@ -27,12 +27,6 @@ impl From<Vec<u64>> for SplitAmount {
 }
 
 impl SplitAmount {
-    pub fn create_secrets(&self) -> Vec<String> {
-        (0..self.0.len())
-            .map(|_| generate_random_string())
-            .collect::<Vec<String>>()
-    }
-
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -82,7 +76,6 @@ pub fn generate_random_string() -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::amount::SplitAmount;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -96,13 +89,5 @@ mod tests {
         let bits = super::split_amount(64);
         assert_eq!(bits, vec![64]);
         Ok(())
-    }
-
-    #[test]
-    fn test_create_secrets() {
-        let amounts = vec![1, 2, 3, 4, 5, 6, 7];
-        let secrets = SplitAmount::from(amounts.clone()).create_secrets();
-        assert!(secrets.len() == amounts.len());
-        assert_eq!(secrets.first().unwrap().len(), 24);
     }
 }

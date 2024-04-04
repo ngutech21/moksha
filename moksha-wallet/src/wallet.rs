@@ -371,10 +371,9 @@ where
             split_result.1.proofs()
         };
 
-        let fee_blind = BlindedMessage::blank(
-            melt_quote.fee_reserve.into(),
-            wallet_keyset.keyset_id.to_string(),
-        )?;
+        let fee_blind = self
+            .create_blank(melt_quote.fee_reserve.into(), &wallet_keyset.keyset_id)
+            .await?;
 
         let msgs = fee_blind
             .iter()
@@ -506,7 +505,7 @@ where
             .update_keyset_last_index(
                 &mut tx,
                 &WalletKeyset {
-                    last_index: (start_index + amount) as u64,
+                    last_index: (start_index + amount - 1) as u64,
                     ..keyset.clone()
                 },
             )
@@ -729,6 +728,41 @@ where
         Ok(tokens)
     }
 
+    pub async fn create_blank(
+        &self,
+        fee_reserve: Amount,
+        keyset_id: &KeysetId,
+    ) -> Result<Vec<(BlindedMessage, SecretKey, String)>, MokshaWalletError> {
+        if fee_reserve.0 == 0 {
+            return Ok(vec![]);
+        }
+
+        let fee_reserve_float = fee_reserve.0 as f64;
+        let count = (fee_reserve_float.log2().ceil() as u64).max(1);
+
+        let secret_range = self.create_secrets(keyset_id, count as u32).await?;
+        let blinded_messages = secret_range
+            .into_iter()
+            .map(|(secret, blinding_factor)| {
+                let (b_, alice_secret_key) = self
+                    .dhke
+                    .step1_alice(secret.clone(), Some(&blinding_factor.secret_bytes()))
+                    .unwrap(); // FIXME
+                (
+                    BlindedMessage {
+                        amount: 1,
+                        b_,
+                        id: keyset_id.to_string(),
+                    },
+                    alice_secret_key,
+                    secret,
+                )
+            })
+            .collect::<Vec<(BlindedMessage, SecretKey, String)>>();
+
+        Ok(blinded_messages)
+    }
+
     // FIXME implement for Amount
     fn create_blinded_messages(
         &self,
@@ -850,6 +884,84 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_blank_blinded_messages_1000_sats() -> anyhow::Result<()> {
+        let localstore = SqliteLocalStore::with_in_memory().await?;
+        let wallet_keyset = create_test_wallet_keyset()?;
+        let mut tx = localstore.begin_tx().await?;
+        localstore.upsert_keyset(&mut tx, &wallet_keyset).await?;
+        tx.commit().await?;
+
+        let client = create_mock();
+
+        let wallet = WalletBuilder::new()
+            .with_client(client)
+            .with_localstore(localstore)
+            .build()
+            .await?;
+        let result = wallet
+            .create_blank(1000.into(), &KeysetId::new("00d31cecf59d18c0")?)
+            .await;
+        println!("{:?}", result);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert!(result.len() == 10);
+        assert!(result.first().unwrap().0.amount == 1);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_blank_blinded_messages_zero_sats() -> anyhow::Result<()> {
+        let localstore = SqliteLocalStore::with_in_memory().await?;
+        let wallet_keyset = create_test_wallet_keyset()?;
+        let mut tx = localstore.begin_tx().await?;
+        localstore.upsert_keyset(&mut tx, &wallet_keyset).await?;
+        tx.commit().await?;
+
+        let client = create_mock();
+
+        let wallet = WalletBuilder::new()
+            .with_client(client)
+            .with_localstore(localstore)
+            .build()
+            .await?;
+        let result = wallet
+            .create_blank(0.into(), &KeysetId::new("00d31cecf59d18c0")?)
+            .await;
+        println!("{:?}", result);
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_blank_blinded_messages_serialize() -> anyhow::Result<()> {
+        let localstore = SqliteLocalStore::with_in_memory().await?;
+        let wallet_keyset = create_test_wallet_keyset()?;
+        let mut tx = localstore.begin_tx().await?;
+        localstore.upsert_keyset(&mut tx, &wallet_keyset).await?;
+        tx.commit().await?;
+
+        let client = create_mock();
+
+        let wallet = WalletBuilder::new()
+            .with_client(client)
+            .with_localstore(localstore)
+            .build()
+            .await?;
+
+        let result = wallet
+            .create_blank(4000.into(), &KeysetId::new("00d31cecf59d18c0")?)
+            .await?;
+        for (blinded_message, _, _) in result {
+            let out = serde_json::to_string(&blinded_message)?;
+            assert!(!out.is_empty());
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_mint_tokens() -> anyhow::Result<()> {
         let mint_response =
             read_fixture_as::<PostMintBolt11Response>("post_mint_response_20.json")?;
@@ -871,7 +983,6 @@ mod tests {
             .build()
             .await?;
 
-        let wallet_keyset = create_test_wallet_keyset()?;
         let result = wallet
             .mint_tokens(
                 &wallet_keyset,
