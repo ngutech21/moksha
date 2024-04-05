@@ -8,17 +8,17 @@ use moksha_core::primitives::{
 };
 use moksha_core::token::TokenV3;
 use moksha_wallet::client::CashuClient;
-use moksha_wallet::error::MokshaWalletError;
+
 use moksha_wallet::http::CrossPlatformHttpClient;
-use moksha_wallet::localstore::sqlite::SqliteLocalStore;
-use moksha_wallet::wallet::Wallet;
+
+use mokshacli::cli::{self, choose_mint, get_mints_with_balance};
 use num_format::{Locale, ToFormattedString};
 use qrcode::render::unicode;
 use qrcode::QrCode;
-use std::io::Write;
-use std::process::exit;
+
+use std::path::PathBuf;
 use std::str::FromStr;
-use std::{io::stdout, path::PathBuf};
+
 use url::Url;
 
 #[derive(Parser)]
@@ -73,6 +73,7 @@ async fn main() -> anyhow::Result<()> {
         None => moksha_wallet::config_path::db_path(),
     };
 
+    let term = Term::stdout();
     let localstore = SqliteLocalStore::with_path(db_path.clone()).await?;
     let client = CrossPlatformHttpClient::new();
     let wallet = moksha_wallet::wallet::WalletBuilder::default()
@@ -85,7 +86,7 @@ async fn main() -> anyhow::Result<()> {
                 e,
                 moksha_wallet::error::MokshaWalletError::UnsupportedApiVersion
             ) {
-                println!("Error: Mint does not support /v1 api");
+                term.write_line("Error: Mint does not support /v1 api").expect("write_line failed");
                 std::process::exit(1);
             }
             e
@@ -94,13 +95,12 @@ async fn main() -> anyhow::Result<()> {
     match cli.command {
         Command::AddMint { mint_url } => {
             wallet.add_mint_keysets(&mint_url).await?;
-            println!("Mint added successfully ");
+            term.write_line("Mint added successfully ")?;
         }
         Command::Info => {
             let wallet_version = style(env!("CARGO_PKG_VERSION")).cyan();
             let mint_urls = wallet.get_mint_urls().await?;
             let db_path = style(db_path).cyan();
-            let term = Term::stdout();
             term.write_line(&format!("Version: {wallet_version}"))?;
             term.write_line(&format!("DB: {db_path}"))?;
 
@@ -121,7 +121,7 @@ async fn main() -> anyhow::Result<()> {
             let token_mint_url = match token.mint() {
                 Some(url) => url,
                 None => {
-                    println!("Invalid Token: Missing mint url");
+                    term.write_line("Invalid Token: Missing mint url")?;
                     return Ok(());
                 }
             };
@@ -132,8 +132,7 @@ async fn main() -> anyhow::Result<()> {
                         "New mint found {:?} . Do you want to add it?",
                         token_mint_url.to_string()
                     ))
-                    .interact()
-                    .unwrap();
+                    .interact()?;
 
                 if !add_mint {
                     return Ok(());
@@ -143,7 +142,7 @@ async fn main() -> anyhow::Result<()> {
                     .is_v1_supported(&token_mint_url)
                     .await?;
                 if !is_valid_mint {
-                    println!("Error: Invalid mint url");
+                    term.write_line("Error: Invalid mint url")?;
                     return Ok(());
                 }
 
@@ -157,16 +156,13 @@ async fn main() -> anyhow::Result<()> {
                 .expect("Keyset not found");
 
             wallet.receive_tokens(wallet_keyset, &token).await?;
-            println!(
-                "Tokens received successfully.\nNew total balance {} (sat)",
-                wallet.get_balance().await?.to_formatted_string(&Locale::en)
-            );
+            cli::show_total_balance(&wallet).await?;
         }
         Command::Send { amount } => {
             let mint_url = choose_mint(&wallet, KeysetIdType::Sat).await?;
 
             if mint_url.1 < amount {
-                println!("Error: Not enough tokens in selected mint");
+                term.write_line("Error: Not enough tokens in selected mint")?;
                 return Ok(());
             }
 
@@ -178,20 +174,15 @@ async fn main() -> anyhow::Result<()> {
                 .find(|k| k.mint_url == mint_url)
                 .expect("Keyset not found");
 
-            println!("Using tokens from mint: {mint_url}");
+            term.write_line(&format!("Using tokens from mint: {mint_url}"))?;
             let result = wallet.send_tokens(wallet_keyset, amount).await?;
             let tokens: String = result.try_into()?;
 
-            println!("Result {amount} (sat):\n{tokens}");
-            println!(
-                "\nNew total balance: {} (sat)",
-                wallet.get_balance().await?.to_formatted_string(&Locale::en)
-            );
+            term.write_line(&format!("Result {amount} (sat):\n{tokens}"))?;
+            cli::show_total_balance(&wallet).await?;
         }
         Command::Balance => {
             let total_balance = wallet.get_balance().await?;
-
-            let term = Term::stdout();
             if total_balance > 0 {
                 let mints = get_mints_with_balance(&wallet, KeysetIdType::Sat).await?;
                 term.write_line(&format!(
@@ -207,9 +198,7 @@ async fn main() -> anyhow::Result<()> {
                     ))?;
                 }
             }
-
-            let balance = style(total_balance.to_formatted_string(&Locale::en)).cyan();
-            term.write_line(&format!("\nTotal balance: {balance} (sat)"))?;
+            cli::show_total_balance(&wallet).await?;
         }
         Command::Pay { invoice } => {
             let mint_url = choose_mint(&wallet, KeysetIdType::Sat).await?.0;
@@ -230,8 +219,7 @@ async fn main() -> anyhow::Result<()> {
                     quote.fee_reserve,
                     quote.amount + quote.fee_reserve
                 ))
-                .interact()
-                .unwrap();
+                .interact()?;
 
             if !pay_confirmed {
                 return Ok(());
@@ -243,25 +231,26 @@ async fn main() -> anyhow::Result<()> {
 
             if response.0.paid {
                 if response.1 > 0 {
-                    println!(
+                    term.write_line(&format!(
                         "Returned fees {} (sat)",
                         response.1.to_formatted_string(&Locale::en)
-                    );
+                    ))?;
                 }
-                println!(
-                    "\nInvoice has been paid: Tokens melted successfully\nNew total balance: {} (sat)",
-                    wallet.get_balance().await?.to_formatted_string(&Locale::en)
-                );
+                term.write_line(
+                    "\nInvoice has been paid: Tokens melted successfully",
+                )?;
+                cli::show_total_balance(&wallet).await?;
             } else {
-                println!("Error: Tokens not melted");
+                term.write_line("Error: Tokens not melted")?;
             }
         }
         Command::PayOnchain { address, amount } => {
             // FIXME remove redundant code
             let mint_url = choose_mint(&wallet, KeysetIdType::Sat).await?;
 
+
             if mint_url.1 < amount {
-                println!("Error: Not enough tokens in selected mint");
+                term.write_line("Error: Not enough tokens in selected mint")?;
                 return Ok(());
             }
             let mint_url = mint_url.0;
@@ -275,7 +264,7 @@ async fn main() -> anyhow::Result<()> {
             let info = wallet.get_mint_info(&mint_url).await?;
 
             if info.nuts.nut18.map_or(true, |nut18| !nut18.supported) {
-                println!("Error: onchain-payments are not supported by this mint");
+                term.write_line("Error: onchain-payments are not supported by this mint")?;
                 return Ok(());
             }
 
@@ -284,23 +273,23 @@ async fn main() -> anyhow::Result<()> {
                 .await?;
 
             if quotes.is_empty() {
-                println!("Error: No quotes found");
+                term.write_line("Error: No quotes found")?;
                 return Ok(());
             }
 
             let quote = quotes.first().expect("No quotes found");
 
-            println!(
+            term.write_line(&format!(
                 "Create onchain transaction to melt tokens: amount {} + fee {} = {} (sat)\n\n{}",
                 amount,
                 quote.fee,
                 amount + quote.fee,
-                address
-            );
+                address)
+            )?;
+
             let pay_confirmed = Confirm::new()
                 .with_prompt("Confirm payment?")
-                .interact()
-                .unwrap();
+                .interact()?;
 
             if !pay_confirmed {
                 return Ok(());
@@ -308,21 +297,19 @@ async fn main() -> anyhow::Result<()> {
 
             let PostMeltBtcOnchainResponse { paid, txid } =
                 wallet.pay_onchain(wallet_keyset, quote).await?;
-            println!("Created transaction: {}\n", &txid);
+            term.write_line(&format!("Created transaction: {}\n", &txid))?;
 
-            let mut lock = stdout().lock();
+            let progress_bar = cli::progress_bar()?;
+            progress_bar.set_message("Waiting for payment confirmation ...");
+
             loop {
                 tokio::time::sleep(std::time::Duration::from_millis(2_000)).await;
 
                 if paid || wallet.is_onchain_tx_paid(&mint_url, txid.clone()).await? {
-                    println!(
-                        "\nTokens melted successfully\nNew total balance: {} (sat)",
-                        wallet.get_balance().await?.to_formatted_string(&Locale::en)
-                    );
+                    progress_bar.finish_with_message("\nTokens melted successfully\n");
+                    cli::show_total_balance(&wallet).await?;
                     break;
                 } else {
-                    write!(lock, ".").unwrap();
-                    lock.flush().unwrap();
                     continue;
                 }
             }
@@ -334,12 +321,12 @@ async fn main() -> anyhow::Result<()> {
 
             let payment_method = info.nuts.nut17.as_ref().map_or_else(
                 || {
-                    println!("Only bolt11 minting is supported");
+                    term.write_line("Only bolt11 minting is supported").expect("write_line failed");
                     PaymentMethod::Bolt11
                 },
                 |nut17| {
                     if !nut17.supported {
-                        println!("Only bolt11 minting is supported");
+                        term.write_line("Only bolt11 minting is supported").expect("write_line failed");
                         PaymentMethod::Bolt11
                     } else {
                         let selections = &[PaymentMethod::BtcOnchain, PaymentMethod::Bolt11];
@@ -348,8 +335,7 @@ async fn main() -> anyhow::Result<()> {
                             .with_prompt("Choose a payment method:")
                             .default(0)
                             .items(&selections[..])
-                            .interact()
-                            .unwrap();
+                            .interact().expect("Selection failed");
                         selections[selection].clone()
                     }
                 },
@@ -359,26 +345,34 @@ async fn main() -> anyhow::Result<()> {
                 PaymentMethod::BtcOnchain => {
                     let nut17 = info.nuts.nut17.expect("nut17 is None");
                     let payment_method = nut17.payment_methods.first().expect("no payment methods");
+                    
                     if amount < payment_method.min_amount {
-                        println!(
+                        term.write_line(&format!(
                             "Amount too low. Minimum amount is {} (sat)",
-                            payment_method.min_amount.to_formatted_string(&Locale::en)
-                        );
+                            payment_method.min_amount.to_formatted_string(&Locale::en))
+                        )?;
                         return Ok(());
                     }
 
                     if amount > payment_method.max_amount {
-                        println!(
+                        term.write_line(&format!(
                             "Amount too high. Maximum amount is {} (sat)",
-                            payment_method.max_amount.to_formatted_string(&Locale::en)
-                        );
+                            payment_method.max_amount.to_formatted_string(&Locale::en))
+                        )?;
                         return Ok(());
                     }
 
                     let PostMintQuoteBtcOnchainResponse { address, quote, .. } =
                         wallet.create_quote_onchain(&mint_url, amount).await?;
 
-                    println!("Pay onchain to mint tokens:\n\n{address}");
+                    term.write_line(&format!("Pay onchain to mint tokens:\n\n{address}"))?;
+
+                    let amount_btc = amount as f64 / 100_000_000.0;
+                    let bip21_code = format!("bitcoin:{}?amount={}", address, amount_btc);
+                    let image = QrCode::new(bip21_code)?
+                        .render::<unicode::Dense1x2>().quiet_zone(true)
+                        .build();
+                    term.write_line(&image)?;
                     quote
                 }
                 PaymentMethod::Bolt11 => {
@@ -388,16 +382,13 @@ async fn main() -> anyhow::Result<()> {
                         ..
                     } = wallet.create_quote_bolt11(&mint_url, amount).await?;
 
-                    let term = Term::stdout();
-                    term.write_line(&format!("Pay invoice to mint tokens:\n\n{payment_request}"))?;
-
+                    term.write_line(&format!("Pay lightning invoice to mint tokens:\n\n{payment_request}"))?;
+                    
                     let image = QrCode::new(payment_request)?
-                        .render::<unicode::Dense1x2>()
-                        .dark_color(unicode::Dense1x2::Dark)
-                        .light_color(unicode::Dense1x2::Light)
+                        .render::<unicode::Dense1x2>().quiet_zone(true)
                         .build();
-
                     term.write_line(&image)?;
+                    
                     quote
                 }
             };
@@ -408,9 +399,13 @@ async fn main() -> anyhow::Result<()> {
                 .find(|k| k.mint_url == mint_url)
                 .expect("Keyset not found");
 
+            
+            let progress_bar = cli::progress_bar()?;
+            progress_bar.set_message("Waiting for payment ...");
+
             loop {
                 tokio::time::sleep_until(
-                    tokio::time::Instant::now() + std::time::Duration::from_millis(1_000),
+                    tokio::time::Instant::now() + std::time::Duration::from_millis(500),
                 )
                 .await;
 
@@ -429,17 +424,15 @@ async fn main() -> anyhow::Result<()> {
 
                 match mint_result {
                     Ok(_) => {
-                        println!(
-                            "Tokens minted successfully.\nNew total balance {} (sat)",
-                            wallet.get_balance().await?.to_formatted_string(&Locale::en)
-                        );
+                        progress_bar.finish_with_message("Tokens minted successfully.\n");
+                        cli::show_total_balance(&wallet).await?;
                         break;
                     }
                     Err(moksha_wallet::error::MokshaWalletError::InvoiceNotPaidYet(_, _)) => {
                         continue;
                     }
                     Err(e) => {
-                        println!("General Error: {}", e);
+                        term.write_line(&format!("General Error: {}", e))?;
                         break;
                     }
                 }
@@ -449,60 +442,3 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn choose_mint(
-    wallet: &Wallet<SqliteLocalStore, CrossPlatformHttpClient>,
-    keysetid_type: KeysetIdType,
-) -> Result<(Url, u64), MokshaWalletError> {
-    let mints = get_mints_with_balance(wallet, keysetid_type).await?;
-
-    if mints.is_empty() {
-        println!("No mints found. Add a mint first with 'moksha-cli add-mint <mint-url>'");
-        exit(0)
-    }
-
-    if mints.len() == 1 {
-        return Ok(mints[0].clone());
-    }
-
-    let mints_display = mints
-        .iter()
-        .map(|(url, balance)| {
-            format!(
-                "{} - {} (sat)",
-                url,
-                balance.to_formatted_string(&Locale::en)
-            )
-        })
-        .collect::<Vec<String>>();
-
-    let selection = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Choose a mint:")
-        .default(0)
-        .items(&mints_display[..])
-        .interact()
-        .unwrap();
-    Ok(mints[selection].clone())
-}
-
-pub async fn get_mints_with_balance(
-    wallet: &Wallet<SqliteLocalStore, CrossPlatformHttpClient>,
-    keysetid_type: KeysetIdType,
-) -> Result<Vec<(Url, u64)>, MokshaWalletError> {
-    let all_proofs = wallet.get_proofs().await?;
-
-    let keysets = wallet.get_wallet_keysets().await?;
-    if keysets.is_empty() {
-        println!("No mints found. Add a mint first with 'moksha-cli add-mint <mint-url>'");
-        exit(0)
-    }
-    Ok(keysets
-        .into_iter()
-        .filter(|k| k.keyset_id.keyset_type() == keysetid_type)
-        .map(|k| {
-            (
-                k.mint_url,
-                all_proofs.proofs_by_keyset(&k.keyset_id).total_amount(),
-            )
-        })
-        .collect::<Vec<(Url, u64)>>())
-}

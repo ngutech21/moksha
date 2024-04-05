@@ -17,8 +17,8 @@ path = "src/lib.rs"
 anyhow = { version = "1.0.79", features = ["backtrace"] }
 secp256k1 = { version = "0.28.2", default-features = false, features = ["serde"] }
 moksha-core = { version = "0.2.1", path = "../moksha-core" }
-serde_json = "1.0.113"
-serde = "1.0.196"
+serde_json = "1.0.115"
+serde = "1.0.197"
 thiserror = "1.0.56"
 async-trait = "0.1.77"
 lightning-invoice = "0.29.0"

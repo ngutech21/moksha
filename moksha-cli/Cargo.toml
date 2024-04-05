@@ -11,6 +11,11 @@ description = "cashu-cli wallet"
 
 [[bin]]
 name = "moksha-cli"
+path = "src/bin/moksha-cli.rs"
+
+[lib]
+name = "mokshacli"
+path = "src/lib.rs"
 
 [dependencies]
 moksha-wallet = { version = "0.2.1", path = "../moksha-wallet" }
@@ -23,3 +28,4 @@ anyhow = { version = "1.0.75", features = ["backtrace"] }
 dialoguer = "0.11.0"
 num-format = "0.4.4"
 qrcode = "0.14.0"
+indicatif = "0.17.8"
