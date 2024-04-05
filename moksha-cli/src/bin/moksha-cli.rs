@@ -1,7 +1,6 @@
 use clap::{Parser, Subcommand};
 use console::{style, Term};
 use dialoguer::{theme::ColorfulTheme, Confirm, Select};
-use moksha_core::keyset::KeysetIdType;
 use moksha_core::primitives::{
     CurrencyUnit, PaymentMethod, PostMeltBtcOnchainResponse, PostMintQuoteBolt11Response,
     PostMintQuoteBtcOnchainResponse,
@@ -159,7 +158,7 @@ async fn main() -> anyhow::Result<()> {
             cli::show_total_balance(&wallet).await?;
         }
         Command::Send { amount } => {
-            let mint_url = choose_mint(&wallet, KeysetIdType::Sat).await?;
+            let mint_url = choose_mint(&wallet, &CurrencyUnit::Sat).await?;
 
             if mint_url.1 < amount {
                 term.write_line("Error: Not enough tokens in selected mint")?;
@@ -184,7 +183,7 @@ async fn main() -> anyhow::Result<()> {
         Command::Balance => {
             let total_balance = wallet.get_balance().await?;
             if total_balance > 0 {
-                let mints = get_mints_with_balance(&wallet, KeysetIdType::Sat).await?;
+                let mints = get_mints_with_balance(&wallet, &CurrencyUnit::Sat).await?;
                 term.write_line(&format!(
                     "You have balances in {} mints",
                     style(mints.len()).cyan()
@@ -201,7 +200,7 @@ async fn main() -> anyhow::Result<()> {
             cli::show_total_balance(&wallet).await?;
         }
         Command::Pay { invoice } => {
-            let mint_url = choose_mint(&wallet, KeysetIdType::Sat).await?.0;
+            let mint_url = choose_mint(&wallet, &CurrencyUnit::Sat).await?.0;
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
                 .iter()
@@ -246,7 +245,7 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::PayOnchain { address, amount } => {
             // FIXME remove redundant code
-            let mint_url = choose_mint(&wallet, KeysetIdType::Sat).await?;
+            let mint_url = choose_mint(&wallet, &CurrencyUnit::Sat).await?;
 
 
             if mint_url.1 < amount {
@@ -315,7 +314,7 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Command::Mint { amount } => {
-            let mint_url = choose_mint(&wallet, KeysetIdType::Sat).await?.0;
+            let mint_url = choose_mint(&wallet, &CurrencyUnit::Sat).await?.0;
 
             let info = wallet.get_mint_info(&mint_url).await?;
 

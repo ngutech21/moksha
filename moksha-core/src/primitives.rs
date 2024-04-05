@@ -11,7 +11,6 @@ use uuid::Uuid;
 
 use crate::{
     blind::{BlindedMessage, BlindedSignature},
-    keyset::KeysetIdType,
     proof::Proofs,
 };
 
@@ -134,6 +133,7 @@ pub struct KeyResponse {
 #[serde(rename_all = "lowercase")]
 pub enum CurrencyUnit {
     Sat,
+    MSat,
     Usd,
 }
 
@@ -141,17 +141,9 @@ impl From<String> for CurrencyUnit {
     fn from(unit: String) -> Self {
         match unit.to_lowercase().as_str() {
             "sat" => Self::Sat,
+            "msat" => Self::Sat,
             "usd" => Self::Usd,
             _ => panic!("Unknown currency unit: {}", unit),
-        }
-    }
-}
-
-impl From<KeysetIdType> for CurrencyUnit {
-    fn from(keyset_id: KeysetIdType) -> Self {
-        match keyset_id {
-            KeysetIdType::Sat => Self::Sat,
-            KeysetIdType::UsdCent => Self::Usd,
         }
     }
 }
@@ -160,6 +152,7 @@ impl Display for CurrencyUnit {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Sat => write!(f, "sat"),
+            Self::MSat => write!(f, "msat"),
             Self::Usd => write!(f, "usd"),
         }
     }

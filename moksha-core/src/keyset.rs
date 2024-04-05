@@ -154,15 +154,13 @@ impl ToString for KeysetId {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum KeysetIdType {
-    Sat,
-    UsdCent,
+    V1,
 }
 
 impl From<String> for KeysetIdType {
     fn from(id: String) -> Self {
         match id.as_str() {
-            "00" => KeysetIdType::Sat,
-            "01" => KeysetIdType::UsdCent,
+            "00" => KeysetIdType::V1,
             _ => panic!("Invalid Keyset ID"),
         }
     }
@@ -171,8 +169,7 @@ impl From<String> for KeysetIdType {
 impl ToString for KeysetIdType {
     fn to_string(&self) -> String {
         match self {
-            KeysetIdType::Sat => "00".to_string(),
-            KeysetIdType::UsdCent => "01".to_string(),
+            KeysetIdType::V1 => "00".to_string(),
         }
     }
 }

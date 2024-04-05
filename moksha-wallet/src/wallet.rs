@@ -572,13 +572,13 @@ where
 
         let first_tokens: TokenV3 = (
             wallet_keyset.mint_url.to_owned(),
-            wallet_keyset.keyset_id.keyset_type().into(),
+            wallet_keyset.currency_unit.clone(),
             proofs[0..len_first].to_vec().into(),
         )
             .into();
         let second_tokens: TokenV3 = (
             wallet_keyset.mint_url.to_owned(),
-            wallet_keyset.keyset_id.keyset_type().into(),
+            wallet_keyset.currency_unit.clone(),
             proofs[len_first..proofs.len()].to_vec().into(),
         )
             .into();

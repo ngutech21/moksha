@@ -3,7 +3,8 @@ use std::{process::exit, time::Duration};
 use console::{style, Term};
 use dialoguer::{theme::ColorfulTheme, Select};
 use indicatif::{ProgressBar, ProgressStyle};
-use moksha_core::keyset::KeysetIdType;
+
+use moksha_core::primitives::CurrencyUnit;
 use moksha_wallet::{error::MokshaWalletError, http::CrossPlatformHttpClient, localstore::sqlite::SqliteLocalStore, wallet::Wallet};
 use num_format::Locale;
 use url::Url;
@@ -14,15 +15,14 @@ pub fn progress_bar() -> anyhow::Result<ProgressBar>{
     pb.enable_steady_tick(Duration::from_millis(100));
     pb.set_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}")?);
     Ok(pb)
-            
 }
 
 
 pub async fn choose_mint(
     wallet: &Wallet<SqliteLocalStore, CrossPlatformHttpClient>,
-    keysetid_type: KeysetIdType,
+    currency_unit: &CurrencyUnit
 ) -> Result<(Url, u64), MokshaWalletError> {
-    let mints = get_mints_with_balance(wallet, keysetid_type).await?;
+    let mints = get_mints_with_balance(wallet, currency_unit).await?;
 
     if mints.is_empty() {
         println!("No mints found. Add a mint first with 'moksha-cli add-mint <mint-url>'");
@@ -57,7 +57,7 @@ pub async fn choose_mint(
 
 pub async fn get_mints_with_balance(
     wallet: &Wallet<SqliteLocalStore, CrossPlatformHttpClient>,
-    keysetid_type: KeysetIdType,
+    currency_unit: &CurrencyUnit,
 ) -> Result<Vec<(Url, u64)>, MokshaWalletError> {
     let all_proofs = wallet.get_proofs().await?;
 
@@ -69,7 +69,7 @@ pub async fn get_mints_with_balance(
     }
     Ok(keysets
         .into_iter()
-        .filter(|k| k.keyset_id.keyset_type() == keysetid_type)
+        .filter(|k| &k.currency_unit == currency_unit)
         .map(|k| {
             (
                 k.mint_url,
