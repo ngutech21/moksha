@@ -127,7 +127,9 @@ services:
     ports:
       - "2228:3338"
     environment:
-      - MINT_LIGHTNING_BACKEND=FakeWallet
+      - MINT_DERIVATION_PATH_LIST=["m/0'/0'/0'", "m/0'/0'/1'", "m/0'/1'/0'", "m/0'/2'/0'"]
+      - MINT_BACKEND_BOLT11_SAT=FakeWallet
+      - MINT_BACKEND_BOLT11_USD=FakeWallet
       - MINT_LISTEN_HOST=0.0.0.0
       - MINT_LISTEN_PORT=3338
       - MINT_PRIVATE_KEY=TEST_PRIVATE_KEY
