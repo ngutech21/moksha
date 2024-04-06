@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT keyset_id, amount, C, secret FROM proofs;",
+  "describe": {
+    "columns": [
+      {
+        "name": "keyset_id",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "amount",
+        "ordinal": 1,
+        "type_info": "Int64"
+      },
+      {
+        "name": "C",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "secret",
+        "ordinal": 3,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "1aa7a37640cde629ef99ebb746875208743b9fc168fa8cffd848b671014b8bf1"
+}

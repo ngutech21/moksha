@@ -11,7 +11,6 @@ use crate::localstore::{LocalStore, WalletKeyset};
 
 use sqlx::sqlite::SqliteError;
 
-use sqlx::Row;
 
 #[derive(Clone, Debug)]
 pub struct SqliteLocalStore {
@@ -40,6 +39,7 @@ impl LocalStore for SqliteLocalStore {
         let placeholders: Vec<String> = (1..=proof_secrets.len())
             .map(|i| format!("?{}", i))
             .collect();
+        
         let sql = format!(
             "DELETE FROM proofs WHERE secret IN ({})",
             placeholders.join(",")
@@ -59,14 +59,11 @@ impl LocalStore for SqliteLocalStore {
         proofs: &Proofs,
     ) -> Result<(), MokshaWalletError> {
         for proof in proofs.proofs() {
-            sqlx::query(
-                r#"INSERT INTO proofs (keyset_id, amount, C, secret, time_created) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP);
-                "#,
-            )
-            .bind(proof.keyset_id)
-            .bind(proof.amount as i64)
-            .bind(proof.c.to_string())
-            .bind(proof.secret)
+            let c = proof.c.to_string();
+            let amount = proof.amount as i64;
+            sqlx::query!(
+                "INSERT INTO proofs (keyset_id, amount, C, secret, time_created) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP);",
+            proof.keyset_id,amount, c, proof.secret )
             .execute(&mut **tx)
             .await?;
         }
@@ -77,27 +74,21 @@ impl LocalStore for SqliteLocalStore {
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
     ) -> Result<Proofs, MokshaWalletError> {
-        let rows = sqlx::query("SELECT * FROM proofs;")
+        let rows = sqlx::query!("SELECT keyset_id, amount, C, secret FROM proofs;")
             .fetch_all(&mut **tx)
             .await?;
 
+        // FIXME read time_created
         Ok(rows
-            .iter()
-            .map(|row| {
-                let id = row.get(0);
-                let amount: i64 = row.get(1);
-                let c: String = row.get(2);
-                let secret: String = row.get(3);
-                let _time_created: String = row.get(4); // TODO use time_created
-                Ok(Proof {
-                    keyset_id: id,
-                    amount: amount as u64,
-                    c: c.parse().expect("Invalid Pubkey"),
-                    secret,
+            .into_iter()
+            .map(|row| Proof{
+                    keyset_id: row.keyset_id,
+                    amount: row.amount as u64,
+                    c: row.C.parse().expect("Invalid Pubkey"),
+                    secret: row.secret,
                     script: None,
-                })
             })
-            .collect::<Result<Vec<Proof>, SqliteError>>()?
+            .collect::<Vec<Proof>>()
             .into())
     }
 
@@ -106,16 +97,15 @@ impl LocalStore for SqliteLocalStore {
         tx: &mut sqlx::Transaction<Self::DB>,
         keyset: &WalletKeyset,
     ) -> Result<(), MokshaWalletError> {
-        sqlx::query(
+        let keyset_id = keyset.keyset_id.to_string();
+        let mint_url = keyset.mint_url.as_str();
+        let currency_unit = keyset.currency_unit.to_string();
+        let last_index = keyset.last_index as i64;
+        let public_keys = serde_json::to_string(&keyset.public_keys)?;
+        sqlx::query!(
             r#"INSERT INTO keysets (keyset_id, mint_url, currency_unit, last_index, public_keys, active) VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT(keyset_id, mint_url) DO UPDATE SET currency_unit = $3, public_keys = $5, active = $6;
-            "#)
-        .bind(keyset.keyset_id.to_string())
-        .bind(keyset.mint_url.as_str())
-        .bind(keyset.currency_unit.to_string())
-        .bind(keyset.last_index as i64)
-        .bind(serde_json::to_string(&keyset.public_keys)?)
-        .bind(keyset.active)
+            "#,keyset_id, mint_url, currency_unit, last_index, public_keys, keyset.active)
         .execute(&mut **tx)
         .await?;
         Ok(())
@@ -125,22 +115,23 @@ impl LocalStore for SqliteLocalStore {
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
     ) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
-        let rows = sqlx::query("SELECT * FROM keysets;")
+        let rows = sqlx::query!("SELECT id, mint_url, keyset_id, currency_unit, active, last_index, public_keys FROM keysets;")
             .fetch_all(&mut **tx)
             .await?;
-
+ 
         Ok(rows
             .iter()
             .map(|row| {
-                let id: i64 = row.get(0);
-                let mint_url: Url = Url::parse(row.get(1)).expect("invalid url in localstore");
+                let id: i64 = row.id;
+                let mint_url: Url = Url::parse(&row.mint_url).expect("invalid URL in localstore");
                 let keyset_id: KeysetId =
-                    KeysetId::new(row.get(2)).expect("invalid keyset_id in localstore");
-                let currency_unit: String = row.get(3);
-                let active: bool = row.get(4);
-                let last_index: i64 = row.get(5);
+                    KeysetId::new(&row.keyset_id).expect("invalid keyset_id in localstore");
+                let currency_unit: String = row.currency_unit.clone();
+                let active: bool = row.active;
+                let last_index: i64 = row.last_index;
+                let public_keys: String = row.public_keys.clone();
                 let public_keys: HashMap<u64, PublicKey> =
-                    serde_json::from_str(row.get(6)).expect("invalid json in localstore");
+                    serde_json::from_str(&public_keys).expect("invalid json in localstore");
                 Ok(WalletKeyset {
                     id: Some(id as u64),
                     mint_url,
@@ -163,10 +154,9 @@ impl LocalStore for SqliteLocalStore {
             None => return Err(MokshaWalletError::IdNotSet),
             Some(id) => id as i64,
         };
+        let last_index = keyset.last_index as i64;
 
-        sqlx::query(r#"UPDATE keysets SET last_index = $1 WHERE id = $2;"#)
-            .bind(keyset.last_index as i64)
-            .bind(id)
+        sqlx::query!("UPDATE keysets SET last_index = $1 WHERE id = $2;", last_index, id)
             .execute(&mut **tx)
             .await?;
         Ok(())
@@ -177,8 +167,7 @@ impl LocalStore for SqliteLocalStore {
         tx: &mut sqlx::Transaction<Self::DB>,
         seed_words: &str,
     ) -> Result<(), MokshaWalletError> {
-        sqlx::query("INSERT INTO seed (seed_words) VALUES ($1);")
-            .bind(seed_words)
+        sqlx::query!("INSERT INTO seed (seed_words) VALUES ($1);", seed_words)
             .execute(&mut **tx)
             .await?;
         Ok(())
@@ -188,12 +177,12 @@ impl LocalStore for SqliteLocalStore {
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
     ) -> Result<Option<String>, MokshaWalletError> {
-        let row = sqlx::query("SELECT seed_words FROM seed;")
+        let row = sqlx::query!("SELECT seed_words FROM seed;")
             .fetch_all(&mut **tx)
             .await?;
         match row.len() {
             0 => Ok(None),
-            1 => Ok(Some(row[0].get(0))),
+            1 => Ok(Some(row[0].seed_words.clone())),
             _ => Err(MokshaWalletError::MultipleSeeds),
         }
     }
@@ -210,7 +199,6 @@ impl SqliteLocalStore {
 
     async fn with_connection_string(connection_string: &str) -> Result<Self, MokshaWalletError> {
         // creates db-file if not already exists
-        //let pool = sqlx::SqlitePool::connect(connection_string).await?;
         let pool = sqlx::sqlite::SqlitePoolOptions::new()
             .acquire_timeout(std::time::Duration::from_secs(5))
             .idle_timeout(std::time::Duration::from_secs(5))

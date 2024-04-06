@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO seed (seed_words) VALUES ($1);",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "e99d7276a6bb8d0b0f456e8d00ec38e1192ef3f25f9204550ed30aa3a0bd7e3f"
+}

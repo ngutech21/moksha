@@ -1,6 +1,6 @@
 -- Add migration script here
 CREATE TABLE IF NOT EXISTS proofs (
-                keyset_id TEXT,
+                keyset_id TEXT NOT NULL,
                 amount INTEGER NOT NULL,
                 C TEXT NOT NULL,
                 secret TEXT NOT NULL, 
@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS keysets (
                 mint_url TEXT NOT NULL,
                 keyset_id TEXT NOT NULL,
                 currency_unit TEXT NOT NULL,
-                active BOOL DEFAULT TRUE,
-                last_index INTEGER,
-                public_keys JSON CHECK (json_valid(public_keys)),
+                active BOOL NOT NULL DEFAULT TRUE,
+                last_index INTEGER NOT NULL,
+                public_keys TEXT NOT NULL CHECK (json_valid(public_keys)),
                 UNIQUE (keyset_id, mint_url)
 );

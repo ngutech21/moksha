@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE keysets SET last_index = $1 WHERE id = $2;",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "c08a68cb103a8fe16fddbe23d163a04db5b9639ea87a8a1472ccca5d5194afc6"
+}

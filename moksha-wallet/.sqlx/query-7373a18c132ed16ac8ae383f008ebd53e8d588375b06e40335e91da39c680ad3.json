@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT seed_words FROM seed;",
+  "describe": {
+    "columns": [
+      {
+        "name": "seed_words",
+        "ordinal": 0,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "7373a18c132ed16ac8ae383f008ebd53e8d588375b06e40335e91da39c680ad3"
+}

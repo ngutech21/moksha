@@ -1,0 +1,56 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, mint_url, keyset_id, currency_unit, active, last_index, public_keys FROM keysets;",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "mint_url",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "keyset_id",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "currency_unit",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "active",
+        "ordinal": 4,
+        "type_info": "Bool"
+      },
+      {
+        "name": "last_index",
+        "ordinal": 5,
+        "type_info": "Int64"
+      },
+      {
+        "name": "public_keys",
+        "ordinal": 6,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "609877b640a209756b504ef93f9d0a41bca0c9c0eece9ec91a50195412d9adae"
+}
