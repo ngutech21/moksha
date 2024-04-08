@@ -83,7 +83,7 @@ pub async fn get_mints_with_balance(
 pub async fn show_total_balance(wallet: &Wallet<SqliteLocalStore, CrossPlatformHttpClient>) -> anyhow::Result<()>{
     let term = Term::stdout();
     term.write_line(&format!(
-                "Tokens received successfully.\nNew total balance {} (sat)",
+                "New total balance {} (sat)",
                 style(wallet.get_balance().await?.to_formatted_string(&Locale::en)).cyan() )
             )?;
     Ok(())

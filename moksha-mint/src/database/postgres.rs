@@ -366,7 +366,7 @@ impl Database for PostgresDB {
         key: &Uuid,
     ) -> Result<BtcOnchainMeltQuote, MokshaMintError> {
         let quote: BtcOnchainMeltQuote = sqlx::query!(
-            "SELECT id, amount,address, fee_total, fee_sat_per_vbyte, expiry, paid  FROM onchain_melt_quotes WHERE id = $1",
+            "SELECT id, amount,address, fee_total, fee_sat_per_vbyte, expiry, paid, description  FROM onchain_melt_quotes WHERE id = $1",
             key
         )
         .map(|row| BtcOnchainMeltQuote {
@@ -377,6 +377,7 @@ impl Database for PostgresDB {
             fee_sat_per_vbyte: row.fee_sat_per_vbyte as u32,
             expiry: row.expiry as u64,
             paid: row.paid,
+            description: row.description, 
         })
         .fetch_one(&mut **tx)
         .await?;
@@ -391,7 +392,7 @@ impl Database for PostgresDB {
         quote: &BtcOnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
-            "INSERT INTO onchain_melt_quotes (id, amount, address, fee_total, fee_sat_per_vbyte, expiry, paid) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            "INSERT INTO onchain_melt_quotes (id, amount, address, fee_total, fee_sat_per_vbyte, expiry, paid, description) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
             quote.quote_id,
             quote.amount as i64,
             quote.address,
@@ -399,6 +400,7 @@ impl Database for PostgresDB {
             quote.fee_sat_per_vbyte as i64,
             quote.expiry as i64,
             quote.paid,
+            quote.description
         )
         .execute(&mut **tx)
         .await?;

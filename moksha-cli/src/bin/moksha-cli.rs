@@ -279,13 +279,14 @@ async fn main() -> anyhow::Result<()> {
             let quote = quotes.first().expect("No quotes found");
 
             term.write_line(&format!(
-                "Create onchain transaction to melt tokens: amount {} + fee {} = {} (sat)\n\n{}",
+                "Create onchain transaction to melt tokens: amount {} + fee {} = {} (sat)\n{}\n\n{}",
                 amount,
                 quote.fee,
                 amount + quote.fee,
+                quote.description,
                 address)
             )?;
-
+            
             let pay_confirmed = Confirm::new()
                 .with_prompt("Confirm payment?")
                 .interact()?;

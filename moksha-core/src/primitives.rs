@@ -315,6 +315,7 @@ pub struct BtcOnchainMeltQuote {
     pub fee_sat_per_vbyte: u32,
     pub expiry: u64,
     pub paid: bool,
+    pub description: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
@@ -372,15 +373,15 @@ pub struct PostMeltBtcOnchainResponse {
     pub txid: String,
 }
 
-impl From<(String, BtcOnchainMeltQuote)> for PostMeltQuoteBtcOnchainResponse {
-    fn from((description, quote): (String, BtcOnchainMeltQuote)) -> Self {
+impl From<BtcOnchainMeltQuote> for PostMeltQuoteBtcOnchainResponse {
+    fn from(quote: BtcOnchainMeltQuote) -> Self {
         Self {
-            description,
             quote: quote.quote_id.to_string(),
             amount: quote.amount,
             fee: quote.fee_total,
             expiry: quote.expiry,
             paid: quote.paid,
+            description: quote.description,
         }
     }
 }
