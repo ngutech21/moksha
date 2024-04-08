@@ -40,7 +40,8 @@
 //!```
 //! If true, C must have originated from Bob
 //!
-use crate::error::MokshaCoreError;
+//!
+use crate::{blind::BlindingFactor, error::MokshaCoreError};
 use bitcoin_hashes::{sha256, Hash};
 use secp256k1::{All, PublicKey, Scalar, Secp256k1, SecretKey};
 use std::iter::once;
@@ -89,21 +90,15 @@ impl Dhke {
             .ok_or(MokshaCoreError::NoValidPointFound)
     }
 
-    // FIXME: use SecretKey instead of &[u8] for blinding factor
     pub fn step1_alice(
         &self,
         secret_msg: impl Into<String>,
-        blinding_factor: Option<&[u8]>,
-    ) -> Result<(PublicKey, SecretKey), MokshaCoreError> {
-        let mut rng = rand::thread_rng();
-
+        blinding_factor: &BlindingFactor,
+    ) -> Result<PublicKey, MokshaCoreError> {
         let y = Self::hash_to_curve(secret_msg.into().as_bytes())?;
-        let secret_key = match blinding_factor {
-            Some(f) => SecretKey::from_slice(f)?,
-            None => SecretKey::new(&mut rng),
-        };
-        let b = y.combine(&PublicKey::from_secret_key(&self.secp, &secret_key))?;
-        Ok((b, secret_key))
+        let blinding_factor = blinding_factor.to_secret_key();
+        let b = y.combine(&PublicKey::from_secret_key(&self.secp, &blinding_factor))?;
+        Ok(b)
     }
 
     pub fn step2_bob(&self, b: PublicKey, a: &SecretKey) -> Result<PublicKey, MokshaCoreError> {
@@ -114,11 +109,11 @@ impl Dhke {
     pub fn step3_alice(
         &self,
         c_: PublicKey,
-        r: SecretKey,
+        r: BlindingFactor,
         a: PublicKey,
     ) -> Result<PublicKey, MokshaCoreError> {
         c_.combine(
-            &a.mul_tweak(&self.secp, &Scalar::from(r))
+            &a.mul_tweak(&self.secp, &Scalar::from(r.to_secret_key()))
                 .map_err(MokshaCoreError::Secp256k1Error)?
                 .negate(&self.secp),
         )
@@ -148,10 +143,10 @@ pub fn public_key_from_hex(hex: &str) -> secp256k1::PublicKey {
 mod tests {
     use std::str::FromStr;
 
-    use crate::dhke::{public_key_from_hex, Dhke};
+    use crate::{blind::BlindingFactor, dhke::{public_key_from_hex, Dhke}};
     use anyhow::Ok;
     use pretty_assertions::assert_eq;
-
+    
     fn hex_to_string(hex: &str) -> String {
         use hex::FromHex;
         let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
@@ -198,10 +193,9 @@ mod tests {
     #[test]
     fn test_step1_alice() -> anyhow::Result<()> {
         let dhke = Dhke::new();
-        let blinding_factor =
-            hex_to_string("0000000000000000000000000000000000000000000000000000000000000001");
-        let (pub_key, secret_key) =
-            dhke.step1_alice("test_message", Some(blinding_factor.as_bytes()))?;
+        let blinding_factor = "0000000000000000000000000000000000000000000000000000000000000001".try_into()?; 
+        let pub_key =
+            dhke.step1_alice("test_message", &blinding_factor)?;
         let pub_key_str = pub_key.to_string();
 
         assert_eq!(
@@ -209,19 +203,15 @@ mod tests {
             "025cc16fe33b953e2ace39653efb3e7a7049711ae1d8a2f7a9108753f1cdea742b"
         );
 
-        assert_eq!(
-            hex::encode(secret_key.secret_bytes()),
-            "0000000000000000000000000000000000000000000000000000000000000001"
-        );
         Ok(())
     }
 
     #[test]
     fn test_step2_bob() -> anyhow::Result<()> {
         let dhke = Dhke::new();
-        let blinding_factor =
-            hex_to_string("0000000000000000000000000000000000000000000000000000000000000001");
-        let (pub_key, _) = dhke.step1_alice("test_message", Some(blinding_factor.as_bytes()))?;
+        
+        let bf: BlindingFactor = "0000000000000000000000000000000000000000000000000000000000000001".try_into()?; 
+        let pub_key = dhke.step1_alice("test_message", &bf)?;
 
         let a = pk_from_hex("0000000000000000000000000000000000000000000000000000000000000001");
 
@@ -242,7 +232,7 @@ mod tests {
             "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2",
         );
 
-        let r = pk_from_hex("0000000000000000000000000000000000000000000000000000000000000001");
+        let r = pk_from_hex("0000000000000000000000000000000000000000000000000000000000000001").into();
 
         let a = public_key_from_hex(
             "020000000000000000000000000000000000000000000000000000000000000001",
@@ -276,14 +266,14 @@ mod tests {
         let a = pk_from_hex("0000000000000000000000000000000000000000000000000000000000000001");
         let A = a.public_key(&dhke.secp);
 
-        let blinding_factor =
-            hex_to_string("0000000000000000000000000000000000000000000000000000000000000002");
+        let blinding_factor: BlindingFactor =
+            "0000000000000000000000000000000000000000000000000000000000000002".try_into()?;
 
         // Generate a shared secret
         let secret_msg = "test";
-        let (B_, r) = dhke.step1_alice(secret_msg, Some(blinding_factor.as_bytes()))?;
+        let B_ = dhke.step1_alice(secret_msg, &blinding_factor)?;
         let C_ = dhke.step2_bob(B_, &a)?;
-        let C = dhke.step3_alice(C_, r, A)?;
+        let C = dhke.step3_alice(C_, blinding_factor, A)?;
 
         // Verify the shared secret
         assert!(dhke.verify(a, C, secret_msg)?);

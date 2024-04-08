@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use bip32::{Seed, XPrv};
 use bip39::Mnemonic;
-use moksha_core::keyset::KeysetId;
+use moksha_core::{blind::BlindingFactor, keyset::KeysetId};
 use rand::Rng;
 use secp256k1::SecretKey;
 
@@ -69,24 +69,24 @@ impl DeterministicSecret {
         keyset_id: &KeysetId,
         start: u32,
         length: u32,
-    ) -> Result<Vec<(String, SecretKey)>, MokshaWalletError> {
+    ) -> Result<Vec<(String, BlindingFactor)>, MokshaWalletError> {
         let keyset_id = keyset_id.as_int()?;
         Ok((start..start + length)
             .map(|i| {
                 let key = self.derive_secret(keyset_id, i).unwrap();
-                let blinding_factor = self.derive_blinding_factor(keyset_id, i).unwrap();
+                let blinding_factor = self.derive_blinding_factor(keyset_id, i).unwrap(); // FIXME
                 (key, blinding_factor)
             })
-            .collect::<Vec<(String, SecretKey)>>())
+            .collect::<Vec<(String, BlindingFactor)>>())
     }
 
     fn derive_blinding_factor(
         &self,
         keyset_id: u32,
         counter: u32,
-    ) -> Result<SecretKey, MokshaWalletError> {
+    ) -> Result<BlindingFactor, MokshaWalletError> {
         let key = self.derive_private_key(keyset_id, counter, DerivationType::Blinding)?;
-        Ok(SecretKey::from_slice(&key)?)
+        Ok(SecretKey::from_slice(&key)?.into())
     }
 }
 
@@ -148,7 +148,7 @@ mod tests {
 
         for (i, factor) in blinding_factors.iter().enumerate() {
             let key = deterministic_secret.derive_blinding_factor(864559728, i as u32)?;
-            assert_eq!(factor.to_owned(), hex::encode(&key[..]));
+            assert_eq!(factor.to_owned(), key.as_hex());
         }
         Ok(())
     }
@@ -181,7 +181,7 @@ mod tests {
 
         for (i, (secret, blinding_factor)) in range.iter().enumerate() {
             assert_eq!(secrets[i], secret);
-            assert_eq!(blinding_factors[i], hex::encode(&blinding_factor[..]));
+            assert_eq!(blinding_factors[i], &blinding_factor.as_hex());
         }
         Ok(())
     }

@@ -1,6 +1,6 @@
 use moksha_core::{
     amount::Amount,
-    blind::{BlindedMessage, BlindedSignature, TotalAmount},
+    blind::{BlindedMessage, BlindedSignature, BlindingFactor, TotalAmount},
     dhke::Dhke,
     keyset::KeysetId,
     primitives::{
@@ -12,7 +12,7 @@ use moksha_core::{
     token::TokenV3,
 };
 
-use secp256k1::{PublicKey, SecretKey};
+use secp256k1::PublicKey;
 use url::Url;
 
 use crate::{
@@ -387,8 +387,8 @@ where
 
         let outputs = fee_blind
             .iter()
-            .map(|(msg, secret, _)| (msg.clone(), secret.to_owned()))
-            .collect::<Vec<(BlindedMessage, SecretKey)>>();
+            .map(|(msg, blinding_factor, _)| (msg.clone(), blinding_factor.clone()))
+            .collect::<Vec<(BlindedMessage, BlindingFactor)>>();
 
         let mut tx = self.localstore.begin_tx().await?;
         match self
@@ -490,7 +490,7 @@ where
         &self,
         keyset_id: &KeysetId,
         amount: u32,
-    ) -> Result<Vec<(String, SecretKey)>, MokshaWalletError> {
+    ) -> Result<Vec<(String, BlindingFactor)>, MokshaWalletError> {
         let mut tx = self.localstore.begin_tx().await?;
         let all_keysets = self.localstore.get_keysets(&mut tx).await?;
         let keyset = all_keysets
@@ -526,7 +526,7 @@ where
             .create_secrets(&wallet_keyset.keyset_id, first_amount.split().len() as u32)
             .await?;
         let first_outputs =
-            self.create_blinded_messages(&wallet_keyset.keyset_id, first_amount, &first_secrets)?;
+            self.create_blinded_messages(&wallet_keyset.keyset_id, first_amount, first_secrets.clone())?;
 
         // ############################################################################
 
@@ -535,7 +535,7 @@ where
             .create_secrets(&wallet_keyset.keyset_id, second_amount.split().len() as u32)
             .await?;
         let second_outputs =
-            self.create_blinded_messages(&wallet_keyset.keyset_id, second_amount, &second_secrets)?;
+            self.create_blinded_messages(&wallet_keyset.keyset_id, second_amount, second_secrets.clone())?;
 
         let mut total_outputs = vec![];
         total_outputs.extend(get_blinded_msg(first_outputs.clone()));
@@ -647,14 +647,14 @@ where
         let secret_range = self
             .create_secrets(&wallet_keyset.keyset_id, split_amount.len() as u32)
             .await?;
-
+ 
         let blinded_messages = split_amount
             .into_iter()
             .zip(secret_range)
             .map(|(amount, (secret, blinding_factor))| {
-                let (b_, alice_secret_key) = self
+                let b_  = self
                     .dhke
-                    .step1_alice(&secret, Some(&blinding_factor.secret_bytes()))
+                    .step1_alice(&secret, &blinding_factor)
                     .unwrap(); // FIXME
                 (
                     BlindedMessage {
@@ -662,11 +662,11 @@ where
                         b_,
                         id: wallet_keyset.keyset_id.to_string(), // FIXME use keyset_id
                     },
-                    alice_secret_key,
+                    blinding_factor,
                     secret,
                 )
             })
-            .collect::<Vec<(BlindedMessage, SecretKey, String)>>();
+            .collect::<Vec<(BlindedMessage, BlindingFactor, String)>>();
 
         let signatures = match payment_method {
             PaymentMethod::Bolt11 => {
@@ -711,7 +711,7 @@ where
                 let key = wallet_keyset
                     .public_keys
                     .get(&p.amount)
-                    .expect("msg amount not found in mint keys");
+                    .expect("msg amount not found in mint keys"); 
                 let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
                 Proof::new(p.amount, secret, pub_alice, current_keyset_id.clone())
             })
@@ -732,7 +732,7 @@ where
         &self,
         fee_reserve: Amount,
         keyset_id: &KeysetId,
-    ) -> Result<Vec<(BlindedMessage, SecretKey, String)>, MokshaWalletError> {
+    ) -> Result<Vec<(BlindedMessage, BlindingFactor, String)>, MokshaWalletError> {
         if fee_reserve.0 == 0 {
             return Ok(vec![]);
         }
@@ -744,9 +744,9 @@ where
         let blinded_messages = secret_range
             .into_iter()
             .map(|(secret, blinding_factor)| {
-                let (b_, alice_secret_key) = self
+                let b_ = self
                     .dhke
-                    .step1_alice(secret.clone(), Some(&blinding_factor.secret_bytes()))
+                    .step1_alice(secret.clone(), &blinding_factor)
                     .unwrap(); // FIXME
                 (
                     BlindedMessage {
@@ -754,11 +754,11 @@ where
                         b_,
                         id: keyset_id.to_string(),
                     },
-                    alice_secret_key,
+                    blinding_factor,
                     secret,
                 )
             })
-            .collect::<Vec<(BlindedMessage, SecretKey, String)>>();
+            .collect::<Vec<(BlindedMessage, BlindingFactor, String)>>();
 
         Ok(blinded_messages)
     }
@@ -768,17 +768,17 @@ where
         &self,
         keyset_id: &KeysetId,
         amount: Amount,
-        secrets_factors: &Vec<(String, SecretKey)>,
-    ) -> Result<Vec<(BlindedMessage, SecretKey)>, MokshaWalletError> {
+        secrets_factors: Vec<(String, BlindingFactor)>,
+    ) -> Result<Vec<(BlindedMessage, BlindingFactor)>, MokshaWalletError> {
         let split_amount = amount.split();
 
         Ok(split_amount
             .into_iter()
             .zip(secrets_factors)
             .map(|(amount, (secret, blinding_factor))| {
-                let (b_, alice_secret_key) = self
+                let b_  = self
                     .dhke
-                    .step1_alice(secret, Some(&blinding_factor.secret_bytes()))
+                    .step1_alice(secret, &blinding_factor)
                     .unwrap(); // FIXME
                 (
                     BlindedMessage {
@@ -786,10 +786,10 @@ where
                         b_,
                         id: keyset_id.to_string(),
                     },
-                    alice_secret_key,
+                    blinding_factor,
                 )
             })
-            .collect::<Vec<(BlindedMessage, SecretKey)>>())
+            .collect::<Vec<(BlindedMessage, BlindingFactor)>>())
     }
 
     fn create_proofs_from_blinded_signatures(
@@ -798,24 +798,24 @@ where
         pub_keys: &HashMap<u64, PublicKey>,
         signatures: Vec<BlindedSignature>,
         secrets: Vec<String>,
-        outputs: Vec<(BlindedMessage, SecretKey)>,
+        outputs: Vec<(BlindedMessage, BlindingFactor)>,
     ) -> Result<Proofs, MokshaWalletError> {
         let current_keyset_id = keyset_id.to_string(); // FIXME
 
-        let private_keys = outputs
+        let blinding_factors = outputs
             .into_iter()
             .map(|(_, secret)| secret)
-            .collect::<Vec<SecretKey>>();
+            .collect::<Vec<BlindingFactor>>();
 
         Ok(signatures
             .iter()
-            .zip(private_keys)
+            .zip(blinding_factors)
             .zip(secrets)
-            .map(|((p, priv_key), secret)| {
+            .map(|((p, blinding_factor), secret)| {
                 let key = pub_keys
                     .get(&p.amount)
                     .expect("msg amount not found in mint keys");
-                let pub_alice = self.dhke.step3_alice(p.c_, priv_key, *key).unwrap();
+                let pub_alice = self.dhke.step3_alice(p.c_, blinding_factor.to_owned(), *key).unwrap();
                 Proof::new(p.amount, secret, pub_alice, current_keyset_id.clone())
             })
             .collect::<Vec<Proof>>()
@@ -831,7 +831,7 @@ where
 }
 
 // FIXME implement for Vec<BlindedMessage, Secretkey>
-fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, SecretKey)>) -> Vec<BlindedMessage> {
+fn get_blinded_msg(blinded_messages: Vec<(BlindedMessage, BlindingFactor)>) -> Vec<BlindedMessage> {
     blinded_messages
         .into_iter()
         .map(|(msg, _)| msg)

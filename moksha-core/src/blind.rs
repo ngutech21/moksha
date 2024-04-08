@@ -8,9 +8,11 @@
 //!
 //! The `TotalAmount` trait is also defined in this module, which provides a `total_amount` method for calculating the total amount of a vector of `BlindedMessage` or `BlindedSignature` structs. The trait is implemented for both `Vec<BlindedMessage>` and `Vec<BlindedSignature>`.
 
-use secp256k1::PublicKey;
+use secp256k1::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
+
+use crate::error::MokshaCoreError;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct BlindedSignature {
@@ -18,7 +20,7 @@ pub struct BlindedSignature {
     #[serde(rename = "C_")]
     #[schema(value_type=String)]
     pub c_: PublicKey,
-    pub id: Option<String>,
+    pub id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -29,6 +31,35 @@ pub struct BlindedMessage {
     pub b_: PublicKey,
     // FIXME use KeysetId
     pub id: String,
+}
+
+
+#[derive(Debug, Clone)]
+pub struct BlindingFactor(SecretKey);
+
+impl From<SecretKey> for BlindingFactor {
+    fn from(sk: SecretKey) -> Self {
+        BlindingFactor(sk)
+    }
+}
+
+impl TryFrom<&str> for BlindingFactor {
+    type Error = MokshaCoreError;
+
+    fn try_from(hex: &str) -> Result<Self, Self::Error> {
+        use std::str::FromStr;
+        Ok(secp256k1::SecretKey::from_str(hex)?.into())
+    }
+}
+
+impl BlindingFactor {
+    pub fn as_hex(&self) -> String {
+        hex::encode(&self.0[..])
+    }
+
+    pub fn to_secret_key(&self) -> SecretKey {
+        self.0
+    }
 }
 
 pub trait TotalAmount {
