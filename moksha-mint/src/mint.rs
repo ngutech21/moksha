@@ -564,7 +564,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_split_zero() -> anyhow::Result<()> {
+    async fn test_swap_zero() -> anyhow::Result<()> {
         let docker = Cli::default();
         let image = create_postgres_image();
         let node = docker.run(image);

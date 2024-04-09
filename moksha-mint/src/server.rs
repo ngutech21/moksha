@@ -414,8 +414,6 @@ mod tests {
         Ok(())
     }
 
-    // ### v1 api tests
-
     #[tokio::test]
     async fn test_get_v1_keys() -> anyhow::Result<()> {
         let docker = Cli::default();
