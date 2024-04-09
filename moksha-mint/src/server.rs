@@ -1,4 +1,4 @@
-use crate::error::MokshaMintError;
+
 use crate::routes::btconchain::{
     get_melt_btconchain, get_melt_quote_btconchain, get_mint_quote_btconchain,
     post_melt_btconchain, post_melt_quote_btconchain, post_mint_btconchain,
@@ -8,13 +8,13 @@ use crate::routes::default::{
     get_info, get_keys, get_keys_by_id, get_keysets, get_melt_quote_bolt11, get_mint_quote_bolt11,
     post_melt_bolt11, post_melt_quote_bolt11, post_mint_bolt11, post_mint_quote_bolt11, post_swap,
 };
-use axum::extract::{Request, State};
+use axum::extract::Request;
 use axum::http::{HeaderName, HeaderValue, StatusCode};
 use axum::middleware::Next;
 use axum::response::IntoResponse;
-use axum::routing::{get_service, post};
+use axum::routing::{get_service, post, get};
 use axum::{middleware, Router};
-use axum::{routing::get, Json};
+
 
 use moksha_core::keyset::{V1Keyset, V1Keysets};
 use moksha_core::proof::Proofs;
@@ -28,7 +28,7 @@ use moksha_core::blind::BlindedMessage;
 use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
     CurrencyUnit, GetMeltBtcOnchainResponse, KeyResponse, KeysResponse, MintInfoResponse,
-    MintLegacyInfoResponse, Nut10, Nut11, Nut12, Nut17, Nut18, Nut4, Nut5, Nut7, Nut8, Nut9, Nuts,
+    Nut10, Nut11, Nut12, Nut17, Nut18, Nut4, Nut5, Nut7, Nut8, Nut9, Nuts,
     PaymentMethod, PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
     PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse,
     PostMintBolt11Request, PostMintBolt11Response, PostMintQuoteBolt11Request,
@@ -43,10 +43,6 @@ use tracing::info;
 
 use utoipa::OpenApi;
 
-use crate::routes::legacy::{
-    get_legacy_keys, get_legacy_keysets, get_legacy_mint, post_legacy_check_fees, post_legacy_melt,
-    post_legacy_mint, post_legacy_split,
-};
 
 pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
     if let Some(ref buildtime) = mint.build_params.build_time {
@@ -163,15 +159,7 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
 struct ApiDoc;
 
 fn app(mint: Mint) -> Router {
-    let legacy_routes = Router::new()
-        .route("/keys", get(get_legacy_keys))
-        .route("/keysets", get(get_legacy_keysets))
-        .route("/mint", get(get_legacy_mint).post(post_legacy_mint))
-        .route("/checkfees", post(post_legacy_check_fees))
-        .route("/melt", post(post_legacy_melt))
-        .route("/split", post(post_legacy_split))
-        .route("/info", get(get_legacy_info));
-
+    
     let default_routes = Router::new()
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .route("/v1/keys", get(get_keys))
@@ -217,7 +205,6 @@ fn app(mint: Mint) -> Router {
     let prefix = server_config.api_prefix.unwrap_or_else(|| "".to_owned());
 
     let router = Router::new()
-        .nest(&prefix, legacy_routes)
         .nest(&prefix, default_routes)
         .nest(&prefix, btconchain_routes)
         .nest("", general_routes)
@@ -266,35 +253,6 @@ async fn add_response_headers(
     Ok(res)
 }
 
-async fn get_legacy_info(
-    State(mint): State<Mint>,
-) -> Result<Json<MintLegacyInfoResponse>, MokshaMintError> {
-    let mint_info = MintLegacyInfoResponse {
-        name: mint.config.info.name,
-        pubkey: mint.keyset_legacy.mint_pubkey,
-        version: match mint.config.info.version {
-            true => Some(mint.build_params.full_version()),
-            _ => None,
-        },
-        description: mint.config.info.description,
-        description_long: mint.config.info.description_long,
-        contact: None, // FIXME set contact
-        nuts: vec![
-            "NUT-00".to_string(),
-            "NUT-01".to_string(),
-            "NUT-02".to_string(),
-            "NUT-03".to_string(),
-            "NUT-04".to_string(),
-            "NUT-05".to_string(),
-            "NUT-06".to_string(),
-            "NUT-08".to_string(),
-            "NUT-09".to_string(),
-        ],
-        motd: mint.config.info.motd,
-        parameter: Default::default(),
-    };
-    Ok(Json(mint_info))
-}
 
 #[utoipa::path(
         get,
@@ -311,7 +269,7 @@ async fn get_health() -> impl IntoResponse {
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, sync::Arc};
+    use std::sync::Arc;
 
     use crate::{
         btconchain::MockBtcOnchain,
@@ -325,10 +283,10 @@ mod tests {
     };
     use http_body_util::BodyExt;
     use moksha_core::{
-        keyset::{Keysets, V1Keysets},
-        primitives::{CurrencyUnit, KeysResponse, MintLegacyInfoResponse},
+        keyset::V1Keysets,
+        primitives::{CurrencyUnit, KeysResponse, MintInfoResponse},
     };
-    use secp256k1::PublicKey;
+ 
     use testcontainers::{clients::Cli, RunnableImage};
     use testcontainers_modules::postgres::Postgres;
     use tower::ServiceExt;
@@ -338,6 +296,7 @@ mod tests {
         lightning::{LightningType, MockLightning},
         mint::Mint,
     };
+    use pretty_assertions::assert_eq;
 
     #[tokio::test]
     async fn test_get_keys() -> anyhow::Result<()> {
@@ -347,13 +306,13 @@ mod tests {
 
         let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
-            .oneshot(Request::builder().uri("/keys").body(Body::empty())?)
+            .oneshot(Request::builder().uri("/v1/keys").body(Body::empty())?)
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
         let body = response.into_body().collect().await?.to_bytes();
-        let keys: HashMap<u64, PublicKey> = serde_json::from_slice(&body)?;
-        assert_eq!(64, keys.len());
+        let keys: KeysResponse = serde_json::from_slice(&body)?;
+        assert_eq!(64, keys.keysets[0].keys.len());
         Ok(())
     }
 
@@ -365,47 +324,16 @@ mod tests {
 
         let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
-            .oneshot(Request::builder().uri("/keysets").body(Body::empty())?)
+            .oneshot(Request::builder().uri("/v1/keysets").body(Body::empty())?)
             .await?;
-
         assert_eq!(response.status(), StatusCode::OK);
         let body = response.into_body().collect().await?.to_bytes();
-        let keysets = serde_json::from_slice::<Keysets>(&body)?;
-        assert_eq!(Keysets::new(vec!["53eJP2+qJyTd".to_string()]), keysets);
+        let keysets = serde_json::from_slice::<V1Keysets>(&body)?;
+        assert_eq!(V1Keysets::new("00f545318e4fad2b".to_owned(), CurrencyUnit::Sat, true), keysets);
         Ok(())
     }
 
-    #[tokio::test]
-    async fn test_get_info() -> anyhow::Result<()> {
-        let docker = Cli::default();
-        let image = create_postgres_image();
-        let node = docker.run(image);
-
-        let mint_info_settings = MintInfoConfig {
-            name: Some("Bob's Cashu mint".to_string()),
-            version: true,
-            description: Some("A mint for testing".to_string()),
-            description_long: Some("A mint for testing long".to_string()),
-            ..Default::default()
-        };
-        let app = app(create_mock_mint(mint_info_settings, node.get_host_port_ipv4(5432)).await?);
-        let response = app
-            .oneshot(Request::builder().uri("/info").body(Body::empty())?)
-            .await?;
-
-        assert_eq!(response.status(), StatusCode::OK);
-        let body = response.into_body().collect().await?.to_bytes();
-        let info = serde_json::from_slice::<MintLegacyInfoResponse>(&body)?;
-        assert!(!info.parameter.peg_out_only);
-        assert_eq!(info.nuts.len(), 9);
-        assert_eq!(info.name, Some("Bob's Cashu mint".to_string()));
-        assert_eq!(info.description, Some("A mint for testing".to_string()));
-        assert_eq!(
-            info.description_long,
-            Some("A mint for testing long".to_string())
-        );
-        Ok(())
-    }
+    
 
     // FIXME remove duplicated code from mint.rs
     async fn create_mock_db_empty(port: u16) -> anyhow::Result<PostgresDB> {
@@ -593,6 +521,36 @@ mod tests {
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_info() -> anyhow::Result<()> {
+        let docker = Cli::default();
+        let image = create_postgres_image();
+        let node = docker.run(image);
+
+        let mint_info_settings = MintInfoConfig {
+            name: Some("Bob's Cashu mint".to_string()),
+            version: true,
+            description: Some("A mint for testing".to_string()),
+            description_long: Some("A mint for testing long".to_string()),
+            ..Default::default()
+        };
+        let app = app(create_mock_mint(mint_info_settings, node.get_host_port_ipv4(5432)).await?);
+        let response = app
+            .oneshot(Request::builder().uri("/v1/info").body(Body::empty())?)
+            .await?;
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response.into_body().collect().await?.to_bytes();
+        let info = serde_json::from_slice::<MintInfoResponse>(&body)?;
+        assert_eq!(info.name, Some("Bob's Cashu mint".to_string()));
+        assert_eq!(info.description, Some("A mint for testing".to_string()));
+        assert_eq!(
+            info.description_long,
+            Some("A mint for testing long".to_string())
+        );
         Ok(())
     }
 }

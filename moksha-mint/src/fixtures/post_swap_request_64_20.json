@@ -1,5 +1,5 @@
 {
-  "proofs": [
+  "inputs": [
     {
       "amount": 64,
       "secret": "sYYrrhUD3IwJzGFCGsUqqXXa",
@@ -30,7 +30,7 @@
     },
     {
       "amount": 16,
-      "B_": "03e997c205b170ed2f88c26f61559733144a55da6e66334b0f4a030b708a49e5ab",
+      "B_": "02364fe16667a049eb6dbdf4a8db23c250822fb8bc9806f4b82cc100ab00872959",
       "id": "00ffd48b8f5ecf80"
     }
   ]

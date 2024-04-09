@@ -88,12 +88,14 @@ impl Keysets {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default, ToSchema)]
+// FIXME rename to keysets
+#[derive(Clone, Debug, Serialize, Deserialize, Default, ToSchema, PartialEq, Eq)]
 pub struct V1Keysets {
     pub keysets: Vec<V1Keyset>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+// FIXME rename to keyset
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
 pub struct V1Keyset {
     pub id: String, // FIXME use KeysetId
     pub unit: CurrencyUnit,

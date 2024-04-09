@@ -450,7 +450,8 @@ mod tests {
     use crate::model::{Invoice, PayInvoiceResult};
     use moksha_core::blind::{BlindedMessage, TotalAmount};
     use moksha_core::dhke;
-    use moksha_core::primitives::PostSplitRequest;
+    use moksha_core::fixture::read_fixture_as;
+    use moksha_core::primitives::PostSwapRequest;
     use moksha_core::proof::Proofs;
     use moksha_core::token::TokenV3;
     use std::str::FromStr;
@@ -458,6 +459,7 @@ mod tests {
     use testcontainers::clients::Cli;
     use testcontainers::RunnableImage;
     use testcontainers_modules::postgres::Postgres;
+    use pretty_assertions::assert_eq;
 
     #[tokio::test]
     async fn test_fee_reserve() -> anyhow::Result<()> {
@@ -495,7 +497,7 @@ mod tests {
             id: "00ffd48b8f5ecf80".to_owned(),
         }];
 
-        let result = mint.create_blinded_signatures(&blinded_messages, &mint.keyset_legacy)?;
+        let result = mint.create_blinded_signatures(&blinded_messages, &mint.keyset)?;
 
         assert_eq!(1, result.len());
         assert_eq!(8, result[0].amount);
@@ -552,7 +554,7 @@ mod tests {
         )
         .await?;
 
-        let outputs = create_blinded_msgs_from_fixture("blinded_messages_40.json".to_string())?;
+        let outputs = read_fixture_as::<Vec<BlindedMessage>>("blinded_messages_40.json")?;
         let mut tx = mint.db.begin_tx().await?;
         let result = mint
             .mint_tokens(
@@ -591,7 +593,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_split_64_in_20() -> anyhow::Result<()> {
+    async fn test_swap_64_in_20() -> anyhow::Result<()> {
         let docker = Cli::default();
         let image = create_postgres_image();
         let node = docker.run(image);
@@ -601,10 +603,10 @@ mod tests {
             None,
         )
         .await?;
-        let request = create_request_from_fixture("post_split_request_64_20.json".to_string())?;
+        let request = read_fixture_as::<PostSwapRequest>("post_swap_request_64_20.json")?;
 
         let result = mint
-            .swap(&request.proofs, &request.outputs, &mint.keyset_legacy)
+            .swap(&request.inputs, &request.outputs, &mint.keyset)
             .await?;
         assert_eq!(result.total_amount(), 64);
 
@@ -617,7 +619,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_split_duplicate_key() -> anyhow::Result<()> {
+    async fn test_swap_duplicate_key() -> anyhow::Result<()> {
         let docker = Cli::default();
         let image = create_postgres_image();
         let node = docker.run(image);
@@ -627,10 +629,10 @@ mod tests {
         )
         .await?;
         let request =
-            create_request_from_fixture("post_split_request_duplicate_key.json".to_string())?;
+            read_fixture_as::<PostSwapRequest>("post_swap_request_duplicate_key.json")?;
 
         let result = mint
-            .swap(&request.proofs, &request.outputs, &mint.keyset_legacy)
+            .swap(&request.inputs, &request.outputs, &mint.keyset)
             .await;
         assert!(result.is_err());
         Ok(())
@@ -673,10 +675,10 @@ mod tests {
             Some(Arc::new(MockBtcOnchain::default())),
         );
 
-        let tokens = create_token_from_fixture("token_60.cashu".to_string())?;
+        let tokens = create_token_from_fixture("token_60.cashu").expect("can not read fixture");
         let invoice = "some invoice".to_string();
         let change =
-            create_blinded_msgs_from_fixture("blinded_messages_blank_4000.json".to_string())?;
+            read_fixture_as::<Vec<BlindedMessage>>("blinded_messages_blank_4000.json")?;
 
         let mut tx = mint.db.begin_tx().await?;
         let (paid, _payment_hash, change) = mint
@@ -695,26 +697,12 @@ mod tests {
         Ok(())
     }
 
-    // FIXME refactor helper functions
-    fn create_token_from_fixture(fixture: String) -> Result<TokenV3, anyhow::Error> {
+    fn create_token_from_fixture(fixture: &str) -> Result<TokenV3, anyhow::Error> {
         let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{fixture}"))?;
         Ok(raw_token.trim().to_string().try_into()?)
     }
-
-    fn create_request_from_fixture(fixture: String) -> Result<PostSplitRequest, anyhow::Error> {
-        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
-        let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{fixture}"))?;
-        Ok(serde_json::from_str::<PostSplitRequest>(&raw_token)?)
-    }
-
-    fn create_blinded_msgs_from_fixture(
-        fixture: String,
-    ) -> Result<Vec<BlindedMessage>, anyhow::Error> {
-        let base_dir = std::env::var("CARGO_MANIFEST_DIR")?;
-        let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{fixture}"))?;
-        Ok(serde_json::from_str::<Vec<BlindedMessage>>(&raw_token)?)
-    }
+    
 
     async fn create_mint_from_mocks(
         mock_db: PostgresDB,

@@ -2048,6 +2048,7 @@ dependencies = [
  "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
+ "pretty_assertions",
  "reqwest 0.12.3",
  "secp256k1 0.28.2",
  "serde",
