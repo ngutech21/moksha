@@ -188,7 +188,7 @@ pub fn derive_keys(master_key: &str, derivation_path: &str) -> HashMap<u64, Secr
     let mut keys = HashMap::new();
     for i in 0..MAX_ORDER {
         let hash = sha256::Hash::hash(format!("{master_key}{derivation_path}{i}").as_bytes());
-        let key = SecretKey::from_slice(hash.as_byte_array()).unwrap();
+        let key = SecretKey::from_slice(hash.as_byte_array()).expect("Invalid Secret Key");
         keys.insert(2u64.pow(i as u32), key);
     }
     keys
@@ -268,9 +268,10 @@ mod tests {
     }
 
     #[test]
-    fn test_keyset_id() {
-        let keyset_id = KeysetId::new("009a1f293253e41e").unwrap();
-        assert_eq!(864559728, keyset_id.as_int().unwrap());
+    fn test_keyset_id() -> anyhow::Result<()> {
+        let keyset_id = KeysetId::new("009a1f293253e41e")?;
+        assert_eq!(864559728, keyset_id.as_int()?);
+        Ok(())
     }
 
     #[test]

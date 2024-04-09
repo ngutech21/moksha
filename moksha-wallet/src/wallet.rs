@@ -654,19 +654,16 @@ where
             .map(|(amount, (secret, blinding_factor))| {
                 let b_  = self
                     .dhke
-                    .step1_alice(&secret, &blinding_factor)
-                    .unwrap(); // FIXME
-                (
-                    BlindedMessage {
+                    .step1_alice(&secret, &blinding_factor)?;
+                Ok((BlindedMessage {
                         amount,
                         b_,
                         id: wallet_keyset.keyset_id.to_string(), // FIXME use keyset_id
                     },
                     blinding_factor,
-                    secret,
-                )
+                    secret,))
             })
-            .collect::<Vec<(BlindedMessage, BlindingFactor, String)>>();
+            .collect::<Result<Vec<(_, _, _)>,MokshaWalletError>>()?;
 
         let signatures = match payment_method {
             PaymentMethod::Bolt11 => {
@@ -746,24 +743,21 @@ where
             .map(|(secret, blinding_factor)| {
                 let b_ = self
                     .dhke
-                    .step1_alice(secret.clone(), &blinding_factor)
-                    .unwrap(); // FIXME
-                (
-                    BlindedMessage {
+                    .step1_alice(secret.clone(), &blinding_factor)?; 
+                Ok((BlindedMessage {
                         amount: 1,
                         b_,
                         id: keyset_id.to_string(),
                     },
                     blinding_factor,
-                    secret,
-                )
+                    secret,))
             })
-            .collect::<Vec<(BlindedMessage, BlindingFactor, String)>>();
+            .collect::<Result<Vec<(_, _, _)>,MokshaWalletError>>()?;
 
         Ok(blinded_messages)
     }
 
-    // FIXME implement for Amount
+
     fn create_blinded_messages(
         &self,
         keyset_id: &KeysetId,
@@ -772,24 +766,21 @@ where
     ) -> Result<Vec<(BlindedMessage, BlindingFactor)>, MokshaWalletError> {
         let split_amount = amount.split();
 
-        Ok(split_amount
+        split_amount
             .into_iter()
             .zip(secrets_factors)
             .map(|(amount, (secret, blinding_factor))| {
                 let b_  = self
                     .dhke
-                    .step1_alice(secret, &blinding_factor)
-                    .unwrap(); // FIXME
-                (
-                    BlindedMessage {
+                    .step1_alice(secret, &blinding_factor)?;
+                Ok((BlindedMessage {
                         amount,
                         b_,
                         id: keyset_id.to_string(),
                     },
-                    blinding_factor,
-                )
+                    blinding_factor,))
             })
-            .collect::<Vec<(BlindedMessage, BlindingFactor)>>())
+            .collect::<Result<Vec<(_, _)>,MokshaWalletError>>()
     }
 
     fn create_proofs_from_blinded_signatures(
@@ -814,11 +805,11 @@ where
             .map(|((p, blinding_factor), secret)| {
                 let key = pub_keys
                     .get(&p.amount)
-                    .expect("msg amount not found in mint keys");
-                let pub_alice = self.dhke.step3_alice(p.c_, blinding_factor.to_owned(), *key).unwrap();
-                Proof::new(p.amount, secret, pub_alice, current_keyset_id.clone())
+                    .ok_or(MokshaWalletError::PubkeyNotFound)?;
+                let pub_alice = self.dhke.step3_alice(p.c_, blinding_factor.to_owned(), *key)?;
+                Ok(Proof::new(p.amount, secret, pub_alice, current_keyset_id.clone()))
             })
-            .collect::<Vec<Proof>>()
+            .collect::<Result<Vec<_>,MokshaWalletError>>()?
             .into())
     }
 

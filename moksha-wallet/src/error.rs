@@ -84,4 +84,8 @@ pub enum MokshaWalletError {
 
     #[error("Invalid Keyset-ID")]
     Slice(#[from] std::array::TryFromSliceError),
+
+    #[error("Pubkey not found")]
+    PubkeyNotFound,
+
 }

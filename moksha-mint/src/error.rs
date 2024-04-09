@@ -82,6 +82,12 @@ pub enum MokshaMintError {
 
     #[error("Lnd error: {0}")]
     Lnd(#[from] Status),
+
+    #[error("PrivateKey in keyset not found")]
+    PrivateKeyNotFound,
+
+    #[error("MokshaCoreError: {0}")]
+    MokshaCore(#[from] moksha_core::error::MokshaCoreError),
 }
 
 impl IntoResponse for MokshaMintError {

@@ -81,23 +81,23 @@ where
     }
 
     pub fn create_blinded_signatures(
-        &self,
-        blinded_messages: &[BlindedMessage],
-        keyset: &MintKeyset, // FIXME refactor keyset management
-    ) -> Result<Vec<BlindedSignature>, MokshaMintError> {
-        let promises = blinded_messages
-            .iter()
-            .map(|blinded_msg| {
-                let private_key = keyset.private_keys.get(&blinded_msg.amount).unwrap(); // FIXME unwrap
-                let blinded_sig = self.dhke.step2_bob(blinded_msg.b_, private_key).unwrap(); // FIXME unwrap
-                BlindedSignature {
-                    id: keyset.keyset_id.clone(),
-                    amount: blinded_msg.amount,
-                    c_: blinded_sig,
-                }
+    &self,
+    blinded_messages: &[BlindedMessage],
+    keyset: &MintKeyset,
+) -> Result<Vec<BlindedSignature>, MokshaMintError> {
+    blinded_messages
+        .iter()
+        .map(|blinded_msg| {
+            let private_key = keyset.private_keys.get(&blinded_msg.amount)
+                .ok_or(MokshaMintError::PrivateKeyNotFound)?;
+            let blinded_sig = self.dhke.step2_bob(blinded_msg.b_, private_key)?;
+            Ok(BlindedSignature {
+                id: keyset.keyset_id.clone(),
+                amount: blinded_msg.amount,
+                c_: blinded_sig,
             })
-            .collect::<Vec<BlindedSignature>>();
-        Ok(promises)
+        })
+        .collect::<Result<Vec<_>, _>>()
     }
 
     #[instrument(level = "debug", skip(self), err)]
@@ -608,8 +608,8 @@ mod tests {
             .await?;
         assert_eq!(result.total_amount(), 64);
 
-        let prv_last = result.get(result.len() - 2).unwrap();
-        let last = result.last().unwrap();
+        let prv_last = result.get(result.len() - 2).expect("element not found");
+        let last = result.last().expect("element not found");
 
         assert_eq!(prv_last.amount, 4);
         assert_eq!(last.amount, 16);

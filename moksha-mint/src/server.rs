@@ -351,7 +351,7 @@ mod tests {
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = response.into_body().collect().await?.to_bytes();
         let keys: HashMap<u64, PublicKey> = serde_json::from_slice(&body)?;
         assert_eq!(64, keys.len());
         Ok(())
@@ -369,7 +369,7 @@ mod tests {
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = response.into_body().collect().await?.to_bytes();
         let keysets = serde_json::from_slice::<Keysets>(&body)?;
         assert_eq!(Keysets::new(vec!["53eJP2+qJyTd".to_string()]), keysets);
         Ok(())
@@ -394,7 +394,7 @@ mod tests {
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = response.into_body().collect().await?.to_bytes();
         let info = serde_json::from_slice::<MintLegacyInfoResponse>(&body)?;
         assert!(!info.parameter.peg_out_only);
         assert_eq!(info.nuts.len(), 9);
@@ -457,7 +457,7 @@ mod tests {
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = response.into_body().collect().await?.to_bytes();
         let keys: KeysResponse = serde_json::from_slice(&body)?;
         let keysets = keys.keysets;
         assert_eq!(&1, &keysets.len());
@@ -479,7 +479,7 @@ mod tests {
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = response.into_body().collect().await?.to_bytes();
         let keysets = serde_json::from_slice::<V1Keysets>(&body)?;
         assert_eq!(1, keysets.keysets.len());
         assert_eq!(16, keysets.keysets[0].id.len());
@@ -500,14 +500,13 @@ mod tests {
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = response.into_body().collect().await?.to_bytes();
         let keys: KeysResponse = serde_json::from_slice(&body)?;
         assert_eq!(1, keys.keysets.len());
         assert_eq!(
             64,
             keys.keysets.first().expect("keyset not found").keys.len()
         );
-        println!("{:#?}", keys.keysets.first().unwrap().id);
         Ok(())
     }
 
@@ -546,7 +545,7 @@ mod tests {
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = response.into_body().collect().await?.to_bytes();
         let keys: KeysResponse = serde_json::from_slice(&body)?;
         assert_eq!(1, keys.keysets.len());
         assert_eq!(
@@ -572,7 +571,7 @@ mod tests {
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
-        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let body = response.into_body().collect().await?.to_bytes();
         let keys: V1Keysets = serde_json::from_slice(&body)?;
         assert_eq!(1, keys.keysets.len());
         let keyset = keys.keysets.first().expect("keyset not found");

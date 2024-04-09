@@ -73,7 +73,7 @@ async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
         .build()
         .await?;
     let wallet_keysets = wallet.add_mint_keysets(&mint_url).await?;
-    let wallet_keyset = wallet_keysets.first().unwrap(); // FIXME
+    let wallet_keyset = wallet_keysets.first().expect("No keyset found");
 
     // get initial balance
     let balance = wallet.get_balance().await?;
@@ -109,7 +109,7 @@ async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
         .get_melt_quote_btconchain(&mint_url, btc_address.clone(), melt_amount)
         .await?;
 
-    let first_quote = melt_quotes.first().unwrap();
+    let first_quote = melt_quotes.first().expect("No quote returned from mint");
     let result = wallet.pay_onchain(wallet_keyset, first_quote).await?;
     assert!(!result.paid);
     btc_client.mine_blocks(1).await?;
