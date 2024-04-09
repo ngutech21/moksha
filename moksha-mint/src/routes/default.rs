@@ -3,7 +3,7 @@ use axum::{
     Json,
 };
 use moksha_core::{
-    keyset::V1Keysets,
+    keyset::Keysets,
     primitives::{
         Bolt11MeltQuote, Bolt11MintQuote, CurrencyUnit, KeyResponse, KeysResponse,
         MintInfoResponse, Nuts, PaymentMethod, PostMeltBolt11Request, PostMeltBolt11Response,
@@ -96,12 +96,12 @@ pub async fn get_keys_by_id(
         get,
         path = "/v1/keysets",
         responses(
-            (status = 200, description = "get keysets", body = [V1Keysets])
+            (status = 200, description = "get keysets", body = [Keysets])
         ),
     )]
 #[instrument(skip(mint), err)]
-pub async fn get_keysets(State(mint): State<Mint>) -> Result<Json<V1Keysets>, MokshaMintError> {
-    Ok(Json(V1Keysets::new(
+pub async fn get_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, MokshaMintError> {
+    Ok(Json(Keysets::new(
         mint.keyset.keyset_id,
         CurrencyUnit::Sat,
         true,

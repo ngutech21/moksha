@@ -2,7 +2,7 @@ use async_trait::async_trait;
 
 use moksha_core::{
     blind::BlindedMessage,
-    keyset::V1Keysets,
+    keyset::Keysets,
     primitives::{
         CurrencyUnit, GetMeltBtcOnchainResponse, KeysResponse, MintInfoResponse,
         PostMeltBolt11Request, PostMeltBolt11Response, PostMeltBtcOnchainRequest,
@@ -36,7 +36,7 @@ impl CashuClient for CrossPlatformHttpClient {
             .await
     }
 
-    async fn get_keysets(&self, mint_url: &Url) -> Result<V1Keysets, MokshaWalletError> {
+    async fn get_keysets(&self, mint_url: &Url) -> Result<Keysets, MokshaWalletError> {
         self.do_get(&mint_url.join("v1/keysets")?).await
     }
 

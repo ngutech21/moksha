@@ -59,3 +59,4 @@ hex = "0.4.3"
 http-body-util = "0.1.0"
 testcontainers = "0.15.0"
 testcontainers-modules = { version = "0.3.6", features = ["postgres"] }
+pretty_assertions = "1.4.0"

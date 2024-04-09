@@ -15,23 +15,16 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use utoipa::ToSchema;
 
-use base64::{engine::general_purpose, Engine as _};
+
 use bitcoin_hashes::{sha256, Hash};
 
 use itertools::Itertools;
-use rand::RngCore;
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
 use crate::{error::MokshaCoreError, primitives::CurrencyUnit};
 
 const MAX_ORDER: u64 = 64;
 
-pub fn generate_hash() -> String {
-    let mut rng = rand::thread_rng();
-    let mut random = [0u8; 32];
-    rng.fill_bytes(&mut random);
-    sha256::Hash::hash(&random).to_string()
-}
 
 #[derive(Debug, Clone)]
 pub struct MintKeyset {
@@ -42,17 +35,6 @@ pub struct MintKeyset {
 }
 
 impl MintKeyset {
-    pub fn legacy_new(seed: &str, derivation_path: &str) -> Self {
-        let priv_keys = derive_keys(seed, derivation_path);
-        let pub_keys = derive_pubkeys(&priv_keys);
-        Self {
-            private_keys: priv_keys,
-            keyset_id: legacy_derive_keyset_id(&pub_keys),
-            public_keys: pub_keys,
-            mint_pubkey: derive_pubkey(seed).expect("invalid seed"),
-        }
-    }
-
     pub fn new(seed: &str, derivation_path: &str) -> Self {
         let priv_keys = derive_keys(seed, derivation_path);
         let pub_keys = derive_pubkeys(&priv_keys);
@@ -65,45 +47,24 @@ impl MintKeyset {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
+// FIXME rename to keysets
+#[derive(Clone, Debug, Serialize, Deserialize, Default, ToSchema, PartialEq, Eq)]
 pub struct Keysets {
-    pub keysets: Vec<String>,
+    pub keysets: Vec<Keyset>,
 }
 
-impl Keysets {
-    pub fn new(keysets: Vec<String>) -> Self {
-        Self { keysets }
-    }
-
-    pub fn current_keyset(
-        &self,
-        mint_keys: &HashMap<u64, PublicKey>,
-    ) -> Result<String, MokshaCoreError> {
-        let computed_id = legacy_derive_keyset_id(mint_keys);
-        if self.keysets.contains(&computed_id) {
-            Ok(computed_id)
-        } else {
-            Err(MokshaCoreError::InvalidKeysetid)
-        }
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default, ToSchema)]
-pub struct V1Keysets {
-    pub keysets: Vec<V1Keyset>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
-pub struct V1Keyset {
+// FIXME rename to keyset
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
+pub struct Keyset {
     pub id: String, // FIXME use KeysetId
     pub unit: CurrencyUnit,
     pub active: bool,
 }
 
-impl V1Keysets {
+impl Keysets {
     pub fn new(id: String, unit: CurrencyUnit, active: bool) -> Self {
         Self {
-            keysets: vec![V1Keyset { id, unit, active }],
+            keysets: vec![Keyset { id, unit, active }],
         }
     }
 
@@ -210,25 +171,6 @@ pub fn derive_pubkeys(keys: &HashMap<u64, SecretKey>) -> HashMap<u64, PublicKey>
         .collect()
 }
 
-/// Derives a keyset ID from a HashMap of public keys.
-///
-/// # Arguments
-///
-/// * `keys` - A HashMap of public keys.
-///
-/// # Returns
-///
-/// A string representing the derived keyset ID.
-pub fn legacy_derive_keyset_id(keys: &HashMap<u64, PublicKey>) -> String {
-    let pubkeys_concat = keys
-        .iter()
-        .sorted_by(|(amt_a, _), (amt_b, _)| amt_a.cmp(amt_b))
-        .map(|(_, pubkey)| pubkey)
-        .join("");
-    let hashed_pubkeys = sha256::Hash::hash(pubkeys_concat.as_bytes()).to_byte_array();
-    general_purpose::STANDARD.encode(hashed_pubkeys)[..12].to_string()
-}
-
 fn derive_keyset_id(keys: &HashMap<u64, PublicKey>) -> String {
     let pubkeys = keys
         .iter()
@@ -256,28 +198,17 @@ pub fn derive_pubkey(seed: &str) -> Result<PublicKey, MokshaCoreError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::keyset::{derive_pubkey, generate_hash, KeysetId};
+    use crate::keyset::{derive_pubkey,  KeysetId};
     use pretty_assertions::assert_eq;
     use secp256k1::PublicKey;
     use std::collections::HashMap;
 
-    fn public_key_from_hex(hex: &str) -> secp256k1::PublicKey {
-        use hex::FromHex;
-        let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
-        secp256k1::PublicKey::from_slice(&input_vec).expect("Invalid Public Key")
-    }
 
     #[test]
     fn test_keyset_id() -> anyhow::Result<()> {
         let keyset_id = KeysetId::new("009a1f293253e41e")?;
         assert_eq!(864559728, keyset_id.as_int()?);
         Ok(())
-    }
-
-    #[test]
-    fn test_generate_hash() {
-        let hash = generate_hash();
-        assert_eq!(hash.len(), 64);
     }
 
     #[test]
@@ -290,18 +221,7 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn test_derive_keys_master() -> anyhow::Result<()> {
-        let keys = super::derive_keys("master", "0/0/0/0");
-        assert_eq!(keys.len(), 64);
-
-        let pub_keys = super::derive_pubkeys(&keys);
-        let id = super::legacy_derive_keyset_id(&pub_keys);
-        assert_eq!("JHV8eUnoAln/", id);
-        assert_eq!(id.len(), 12);
-        Ok(())
-    }
-
+    
     #[test]
     fn test_derive_keys_master_v1() -> anyhow::Result<()> {
         let keys = super::derive_keys("supersecretprivatekey", "");
@@ -314,42 +234,6 @@ mod tests {
         Ok(())
     }
 
-    // uses values from cashu test_mint.py
-    #[test]
-    fn test_derive_keys_cashu_py() -> anyhow::Result<()> {
-        let keys = super::derive_keys("TEST_PRIVATE_KEY", "0/0/0/0");
-        assert_eq!(keys.len(), 64);
-
-        let pub_keys = super::derive_pubkeys(&keys);
-        let id = super::legacy_derive_keyset_id(&pub_keys);
-        assert_eq!("1cCNIAZ2X/w1", id);
-        assert_eq!(id.len(), 12);
-        Ok(())
-    }
-
-    #[test]
-    fn test_legacy_derive_keyset_id() -> anyhow::Result<()> {
-        let mut pubs = HashMap::new();
-        pubs.insert(
-            1,
-            public_key_from_hex(
-                "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2",
-            ),
-        );
-
-        pubs.insert(
-            2,
-            public_key_from_hex(
-                "020000000000000000000000000000000000000000000000000000000000000001",
-            ),
-        );
-
-        let keyset_id = super::legacy_derive_keyset_id(&pubs);
-
-        assert_eq!(keyset_id.len(), 12);
-        assert_eq!(keyset_id, "cNbjM0O6V/Kl");
-        Ok(())
-    }
 
     #[test]
     fn test_derive_keyset_id() -> anyhow::Result<()> {

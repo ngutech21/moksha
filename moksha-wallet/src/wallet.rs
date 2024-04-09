@@ -281,7 +281,7 @@ where
         let selected_tokens = (wallet_keyset.mint_url.to_owned(), selected_proofs.clone()).into();
 
         let (remaining_tokens, result) = self
-            .split_tokens(wallet_keyset, &selected_tokens, amount.into())
+            .swap_tokens(wallet_keyset, &selected_tokens, amount.into())
             .await?;
 
         let mut tx = self.localstore.begin_tx().await?;
@@ -303,7 +303,7 @@ where
     ) -> Result<(), MokshaWalletError> {
         let total_amount = tokens.total_amount();
         let (_, redeemed_tokens) = self
-            .split_tokens(wallet_keyset, tokens, total_amount.into())
+            .swap_tokens(wallet_keyset, tokens, total_amount.into())
             .await?;
         let mut tx = self.localstore.begin_tx().await?;
         self.localstore
@@ -355,8 +355,8 @@ where
         let total_proofs = {
             let selected_tokens =
                 (wallet_keyset.mint_url.to_owned(), selected_proofs.clone()).into();
-            let split_result = self
-                .split_tokens(wallet_keyset, &selected_tokens, ln_amount.into())
+            let swap_result = self
+                .swap_tokens(wallet_keyset, &selected_tokens, ln_amount.into())
                 .await?;
 
             let mut tx = self.localstore.begin_tx().await?;
@@ -364,11 +364,11 @@ where
                 .delete_proofs(&mut tx, &selected_proofs)
                 .await?;
             self.localstore
-                .add_proofs(&mut tx, &split_result.0.proofs())
+                .add_proofs(&mut tx, &swap_result.0.proofs())
                 .await?;
             tx.commit().await?;
 
-            split_result.1.proofs()
+            swap_result.1.proofs()
         };
 
         let fee_blind = self
@@ -455,17 +455,17 @@ where
         let total_proofs = {
             let selected_tokens =
                 (wallet_keyset.mint_url.to_owned(), selected_proofs.clone()).into();
-            let split_result = self
-                .split_tokens(wallet_keyset, &selected_tokens, ln_amount.into())
+            let swap_result = self
+                .swap_tokens(wallet_keyset, &selected_tokens, ln_amount.into())
                 .await?;
             self.localstore
                 .delete_proofs(&mut tx, &selected_proofs)
                 .await?;
             self.localstore
-                .add_proofs(&mut tx, &split_result.0.proofs())
+                .add_proofs(&mut tx, &swap_result.0.proofs())
                 .await?;
 
-            split_result.1.proofs()
+            swap_result.1.proofs()
         };
 
         let melt_response = self
@@ -514,7 +514,7 @@ where
         Ok(secret_range)
     }
 
-    pub async fn split_tokens(
+    pub async fn swap_tokens(
         &self,
         wallet_keyset: &WalletKeyset,
         tokens: &TokenV3,
@@ -839,7 +839,7 @@ mod tests {
     use crate::wallet::WalletBuilder;
 
     use moksha_core::fixture::{read_fixture, read_fixture_as};
-    use moksha_core::keyset::{KeysetId, MintKeyset, V1Keysets};
+    use moksha_core::keyset::{KeysetId, MintKeyset, Keysets};
     use moksha_core::primitives::{
         CurrencyUnit, KeyResponse, KeysResponse, PaymentMethod, PostMeltBolt11Response,
         PostMeltQuoteBolt11Response, PostMintBolt11Response, PostSwapResponse,
@@ -858,7 +858,7 @@ mod tests {
         };
         let keys_response = KeysResponse::new(key_response.clone());
         let keys_by_id_response = keys_response.clone();
-        let keysets = V1Keysets::new(keys.keyset_id, CurrencyUnit::Sat, true);
+        let keysets = Keysets::new(keys.keyset_id, CurrencyUnit::Sat, true);
 
         let mut client = MockCashuClient::default();
         client
@@ -990,8 +990,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_split() -> anyhow::Result<()> {
-        let split_response = read_fixture_as::<PostSwapResponse>("post_split_response_24_40.json")?;
+    async fn test_swap() -> anyhow::Result<()> {
+        let split_response = read_fixture_as::<PostSwapResponse>("post_swap_response_24_40.json")?;
         let mut client = create_mock();
         client
             .expect_post_swap()
@@ -1009,7 +1009,7 @@ mod tests {
             .await?;
 
         let tokens = read_fixture("token_64.cashu")?.try_into()?;
-        let result = wallet.split_tokens(&keyset, &tokens, 20.into()).await?;
+        let result = wallet.swap_tokens(&keyset, &tokens, 20.into()).await?;
 
         let first = result.0;
 
@@ -1069,7 +1069,7 @@ mod tests {
             .expect_post_melt_quote_bolt11()
             .returning(move |_, _, _| Ok(quote_response.clone()));
 
-        let swap_response = read_fixture_as::<PostSwapResponse>("post_split_response_24_40.json")?;
+        let swap_response = read_fixture_as::<PostSwapResponse>("post_swap_response_24_40.json")?;
         mock_client
             .expect_post_swap()
             .returning(move |_, _, _| Ok(swap_response.clone()));
@@ -1123,7 +1123,7 @@ mod tests {
         mock_client
             .expect_post_melt_quote_bolt11()
             .returning(move |_, _, _| Ok(quote_response.clone()));
-        let swap_response = read_fixture_as::<PostSwapResponse>("post_split_response_24_40.json")?;
+        let swap_response = read_fixture_as::<PostSwapResponse>("post_swap_response_24_40.json")?;
         mock_client
             .expect_post_swap()
             .returning(move |_, _, _| Ok(swap_response.clone()));

@@ -1,14 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GetMintQuery {
-    pub amount: u64,
-}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PostMintQuery {
-    pub hash: String,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Invoice {
