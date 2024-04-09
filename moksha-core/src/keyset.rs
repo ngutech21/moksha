@@ -19,19 +19,12 @@ use utoipa::ToSchema;
 use bitcoin_hashes::{sha256, Hash};
 
 use itertools::Itertools;
-use rand::RngCore;
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
 use crate::{error::MokshaCoreError, primitives::CurrencyUnit};
 
 const MAX_ORDER: u64 = 64;
 
-pub fn generate_hash() -> String {
-    let mut rng = rand::thread_rng();
-    let mut random = [0u8; 32];
-    rng.fill_bytes(&mut random);
-    sha256::Hash::hash(&random).to_string()
-}
 
 #[derive(Debug, Clone)]
 pub struct MintKeyset {
@@ -205,7 +198,7 @@ pub fn derive_pubkey(seed: &str) -> Result<PublicKey, MokshaCoreError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::keyset::{derive_pubkey, generate_hash, KeysetId};
+    use crate::keyset::{derive_pubkey,  KeysetId};
     use pretty_assertions::assert_eq;
     use secp256k1::PublicKey;
     use std::collections::HashMap;
@@ -216,12 +209,6 @@ mod tests {
         let keyset_id = KeysetId::new("009a1f293253e41e")?;
         assert_eq!(864559728, keyset_id.as_int()?);
         Ok(())
-    }
-
-    #[test]
-    fn test_generate_hash() {
-        let hash = generate_hash();
-        assert_eq!(hash.len(), 64);
     }
 
     #[test]

@@ -5,8 +5,6 @@
 //! The `SplitAmount` struct represents a split amount, with a `Vec<u64>` field for the split amounts. The struct provides a `create_secrets` method that generates a vector of random strings for use as secrets in the split transaction. The struct also implements the `IntoIterator` trait, which allows it to be iterated over as a vector of `u64` values.
 //!
 //! Both the `Amount` and `SplitAmount` structs are serializable and deserializable using serde.
-use rand::distributions::Alphanumeric;
-use rand::Rng;
 
 #[derive(Debug, Clone)]
 pub struct Amount(pub u64);
@@ -66,13 +64,6 @@ fn split_amount(amount: u64) -> Vec<u64> {
         .collect::<Vec<u64>>()
 }
 
-pub fn generate_random_string() -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(24)
-        .map(char::from)
-        .collect()
-}
 
 #[cfg(test)]
 mod tests {
