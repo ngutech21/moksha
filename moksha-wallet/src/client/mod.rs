@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use moksha_core::{
     blind::BlindedMessage,
-    keyset::V1Keysets,
+    keyset::Keysets,
     primitives::{
         CurrencyUnit, GetMeltBtcOnchainResponse, KeysResponse, MintInfoResponse,
         PostMeltBolt11Response, PostMeltBtcOnchainResponse, PostMeltQuoteBolt11Response,
@@ -31,7 +31,7 @@ pub trait CashuClient {
         keyset_id: String,
     ) -> Result<KeysResponse, MokshaWalletError>;
 
-    async fn get_keysets(&self, mint_url: &Url) -> Result<V1Keysets, MokshaWalletError>;
+    async fn get_keysets(&self, mint_url: &Url) -> Result<Keysets, MokshaWalletError>;
 
     async fn post_swap(
         &self,

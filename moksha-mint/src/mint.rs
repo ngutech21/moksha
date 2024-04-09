@@ -32,8 +32,6 @@ use crate::lightning::cln::ClnLightning;
 pub struct Mint<DB: Database = PostgresDB> {
     pub lightning: Arc<dyn Lightning + Send + Sync>,
     pub lightning_type: LightningType,
-    // FIXME remove after v1 api release
-    pub keyset_legacy: MintKeyset,
     pub keyset: MintKeyset,
     pub db: DB,
     pub dhke: Dhke,
@@ -57,11 +55,6 @@ where
         Self {
             lightning,
             lightning_type,
-            keyset_legacy: MintKeyset::legacy_new(
-                // FIXME
-                &config.privatekey.clone(),
-                &config.derivation_path.clone().unwrap_or_default(),
-            ),
             keyset: MintKeyset::new(
                 &config.privatekey.clone(),
                 &config.derivation_path.clone().unwrap_or_default(),
@@ -171,7 +164,7 @@ where
         let amount_promises = promises.total_amount();
         if sum_proofs != amount_promises {
             return Err(MokshaMintError::SwapAmountMismatch(format!(
-                "Split amount mismatch: {sum_proofs} != {amount_promises}"
+                "Swap amount mismatch: {sum_proofs} != {amount_promises}"
             )));
         }
 
@@ -532,7 +525,7 @@ mod tests {
                 moksha_core::primitives::PaymentMethod::Bolt11,
                 "somehash".to_string(),
                 &outputs,
-                &mint.keyset_legacy,
+                &mint.keyset,
                 true,
             )
             .await?;
@@ -562,7 +555,7 @@ mod tests {
                 moksha_core::primitives::PaymentMethod::Bolt11,
                 "somehash".to_string(),
                 &outputs,
-                &mint.keyset_legacy,
+                &mint.keyset,
                 true,
             )
             .await?;
@@ -585,7 +578,7 @@ mod tests {
 
         let proofs = Proofs::empty();
         let result = mint
-            .swap(&proofs, &blinded_messages, &mint.keyset_legacy)
+            .swap(&proofs, &blinded_messages, &mint.keyset)
             .await?;
 
         assert!(result.is_empty());
@@ -688,7 +681,7 @@ mod tests {
                 4,
                 &tokens.proofs(),
                 &change,
-                &mint.keyset_legacy,
+                &mint.keyset,
             )
             .await?;
 

@@ -16,7 +16,7 @@ use axum::routing::{get_service, post, get};
 use axum::{middleware, Router};
 
 
-use moksha_core::keyset::{V1Keyset, V1Keysets};
+use moksha_core::keyset::{Keyset, Keysets};
 use moksha_core::proof::Proofs;
 use moksha_core::proof::{P2SHScript, Proof};
 
@@ -130,8 +130,8 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         PaymentMethod,
         KeysResponse,
         KeyResponse,
-        V1Keysets,
-        V1Keyset,
+        Keysets,
+        Keyset,
         BlindedMessage,
         BlindedSignature,
         Proof,
@@ -283,7 +283,7 @@ mod tests {
     };
     use http_body_util::BodyExt;
     use moksha_core::{
-        keyset::V1Keysets,
+        keyset::Keysets,
         primitives::{CurrencyUnit, KeysResponse, MintInfoResponse},
     };
  
@@ -328,8 +328,8 @@ mod tests {
             .await?;
         assert_eq!(response.status(), StatusCode::OK);
         let body = response.into_body().collect().await?.to_bytes();
-        let keysets = serde_json::from_slice::<V1Keysets>(&body)?;
-        assert_eq!(V1Keysets::new("00f545318e4fad2b".to_owned(), CurrencyUnit::Sat, true), keysets);
+        let keysets = serde_json::from_slice::<Keysets>(&body)?;
+        assert_eq!(Keysets::new("00f545318e4fad2b".to_owned(), CurrencyUnit::Sat, true), keysets);
         Ok(())
     }
 
@@ -408,7 +408,7 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::OK);
         let body = response.into_body().collect().await?.to_bytes();
-        let keysets = serde_json::from_slice::<V1Keysets>(&body)?;
+        let keysets = serde_json::from_slice::<Keysets>(&body)?;
         assert_eq!(1, keysets.keysets.len());
         assert_eq!(16, keysets.keysets[0].id.len());
         Ok(())
@@ -500,7 +500,7 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::OK);
         let body = response.into_body().collect().await?.to_bytes();
-        let keys: V1Keysets = serde_json::from_slice(&body)?;
+        let keys: Keysets = serde_json::from_slice(&body)?;
         assert_eq!(1, keys.keysets.len());
         let keyset = keys.keysets.first().expect("keyset not found");
         assert!(keyset.active);

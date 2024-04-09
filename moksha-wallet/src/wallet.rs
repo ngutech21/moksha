@@ -839,7 +839,7 @@ mod tests {
     use crate::wallet::WalletBuilder;
 
     use moksha_core::fixture::{read_fixture, read_fixture_as};
-    use moksha_core::keyset::{KeysetId, MintKeyset, V1Keysets};
+    use moksha_core::keyset::{KeysetId, MintKeyset, Keysets};
     use moksha_core::primitives::{
         CurrencyUnit, KeyResponse, KeysResponse, PaymentMethod, PostMeltBolt11Response,
         PostMeltQuoteBolt11Response, PostMintBolt11Response, PostSwapResponse,
@@ -858,7 +858,7 @@ mod tests {
         };
         let keys_response = KeysResponse::new(key_response.clone());
         let keys_by_id_response = keys_response.clone();
-        let keysets = V1Keysets::new(keys.keyset_id, CurrencyUnit::Sat, true);
+        let keysets = Keysets::new(keys.keyset_id, CurrencyUnit::Sat, true);
 
         let mut client = MockCashuClient::default();
         client
