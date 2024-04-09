@@ -30,7 +30,7 @@ utoipa = { version = "4.2.0" }
 # getrandom is transitive dependency of rand
 # on wasm, we need to enable the js backend
 # see https://docs.rs/getrandom/latest/getrandom/#indirect-dependencies and https://docs.rs/getrandom/latest/getrandom/#webassembly-support
-getrandom = { version = "0.2.11", features = ["js"] }
+getrandom = { version = "0.2.14", features = ["js"] }
 
 [dev-dependencies]
 anyhow = "1.0.79"
