@@ -87,5 +87,4 @@ pub enum MokshaWalletError {
 
     #[error("Pubkey not found")]
     PubkeyNotFound,
-
 }

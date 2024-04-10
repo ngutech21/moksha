@@ -74,23 +74,25 @@ where
     }
 
     pub fn create_blinded_signatures(
-    &self,
-    blinded_messages: &[BlindedMessage],
-    keyset: &MintKeyset,
-) -> Result<Vec<BlindedSignature>, MokshaMintError> {
-    blinded_messages
-        .iter()
-        .map(|blinded_msg| {
-            let private_key = keyset.private_keys.get(&blinded_msg.amount)
-                .ok_or(MokshaMintError::PrivateKeyNotFound)?;
-            let blinded_sig = self.dhke.step2_bob(blinded_msg.b_, private_key)?;
-            Ok(BlindedSignature {
-                id: keyset.keyset_id.clone(),
-                amount: blinded_msg.amount,
-                c_: blinded_sig,
+        &self,
+        blinded_messages: &[BlindedMessage],
+        keyset: &MintKeyset,
+    ) -> Result<Vec<BlindedSignature>, MokshaMintError> {
+        blinded_messages
+            .iter()
+            .map(|blinded_msg| {
+                let private_key = keyset
+                    .private_keys
+                    .get(&blinded_msg.amount)
+                    .ok_or(MokshaMintError::PrivateKeyNotFound)?;
+                let blinded_sig = self.dhke.step2_bob(blinded_msg.b_, private_key)?;
+                Ok(BlindedSignature {
+                    id: keyset.keyset_id.clone(),
+                    amount: blinded_msg.amount,
+                    c_: blinded_sig,
+                })
             })
-        })
-        .collect::<Result<Vec<_>, _>>()
+            .collect::<Result<Vec<_>, _>>()
     }
 
     #[instrument(level = "debug", skip(self), err)]
@@ -447,12 +449,12 @@ mod tests {
     use moksha_core::primitives::PostSwapRequest;
     use moksha_core::proof::Proofs;
     use moksha_core::token::TokenV3;
+    use pretty_assertions::assert_eq;
     use std::str::FromStr;
     use std::sync::Arc;
     use testcontainers::clients::Cli;
     use testcontainers::RunnableImage;
     use testcontainers_modules::postgres::Postgres;
-    use pretty_assertions::assert_eq;
 
     #[tokio::test]
     async fn test_fee_reserve() -> anyhow::Result<()> {
@@ -577,9 +579,7 @@ mod tests {
         .await?;
 
         let proofs = Proofs::empty();
-        let result = mint
-            .swap(&proofs, &blinded_messages, &mint.keyset)
-            .await?;
+        let result = mint.swap(&proofs, &blinded_messages, &mint.keyset).await?;
 
         assert!(result.is_empty());
         Ok(())
@@ -621,8 +621,7 @@ mod tests {
             None,
         )
         .await?;
-        let request =
-            read_fixture_as::<PostSwapRequest>("post_swap_request_duplicate_key.json")?;
+        let request = read_fixture_as::<PostSwapRequest>("post_swap_request_duplicate_key.json")?;
 
         let result = mint
             .swap(&request.inputs, &request.outputs, &mint.keyset)
@@ -670,19 +669,11 @@ mod tests {
 
         let tokens = create_token_from_fixture("token_60.cashu").expect("can not read fixture");
         let invoice = "some invoice".to_string();
-        let change =
-            read_fixture_as::<Vec<BlindedMessage>>("blinded_messages_blank_4000.json")?;
+        let change = read_fixture_as::<Vec<BlindedMessage>>("blinded_messages_blank_4000.json")?;
 
         let mut tx = mint.db.begin_tx().await?;
         let (paid, _payment_hash, change) = mint
-            .melt_bolt11(
-                &mut tx,
-                invoice,
-                4,
-                &tokens.proofs(),
-                &change,
-                &mint.keyset,
-            )
+            .melt_bolt11(&mut tx, invoice, 4, &tokens.proofs(), &change, &mint.keyset)
             .await?;
 
         assert!(paid);
@@ -695,7 +686,6 @@ mod tests {
         let raw_token = std::fs::read_to_string(format!("{base_dir}/src/fixtures/{fixture}"))?;
         Ok(raw_token.trim().to_string().try_into()?)
     }
-    
 
     async fn create_mint_from_mocks(
         mock_db: PostgresDB,

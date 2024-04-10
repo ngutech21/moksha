@@ -85,7 +85,8 @@ async fn main() -> anyhow::Result<()> {
                 e,
                 moksha_wallet::error::MokshaWalletError::UnsupportedApiVersion
             ) {
-                term.write_line("Error: Mint does not support /v1 api").expect("write_line failed");
+                term.write_line("Error: Mint does not support /v1 api")
+                    .expect("write_line failed");
                 std::process::exit(1);
             }
             e
@@ -235,9 +236,7 @@ async fn main() -> anyhow::Result<()> {
                         response.1.to_formatted_string(&Locale::en)
                     ))?;
                 }
-                term.write_line(
-                    "\nInvoice has been paid: Tokens melted successfully",
-                )?;
+                term.write_line("\nInvoice has been paid: Tokens melted successfully")?;
                 cli::show_total_balance(&wallet).await?;
             } else {
                 term.write_line("Error: Tokens not melted")?;
@@ -246,7 +245,6 @@ async fn main() -> anyhow::Result<()> {
         Command::PayOnchain { address, amount } => {
             // FIXME remove redundant code
             let mint_url = choose_mint(&wallet, &CurrencyUnit::Sat).await?;
-
 
             if mint_url.1 < amount {
                 term.write_line("Error: Not enough tokens in selected mint")?;
@@ -286,10 +284,8 @@ async fn main() -> anyhow::Result<()> {
                 quote.description,
                 address)
             )?;
-            
-            let pay_confirmed = Confirm::new()
-                .with_prompt("Confirm payment?")
-                .interact()?;
+
+            let pay_confirmed = Confirm::new().with_prompt("Confirm payment?").interact()?;
 
             if !pay_confirmed {
                 return Ok(());
@@ -321,12 +317,14 @@ async fn main() -> anyhow::Result<()> {
 
             let payment_method = info.nuts.nut17.as_ref().map_or_else(
                 || {
-                    term.write_line("Only bolt11 minting is supported").expect("write_line failed");
+                    term.write_line("Only bolt11 minting is supported")
+                        .expect("write_line failed");
                     PaymentMethod::Bolt11
                 },
                 |nut17| {
                     if !nut17.supported {
-                        term.write_line("Only bolt11 minting is supported").expect("write_line failed");
+                        term.write_line("Only bolt11 minting is supported")
+                            .expect("write_line failed");
                         PaymentMethod::Bolt11
                     } else {
                         let selections = &[PaymentMethod::BtcOnchain, PaymentMethod::Bolt11];
@@ -335,7 +333,8 @@ async fn main() -> anyhow::Result<()> {
                             .with_prompt("Choose a payment method:")
                             .default(0)
                             .items(&selections[..])
-                            .interact().expect("Selection failed");
+                            .interact()
+                            .expect("Selection failed");
                         selections[selection].clone()
                     }
                 },
@@ -345,20 +344,20 @@ async fn main() -> anyhow::Result<()> {
                 PaymentMethod::BtcOnchain => {
                     let nut17 = info.nuts.nut17.expect("nut17 is None");
                     let payment_method = nut17.payment_methods.first().expect("no payment methods");
-                    
+
                     if amount < payment_method.min_amount {
                         term.write_line(&format!(
                             "Amount too low. Minimum amount is {} (sat)",
-                            payment_method.min_amount.to_formatted_string(&Locale::en))
-                        )?;
+                            payment_method.min_amount.to_formatted_string(&Locale::en)
+                        ))?;
                         return Ok(());
                     }
 
                     if amount > payment_method.max_amount {
                         term.write_line(&format!(
                             "Amount too high. Maximum amount is {} (sat)",
-                            payment_method.max_amount.to_formatted_string(&Locale::en))
-                        )?;
+                            payment_method.max_amount.to_formatted_string(&Locale::en)
+                        ))?;
                         return Ok(());
                     }
 
@@ -370,7 +369,8 @@ async fn main() -> anyhow::Result<()> {
                     let amount_btc = amount as f64 / 100_000_000.0;
                     let bip21_code = format!("bitcoin:{}?amount={}", address, amount_btc);
                     let image = QrCode::new(bip21_code)?
-                        .render::<unicode::Dense1x2>().quiet_zone(true)
+                        .render::<unicode::Dense1x2>()
+                        .quiet_zone(true)
                         .build();
                     term.write_line(&image)?;
                     quote
@@ -382,13 +382,16 @@ async fn main() -> anyhow::Result<()> {
                         ..
                     } = wallet.create_quote_bolt11(&mint_url, amount).await?;
 
-                    term.write_line(&format!("Pay lightning invoice to mint tokens:\n\n{payment_request}"))?;
-                    
+                    term.write_line(&format!(
+                        "Pay lightning invoice to mint tokens:\n\n{payment_request}"
+                    ))?;
+
                     let image = QrCode::new(payment_request)?
-                        .render::<unicode::Dense1x2>().quiet_zone(true)
+                        .render::<unicode::Dense1x2>()
+                        .quiet_zone(true)
                         .build();
                     term.write_line(&image)?;
-                    
+
                     quote
                 }
             };
@@ -399,7 +402,6 @@ async fn main() -> anyhow::Result<()> {
                 .find(|k| k.mint_url == mint_url)
                 .expect("Keyset not found");
 
-            
             let progress_bar = cli::progress_bar()?;
             progress_bar.set_message("Waiting for payment ...");
 
@@ -441,4 +443,3 @@ async fn main() -> anyhow::Result<()> {
     }
     Ok(())
 }
-

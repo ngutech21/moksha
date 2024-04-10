@@ -64,7 +64,6 @@ fn split_amount(amount: u64) -> Vec<u64> {
         .collect::<Vec<u64>>()
 }
 
-
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
