@@ -211,14 +211,14 @@ pub async fn post_melt_quote_btconchain(
         fee_sat_per_vbyte: fee_response.sat_per_vbyte,
         expiry: quote_onchain_expiry(),
         paid: false,
-        description: format!("{} sat per vbyte", fee_response.sat_per_vbyte)
+        description: format!("{} sat per vbyte", fee_response.sat_per_vbyte),
     };
 
     let mut tx = mint.db.begin_tx().await?;
     mint.db.add_onchain_melt_quote(&mut tx, &quote).await?;
     tx.commit().await?;
 
-    Ok(Json(vec![ quote.into()]))
+    Ok(Json(vec![quote.into()]))
 }
 
 #[utoipa::path(
@@ -256,9 +256,7 @@ pub async fn get_melt_quote_btconchain(
             .await?;
     }
 
-    Ok(Json(
-        BtcOnchainMeltQuote { paid, ..quote }.into(),
-    ))
+    Ok(Json(BtcOnchainMeltQuote { paid, ..quote }.into()))
 }
 
 #[utoipa::path(

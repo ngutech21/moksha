@@ -377,7 +377,7 @@ impl Database for PostgresDB {
             fee_sat_per_vbyte: row.fee_sat_per_vbyte as u32,
             expiry: row.expiry as u64,
             paid: row.paid,
-            description: row.description, 
+            description: row.description 
         })
         .fetch_one(&mut **tx)
         .await?;

@@ -14,31 +14,31 @@ name = "itests"
 path = "src/lib.rs"
 
 [dependencies]
-rand = "0.8.5"
-axum = "0.7.5"
-anyhow = { version = "1.0.80", features = ["backtrace"] }
-serde = { version = "1.0.197", features = ["derive"] }
+rand = { workspace = true }
+axum = { workspace = true }
+anyhow = { workspace = true, features = ["backtrace"] }
+serde = { workspace = true, features = ["derive"] }
 lightning-invoice = "0.29.0"
 bitcoin_hashes = { version = "0.12.0", default-features = false }
 secp256k1 = { version = "0.27.0", default-features = false, features = ["recovery", "alloc", "rand"] }
-testcontainers = "0.15.0"
-testcontainers-modules = { version = "0.3.4", features = ["postgres"] }
-bitcoincore-rpc = "0.18.0"
-fedimint-tonic-lnd = { version = "0.2.0", features = ["lightningrpc", "walletrpc"] }
-url = "2.5.0"
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true, features = ["postgres"] }
+bitcoincore-rpc = { workspace = true }
+fedimint-tonic-lnd = { workspace = true, features = ["lightningrpc", "walletrpc"] }
+url = { workspace = true }
 moksha-mint = { path = "../moksha-mint" }
-hex = "0.4.3"
-reqwest = { version = "0.12.3", default-features = false, features = ["json", "rustls-tls"] }
+hex = { workspace = true }
+reqwest = { workspace = true, features = ["json", "rustls-tls"] }
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
 tokio = { version = "1.37.0", features = ["sync", "rt-multi-thread"] }
 
 [dev-dependencies]
-anyhow = { version = "1.0.80", features = ["backtrace"] }
-tokio = { version = "1.37.0", features = ["full"] }
-reqwest = { version = "0.12.3", default-features = false, features = ["json", "rustls-tls"] }
+anyhow = { workspace = true, features = ["backtrace"] }
+tokio = { workspace = true, features = ["full"] }
+reqwest = { workspace = true, features = ["json", "rustls-tls"] }
 moksha-mint = { path = "../moksha-mint" }
 moksha-wallet = { path = "../moksha-wallet" }
 moksha-core = { path = "../moksha-core" }
-tempfile = "3.9.0"
-assert_cmd = "2.0.14"
+tempfile = { workspace = true }
+assert_cmd = { workspace = true }

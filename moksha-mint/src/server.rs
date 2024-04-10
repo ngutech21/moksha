@@ -1,4 +1,3 @@
-
 use crate::routes::btconchain::{
     get_melt_btconchain, get_melt_quote_btconchain, get_mint_quote_btconchain,
     post_melt_btconchain, post_melt_quote_btconchain, post_mint_btconchain,
@@ -12,9 +11,8 @@ use axum::extract::Request;
 use axum::http::{HeaderName, HeaderValue, StatusCode};
 use axum::middleware::Next;
 use axum::response::IntoResponse;
-use axum::routing::{get_service, post, get};
+use axum::routing::{get, get_service, post};
 use axum::{middleware, Router};
-
 
 use moksha_core::keyset::{Keyset, Keysets};
 use moksha_core::proof::Proofs;
@@ -27,9 +25,9 @@ use crate::mint::Mint;
 use moksha_core::blind::BlindedMessage;
 use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
-    CurrencyUnit, GetMeltBtcOnchainResponse, KeyResponse, KeysResponse, MintInfoResponse,
-    Nut10, Nut11, Nut12, Nut17, Nut18, Nut4, Nut5, Nut7, Nut8, Nut9, Nuts,
-    PaymentMethod, PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
+    CurrencyUnit, GetMeltBtcOnchainResponse, KeyResponse, KeysResponse, MintInfoResponse, Nut10,
+    Nut11, Nut12, Nut17, Nut18, Nut4, Nut5, Nut7, Nut8, Nut9, Nuts, PaymentMethod,
+    PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
     PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse,
     PostMintBolt11Request, PostMintBolt11Response, PostMintQuoteBolt11Request,
     PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse,
@@ -42,7 +40,6 @@ use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
 
 use utoipa::OpenApi;
-
 
 pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
     if let Some(ref buildtime) = mint.build_params.build_time {
@@ -159,7 +156,6 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
 struct ApiDoc;
 
 fn app(mint: Mint) -> Router {
-    
     let default_routes = Router::new()
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .route("/v1/keys", get(get_keys))
@@ -253,7 +249,6 @@ async fn add_response_headers(
     Ok(res)
 }
 
-
 #[utoipa::path(
         get,
         path = "/health",
@@ -286,7 +281,7 @@ mod tests {
         keyset::Keysets,
         primitives::{CurrencyUnit, KeysResponse, MintInfoResponse},
     };
- 
+
     use testcontainers::{clients::Cli, RunnableImage};
     use testcontainers_modules::postgres::Postgres;
     use tower::ServiceExt;
@@ -329,11 +324,12 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let body = response.into_body().collect().await?.to_bytes();
         let keysets = serde_json::from_slice::<Keysets>(&body)?;
-        assert_eq!(Keysets::new("00f545318e4fad2b".to_owned(), CurrencyUnit::Sat, true), keysets);
+        assert_eq!(
+            Keysets::new("00f545318e4fad2b".to_owned(), CurrencyUnit::Sat, true),
+            keysets
+        );
         Ok(())
     }
-
-    
 
     // FIXME remove duplicated code from mint.rs
     async fn create_mock_db_empty(port: u16) -> anyhow::Result<PostgresDB> {

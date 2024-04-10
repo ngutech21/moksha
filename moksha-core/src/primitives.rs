@@ -20,7 +20,6 @@ pub struct PaymentRequest {
     pub hash: String, // TODO use sha256::Hash
 }
 
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CheckFeesRequest {
     pub pr: String,
@@ -31,7 +30,6 @@ pub struct CheckFeesResponse {
     /// fee in satoshis
     pub fee: u64,
 }
-
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct PostSwapRequest {
@@ -49,8 +47,6 @@ pub struct CashuErrorResponse {
     pub code: u64,
     pub detail: String,
 }
-
-
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
 pub struct KeysResponse {
@@ -524,10 +520,7 @@ mod tests {
     use crate::{
         dhke::public_key_from_hex,
         fixture::read_fixture,
-        primitives::{
-            KeyResponse, MintInfoResponse,  Nuts,
-            PostSwapResponse,
-        },
+        primitives::{KeyResponse, MintInfoResponse, Nuts, PostSwapResponse},
     };
 
     #[test]
@@ -549,8 +542,6 @@ mod tests {
         assert_eq!(serialized, "{\"id\":\"test\",\"unit\":\"sat\",\"keys\":{}}");
         Ok(())
     }
-
-    
 
     #[test]
     fn test_deserialize_mint_info() -> anyhow::Result<()> {

@@ -20,12 +20,12 @@ path = "src/lib.rs"
 [dependencies]
 moksha-wallet = { version = "0.2.1", path = "../moksha-wallet" }
 moksha-core = { version = "0.2.1", path = "../moksha-core" }
-console = "0.15.8"
-clap = { version = "4.5.1", features = ["derive"] }
-tokio = { version = "1.37.0", features = ["rt", "rt-multi-thread", "macros"] }
-url = "2.4.1"
-anyhow = { version = "1.0.75", features = ["backtrace"] }
-dialoguer = "0.11.0"
-num-format = "0.4.4"
-qrcode = "0.14.0"
-indicatif = "0.17.8"
+console = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
+url = { workspace = true }
+anyhow = { workspace = true, features = ["backtrace"] }
+dialoguer = { workspace = true }
+num-format = { workspace = true }
+qrcode = { workspace = true }
+indicatif = { workspace = true }
