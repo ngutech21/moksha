@@ -22,6 +22,8 @@ jobs:
         run: cargo install just
       - name: Run Docker Compose
         run: docker compose --profile itest up -d
+      - name: check formatting
+        run: cargo fmt --all -- --check
       - name: Build
         run: cargo build --verbose
       - name: chmod data-dir
