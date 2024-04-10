@@ -34,7 +34,7 @@ typos-fix-all:
 final-check:
   cargo fmt --all
   just typos
-  cargo test
+  RUST_BACKTRACE=1 cargo test --workspace --exclude integrationtests
   just run-itests
   just build-wasm
 
