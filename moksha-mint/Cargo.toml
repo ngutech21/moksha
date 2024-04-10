@@ -17,46 +17,46 @@ name = "mokshamint"
 path = "src/lib.rs"
 
 [dependencies]
-clap = { version = "4.5.1", features = ["env", "derive"] }
-hex = "0.4.3"
-async-trait = "0.1.74"
-anyhow = { version = "1.0.75", features = ["backtrace"] }
-axum = { version = "0.7.5", features = ["http2"] }
-hyper = "1"
-serde = { version = "1.0.193", features = ["derive"] }
-serde_json = "1.0.108"
-tokio = { version = "1.37.0", features = ["full"] }
-tower-http = { version = "0.5.0", features = ["cors", "fs", "set-header"] }
+clap = { workspace = true, features = ["env", "derive"] }
+hex = { workspace = true }
+async-trait = { workspace = true }
+anyhow = { workspace = true, features = ["backtrace"] }
+axum = { workspace = true, features = ["http2"] }
+hyper = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tower-http = { workspace = true, features = ["cors", "fs", "set-header"] }
 
 secp256k1 = { version = "0.28.2", default-features = false, features = ["rand", "serde"] }
-thiserror = "1.0.50"
+thiserror = { workspace = true }
 moksha-core = { path = "../moksha-core", version = "0.2.1" }
 lightning-invoice = "0.26.0"
-reqwest = { version = "0.12.3", default-features = false, features = ["json", "rustls-tls", "socks"] }
-url = "2.4.1"
-dotenvy = "0.15.7"
-fedimint-tonic-lnd = { version = "0.2.0", features = ["lightningrpc", "walletrpc"] }
-uuid = { version = "1.6.1", features = ["serde", "v4"] }
-utoipa = { version = "4.1.0", features = ["axum_extras"] }
-utoipa-swagger-ui = { version = "6.0.0", features = ["axum"] }
-sqlx = { version = "0.7.4", default-features = false, features = ["postgres", "runtime-tokio", "tls-rustls", "migrate", "macros", "uuid"] }
-chrono = "0.4.31"
-cln-grpc = "0.1.7"
-tonic = { version = "0.8", features = ["transport", "tls"] }
+reqwest = { workspace = true, features = ["json", "rustls-tls", "socks"] }
+url = { workspace = true }
+dotenvy = { workspace = true }
+fedimint-tonic-lnd = { workspace = true, features = ["lightningrpc", "walletrpc"] }
+uuid = { workspace = true, features = ["serde", "v4"] }
+utoipa = { workspace = true, features = ["axum_extras"] }
+utoipa-swagger-ui = { workspace = true, features = ["axum"] }
+sqlx = { workspace = true, features = ["postgres", "runtime-tokio", "tls-rustls", "migrate", "macros", "uuid"] }
+chrono = { workspace = true }
+cln-grpc = { workspace = true }
+tonic = { workspace = true, features = ["transport", "tls"] }
 
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json"] }
-tracing-opentelemetry = "0.23.0"
-opentelemetry_sdk = { version = "0.22.1", features = ["rt-tokio"] }
-opentelemetry = "0.22.0"
-opentelemetry-otlp = { version = "0.15.0", features = ["http-proto", "reqwest-client"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter", "json"] }
+tracing-opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true, features = ["rt-tokio"] }
+opentelemetry = { workspace = true }
+opentelemetry-otlp = { workspace = true, features = ["http-proto", "reqwest-client"] }
 
 [dev-dependencies]
-tempfile = "3.8.1"
-tower = { version = "0.4.13", features = ["util"] }
-mockall = "0.12.1"
-hex = "0.4.3"
-http-body-util = "0.1.0"
-testcontainers = "0.15.0"
-testcontainers-modules = { version = "0.3.6", features = ["postgres"] }
-pretty_assertions = "1.4.0"
+tempfile = { workspace = true }
+tower = { workspace = true, features = ["util"] }
+mockall = { workspace = true }
+hex = { workspace = true }
+http-body-util = { workspace = true }
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true, features = ["postgres"] }
+pretty_assertions = { workspace = true }

@@ -5,22 +5,24 @@ use dialoguer::{theme::ColorfulTheme, Select};
 use indicatif::{ProgressBar, ProgressStyle};
 
 use moksha_core::primitives::CurrencyUnit;
-use moksha_wallet::{error::MokshaWalletError, http::CrossPlatformHttpClient, localstore::sqlite::SqliteLocalStore, wallet::Wallet};
+use moksha_wallet::{
+    error::MokshaWalletError, http::CrossPlatformHttpClient, localstore::sqlite::SqliteLocalStore,
+    wallet::Wallet,
+};
 use num_format::Locale;
-use url::Url;
 use num_format::ToFormattedString;
+use url::Url;
 
-pub fn progress_bar() -> anyhow::Result<ProgressBar>{
+pub fn progress_bar() -> anyhow::Result<ProgressBar> {
     let pb = ProgressBar::new_spinner();
     pb.enable_steady_tick(Duration::from_millis(100));
     pb.set_style(ProgressStyle::default_spinner().template("{spinner:.cyan} {msg}")?);
     Ok(pb)
 }
 
-
 pub async fn choose_mint(
     wallet: &Wallet<SqliteLocalStore, CrossPlatformHttpClient>,
-    currency_unit: &CurrencyUnit
+    currency_unit: &CurrencyUnit,
 ) -> Result<(Url, u64), MokshaWalletError> {
     let mints = get_mints_with_balance(wallet, currency_unit).await?;
 
@@ -53,15 +55,12 @@ pub async fn choose_mint(
     Ok(mints[selection].clone())
 }
 
-
-
 pub async fn get_mints_with_balance(
     wallet: &Wallet<SqliteLocalStore, CrossPlatformHttpClient>,
     currency_unit: &CurrencyUnit,
 ) -> Result<Vec<(Url, u64)>, MokshaWalletError> {
     let all_proofs = wallet.get_proofs().await?;
 
-    
     let keysets = wallet.get_wallet_keysets().await?;
     if keysets.is_empty() {
         println!("No mints found. Add a mint first with 'moksha-cli add-mint <mint-url>'");
@@ -79,12 +78,13 @@ pub async fn get_mints_with_balance(
         .collect::<Vec<(Url, u64)>>())
 }
 
-
-pub async fn show_total_balance(wallet: &Wallet<SqliteLocalStore, CrossPlatformHttpClient>) -> anyhow::Result<()>{
+pub async fn show_total_balance(
+    wallet: &Wallet<SqliteLocalStore, CrossPlatformHttpClient>,
+) -> anyhow::Result<()> {
     let term = Term::stdout();
     term.write_line(&format!(
-                "New total balance {} (sat)",
-                style(wallet.get_balance().await?.to_formatted_string(&Locale::en)).cyan() )
-            )?;
+        "New total balance {} (sat)",
+        style(wallet.get_balance().await?.to_formatted_string(&Locale::en)).cyan()
+    ))?;
     Ok(())
 }

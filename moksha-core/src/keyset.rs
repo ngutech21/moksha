@@ -15,7 +15,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use utoipa::ToSchema;
 
-
 use bitcoin_hashes::{sha256, Hash};
 
 use itertools::Itertools;
@@ -24,7 +23,6 @@ use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use crate::{error::MokshaCoreError, primitives::CurrencyUnit};
 
 const MAX_ORDER: u64 = 64;
-
 
 #[derive(Debug, Clone)]
 pub struct MintKeyset {
@@ -198,11 +196,10 @@ pub fn derive_pubkey(seed: &str) -> Result<PublicKey, MokshaCoreError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::keyset::{derive_pubkey,  KeysetId};
+    use crate::keyset::{derive_pubkey, KeysetId};
     use pretty_assertions::assert_eq;
     use secp256k1::PublicKey;
     use std::collections::HashMap;
-
 
     #[test]
     fn test_keyset_id() -> anyhow::Result<()> {
@@ -221,7 +218,6 @@ mod tests {
         Ok(())
     }
 
-    
     #[test]
     fn test_derive_keys_master_v1() -> anyhow::Result<()> {
         let keys = super::derive_keys("supersecretprivatekey", "");
@@ -233,7 +229,6 @@ mod tests {
         assert_eq!(id.len(), 16);
         Ok(())
     }
-
 
     #[test]
     fn test_derive_keyset_id() -> anyhow::Result<()> {

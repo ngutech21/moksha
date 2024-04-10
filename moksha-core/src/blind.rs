@@ -33,7 +33,6 @@ pub struct BlindedMessage {
     pub id: String,
 }
 
-
 #[derive(Debug, Clone)]
 pub struct BlindingFactor(SecretKey);
 

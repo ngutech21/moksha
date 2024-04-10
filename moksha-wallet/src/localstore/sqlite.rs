@@ -11,7 +11,6 @@ use crate::localstore::{LocalStore, WalletKeyset};
 
 use sqlx::sqlite::SqliteError;
 
-
 #[derive(Clone, Debug)]
 pub struct SqliteLocalStore {
     pool: sqlx::SqlitePool,
@@ -39,7 +38,7 @@ impl LocalStore for SqliteLocalStore {
         let placeholders: Vec<String> = (1..=proof_secrets.len())
             .map(|i| format!("?{}", i))
             .collect();
-        
+
         let sql = format!(
             "DELETE FROM proofs WHERE secret IN ({})",
             placeholders.join(",")
@@ -81,12 +80,12 @@ impl LocalStore for SqliteLocalStore {
         // FIXME read time_created
         Ok(rows
             .into_iter()
-            .map(|row| Proof{
-                    keyset_id: row.keyset_id,
-                    amount: row.amount as u64,
-                    c: row.C.parse().expect("Invalid Pubkey"),
-                    secret: row.secret,
-                    script: None,
+            .map(|row| Proof {
+                keyset_id: row.keyset_id,
+                amount: row.amount as u64,
+                c: row.C.parse().expect("Invalid Pubkey"),
+                secret: row.secret,
+                script: None,
             })
             .collect::<Vec<Proof>>()
             .into())
@@ -118,7 +117,7 @@ impl LocalStore for SqliteLocalStore {
         let rows = sqlx::query!("SELECT id, mint_url, keyset_id, currency_unit, active, last_index, public_keys FROM keysets;")
             .fetch_all(&mut **tx)
             .await?;
- 
+
         Ok(rows
             .iter()
             .map(|row| {
@@ -156,9 +155,13 @@ impl LocalStore for SqliteLocalStore {
         };
         let last_index = keyset.last_index as i64;
 
-        sqlx::query!("UPDATE keysets SET last_index = $1 WHERE id = $2;", last_index, id)
-            .execute(&mut **tx)
-            .await?;
+        sqlx::query!(
+            "UPDATE keysets SET last_index = $1 WHERE id = $2;",
+            last_index,
+            id
+        )
+        .execute(&mut **tx)
+        .await?;
         Ok(())
     }
 

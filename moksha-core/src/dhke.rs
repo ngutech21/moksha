@@ -143,10 +143,13 @@ pub fn public_key_from_hex(hex: &str) -> secp256k1::PublicKey {
 mod tests {
     use std::str::FromStr;
 
-    use crate::{blind::BlindingFactor, dhke::{public_key_from_hex, Dhke}};
+    use crate::{
+        blind::BlindingFactor,
+        dhke::{public_key_from_hex, Dhke},
+    };
     use anyhow::Ok;
     use pretty_assertions::assert_eq;
-    
+
     fn hex_to_string(hex: &str) -> String {
         use hex::FromHex;
         let input_vec: Vec<u8> = Vec::from_hex(hex).expect("Invalid Hex String");
@@ -193,9 +196,9 @@ mod tests {
     #[test]
     fn test_step1_alice() -> anyhow::Result<()> {
         let dhke = Dhke::new();
-        let blinding_factor = "0000000000000000000000000000000000000000000000000000000000000001".try_into()?; 
-        let pub_key =
-            dhke.step1_alice("test_message", &blinding_factor)?;
+        let blinding_factor =
+            "0000000000000000000000000000000000000000000000000000000000000001".try_into()?;
+        let pub_key = dhke.step1_alice("test_message", &blinding_factor)?;
         let pub_key_str = pub_key.to_string();
 
         assert_eq!(
@@ -209,8 +212,9 @@ mod tests {
     #[test]
     fn test_step2_bob() -> anyhow::Result<()> {
         let dhke = Dhke::new();
-        
-        let bf: BlindingFactor = "0000000000000000000000000000000000000000000000000000000000000001".try_into()?; 
+
+        let bf: BlindingFactor =
+            "0000000000000000000000000000000000000000000000000000000000000001".try_into()?;
         let pub_key = dhke.step1_alice("test_message", &bf)?;
 
         let a = pk_from_hex("0000000000000000000000000000000000000000000000000000000000000001");
@@ -232,7 +236,8 @@ mod tests {
             "02a9acc1e48c25eeeb9289b5031cc57da9fe72f3fe2861d264bdc074209b107ba2",
         );
 
-        let r = pk_from_hex("0000000000000000000000000000000000000000000000000000000000000001").into();
+        let r =
+            pk_from_hex("0000000000000000000000000000000000000000000000000000000000000001").into();
 
         let a = public_key_from_hex(
             "020000000000000000000000000000000000000000000000000000000000000001",
