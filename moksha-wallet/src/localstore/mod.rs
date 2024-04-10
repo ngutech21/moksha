@@ -26,6 +26,17 @@ pub struct WalletKeyset {
     pub active: bool,
 }
 
+impl WalletKeysetFilter for Vec<WalletKeyset> {
+    fn get_active(&self, mint_url: &Url, currency_unit: &CurrencyUnit) -> Option<&WalletKeyset> {
+        self.iter()
+            .find(|k| k.mint_url == *mint_url && k.currency_unit == *currency_unit && k.active)
+    }
+}
+
+pub trait WalletKeysetFilter {
+    fn get_active(&self, mint_url: &Url, currency_unit: &CurrencyUnit) -> Option<&WalletKeyset>;
+}
+
 impl WalletKeyset {
     pub fn new(
         keyset_id: &KeysetId,

@@ -210,27 +210,35 @@ where
             return Err(MokshaWalletError::UnsupportedApiVersion);
         }
 
-        // FIXME cleanup code
         let mint_keysets = self.client.get_keysets(mint_url).await?;
 
         let mut tx = self.localstore.begin_tx().await?;
         let mut result = vec![];
         for keyset in mint_keysets.keysets.iter() {
-            let public_keys = self
+            let keysets = self
                 .client
                 .get_keys_by_id(mint_url, keyset.id.clone())
-                .await?
-                .keysets
-                .into_iter()
-                .find(|k| k.id == keyset.id)
-                .expect("no valid keyset found")
-                .keys
-                .clone();
+                .await;
+
+            let public_keys = match keysets {
+                Ok(k) => k
+                    .keysets
+                    .into_iter()
+                    .find(|k| k.id == keyset.id && k.unit == keyset.unit)
+                    .expect("no valid keyset found")
+                    .keys
+                    .clone(),
+                Err(_) => {
+                    //println!("Ignoring keyset without public_keys {:?}", keyset.id);
+                    continue;
+                }
+            };
 
             // ignore legacy keysets
             let keyset_id = match KeysetId::new(&keyset.id) {
                 Ok(id) => id,
                 Err(_) => {
+                    //println!("Ignoring legacy keyset {:?}", keyset.id);
                     continue;
                 }
             };
@@ -243,6 +251,7 @@ where
                 public_keys,
                 keyset.active,
             );
+
             result.push(wallet_keyset.clone());
             self.localstore
                 .upsert_keyset(&mut tx, &wallet_keyset)
@@ -496,7 +505,7 @@ where
         let keyset = all_keysets
             .iter()
             .find(|k| k.keyset_id == *keyset_id)
-            .expect("keyset not found");
+            .expect("keyset not found create-secrets");
 
         let start_index = (keyset.last_index + 1) as u32;
         let secret_range = self.secret.derive_range(keyset_id, start_index, amount)?;

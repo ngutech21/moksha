@@ -10,6 +10,7 @@ use moksha_wallet::client::CashuClient;
 
 use moksha_wallet::http::CrossPlatformHttpClient;
 
+use moksha_wallet::localstore::WalletKeysetFilter;
 use mokshacli::cli::{self, choose_mint, get_mints_with_balance};
 use num_format::{Locale, ToFormattedString};
 use qrcode::render::unicode;
@@ -151,9 +152,8 @@ async fn main() -> anyhow::Result<()> {
 
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
-                .iter()
-                .find(|k| k.mint_url == token_mint_url)
-                .expect("Keyset not found");
+                .get_active(&token_mint_url, &CurrencyUnit::Sat)
+                .expect("no active keyset found");
 
             wallet.receive_tokens(wallet_keyset, &token).await?;
             cli::show_total_balance(&wallet).await?;
@@ -170,9 +170,8 @@ async fn main() -> anyhow::Result<()> {
 
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
-                .iter()
-                .find(|k| k.mint_url == mint_url)
-                .expect("Keyset not found");
+                .get_active(&mint_url, &CurrencyUnit::Sat)
+                .expect("no active keyset found");
 
             term.write_line(&format!("Using tokens from mint: {mint_url}"))?;
             let result = wallet.send_tokens(wallet_keyset, amount).await?;
@@ -201,15 +200,15 @@ async fn main() -> anyhow::Result<()> {
             cli::show_total_balance(&wallet).await?;
         }
         Command::Pay { invoice } => {
-            let mint_url = choose_mint(&wallet, &CurrencyUnit::Sat).await?.0;
+            let currency_unit = CurrencyUnit::Sat;
+            let mint_url = choose_mint(&wallet, &currency_unit).await?.0;
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
-                .iter()
-                .find(|k| k.mint_url == mint_url)
-                .expect("Keyset not found");
+                .get_active(&mint_url, &currency_unit)
+                .expect("no active keyset found");
 
             let quote = wallet
-                .get_melt_quote_bolt11(&mint_url, invoice.clone(), CurrencyUnit::Sat)
+                .get_melt_quote_bolt11(&mint_url, invoice.clone(), currency_unit)
                 .await?;
 
             let pay_confirmed = Confirm::new()
@@ -254,8 +253,7 @@ async fn main() -> anyhow::Result<()> {
 
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
-                .iter()
-                .find(|k| k.mint_url == mint_url)
+                .get_active(&mint_url, &CurrencyUnit::Sat)
                 .expect("Keyset not found");
 
             let info = wallet.get_mint_info(&mint_url).await?;
@@ -398,8 +396,7 @@ async fn main() -> anyhow::Result<()> {
 
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
-                .iter()
-                .find(|k| k.mint_url == mint_url)
+                .get_active(&mint_url, &CurrencyUnit::Sat)
                 .expect("Keyset not found");
 
             let progress_bar = cli::progress_bar()?;

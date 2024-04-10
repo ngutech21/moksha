@@ -1,10 +1,10 @@
 use super::CrossPlatformHttpClient;
 use crate::error::MokshaWalletError;
-use moksha_core::primitives::CashuErrorResponse;
 use reqwest::{
     header::{HeaderValue, CONTENT_TYPE},
     Response, StatusCode,
 };
+use serde_json::Value;
 use url::Url;
 
 impl CrossPlatformHttpClient {
@@ -23,32 +23,38 @@ impl CrossPlatformHttpClient {
                 match serde_json::from_str::<T>(&response_text) {
                     Ok(data) => Ok(data),
                     Err(_) => {
-                        let data = serde_json::from_str::<CashuErrorResponse>(&response_text)
+                        // FIXME cleanup code
+                        let data: Value = serde_json::from_str(&response_text)
                             .map_err(|_| MokshaWalletError::UnexpectedResponse(response_text))
-                            .unwrap();
+                            .expect("invalid value");
+                        let detail = data["detail"].as_str().expect("detail not found");
+                        // let data = serde_json::from_str::<CashuErrorResponse>(&response_text)
+                        //     .map_err(|_| MokshaWalletError::UnexpectedResponse(response_text))
+                        //     .unwrap();
 
                         // FIXME: use the error code to return a proper error
-                        match data.detail.as_str() {
+                        match detail {
                             "Lightning invoice not paid yet." => {
-                                Err(MokshaWalletError::InvoiceNotPaidYet(data.code, data.detail))
+                                Err(MokshaWalletError::InvoiceNotPaidYet(0, detail.to_owned()))
                             }
-                            _ => Err(MokshaWalletError::MintError(data.detail)),
+                            _ => Err(MokshaWalletError::MintError(detail.to_owned())),
                         }
                     }
                 }
             }
             _ => {
-                let txt = response.text().await?;
-                let data = serde_json::from_str::<CashuErrorResponse>(&txt)
-                    .map_err(|_| MokshaWalletError::UnexpectedResponse(txt))
-                    .unwrap();
+                let response_text = response.text().await?;
+                let data: Value = serde_json::from_str(&response_text)
+                    .map_err(|_| MokshaWalletError::UnexpectedResponse(response_text))
+                    .expect("invalid value");
+                let detail = data["detail"].as_str().expect("detail not found");
 
                 // FIXME: use the error code to return a proper error
-                match data.detail.as_str() {
+                match detail {
                     "Lightning invoice not paid yet." => {
-                        Err(MokshaWalletError::InvoiceNotPaidYet(data.code, data.detail))
+                        Err(MokshaWalletError::InvoiceNotPaidYet(0, detail.to_owned()))
                     }
-                    _ => Err(MokshaWalletError::MintError(data.detail)),
+                    _ => Err(MokshaWalletError::MintError(detail.to_owned())),
                 }
             }
         }

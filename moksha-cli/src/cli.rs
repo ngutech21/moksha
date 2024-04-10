@@ -68,7 +68,7 @@ pub async fn get_mints_with_balance(
     }
     Ok(keysets
         .into_iter()
-        .filter(|k| &k.currency_unit == currency_unit)
+        .filter(|k| &k.currency_unit == currency_unit && k.active)
         .map(|k| {
             (
                 k.mint_url,
