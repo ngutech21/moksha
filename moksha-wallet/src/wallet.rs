@@ -1034,12 +1034,12 @@ mod tests {
 
         let first = result.0;
 
-        assert_eq!(CurrencyUnit::Sat, first.clone().unit.unwrap());
+        assert_eq!(CurrencyUnit::Sat, first.clone().currency_unit.unwrap());
         assert_eq!(24, first.total_amount());
 
         let second = result.1;
 
-        assert_eq!(CurrencyUnit::Sat, second.clone().unit.unwrap());
+        assert_eq!(CurrencyUnit::Sat, second.clone().currency_unit.unwrap());
         assert_eq!(40, second.total_amount());
         Ok(())
     }

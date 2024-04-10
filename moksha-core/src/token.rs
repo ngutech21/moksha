@@ -53,7 +53,8 @@ where
 pub struct TokenV3 {
     #[serde(rename = "token")]
     pub tokens: Vec<Token>,
-    pub unit: Option<CurrencyUnit>,
+    #[serde(rename = "unit")]
+    pub currency_unit: Option<CurrencyUnit>,
     pub memo: Option<String>,
 }
 
@@ -62,7 +63,7 @@ impl TokenV3 {
         Self {
             tokens: vec![token],
             memo: None,
-            unit: None,
+            currency_unit: None,
         }
     }
 
@@ -70,7 +71,7 @@ impl TokenV3 {
         Self {
             tokens: vec![],
             memo: None,
-            unit: None,
+            currency_unit: None,
         }
     }
 
@@ -160,7 +161,7 @@ impl From<(Url, Proofs)> for TokenV3 {
                 proofs: from.1,
             }],
             memo: None,
-            unit: None,
+            currency_unit: None,
         }
     }
 }
@@ -173,7 +174,7 @@ impl From<(Url, CurrencyUnit, Proofs)> for TokenV3 {
                 proofs: from.2,
             }],
             memo: None,
-            unit: Some(from.1),
+            currency_unit: Some(from.1),
         }
     }
 }
@@ -227,7 +228,9 @@ mod tests {
             Some(Url::parse("https://8333.space:3338")?)
         );
         assert_eq!(token.tokens[0].proofs.len(), 2);
-        assert_eq!(token.unit, Some(CurrencyUnit::Sat));
+        assert_eq!(token.currency_unit, Some(CurrencyUnit::Sat));
+        assert_eq!(token.memo, Some("Thank you.".to_string()));
+        assert_eq!(token.total_amount(), 10);
 
         let token_serialized = token.serialize()?;
         let fixture = read_fixture("token_nut_example.cashu")?;
@@ -284,7 +287,7 @@ mod tests {
         let tokens = super::TokenV3 {
             tokens: vec![token],
             memo: Some("my memo".to_string()),
-            unit: None,
+            currency_unit: None,
         };
 
         let serialized: String = tokens.try_into()?;

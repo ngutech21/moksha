@@ -118,6 +118,10 @@ async fn main() -> anyhow::Result<()> {
         Command::Receive { token } => {
             let token: TokenV3 = TokenV3::from_str(&token)?;
             let mint_urls = wallet.get_mint_urls().await?;
+            let currency = match &token.currency_unit {
+                Some(currency) => currency,
+                None => &CurrencyUnit::Sat,
+            };
 
             let token_mint_url = match token.mint() {
                 Some(url) => url,
@@ -152,14 +156,15 @@ async fn main() -> anyhow::Result<()> {
 
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
-                .get_active(&token_mint_url, &CurrencyUnit::Sat)
+                .get_active(&token_mint_url, currency)
                 .expect("no active keyset found");
 
             wallet.receive_tokens(wallet_keyset, &token).await?;
             cli::show_total_balance(&wallet).await?;
         }
         Command::Send { amount } => {
-            let mint_url = choose_mint(&wallet, &CurrencyUnit::Sat).await?;
+            let currency_unit = CurrencyUnit::Sat;
+            let mint_url = choose_mint(&wallet, &currency_unit).await?;
 
             if mint_url.1 < amount {
                 term.write_line("Error: Not enough tokens in selected mint")?;
@@ -170,7 +175,7 @@ async fn main() -> anyhow::Result<()> {
 
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
-                .get_active(&mint_url, &CurrencyUnit::Sat)
+                .get_active(&mint_url, &currency_unit)
                 .expect("no active keyset found");
 
             term.write_line(&format!("Using tokens from mint: {mint_url}"))?;
@@ -243,7 +248,8 @@ async fn main() -> anyhow::Result<()> {
         }
         Command::PayOnchain { address, amount } => {
             // FIXME remove redundant code
-            let mint_url = choose_mint(&wallet, &CurrencyUnit::Sat).await?;
+            let currency = CurrencyUnit::Sat;
+            let mint_url = choose_mint(&wallet, &currency).await?;
 
             if mint_url.1 < amount {
                 term.write_line("Error: Not enough tokens in selected mint")?;
@@ -253,7 +259,7 @@ async fn main() -> anyhow::Result<()> {
 
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
-                .get_active(&mint_url, &CurrencyUnit::Sat)
+                .get_active(&mint_url, &currency)
                 .expect("Keyset not found");
 
             let info = wallet.get_mint_info(&mint_url).await?;
@@ -309,7 +315,8 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Command::Mint { amount } => {
-            let mint_url = choose_mint(&wallet, &CurrencyUnit::Sat).await?.0;
+            let currency = CurrencyUnit::Sat;
+            let mint_url = choose_mint(&wallet, &currency).await?.0;
 
             let info = wallet.get_mint_info(&mint_url).await?;
 
@@ -396,7 +403,7 @@ async fn main() -> anyhow::Result<()> {
 
             let wallet_keysets = wallet.get_wallet_keysets().await?;
             let wallet_keyset = wallet_keysets
-                .get_active(&mint_url, &CurrencyUnit::Sat)
+                .get_active(&mint_url, &currency)
                 .expect("Keyset not found");
 
             let progress_bar = cli::progress_bar()?;
