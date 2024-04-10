@@ -15,13 +15,13 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = { workspace = true, features = ["backtrace"] }
-secp256k1 = { version = "0.28.2", default-features = false, features = ["serde"] }
+secp256k1 = { version = "0.29.0", default-features = false, features = ["serde"] }
 moksha-core = { version = "0.2.1", path = "../moksha-core" }
 serde_json = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 async-trait = { workspace = true }
-lightning-invoice = "0.29.0"
+lightning-invoice = "0.30.0"
 url = { workspace = true }
 dirs = { workspace = true }
 bip32 = { workspace = true, features = ["secp256k1", "std"] }
@@ -31,15 +31,15 @@ rand = { workspace = true }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 gloo-net = { version = "0.5.0" }
-serde-wasm-bindgen = "0.6.3"
-wasm-bindgen = "0.2.90"
+serde-wasm-bindgen = "0.6.5"
+wasm-bindgen = "0.2.92"
 rexie = "0.5.0"
-tokio = { version = "1.37.0", features = ["rt", "sync"] }
+tokio = { workspace = true, features = ["rt", "sync"] }
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
-reqwest = { version = "0.12.3", features = ["json", "rustls-tls"], default-features = false }
-tokio = { version = "1.37.0", features = ["rt", "rt-multi-thread", "macros"] }
-sqlx = { version = "0.7.4", default-features = false, features = ["sqlite", "runtime-tokio", "tls-rustls", "migrate", "macros", "json"] }
+reqwest = { workspace = true, features = ["json", "rustls-tls"], default-features = false }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
+sqlx = { workspace = true, default-features = false, features = ["sqlite", "runtime-tokio", "tls-rustls", "migrate", "macros", "json"] }
 
 [dev-dependencies]
 tempfile = { workspace = true }

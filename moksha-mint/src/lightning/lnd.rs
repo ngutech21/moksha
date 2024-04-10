@@ -92,7 +92,8 @@ impl Lightning for LndLightning {
     #[instrument(skip(self), err)]
     async fn is_invoice_paid(&self, payment_request: String) -> Result<bool, MokshaMintError> {
         let invoice = self.decode_invoice(payment_request).await?;
-        let payment_hash = invoice.payment_hash();
+        let payment_hash: &[u8] = invoice.payment_hash().as_ref();
+
         let invoice_request = fedimint_tonic_lnd::lnrpc::PaymentHash {
             r_hash: payment_hash.to_vec(),
             ..Default::default()

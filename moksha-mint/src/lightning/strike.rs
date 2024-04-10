@@ -82,10 +82,10 @@ impl Lightning for StrikeLightning {
         let invoice =
             LNInvoice::from_signed(payment_request.parse::<SignedRawBolt11Invoice>().unwrap())
                 .unwrap();
-        let payment_hash = invoice.payment_hash().to_vec();
+        let payment_hash: &[u8] = invoice.payment_hash().as_ref();
 
         Ok(CreateInvoiceResult {
-            payment_hash,
+            payment_hash: payment_hash.to_vec(),
             payment_request,
         })
     }
@@ -96,7 +96,8 @@ impl Lightning for StrikeLightning {
     ) -> Result<PayInvoiceResult, MokshaMintError> {
         // strike doesn't return the payment_hash so we have to read the invoice into a Bolt11 and extract it
         let invoice = self.decode_invoice(payment_request.clone()).await?;
-        let payment_hash = invoice.payment_hash().to_vec();
+        let invoice2 = invoice.clone();
+        let payment_hash: &[u8] = invoice2.payment_hash().as_ref();
 
         let payment_quote_id = self
             .client
