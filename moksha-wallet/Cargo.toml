@@ -14,20 +14,20 @@ name = "moksha_wallet"
 path = "src/lib.rs"
 
 [dependencies]
-anyhow = { version = "1.0.79", features = ["backtrace"] }
+anyhow = { workspace = true, features = ["backtrace"] }
 secp256k1 = { version = "0.28.2", default-features = false, features = ["serde"] }
 moksha-core = { version = "0.2.1", path = "../moksha-core" }
-serde_json = "1.0.115"
-serde = "1.0.197"
-thiserror = "1.0.56"
-async-trait = "0.1.77"
+serde_json = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }
 lightning-invoice = "0.29.0"
-url = "2.5.0"
-dirs = "5.0.1"
-bip32 = { version = "0.5.1", features = ["secp256k1", "std"] }
-bip39 = "2.0.0"
-hex = "0.4.3"
-rand = "0.8.5"
+url = { workspace = true }
+dirs = { workspace = true }
+bip32 = { workspace = true, features = ["secp256k1", "std"] }
+bip39 = { workspace = true }
+hex = { workspace = true }
+rand = { workspace = true }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 gloo-net = { version = "0.5.0" }
@@ -42,5 +42,5 @@ tokio = { version = "1.37.0", features = ["rt", "rt-multi-thread", "macros"] }
 sqlx = { version = "0.7.4", default-features = false, features = ["sqlite", "runtime-tokio", "tls-rustls", "migrate", "macros", "json"] }
 
 [dev-dependencies]
-tempfile = "3.10.1"
-mockall = "0.12.1"
+tempfile = { workspace = true }
+mockall = { workspace = true }
