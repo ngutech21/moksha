@@ -1,0 +1,37 @@
+{
+  "name": "My Cashu mint",
+  "pubkey": "03a2118b421e6b47f0656b97bb7eeea43c41096adbc0d0e511ff70de7d94dbd990",
+  "version": "MyMint",
+  "description": "The short mint description",
+  "description_long": "A long mint description that can be a long piece of text.",
+  "contact": [
+    ["email", "contact@me.com"],
+    ["twitter", "@me"],
+    ["nostr", "npub..."]
+  ],
+  "motd": "Message to users",
+  "nuts": {
+    "4": {
+      "methods": [
+        {
+          "method": "bolt11",
+          "unit": "sat",
+          "min_amount": 1,
+          "max_amount": 21
+        }
+      ],
+      "disabled": false
+    },
+    "5": {
+      "methods": [
+        {
+          "method": "bolt11",
+          "unit": "sat",
+          "min_amount": 1,
+          "max_amount": 42
+        }
+      ],
+      "disabled": false
+    }
+  }
+}

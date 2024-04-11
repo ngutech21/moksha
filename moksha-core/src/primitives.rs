@@ -331,7 +331,7 @@ pub struct GetMeltBtcOnchainResponse {
     pub paid: bool,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct Nuts {
     /// Minting tokens
     #[serde(rename = "4")]
@@ -342,30 +342,29 @@ pub struct Nuts {
     pub nut5: Nut5,
 
     /// Token state check
-    #[serde(rename = "7")]
-    pub nut7: Nut7,
+    #[serde(rename = "7", skip_serializing_if = "Option::is_none")]
+    pub nut7: Option<Nut7>,
 
     /// Overpaid Lightning fees
-    #[serde(rename = "8")]
-    pub nut8: Nut8,
+    #[serde(rename = "8", skip_serializing_if = "Option::is_none")]
+    pub nut8: Option<Nut8>,
 
     /// Deterministic backup and restore
-    #[serde(rename = "9")]
-    pub nut9: Nut9,
+    #[serde(rename = "9", skip_serializing_if = "Option::is_none")]
+    pub nut9: Option<Nut9>,
 
     /// Spending conditions
-    #[serde(rename = "10")]
-    pub nut10: Nut10,
+    #[serde(rename = "10", skip_serializing_if = "Option::is_none")]
+    pub nut10: Option<Nut10>,
 
     /// Pay-To-Pubkey (P2PK)
-    #[serde(rename = "11")]
-    pub nut11: Nut11,
+    #[serde(rename = "11", skip_serializing_if = "Option::is_none")]
+    pub nut11: Option<Nut11>,
 
-    #[serde(rename = "12")]
+    #[serde(rename = "12", skip_serializing_if = "Option::is_none")]
     /// DLEQ proofs
-    pub nut12: Nut12,
+    pub nut12: Option<Nut12>,
 
-    // TODO remove this if nut-17 and nut-18 are merged
     #[serde(rename = "17", skip_serializing_if = "Option::is_none")]
     /// minting tokens btc onchain
     pub nut17: Option<Nut17>,
@@ -373,6 +372,23 @@ pub struct Nuts {
     #[serde(rename = "18", skip_serializing_if = "Option::is_none")]
     /// melting tokens btc onchain
     pub nut18: Option<Nut18>,
+}
+
+impl Default for Nuts {
+    fn default() -> Self {
+        Self {
+            nut4: Nut4::default(),
+            nut5: Nut5::default(),
+            nut7: Some(Nut7 { supported: false }),
+            nut8: Some(Nut8 { supported: true }),
+            nut9: Some(Nut9 { supported: false }),
+            nut10: Some(Nut10 { supported: false }),
+            nut11: Some(Nut11 { supported: false }),
+            nut12: Some(Nut12 { supported: false }),
+            nut17: Some(Nut17::default()),
+            nut18: Some(Nut18::default()),
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
@@ -544,7 +560,7 @@ mod tests {
     }
 
     #[test]
-    fn test_deserialize_mint_info() -> anyhow::Result<()> {
+    fn test_serialize_mint_info() -> anyhow::Result<()> {
         let mint_info = MintInfoResponse {
             name: Some("Bob's Cashu mint".to_string()),
             pubkey: public_key_from_hex(
@@ -574,6 +590,22 @@ mod tests {
         assert!(info.is_ok());
         let info = info?;
         assert_eq!("Nutshell/0.15.0", info.version.unwrap());
+        Ok(())
+    }
+
+    #[test]
+    fn test_deserialize_incomplete_mint_info() -> anyhow::Result<()> {
+        let mint_info = read_fixture("incomplete_mint_info.json")?;
+        let info = serde_json::from_str::<MintInfoResponse>(&mint_info);
+        assert!(info.is_ok());
+        let info = info?;
+        assert_eq!("MyMint", info.version.unwrap());
+        assert!(info.nuts.nut7.is_none());
+        assert!(info.nuts.nut8.is_none());
+        assert!(info.nuts.nut9.is_none());
+        assert!(info.nuts.nut10.is_none());
+        assert!(info.nuts.nut11.is_none());
+        assert!(info.nuts.nut12.is_none());
         Ok(())
     }
 }
