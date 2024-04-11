@@ -1711,11 +1711,11 @@ dependencies = [
  "anyhow",
  "assert_cmd",
  "axum 0.7.5",
- "bitcoin_hashes 0.12.0",
+ "bitcoin 0.30.2",
  "bitcoincore-rpc",
  "fedimint-tonic-lnd",
  "hex",
- "lightning-invoice 0.29.0",
+ "lightning-invoice",
  "moksha-core",
  "moksha-mint",
  "moksha-wallet",
@@ -1836,16 +1836,6 @@ dependencies = [
 
 [[package]]
 name = "lightning"
-version = "0.0.121"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b0c1f811ae288f86c6767055c55b5f7a721ca1e61bf1897a9ae2ec663e8aba1"
-dependencies = [
- "bitcoin 0.30.2",
- "hex-conservative 0.1.1",
-]
-
-[[package]]
-name = "lightning"
 version = "0.0.122"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d9b36ae12b379905bfc429ce5d4e8ca4a55c8dd3de73074309bd0bcc053bcac"
@@ -1856,26 +1846,13 @@ dependencies = [
 
 [[package]]
 name = "lightning-invoice"
-version = "0.29.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b186aca4a605d4db3b85979922be287b9ebd5dedd8132963bb9dbeb8f7d2a04"
-dependencies = [
- "bech32 0.9.1",
- "bitcoin 0.30.2",
- "lightning 0.0.121",
- "num-traits",
- "secp256k1 0.27.0",
-]
-
-[[package]]
-name = "lightning-invoice"
 version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "106fdb897e69df697480f45bf0a564b425af488fb0f7407e770a770c39b19a21"
 dependencies = [
  "bech32 0.9.1",
  "bitcoin 0.30.2",
- "lightning 0.0.122",
+ "lightning",
  "num-traits",
  "secp256k1 0.27.0",
 ]
@@ -2055,7 +2032,7 @@ dependencies = [
  "hex",
  "http-body-util",
  "hyper 1.2.0",
- "lightning-invoice 0.30.0",
+ "lightning-invoice",
  "mockall",
  "moksha-core",
  "opentelemetry",
@@ -2095,7 +2072,7 @@ dependencies = [
  "dirs",
  "gloo-net",
  "hex",
- "lightning-invoice 0.30.0",
+ "lightning-invoice",
  "mockall",
  "moksha-core",
  "rand",

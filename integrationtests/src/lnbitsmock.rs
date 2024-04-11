@@ -2,14 +2,14 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use axum::{response::IntoResponse, routing::get, routing::post, Router};
-use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
-
-use bitcoin_hashes::sha256;
-use bitcoin_hashes::Hash;
+use bitcoin::hashes::sha256;
 use lightning_invoice::{Currency, InvoiceBuilder, PaymentSecret};
 use secp256k1::Secp256k1;
 use secp256k1::SecretKey;
+use serde::{Deserialize, Serialize};
+use std::net::SocketAddr;
+
+use std::str::FromStr;
 
 #[derive(Default, Debug, Deserialize, Serialize)]
 struct CreateInvoiceRequest {
@@ -41,13 +41,16 @@ async fn post_invoice(
     params: axum::Json<CreateInvoiceRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     if !params.out {
-        let payment_hash = sha256::Hash::from_slice(&[0; 32][..]).expect("Can't create hash");
         let payment_secret = PaymentSecret([42u8; 32]);
-
         let invoice = InvoiceBuilder::new(Currency::Regtest)
             .description(params.memo.clone().unwrap_or("".to_string()))
             .amount_milli_satoshis(params.amount.expect("amount is not set"))
-            .payment_hash(payment_hash)
+            .payment_hash(
+                sha256::Hash::from_str(
+                    "0001020304050607080900010203040506070809000102030405060708090102",
+                )
+                .unwrap(),
+            )
             .payment_secret(payment_secret)
             .current_timestamp()
             .min_final_cltv_expiry_delta(144)
