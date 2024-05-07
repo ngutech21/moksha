@@ -100,7 +100,7 @@ sqlx = { version = "0.7.4", default-features = false }
 tempfile = "3.10.1"
 testcontainers = "0.15.0"
 testcontainers-modules = "0.3.6"
-thiserror = "1.0.59"
+thiserror = "1.0.60"
 tokio = "1.37.0"
 tonic = "0.8"
 tower = "0.4.13"
