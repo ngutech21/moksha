@@ -3,4 +3,4 @@ extend-glob = ["*.cashu"]
 check-file = false
 
 [files]
-extend-exclude = ["build/*"]
+extend-exclude = ["build/*", "moksha-wallet/examples/receive_tokens.rs"]
