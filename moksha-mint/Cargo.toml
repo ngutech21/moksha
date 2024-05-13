@@ -30,7 +30,7 @@ tower-http = { workspace = true, features = ["cors", "fs", "set-header"] }
 secp256k1 = { workspace = true, default-features = false, features = ["rand", "serde"] }
 thiserror = { workspace = true }
 moksha-core = { path = "../moksha-core", version = "0.2.1" }
-lightning-invoice = "0.30.0"
+lightning-invoice = "0.31.0"
 reqwest = { workspace = true, features = ["json", "rustls-tls", "socks"] }
 url = { workspace = true }
 dotenvy = { workspace = true }

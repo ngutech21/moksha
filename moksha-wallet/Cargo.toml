@@ -21,7 +21,7 @@ serde_json = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 async-trait = { workspace = true }
-lightning-invoice = "0.30.0"
+lightning-invoice = "0.31.0"
 url = { workspace = true }
 dirs = { workspace = true }
 bip32 = { workspace = true, features = ["secp256k1", "std"] }
