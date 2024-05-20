@@ -63,7 +63,7 @@ activeperl = "*"
 x86_64-unknown-linux-gnu = "ubuntu-22.04"
 
 [workspace.dependencies]
-anyhow = "1.0.82"
+anyhow = "1.0.86"
 assert_cmd = "2.0.14"
 async-trait = "0.1.80"
 axum = "0.7.5"
