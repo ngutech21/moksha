@@ -31,7 +31,7 @@ hex = { workspace = true }
 reqwest = { workspace = true, features = ["json", "rustls-tls"] }
 
 [target.'cfg(not(target_family="wasm"))'.dependencies]
-tokio = { version = "1.37.0", features = ["sync", "rt-multi-thread"] }
+tokio = { version = "1.38.0", features = ["sync", "rt-multi-thread"] }
 
 [dev-dependencies]
 anyhow = { workspace = true, features = ["backtrace"] }
