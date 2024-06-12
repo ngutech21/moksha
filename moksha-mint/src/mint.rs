@@ -182,7 +182,7 @@ where
         payment_request: String,
         fee_reserve: u64,
         proofs: &Proofs,
-        blinded_messages: &[BlindedMessage],
+        blinded_messages: Option<Vec<BlindedMessage>>,
         keyset: &MintKeyset,
     ) -> Result<(bool, String, Vec<BlindedSignature>), MokshaMintError> {
         let invoice = self
@@ -212,26 +212,33 @@ where
         let result = self.lightning.pay_invoice(payment_request).await?;
         self.db.add_used_proofs(tx, proofs).await?;
 
-        let change = if fee_reserve > 0 {
-            let return_fees = Amount(fee_reserve - result.total_fees).split();
+        let change = match blinded_messages {
+            Some(blinded_messages) => {
+                if fee_reserve > 0 {
+                    let return_fees = Amount(fee_reserve - result.total_fees).split();
 
-            if (return_fees.len()) > blinded_messages.len() {
-                // FIXME better handle case when there are more fees than blinded messages
-                vec![]
-            } else {
-                let out: Vec<_> = blinded_messages[0..return_fees.len()]
-                    .iter()
-                    .zip(return_fees.into_iter())
-                    .map(|(message, fee)| BlindedMessage {
-                        amount: fee,
-                        ..message.clone()
-                    })
-                    .collect();
+                    if (return_fees.len()) > blinded_messages.len() {
+                        // FIXME better handle case when there are more fees than blinded messages
+                        vec![]
+                    } else {
+                        let out: Vec<_> = blinded_messages[0..return_fees.len()]
+                            .iter()
+                            .zip(return_fees.into_iter())
+                            .map(|(message, fee)| BlindedMessage {
+                                amount: fee,
+                                ..message.clone()
+                            })
+                            .collect();
 
-                self.create_blinded_signatures(&out, keyset)?
+                        self.create_blinded_signatures(&out, keyset)?
+                    }
+                } else {
+                    vec![]
+                }
             }
-        } else {
-            vec![]
+            None => {
+                vec![]
+            }
         };
         Ok((true, result.payment_hash, change))
     }
@@ -673,7 +680,14 @@ mod tests {
 
         let mut tx = mint.db.begin_tx().await?;
         let (paid, _payment_hash, change) = mint
-            .melt_bolt11(&mut tx, invoice, 4, &tokens.proofs(), &change, &mint.keyset)
+            .melt_bolt11(
+                &mut tx,
+                invoice,
+                4,
+                &tokens.proofs(),
+                Some(change),
+                &mint.keyset,
+            )
             .await?;
 
         assert!(paid);

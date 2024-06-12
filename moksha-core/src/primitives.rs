@@ -201,7 +201,7 @@ impl From<Bolt11MeltQuote> for PostMeltQuoteBolt11Response {
 pub struct PostMeltBolt11Request {
     pub quote: String,
     pub inputs: Proofs,
-    pub outputs: Vec<BlindedMessage>,
+    pub outputs: Option<Vec<BlindedMessage>>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
