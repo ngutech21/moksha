@@ -27,7 +27,7 @@ jobs:
         run: echo "::set-output name=sha::$(git rev-parse --short HEAD)"
 
       - name: Build and push Docker image bullseye
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -38,7 +38,7 @@ jobs:
           tags: docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:${{ steps.sha.outputs.sha }}-bullseye, docker.io/${{ secrets.DOCKER_NAME }}/moksha-mint:bullseye
 
       - name: Build and push Docker image alpine
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.alpine
