@@ -257,7 +257,7 @@ pub async fn post_melt_bolt11(
             quote.payment_request.to_owned(),
             quote.fee_reserve,
             &melt_request.inputs,
-            &melt_request.outputs,
+            melt_request.outputs,
             &mint.keyset,
         )
         .await?;
