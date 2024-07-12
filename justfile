@@ -1,4 +1,4 @@
-DB_URL := "postgres://postgres:postgres@localhost/moksha-mint"
+DB_URL := "postgres://postgres:postgres@localhost:5432/bitcredit-mint"
 
 # list all tasks
 default:
@@ -59,9 +59,13 @@ run-coverage-report:
   >&2 echo '💡 Created the report in html-format target/coverage/html/index.html'
 
 
-# run the cashu-mint
+# run the cashu-mint prod mode
 run-mint *ARGS:
-  RUST_BACKTRACE=1 MINT_APP_ENV=dev cargo run --bin moksha-mint -- {{ARGS}}
+  RUST_BACKTRACE=1 cargo run --bin moksha-mint -- {{ARGS}}
+
+# run the cashu-mint dev mode
+#run-mint *ARGS:
+#  RUST_BACKTRACE=1 MINT_APP_ENV=dev cargo run --bin moksha-mint -- {{ARGS}}
 
 # run cli-wallet with the given args
 run-cli *ARGS:

@@ -3,6 +3,7 @@ use mokshamint::{
     mint::MintBuilder,
 };
 use std::env;
+use dotenvy::dotenv;
 use tracing_subscriber::{filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 use opentelemetry::KeyValue;
@@ -11,6 +12,8 @@ use opentelemetry_sdk::trace::Sampler;
 
 #[tokio::main]
 pub async fn main() -> anyhow::Result<()> {
+    dotenv().ok();
+
     let app_env = match env::var("MINT_APP_ENV") {
         Ok(v) if v.trim() == "dev" => AppEnv::Dev,
         _ => AppEnv::Prod,
@@ -19,7 +22,7 @@ pub async fn main() -> anyhow::Result<()> {
     println!("Running in {app_env} mode");
 
     if app_env == AppEnv::Dev {
-        match dotenvy::dotenv() {
+        match dotenv() {
             Ok(path) => println!(".env read successfully from {}", path.display()),
             Err(e) => panic!("Could not load .env file: {e}"),
         };
