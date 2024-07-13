@@ -23,6 +23,7 @@ use crate::{
     secret::DeterministicSecret,
 };
 use lightning_invoice::Bolt11Invoice as LNInvoice;
+use moksha_core::primitives::{PostMintQuoteBitcreditResponse, PostRequestToMintBitcreditResponse};
 use std::{
     collections::{HashMap, HashSet},
     str::FromStr,
@@ -135,6 +136,18 @@ where
             .await
     }
 
+    pub async fn create_quote_bitcredit(
+        &self,
+        mint_url: &Url,
+        bill_id: String,
+        node_id: String,
+        amount: u64,
+    ) -> Result<PostMintQuoteBitcreditResponse, MokshaWalletError> {
+        self.client
+            .post_mint_quote_bitcredit(mint_url, bill_id, node_id, amount, CurrencyUnit::Sat)
+            .await
+    }
+
     pub async fn create_quote_onchain(
         &self,
         mint_url: &Url,
@@ -142,6 +155,17 @@ where
     ) -> Result<PostMintQuoteBtcOnchainResponse, MokshaWalletError> {
         self.client
             .post_mint_quote_onchain(mint_url, amount, CurrencyUnit::Sat)
+            .await
+    }
+
+    pub async fn send_request_to_mint_bitcredit(
+        &self,
+        mint_url: &Url,
+        bill_id: String,
+        bill_key: String,
+    ) -> Result<PostRequestToMintBitcreditResponse, MokshaWalletError> {
+        self.client
+            .post_request_to_mint_bitcredit(mint_url, bill_id, bill_key)
             .await
     }
 

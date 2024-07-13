@@ -22,6 +22,11 @@ use crate::{
     mint::Mint,
 };
 use chrono::{Duration, Utc};
+use moksha_core::primitives::{
+    BitcreditMintQuote, BitcreditRequestToMint, PostMintQuoteBitcreditRequest,
+    PostMintQuoteBitcreditResponse, PostRequestToMintBitcreditRequest,
+    PostRequestToMintBitcreditResponse,
+};
 use std::str::FromStr;
 
 #[utoipa::path(
@@ -139,6 +144,64 @@ pub async fn post_mint_quote_bolt11(
 }
 
 #[utoipa::path(
+    post,
+    path = "/v1/mint/quote/bitcredit",
+    request_body = PostMintQuoteBitcreditRequest,
+    responses(
+    (status = 200, description = "post mint quote", body = [PostMintQuoteBitcreditResponse])
+    ),
+)]
+#[instrument(name = "post_mint_quote_bitcredit", skip(mint), err)]
+pub async fn post_mint_quote_bitcredit(
+    State(mint): State<Mint>,
+    Json(request): Json<PostMintQuoteBitcreditRequest>,
+) -> Result<Json<PostMintQuoteBitcreditResponse>, MokshaMintError> {
+    // FIXME check currency unit
+    let key = Uuid::new_v4();
+
+    let quote = BitcreditMintQuote {
+        quote_id: key,
+        bill_id: request.bill_id,
+        node_id: request.node_id,
+    };
+
+    let mut tx = mint.db.begin_tx().await?;
+    mint.db.add_bitcredit_mint_quote(&mut tx, &quote).await?;
+    tx.commit().await?;
+    Ok(Json(quote.into()))
+}
+
+#[utoipa::path(
+    post,
+    path = "/v1/mint/request/bitcredit",
+    request_body = PostRequestToMintBitcredit,
+    responses(
+    (status = 200, description = "post request to mint", body = [PostRequestToMintBitcreditResponse])
+    ),
+)]
+#[instrument(name = "post_request_to_mint_bitcredit", skip(mint), err)]
+pub async fn post_request_to_mint_bitcredit(
+    State(mint): State<Mint>,
+    Json(request): Json<PostRequestToMintBitcreditRequest>,
+    //TODO: correct response
+) -> Result<Json<PostRequestToMintBitcreditResponse>, MokshaMintError> {
+    println!("{}", request.bill_id);
+    // TODO => decrypt bill key with own private key
+
+    let request_to_mint = BitcreditRequestToMint {
+        bill_key: request.bill_key,
+        bill_id: request.bill_id,
+    };
+
+    let mut tx = mint.db.begin_tx().await?;
+    mint.db
+        .add_bitcredit_request_to_mint(&mut tx, &request_to_mint)
+        .await?;
+    tx.commit().await?;
+    Ok(Json(request_to_mint.into()))
+}
+
+#[utoipa::path(
         post,
         path = "/v1/mint/bolt11/{quote_id}",
         request_body = PostMintBolt11Request,
@@ -204,7 +267,7 @@ pub async fn post_melt_quote_bolt11(
     let amount = invoice.amount_milli_satoshis().ok_or_else(|| {
         crate::error::MokshaMintError::InvalidAmount("invalid invoice".to_owned())
     })?;
-    let fee_reserve = mint.fee_reserve(amount) / 1_000; // FIXME check if this is correct
+    let fee_reserve = mint.fee_reserve_msat(amount) / 1_000; // FIXME check if this is correct
     debug!("fee_reserve: {}", fee_reserve);
 
     let amount_sat = amount / 1_000;

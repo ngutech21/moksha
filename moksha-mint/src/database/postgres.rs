@@ -8,11 +8,11 @@ use moksha_core::{
     proof::{Proof, Proofs},
 };
 
+use crate::{config::DatabaseConfig, error::MokshaMintError, model::Invoice};
+use moksha_core::primitives::{BitcreditMintQuote, BitcreditRequestToMint};
 use sqlx::postgres::PgPoolOptions;
 use tracing::instrument;
 use uuid::Uuid;
-
-use crate::{config::DatabaseConfig, error::MokshaMintError, model::Invoice};
 
 use super::Database;
 
@@ -204,6 +204,39 @@ impl Database for PostgresDB {
         sqlx::query!(
             "DELETE FROM bolt11_mint_quotes WHERE id = $1",
             quote.quote_id
+        )
+        .execute(&mut **tx)
+        .await?;
+        Ok(())
+    }
+
+    #[instrument(level = "debug", skip(self), err)]
+    async fn add_bitcredit_mint_quote(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        quote: &BitcreditMintQuote,
+    ) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "INSERT INTO bitcredit_mint_quotes (id, bill_id, node_id) VALUES ($1, $2, $3)",
+            quote.quote_id,
+            quote.bill_id,
+            quote.node_id,
+        )
+        .execute(&mut **tx)
+        .await?;
+        Ok(())
+    }
+
+    #[instrument(level = "debug", skip(self), err)]
+    async fn add_bitcredit_request_to_mint(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        quote: &BitcreditRequestToMint,
+    ) -> Result<(), MokshaMintError> {
+        sqlx::query!(
+            "INSERT INTO bitcredit_requests_to_mint (bill_id, bill_key) VALUES ($1, $2)",
+            quote.bill_id,
+            quote.bill_key,
         )
         .execute(&mut **tx)
         .await?;

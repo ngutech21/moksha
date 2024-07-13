@@ -136,5 +136,3 @@ publish:
   cargo publish -p moksha-wallet
   cargo publish -p moksha-mint
   cargo publish -p moksha-cli
-
-   

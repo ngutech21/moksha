@@ -1,11 +1,11 @@
+use crate::{error::MokshaMintError, model::Invoice};
 use async_trait::async_trait;
+use moksha_core::primitives::{BitcreditMintQuote, BitcreditRequestToMint};
 use moksha_core::{
     primitives::{Bolt11MeltQuote, Bolt11MintQuote, BtcOnchainMeltQuote, BtcOnchainMintQuote},
     proof::Proofs,
 };
 use uuid::Uuid;
-
-use crate::{error::MokshaMintError, model::Invoice};
 
 pub mod postgres;
 
@@ -59,6 +59,18 @@ pub trait Database {
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
         quote: &Bolt11MintQuote,
+    ) -> Result<(), MokshaMintError>;
+
+    async fn add_bitcredit_mint_quote(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        quote: &BitcreditMintQuote,
+    ) -> Result<(), MokshaMintError>;
+
+    async fn add_bitcredit_request_to_mint(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        quote: &BitcreditRequestToMint,
     ) -> Result<(), MokshaMintError>;
 
     async fn get_bolt11_melt_quote(

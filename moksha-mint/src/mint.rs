@@ -67,9 +67,15 @@ where
         }
     }
 
-    pub fn fee_reserve(&self, amount_msat: u64) -> u64 {
+    pub fn fee_reserve_msat(&self, amount_msat: u64) -> u64 {
         let fee_percent = self.config.lightning_fee.fee_percent as f64 / 100.0;
         let fee_reserve = (amount_msat as f64 * fee_percent) as u64;
+        std::cmp::max(fee_reserve, self.config.lightning_fee.fee_reserve_min)
+    }
+
+    pub fn fee_reserve_sat(&self, amount_sat: u64) -> u64 {
+        let fee_percent = self.config.lightning_fee.fee_percent as f64 / 100.0;
+        let fee_reserve = (amount_sat as f64 * fee_percent) as u64;
         std::cmp::max(fee_reserve, self.config.lightning_fee.fee_reserve_min)
     }
 
@@ -474,7 +480,7 @@ mod tests {
             None,
         )
         .await?;
-        let fee = mint.fee_reserve(10000);
+        let fee = mint.fee_reserve_msat(10000);
         assert_eq!(4000, fee);
         Ok(())
     }

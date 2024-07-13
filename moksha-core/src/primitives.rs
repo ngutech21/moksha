@@ -141,6 +141,38 @@ impl From<Bolt11MintQuote> for PostMintQuoteBolt11Response {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMintQuoteBitcreditRequest {
+    pub bill_id: String,
+    pub node_id: String,
+    pub amount: u64,
+    pub unit: CurrencyUnit,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMintQuoteBitcreditResponse {}
+
+impl From<BitcreditMintQuote> for PostMintQuoteBitcreditResponse {
+    fn from(_quote: BitcreditMintQuote) -> Self {
+        Self {}
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostRequestToMintBitcreditRequest {
+    pub bill_id: String,
+    pub bill_key: String,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostRequestToMintBitcreditResponse {}
+
+impl From<BitcreditRequestToMint> for PostRequestToMintBitcreditResponse {
+    fn from(_quote: BitcreditRequestToMint) -> Self {
+        Self {}
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMintBolt11Request {
     pub quote: String,
     pub outputs: Vec<BlindedMessage>,
@@ -173,6 +205,19 @@ pub struct Bolt11MintQuote {
     pub payment_request: String,
     pub expiry: u64,
     pub paid: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BitcreditMintQuote {
+    pub quote_id: Uuid,
+    pub bill_id: String,
+    pub node_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BitcreditRequestToMint {
+    pub bill_id: String,
+    pub bill_key: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

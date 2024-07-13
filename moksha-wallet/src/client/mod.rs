@@ -6,7 +6,8 @@ use moksha_core::{
         CurrencyUnit, GetMeltBtcOnchainResponse, KeysResponse, MintInfoResponse,
         PostMeltBolt11Response, PostMeltBtcOnchainResponse, PostMeltQuoteBolt11Response,
         PostMeltQuoteBtcOnchainResponse, PostMintBolt11Response, PostMintBtcOnchainResponse,
-        PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainResponse, PostSwapResponse,
+        PostMintQuoteBitcreditResponse, PostMintQuoteBolt11Response,
+        PostMintQuoteBtcOnchainResponse, PostRequestToMintBitcreditResponse, PostSwapResponse,
     },
     proof::Proofs,
 };
@@ -80,6 +81,22 @@ pub trait CashuClient {
         mint_url: &Url,
         quote: String,
     ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError>;
+
+    async fn post_mint_quote_bitcredit(
+        &self,
+        mint_url: &Url,
+        bill_id: String,
+        node_id: String,
+        amount: u64,
+        unit: CurrencyUnit,
+    ) -> Result<PostMintQuoteBitcreditResponse, MokshaWalletError>;
+
+    async fn post_request_to_mint_bitcredit(
+        &self,
+        mint_url: &Url,
+        bill_id: String,
+        bill_key: String,
+    ) -> Result<PostRequestToMintBitcreditResponse, MokshaWalletError>;
 
     async fn get_info(&self, mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError>;
 

@@ -1,9 +1,9 @@
+use dotenvy::dotenv;
 use mokshamint::{
     config::{MintConfig, TracingConfig},
     mint::MintBuilder,
 };
 use std::env;
-use dotenvy::dotenv;
 use tracing_subscriber::{filter::EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 use opentelemetry::KeyValue;
