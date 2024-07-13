@@ -125,6 +125,7 @@ impl Lightning for ClnLightning {
                 preimage: None,
                 cltv: None,
                 deschashonly: None,
+                exposeprivatechannels: vec![],
             })
             .await
             .expect("failed to create invoice")
@@ -157,6 +158,7 @@ impl Lightning for ClnLightning {
                 exclude: vec![],
                 maxfee: None,
                 description: None,
+                partial_msat: None,
             })
             .await
             .expect("failed to pay invoice")
