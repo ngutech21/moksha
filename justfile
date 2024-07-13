@@ -86,8 +86,8 @@ _check-docker:
   fi
 
   if ! command -v docker compose &> /dev/null; then
-   >&2 echo 'Error: Docker Compose is not installed.' >&2;
-   exit 1;
+    >&2 echo 'Error: Docker Compose is not installed.' >&2;
+    exit 1;
   fi
 
   if ! command docker info &> /dev/null; then
@@ -109,9 +109,9 @@ build-docker:
 
 # compile all rust crates, that are relevant for the client, to wasm
 build-wasm:
-   cargo +nightly build -p  moksha-core -p moksha-wallet \
-   --target wasm32-unknown-unknown \
-   -Z build-std=std,panic_abort
+  cargo +nightly build -p  moksha-core -p moksha-wallet \
+  --target wasm32-unknown-unknown \
+  -Z build-std=std,panic_abort
 
 
 # runs sqlx prepare
