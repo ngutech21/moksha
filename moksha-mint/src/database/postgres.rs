@@ -168,13 +168,14 @@ impl Database for PostgresDB {
         id: &Uuid,
     ) -> Result<BitcreditMintQuote, MokshaMintError> {
         let quote: BitcreditMintQuote = sqlx::query!(
-            "SELECT id, bill_id, node_id FROM bitcredit_mint_quotes WHERE id = $1",
+            "SELECT id, bill_id, node_id, sent FROM bitcredit_mint_quotes WHERE id = $1",
             id
         )
         .map(|row| BitcreditMintQuote {
             quote_id: row.id,
             bill_id: row.bill_id,
             node_id: row.node_id,
+            sent: row.sent,
         })
         .fetch_one(&mut **tx)
         .await?;
@@ -221,15 +222,13 @@ impl Database for PostgresDB {
         tx: &mut sqlx::Transaction<Self::DB>,
         quote: &BitcreditMintQuote,
     ) -> Result<(), MokshaMintError> {
-        //TODO: update column tokens received?
-
-        // sqlx::query!(
-        //     "UPDATE bolt11_mint_quotes SET paid = $1 WHERE id = $2",
-        //     quote.paid,
-        //     quote.quote_id
-        // )
-        //     .execute(&mut **tx)
-        //     .await?;
+        sqlx::query!(
+            "UPDATE bitcredit_mint_quotes SET sent = $1 WHERE id = $2",
+            quote.sent,
+            quote.quote_id
+        )
+        .execute(&mut **tx)
+        .await?;
         Ok(())
     }
 

@@ -47,6 +47,9 @@ pub enum MokshaMintError {
     #[error("Lightning invoice not paid yet.")]
     InvoiceNotPaidYet,
 
+    #[error("Bitcredit quote already sent.")]
+    BitcreditQuoteAlreadySent,
+
     #[error("BTC-Onchain not paid yet.")]
     BtcOnchainNotPaidYet,
 

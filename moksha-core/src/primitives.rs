@@ -229,6 +229,7 @@ pub struct BitcreditMintQuote {
     pub quote_id: Uuid,
     pub bill_id: String,
     pub node_id: String,
+    pub sent: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

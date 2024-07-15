@@ -163,6 +163,7 @@ pub async fn post_mint_quote_bitcredit(
         quote_id: key,
         bill_id: request.bill_id,
         node_id: request.node_id,
+        sent: false,
     };
 
     let mut tx = mint.db.begin_tx().await?;
@@ -284,6 +285,7 @@ pub async fn post_mint_bitcredit(
         .update_bitcredit_mint_quote(
             &mut tx,
             &BitcreditMintQuote {
+                sent: true,
                 ..old_quote.clone()
             },
         )

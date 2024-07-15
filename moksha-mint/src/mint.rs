@@ -1,16 +1,3 @@
-use std::{collections::HashSet, sync::Arc, vec};
-
-use moksha_core::{
-    amount::Amount,
-    blind::{BlindedMessage, BlindedSignature, TotalAmount},
-    dhke::Dhke,
-    keyset::MintKeyset,
-    primitives::{BtcOnchainMeltQuote, PaymentMethod},
-    proof::Proofs,
-};
-use sqlx::Transaction;
-use tracing::instrument;
-
 use crate::{
     btconchain::{lnd::LndBtcOnchain, BtcOnchain},
     config::{
@@ -25,6 +12,19 @@ use crate::{
     },
     model::Invoice,
 };
+use moksha_core::{
+    amount::Amount,
+    blind::{BlindedMessage, BlindedSignature, TotalAmount},
+    dhke::Dhke,
+    keyset::MintKeyset,
+    primitives::{BtcOnchainMeltQuote, PaymentMethod},
+    proof::Proofs,
+};
+use sqlx::Transaction;
+use std::str::FromStr;
+use std::{collections::HashSet, sync::Arc, vec};
+use tracing::instrument;
+use uuid::Uuid;
 
 use crate::lightning::cln::ClnLightning;
 
@@ -144,7 +144,18 @@ where
             self.db.delete_pending_invoice(&mut tx, key).await?;
             tx.commit().await?;
         } else if payment_method == PaymentMethod::Bitcredit {
-            //TODO: new column tokens received?
+            let mut tx = self.db.begin_tx().await?;
+
+            let quote = self
+                .db
+                .get_bitcredit_mint_quote(&mut tx, &Uuid::from_str(key.clone().as_str())?)
+                .await?;
+
+            let is_sent = quote.sent;
+
+            if return_error && is_sent {
+                return Err(MokshaMintError::BitcreditQuoteAlreadySent);
+            }
         }
         self.create_blinded_signatures(outputs, keyset)
     }
