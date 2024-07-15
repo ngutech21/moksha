@@ -153,7 +153,7 @@ where
 
             let is_sent = quote.sent;
 
-            if return_error && is_sent {
+            if return_error || is_sent {
                 return Err(MokshaMintError::BitcreditQuoteAlreadySent);
             }
         }
