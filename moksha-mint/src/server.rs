@@ -4,9 +4,10 @@ use crate::routes::btconchain::{
     post_mint_quote_btconchain,
 };
 use crate::routes::default::{
-    get_info, get_keys, get_keys_by_id, get_keysets, get_melt_quote_bolt11, get_mint_quote_bolt11,
-    post_melt_bolt11, post_melt_quote_bolt11, post_mint_bolt11, post_mint_quote_bitcredit,
-    post_mint_quote_bolt11, post_request_to_mint_bitcredit, post_swap,
+    get_info, get_keys, get_keys_by_id, get_keysets, get_melt_quote_bolt11,
+    get_mint_quote_bitcredit, get_mint_quote_bolt11, post_melt_bolt11, post_melt_quote_bolt11,
+    post_mint_bitcredit, post_mint_bolt11, post_mint_quote_bitcredit, post_mint_quote_bolt11,
+    post_request_to_mint_bitcredit, post_swap,
 };
 use axum::extract::Request;
 use axum::http::{HeaderName, HeaderValue, StatusCode};
@@ -30,11 +31,11 @@ use moksha_core::primitives::{
     Nut11, Nut12, Nut17, Nut18, Nut4, Nut5, Nut7, Nut8, Nut9, Nuts, PaymentMethod,
     PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
     PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse,
-    PostMintBolt11Request, PostMintBolt11Response, PostMintQuoteBitcreditRequest,
-    PostMintQuoteBitcreditResponse, PostMintQuoteBolt11Request, PostMintQuoteBolt11Response,
-    PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse,
-    PostRequestToMintBitcreditRequest, PostRequestToMintBitcreditResponse, PostSwapRequest,
-    PostSwapResponse,
+    PostMintBitcreditRequest, PostMintBitcreditResponse, PostMintBolt11Request,
+    PostMintBolt11Response, PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse,
+    PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainRequest,
+    PostMintQuoteBtcOnchainResponse, PostRequestToMintBitcreditRequest,
+    PostRequestToMintBitcreditResponse, PostSwapRequest, PostSwapResponse,
 };
 
 use tower_http::services::ServeDir;
@@ -99,10 +100,12 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         crate::routes::default::get_keys_by_id,
         crate::routes::default::get_keysets,
         crate::routes::default::post_mint_bolt11,
+        crate::routes::default::post_mint_bitcredit,
         crate::routes::default::post_mint_quote_bolt11,
         crate::routes::default::post_mint_quote_bitcredit,
         crate::routes::default::post_request_to_mint_bitcredit,
         crate::routes::default::get_mint_quote_bolt11,
+        crate::routes::default::get_mint_quote_bitcredit,
         crate::routes::default::post_melt_bolt11,
         crate::routes::default::post_melt_quote_bolt11,
         crate::routes::default::get_melt_quote_bolt11,
@@ -149,7 +152,9 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         PostMeltBolt11Request,
         PostMeltBolt11Response,
         PostMintBolt11Request,
+        PostMintBitcreditRequest,
         PostMintBolt11Response,
+        PostMintBitcreditResponse,
         PostSwapRequest,
         PostSwapResponse,
         P2SHScript,
@@ -177,7 +182,12 @@ fn app(mint: Mint) -> Router {
             post(post_request_to_mint_bitcredit),
         )
         .route("/v1/mint/quote/bolt11/:quote", get(get_mint_quote_bolt11))
+        .route(
+            "/v1/mint/quote/bitcredit/:quote",
+            get(get_mint_quote_bitcredit),
+        )
         .route("/v1/mint/bolt11", post(post_mint_bolt11))
+        .route("/v1/mint/bitcredit", post(post_mint_bitcredit))
         .route("/v1/melt/quote/bolt11", post(post_melt_quote_bolt11))
         .route("/v1/melt/quote/bolt11/:quote", get(get_melt_quote_bolt11))
         .route("/v1/melt/bolt11", post(post_melt_bolt11))

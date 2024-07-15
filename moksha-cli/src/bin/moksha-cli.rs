@@ -399,6 +399,20 @@ async fn main() -> anyhow::Result<()> {
 
                     quote
                 }
+                //TODO PaymentMethod::Bitcredit
+
+                // PaymentMethod::Bitcredit => {
+                //     let PostMintQuoteBitcreditResponse {
+                //         quote,
+                //     } = wallet.create_quote_bitcredit(&mint_url, amount).await?;
+                //
+                //     term.write_line(&format!(
+                //         "Pay lightning invoice to mint tokens:\n\n{payment_request}"
+                //     ))?;
+                //
+                //     quote
+                // }
+                _ => String::new(),
             };
 
             let wallet_keysets = wallet.get_wallet_keysets().await?;

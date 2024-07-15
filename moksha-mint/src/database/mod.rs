@@ -61,7 +61,17 @@ pub trait Database {
         quote: &Bolt11MintQuote,
     ) -> Result<(), MokshaMintError>;
 
+    async fn get_bitcredit_mint_quote(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        key: &Uuid,
+    ) -> Result<BitcreditMintQuote, MokshaMintError>;
     async fn add_bitcredit_mint_quote(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        quote: &BitcreditMintQuote,
+    ) -> Result<(), MokshaMintError>;
+    async fn update_bitcredit_mint_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
         quote: &BitcreditMintQuote,

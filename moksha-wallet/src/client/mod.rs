@@ -5,8 +5,8 @@ use moksha_core::{
     primitives::{
         CurrencyUnit, GetMeltBtcOnchainResponse, KeysResponse, MintInfoResponse,
         PostMeltBolt11Response, PostMeltBtcOnchainResponse, PostMeltQuoteBolt11Response,
-        PostMeltQuoteBtcOnchainResponse, PostMintBolt11Response, PostMintBtcOnchainResponse,
-        PostMintQuoteBitcreditResponse, PostMintQuoteBolt11Response,
+        PostMeltQuoteBtcOnchainResponse, PostMintBitcreditResponse, PostMintBolt11Response,
+        PostMintBtcOnchainResponse, PostMintQuoteBitcreditResponse, PostMintQuoteBolt11Response,
         PostMintQuoteBtcOnchainResponse, PostRequestToMintBitcreditResponse, PostSwapResponse,
     },
     proof::Proofs,
@@ -69,6 +69,13 @@ pub trait CashuClient {
         blinded_messages: Vec<BlindedMessage>,
     ) -> Result<PostMintBolt11Response, MokshaWalletError>;
 
+    async fn post_mint_bitcredit(
+        &self,
+        mint_url: &Url,
+        quote: String,
+        blinded_messages: Vec<BlindedMessage>,
+    ) -> Result<PostMintBitcreditResponse, MokshaWalletError>;
+
     async fn post_mint_quote_bolt11(
         &self,
         mint_url: &Url,
@@ -89,6 +96,12 @@ pub trait CashuClient {
         node_id: String,
         amount: u64,
         unit: CurrencyUnit,
+    ) -> Result<PostMintQuoteBitcreditResponse, MokshaWalletError>;
+
+    async fn get_mint_quote_bitcredit(
+        &self,
+        mint_url: &Url,
+        quote: String,
     ) -> Result<PostMintQuoteBitcreditResponse, MokshaWalletError>;
 
     async fn post_request_to_mint_bitcredit(

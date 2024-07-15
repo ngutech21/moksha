@@ -17,7 +17,7 @@ use moksha_core::{
 
 use crate::{error::MokshaWalletError, http::CrossPlatformHttpClient};
 use moksha_core::primitives::{
-    PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse,
+    PostMintBitcreditResponse, PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse,
     PostRequestToMintBitcreditRequest, PostRequestToMintBitcreditResponse,
 };
 use url::Url;
@@ -107,6 +107,20 @@ impl CashuClient for CrossPlatformHttpClient {
         self.do_post(&mint_url.join("v1/mint/bolt11")?, &body).await
     }
 
+    async fn post_mint_bitcredit(
+        &self,
+        mint_url: &Url,
+        quote: String,
+        blinded_messages: Vec<BlindedMessage>,
+    ) -> Result<PostMintBitcreditResponse, MokshaWalletError> {
+        let body = PostMintBolt11Request {
+            quote,
+            outputs: blinded_messages,
+        };
+        self.do_post(&mint_url.join("v1/mint/bitcredit")?, &body)
+            .await
+    }
+
     async fn post_mint_quote_bolt11(
         &self,
         mint_url: &Url,
@@ -124,6 +138,15 @@ impl CashuClient for CrossPlatformHttpClient {
         quote: String,
     ) -> Result<PostMintQuoteBolt11Response, MokshaWalletError> {
         self.do_get(&mint_url.join(&format!("v1/mint/quote/bolt11/{}", quote))?)
+            .await
+    }
+
+    async fn get_mint_quote_bitcredit(
+        &self,
+        mint_url: &Url,
+        quote: String,
+    ) -> Result<PostMintQuoteBitcreditResponse, MokshaWalletError> {
+        self.do_get(&mint_url.join(&format!("v1/mint/quote/bitcredit/{}", quote))?)
             .await
     }
 

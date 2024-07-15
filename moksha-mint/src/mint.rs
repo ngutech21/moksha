@@ -143,6 +143,8 @@ where
 
             self.db.delete_pending_invoice(&mut tx, key).await?;
             tx.commit().await?;
+        } else if payment_method == PaymentMethod::Bitcredit {
+            //TODO: new column tokens received?
         }
         self.create_blinded_signatures(outputs, keyset)
     }

@@ -162,6 +162,26 @@ impl Database for PostgresDB {
     }
 
     #[instrument(level = "debug", skip(self), err)]
+    async fn get_bitcredit_mint_quote(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        id: &Uuid,
+    ) -> Result<BitcreditMintQuote, MokshaMintError> {
+        let quote: BitcreditMintQuote = sqlx::query!(
+            "SELECT id, bill_id, node_id FROM bitcredit_mint_quotes WHERE id = $1",
+            id
+        )
+        .map(|row| BitcreditMintQuote {
+            quote_id: row.id,
+            bill_id: row.bill_id,
+            node_id: row.node_id,
+        })
+        .fetch_one(&mut **tx)
+        .await?;
+        Ok(quote)
+    }
+
+    #[instrument(level = "debug", skip(self), err)]
     async fn add_bolt11_mint_quote(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
@@ -192,6 +212,24 @@ impl Database for PostgresDB {
         )
         .execute(&mut **tx)
         .await?;
+        Ok(())
+    }
+
+    #[instrument(level = "debug", skip(self), err)]
+    async fn update_bitcredit_mint_quote(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        quote: &BitcreditMintQuote,
+    ) -> Result<(), MokshaMintError> {
+        //TODO: update column tokens received?
+
+        // sqlx::query!(
+        //     "UPDATE bolt11_mint_quotes SET paid = $1 WHERE id = $2",
+        //     quote.paid,
+        //     quote.quote_id
+        // )
+        //     .execute(&mut **tx)
+        //     .await?;
         Ok(())
     }
 

@@ -189,6 +189,11 @@ where
                     .await?
                     .paid
             }
+
+            // PaymentMethod::Bitcredit => {
+            //  There is no paid column in Bitcredit quote
+            // }
+            _ => true,
         })
     }
 
@@ -709,6 +714,21 @@ where
                 let post_mint_resp = self
                     .client
                     .post_mint_bolt11(
+                        &wallet_keyset.mint_url,
+                        quote_id,
+                        blinded_messages
+                            .clone()
+                            .into_iter()
+                            .map(|(msg, _, _)| msg)
+                            .collect::<Vec<BlindedMessage>>(),
+                    )
+                    .await?;
+                post_mint_resp.signatures
+            }
+            PaymentMethod::Bitcredit => {
+                let post_mint_resp = self
+                    .client
+                    .post_mint_bitcredit(
                         &wallet_keyset.mint_url,
                         quote_id,
                         blinded_messages

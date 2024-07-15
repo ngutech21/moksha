@@ -23,9 +23,9 @@ use crate::{
 };
 use chrono::{Duration, Utc};
 use moksha_core::primitives::{
-    BitcreditMintQuote, BitcreditRequestToMint, PostMintQuoteBitcreditRequest,
-    PostMintQuoteBitcreditResponse, PostRequestToMintBitcreditRequest,
-    PostRequestToMintBitcreditResponse,
+    BitcreditMintQuote, BitcreditRequestToMint, PostMintBitcreditRequest,
+    PostMintBitcreditResponse, PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse,
+    PostRequestToMintBitcreditRequest, PostRequestToMintBitcreditResponse,
 };
 use std::str::FromStr;
 
@@ -248,6 +248,51 @@ pub async fn post_mint_bolt11(
 }
 
 #[utoipa::path(
+    post,
+    path = "/v1/mint/bitcredit/{quote_id}",
+    request_body = PostMintBitcreditRequest,
+    responses(
+    (status = 200, description = "post mint quote bitcredit", body = [PostMintBitcreditResponse])
+    ),
+    params(
+    ("quote_id" = String, Path, description = "quote id"),
+    )
+)]
+#[instrument(name = "post_mint_bitcredit", fields(quote_id = %request.quote), skip_all, err)]
+pub async fn post_mint_bitcredit(
+    State(mint): State<Mint>,
+    Json(request): Json<PostMintBitcreditRequest>,
+) -> Result<Json<PostMintBitcreditResponse>, MokshaMintError> {
+    let mut tx = mint.db.begin_tx().await?;
+    let signatures = mint
+        .mint_tokens(
+            &mut tx,
+            PaymentMethod::Bitcredit,
+            request.quote.clone(),
+            &request.outputs,
+            &mint.keyset,
+            false,
+        )
+        .await?;
+
+    let old_quote = &mint
+        .db
+        .get_bitcredit_mint_quote(&mut tx, &Uuid::from_str(request.quote.as_str())?)
+        .await?;
+
+    mint.db
+        .update_bitcredit_mint_quote(
+            &mut tx,
+            &BitcreditMintQuote {
+                ..old_quote.clone()
+            },
+        )
+        .await?;
+    tx.commit().await?;
+    Ok(Json(PostMintBitcreditResponse { signatures }))
+}
+
+#[utoipa::path(
         post,
         path = "/v1/melt/quote/bolt11",
         request_body = PostMeltQuoteBolt11Request,
@@ -366,6 +411,33 @@ pub async fn get_mint_quote_bolt11(
         .await?;
 
     Ok(Json(Bolt11MintQuote { paid, ..quote }.into()))
+}
+
+#[utoipa::path(
+    get,
+    path = "/v1/mint/quote/bitcredit/{quote_id}",
+    responses(
+        (status = 200, description = "get bitcredit mint quote by id", body = [PostMintQuoteBitcreditResponse])
+    ),
+    params(
+        ("quote_id" = String, Path, description = "quote id"),
+    )
+)]
+#[instrument(name = "get_mint_quote_bitcredit", skip(mint), err)]
+pub async fn get_mint_quote_bitcredit(
+    Path(quote_id): Path<String>,
+    State(mint): State<Mint>,
+) -> Result<Json<PostMintQuoteBitcreditResponse>, MokshaMintError> {
+    debug!("get_quote: {}", quote_id);
+
+    let mut tx = mint.db.begin_tx().await?;
+    let quote = mint
+        .db
+        .get_bitcredit_mint_quote(&mut tx, &Uuid::from_str(quote_id.as_str())?)
+        .await?;
+    tx.commit().await?;
+
+    Ok(Json(BitcreditMintQuote { ..quote }.into()))
 }
 
 #[utoipa::path(

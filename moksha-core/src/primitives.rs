@@ -103,6 +103,7 @@ impl Display for CurrencyUnit {
 pub enum PaymentMethod {
     Bolt11,
     BtcOnchain,
+    Bitcredit,
 }
 
 impl Display for PaymentMethod {
@@ -110,6 +111,7 @@ impl Display for PaymentMethod {
         match self {
             Self::Bolt11 => write!(f, "Lightning"),
             Self::BtcOnchain => write!(f, "Onchain"),
+            Self::Bitcredit => write!(f, "Bitcredit"),
         }
     }
 }
@@ -149,11 +151,15 @@ pub struct PostMintQuoteBitcreditRequest {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
-pub struct PostMintQuoteBitcreditResponse {}
+pub struct PostMintQuoteBitcreditResponse {
+    pub quote: String,
+}
 
 impl From<BitcreditMintQuote> for PostMintQuoteBitcreditResponse {
-    fn from(_quote: BitcreditMintQuote) -> Self {
-        Self {}
+    fn from(quote: BitcreditMintQuote) -> Self {
+        Self {
+            quote: quote.quote_id.to_string(),
+        }
     }
 }
 
@@ -180,6 +186,17 @@ pub struct PostMintBolt11Request {
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMintBolt11Response {
+    pub signatures: Vec<BlindedSignature>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMintBitcreditRequest {
+    pub quote: String,
+    pub outputs: Vec<BlindedMessage>,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
+pub struct PostMintBitcreditResponse {
     pub signatures: Vec<BlindedSignature>,
 }
 
