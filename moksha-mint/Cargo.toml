@@ -27,7 +27,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tower-http = { workspace = true, features = ["cors", "fs", "set-header"] }
-secp256k1 = { workspace = true, default-features = false, features = ["rand", "serde"] }
+secp256k1 = { workspace = true, features = ["rand", "serde"] }
 thiserror = { workspace = true }
 moksha-core = { path = "../moksha-core", version = "0.2.1" }
 lightning-invoice = "0.31.0"
