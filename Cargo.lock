@@ -1636,6 +1636,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "idb"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5343e1df07c7c249df4a750a6e8c42dda96d6041e126cea6776151ec648645c2"
+dependencies = [
+ "js-sys",
+ "num-traits",
+ "thiserror",
+ "tokio",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2920,17 +2934,13 @@ dependencies = [
 
 [[package]]
 name = "rexie"
-version = "0.5.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d34618a20b14cebebc63f8b1c5228116e7379765e8f1b7a9f66b5920babd8595"
+checksum = "1dc7b9e833b7e246d7f88952c666336eb57f7c7e715b1e4756cbfbcddd3a5816"
 dependencies = [
- "js-sys",
- "num-traits",
+ "idb",
  "thiserror",
- "tokio",
  "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
 ]
 
 [[package]]
