@@ -254,10 +254,11 @@ impl Database for PostgresDB {
         quote: &BitcreditMintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
-            "INSERT INTO bitcredit_mint_quotes (id, bill_id, node_id) VALUES ($1, $2, $3)",
+            "INSERT INTO bitcredit_mint_quotes (id, bill_id, node_id, sent) VALUES ($1, $2, $3, $4)",
             quote.quote_id,
             quote.bill_id,
             quote.node_id,
+            quote.sent,
         )
         .execute(&mut **tx)
         .await?;

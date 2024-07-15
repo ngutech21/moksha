@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO bitcredit_mint_quotes (id, bill_id, node_id, sent) VALUES ($1, $2, $3, $4)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ab8b6533b275f48f95ef23a7a535137d29bfabd0a179fef346c5d9a2e4dc7f7c"
+}
