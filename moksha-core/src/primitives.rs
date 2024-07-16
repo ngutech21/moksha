@@ -170,9 +170,9 @@ pub struct PostRequestToMintBitcreditRequest {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
-pub struct PostRequestToMintBitcreditResponse {}
+pub struct PostBitcreditRequestToMintResponse {}
 
-impl From<BitcreditRequestToMint> for PostRequestToMintBitcreditResponse {
+impl From<BitcreditRequestToMint> for PostBitcreditRequestToMintResponse {
     fn from(_quote: BitcreditRequestToMint) -> Self {
         Self {}
     }

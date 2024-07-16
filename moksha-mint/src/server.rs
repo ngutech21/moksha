@@ -35,7 +35,7 @@ use moksha_core::primitives::{
     PostMintBolt11Response, PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse,
     PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainRequest,
     PostMintQuoteBtcOnchainResponse, PostRequestToMintBitcreditRequest,
-    PostRequestToMintBitcreditResponse, PostSwapRequest, PostSwapResponse,
+    PostBitcreditRequestToMintResponse, PostSwapRequest, PostSwapResponse,
 };
 
 use tower_http::services::ServeDir;

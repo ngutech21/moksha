@@ -25,7 +25,7 @@ use chrono::{Duration, Utc};
 use moksha_core::primitives::{
     BitcreditMintQuote, BitcreditRequestToMint, PostMintBitcreditRequest,
     PostMintBitcreditResponse, PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse,
-    PostRequestToMintBitcreditRequest, PostRequestToMintBitcreditResponse,
+    PostRequestToMintBitcreditRequest, PostBitcreditRequestToMintResponse,
 };
 use std::str::FromStr;
 
@@ -186,7 +186,7 @@ pub async fn post_request_to_mint_bitcredit(
     State(mint): State<Mint>,
     Json(request): Json<PostRequestToMintBitcreditRequest>,
     //TODO: correct response
-) -> Result<Json<PostRequestToMintBitcreditResponse>, MokshaMintError> {
+) -> Result<Json<PostBitcreditRequestToMintResponse>, MokshaMintError> {
     println!("{}", request.bill_id);
     // TODO => decrypt bill key with own private key
 
