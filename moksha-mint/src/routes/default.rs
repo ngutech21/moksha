@@ -341,25 +341,8 @@ pub async fn get_melt_quote_bolt11(
     )]
 #[instrument(name = "get_info", skip(mint), err)]
 pub async fn get_info(State(mint): State<Mint>) -> Result<Json<MintInfoResponse>, MokshaMintError> {
-    // TODO implement From-trait
-
     let mint_info = mint.config.info.clone();
-    let contact = Some(
-        vec![
-            mint_info
-                .contact_email
-                .map(|email| vec!["email".to_owned(), email]),
-            mint_info
-                .contact_twitter
-                .map(|twitter| vec!["twitter".to_owned(), twitter]),
-            mint_info
-                .contact_nostr
-                .map(|nostr| vec!["nostr".to_owned(), nostr]),
-        ]
-        .into_iter()
-        .flatten()
-        .collect::<Vec<Vec<String>>>(),
-    );
+    let contact = Some(mint_info.into());
 
     let mint_info = MintInfoResponse {
         nuts: get_nuts(&mint.config),

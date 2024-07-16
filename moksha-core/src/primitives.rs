@@ -220,9 +220,38 @@ pub struct MintInfoResponse {
     pub version: Option<String>,
     pub description: Option<String>,
     pub description_long: Option<String>,
-    pub contact: Option<Vec<Vec<String>>>,
+    pub contact: Option<Vec<ContactInfoResponse>>,
     pub motd: Option<String>,
     pub nuts: Nuts,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
+pub struct ContactInfoResponse {
+    pub method: String,
+    pub info: String,
+}
+
+impl ContactInfoResponse {
+    pub fn email(info: String) -> Self {
+        Self {
+            method: "email".to_string(),
+            info,
+        }
+    }
+
+    pub fn twitter(info: String) -> Self {
+        Self {
+            method: "twitter".to_string(),
+            info,
+        }
+    }
+
+    pub fn nostr(info: String) -> Self {
+        Self {
+            method: "twitter".to_string(),
+            info,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -536,7 +565,7 @@ mod tests {
     use crate::{
         dhke::public_key_from_hex,
         fixture::read_fixture,
-        primitives::{KeyResponse, MintInfoResponse, Nuts, PostSwapResponse},
+        primitives::{ContactInfoResponse, KeyResponse, MintInfoResponse, Nuts, PostSwapResponse},
     };
 
     #[test]
@@ -570,9 +599,9 @@ mod tests {
             description: Some("The short mint description".to_string()),
             description_long: Some("A description that can be a long piece of text.".to_string()),
             contact: Some(vec![
-                vec!["email".to_string(), "contact@me.com".to_string()],
-                vec!["twitter".to_string(), "@me".to_string()],
-                vec!["nostr".to_string(), "npub...".to_string()],
+                ContactInfoResponse::email("contact@me.com".to_string()),
+                ContactInfoResponse::twitter("@me".to_string()),
+                ContactInfoResponse::nostr("npub...".to_string()),
             ]),
             nuts: Nuts::default(),
             motd: Some("Message to display to users.".to_string()),
