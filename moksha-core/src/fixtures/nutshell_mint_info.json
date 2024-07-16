@@ -5,9 +5,18 @@
   "description": "The short mint description",
   "description_long": "A long mint description that can be a long piece of text.",
   "contact": [
-    ["email", "contact@me.com"],
-    ["twitter", "@me"],
-    ["nostr", "npub..."]
+    {
+      "method": "email",
+      "info": "contact@me.com"
+    },
+    {
+      "method": "twitter",
+      "info": "@me"
+    },
+    {
+      "method": "nostr",
+      "info": "npub..."
+    }
   ],
   "motd": "Message to users",
   "nuts": {

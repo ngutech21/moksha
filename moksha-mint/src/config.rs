@@ -2,7 +2,7 @@ use std::{env, net::SocketAddr, path::PathBuf, str::FromStr};
 
 use clap::Parser;
 use moksha_core::primitives::{
-    CurrencyUnit, Nut17, Nut18, PaymentMethod, PaymentMethodConfigBtcOnchain,
+    ContactInfoResponse, CurrencyUnit, Nut17, Nut18, PaymentMethod, PaymentMethodConfigBtcOnchain,
 };
 use serde::{Deserialize, Serialize};
 
@@ -302,6 +302,18 @@ pub struct MintInfoConfig {
     // FIXME add missing fields for v1/info endpoint nut4/nut5 payment_methods, nut4 disabled flag
 }
 
+impl From<MintInfoConfig> for Vec<ContactInfoResponse> {
+    fn from(info: MintInfoConfig) -> Vec<ContactInfoResponse> {
+        [
+            info.contact_email.map(ContactInfoResponse::email),
+            info.contact_twitter.map(ContactInfoResponse::twitter),
+            info.contact_nostr.map(ContactInfoResponse::nostr),
+        ]
+        .iter()
+        .filter_map(|contact| contact.to_owned())
+        .collect()
+    }
+}
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct BuildParams {
     pub commit_hash: Option<String>,
