@@ -168,7 +168,7 @@ impl Database for PostgresDB {
         id: &Uuid,
     ) -> Result<BitcreditMintQuote, MokshaMintError> {
         let quote: BitcreditMintQuote = sqlx::query!(
-            "SELECT id, bill_id, node_id, sent FROM bitcredit_mint_quotes WHERE id = $1",
+            "SELECT id, bill_id, node_id, sent, amount FROM bitcredit_mint_quotes WHERE id = $1",
             id
         )
         .map(|row| BitcreditMintQuote {
@@ -176,6 +176,7 @@ impl Database for PostgresDB {
             bill_id: row.bill_id,
             node_id: row.node_id,
             sent: row.sent,
+            amount: row.amount as u64,
         })
         .fetch_one(&mut **tx)
         .await?;
@@ -254,11 +255,12 @@ impl Database for PostgresDB {
         quote: &BitcreditMintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
-            "INSERT INTO bitcredit_mint_quotes (id, bill_id, node_id, sent) VALUES ($1, $2, $3, $4)",
+            "INSERT INTO bitcredit_mint_quotes (id, bill_id, node_id, sent, amount) VALUES ($1, $2, $3, $4, $5)",
             quote.quote_id,
             quote.bill_id,
             quote.node_id,
             quote.sent,
+            quote.amount as i64,
         )
         .execute(&mut **tx)
         .await?;

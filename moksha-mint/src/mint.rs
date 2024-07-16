@@ -152,9 +152,18 @@ where
                 .await?;
 
             let is_sent = quote.sent;
+            let quote_amount = quote.amount;
+
+            let mut amount = 0;
+            for blinded_message in outputs {
+                amount += blinded_message.amount;
+            }
 
             if return_error || is_sent {
                 return Err(MokshaMintError::BitcreditQuoteAlreadySent);
+            }
+            if !quote_amount.eq(&amount) {
+                return Err(MokshaMintError::BitcreditQuoteIncorrectAmount);
             }
         }
         self.create_blinded_signatures(outputs, keyset)

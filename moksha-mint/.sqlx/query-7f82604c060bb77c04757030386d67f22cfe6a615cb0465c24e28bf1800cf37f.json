@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, bill_id, node_id, sent FROM bitcredit_mint_quotes WHERE id = $1",
+  "query": "SELECT id, bill_id, node_id, sent, amount FROM bitcredit_mint_quotes WHERE id = $1",
   "describe": {
     "columns": [
       {
@@ -22,6 +22,11 @@
         "ordinal": 3,
         "name": "sent",
         "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "amount",
+        "type_info": "Int8"
       }
     ],
     "parameters": {
@@ -33,8 +38,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "4dc0ea2dfe3bd74f1233a5a5da07e6df93a17c6838823aca1dd1b16f51fa836b"
+  "hash": "7f82604c060bb77c04757030386d67f22cfe6a615cb0465c24e28bf1800cf37f"
 }

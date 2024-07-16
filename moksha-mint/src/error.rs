@@ -50,6 +50,9 @@ pub enum MokshaMintError {
     #[error("Bitcredit quote already sent.")]
     BitcreditQuoteAlreadySent,
 
+    #[error("You try to mint incorrect amount.")]
+    BitcreditQuoteIncorrectAmount,
+
     #[error("BTC-Onchain not paid yet.")]
     BtcOnchainNotPaidYet,
 
