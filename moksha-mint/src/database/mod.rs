@@ -80,7 +80,7 @@ pub trait Database {
     async fn add_bitcredit_request_to_mint(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &BitcreditRequestToMint,
+        request_to_mint: &BitcreditRequestToMint,
     ) -> Result<(), MokshaMintError>;
 
     async fn get_bolt11_melt_quote(

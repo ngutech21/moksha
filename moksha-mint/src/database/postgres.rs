@@ -271,12 +271,12 @@ impl Database for PostgresDB {
     async fn add_bitcredit_request_to_mint(
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
-        quote: &BitcreditRequestToMint,
+        request_to_mint: &BitcreditRequestToMint,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
             "INSERT INTO bitcredit_requests_to_mint (bill_id, bill_key) VALUES ($1, $2)",
-            quote.bill_id,
-            quote.bill_key,
+            request_to_mint.bill_id,
+            request_to_mint.bill_key,
         )
         .execute(&mut **tx)
         .await?;
