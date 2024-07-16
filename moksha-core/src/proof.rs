@@ -123,6 +123,33 @@ impl From<Proof> for Proofs {
     }
 }
 
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+pub struct ProofV4 {
+    #[serde(rename = "a")]
+    pub amount: u64,
+
+    #[serde(rename = "s")]
+    pub secret: String,
+
+    #[serde(rename = "c")]
+    #[schema(value_type = String)]
+    pub c: PublicKey,
+
+    #[serde(rename = "d")]
+    pub dleq_proof: Option<DleqProof>,
+
+    #[serde(rename = "w")]
+    pub witness: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+pub struct DleqProof {
+    pub e: Vec<u64>,
+    pub s: Vec<u64>,
+    pub r: Vec<u64>,
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;

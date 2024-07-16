@@ -12,7 +12,7 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = { workspace = true }
-url = { workspace = true }
+url = { workspace = true, features = ["serde"] }
 base64 = { workspace = true }
 bitcoin_hashes = "0.14.0"
 secp256k1 = { workspace = true, default-features = true, features = ["rand", "serde"] }
@@ -24,6 +24,7 @@ thiserror = { workspace = true }
 itertools = { workspace = true }
 uuid = { workspace = true, features = ["serde", "v4"] }
 utoipa = { workspace = true }
+ciborium = "0.2.2"
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 # getrandom is transitive dependency of rand
