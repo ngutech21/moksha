@@ -175,6 +175,12 @@ pub struct BitcreditQuoteCheck {
     pub node_id: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ParamsBitcreditQuoteCheck {
+    pub node_id: String,
+    pub bill_id: String,
+}
+
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct CheckBitcreditQuoteResponse {
     pub quote: String,

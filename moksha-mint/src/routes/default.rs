@@ -24,9 +24,9 @@ use crate::{
 use chrono::{Duration, Utc};
 use moksha_core::primitives::{
     BitcreditMintQuote, BitcreditQuoteCheck, BitcreditRequestToMint, CheckBitcreditQuoteResponse,
-    PostMintBitcreditRequest, PostMintBitcreditResponse, PostMintQuoteBitcreditRequest,
-    PostMintQuoteBitcreditResponse, PostRequestToMintBitcreditRequest,
-    PostRequestToMintBitcreditResponse,
+    ParamsBitcreditQuoteCheck, PostMintBitcreditRequest, PostMintBitcreditResponse,
+    PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse,
+    PostRequestToMintBitcreditRequest, PostRequestToMintBitcreditResponse,
 };
 use std::str::FromStr;
 
@@ -423,11 +423,13 @@ pub async fn get_mint_quote_bolt11(
 )]
 #[instrument(name = "check_bitcredit_quote", skip(mint), err)]
 pub async fn check_bitcredit_quote(
-    Path(bill_id): Path<String>,
-    Path(node_id): Path<String>,
+    params: Path<ParamsBitcreditQuoteCheck>,
     State(mint): State<Mint>,
 ) -> Result<Json<CheckBitcreditQuoteResponse>, MokshaMintError> {
-    let quote_check = BitcreditQuoteCheck { node_id, bill_id };
+    let quote_check = BitcreditQuoteCheck {
+        node_id: params.node_id.clone(),
+        bill_id: params.bill_id.clone(),
+    };
 
     let mut tx = mint.db.begin_tx().await?;
     let quote = mint.db.check_bitcredit_quote(&mut tx, &quote_check).await?;
