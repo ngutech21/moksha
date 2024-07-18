@@ -23,10 +23,10 @@ use crate::{
 };
 use chrono::{Duration, Utc};
 use moksha_core::primitives::{
-    BitcreditMintQuote, BitcreditQuoteCheck, BitcreditRequestToMint, CheckBitcreditQuoteRequest,
-    CheckBitcreditQuoteResponse, PostMintBitcreditRequest, PostMintBitcreditResponse,
-    PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse,
-    PostRequestToMintBitcreditRequest, PostRequestToMintBitcreditResponse,
+    BitcreditMintQuote, BitcreditQuoteCheck, BitcreditRequestToMint, CheckBitcreditQuoteResponse,
+    PostMintBitcreditRequest, PostMintBitcreditResponse, PostMintQuoteBitcreditRequest,
+    PostMintQuoteBitcreditResponse, PostRequestToMintBitcreditRequest,
+    PostRequestToMintBitcreditResponse,
 };
 use std::str::FromStr;
 
@@ -199,30 +199,6 @@ pub async fn post_request_to_mint_bitcredit(
         .await?;
     tx.commit().await?;
     Ok(Json(request_to_mint.into()))
-}
-
-#[utoipa::path(
-    get,
-    path = "/v1/quote/bitcredit/check",
-    request_body = GetBitcreditQuoteRequestRequest,
-    responses(
-    (status = 200, description = "check bitcredit quote", body = [GetBitcreditQuoteRequestResponse])
-    ),
-)]
-#[instrument(name = "check_bitcredit_quote", skip(mint), err)]
-pub async fn check_bitcredit_quote(
-    State(mint): State<Mint>,
-    Json(request): Json<CheckBitcreditQuoteRequest>,
-) -> Result<Json<CheckBitcreditQuoteResponse>, MokshaMintError> {
-    let quote_check = BitcreditQuoteCheck {
-        node_id: request.node_id,
-        bill_id: request.bill_id,
-    };
-
-    let mut tx = mint.db.begin_tx().await?;
-    let quote = mint.db.check_bitcredit_quote(&mut tx, &quote_check).await?;
-    tx.commit().await?;
-    Ok(Json(quote.into()))
 }
 
 #[utoipa::path(
@@ -436,6 +412,27 @@ pub async fn get_mint_quote_bolt11(
         .await?;
 
     Ok(Json(Bolt11MintQuote { paid, ..quote }.into()))
+}
+
+#[utoipa::path(
+    get,
+    path = "/v1/quote/bitcredit/check/{bill_id}/{node_id}",
+    responses(
+    (status = 200, description = "check bitcredit quote", body = [CheckBitcreditQuoteResponse])
+    ),
+)]
+#[instrument(name = "check_bitcredit_quote", skip(mint), err)]
+pub async fn check_bitcredit_quote(
+    Path(bill_id): Path<String>,
+    Path(node_id): Path<String>,
+    State(mint): State<Mint>,
+) -> Result<Json<CheckBitcreditQuoteResponse>, MokshaMintError> {
+    let quote_check = BitcreditQuoteCheck { node_id, bill_id };
+
+    let mut tx = mint.db.begin_tx().await?;
+    let quote = mint.db.check_bitcredit_quote(&mut tx, &quote_check).await?;
+    tx.commit().await?;
+    Ok(Json(quote.into()))
 }
 
 #[utoipa::path(

@@ -27,14 +27,14 @@ use crate::mint::Mint;
 use moksha_core::blind::BlindedMessage;
 use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
-    CheckBitcreditQuoteRequest, CheckBitcreditQuoteResponse, CurrencyUnit,
-    GetMeltBtcOnchainResponse, KeyResponse, KeysResponse, MintInfoResponse, Nut10, Nut11, Nut12,
-    Nut17, Nut18, Nut4, Nut5, Nut7, Nut8, Nut9, Nuts, PaymentMethod, PostMeltBolt11Request,
-    PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
-    PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse, PostMintBitcreditRequest,
-    PostMintBitcreditResponse, PostMintBolt11Request, PostMintBolt11Response,
-    PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse, PostMintQuoteBolt11Request,
-    PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse,
+    CheckBitcreditQuoteResponse, CurrencyUnit, GetMeltBtcOnchainResponse, KeyResponse,
+    KeysResponse, MintInfoResponse, Nut10, Nut11, Nut12, Nut17, Nut18, Nut4, Nut5, Nut7, Nut8,
+    Nut9, Nuts, PaymentMethod, PostMeltBolt11Request, PostMeltBolt11Response,
+    PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainRequest,
+    PostMeltQuoteBtcOnchainResponse, PostMintBitcreditRequest, PostMintBitcreditResponse,
+    PostMintBolt11Request, PostMintBolt11Response, PostMintQuoteBitcreditRequest,
+    PostMintQuoteBitcreditResponse, PostMintQuoteBolt11Request, PostMintQuoteBolt11Response,
+    PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse,
     PostRequestToMintBitcreditRequest, PostRequestToMintBitcreditResponse, PostSwapRequest,
     PostSwapResponse,
 };
@@ -145,7 +145,6 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         PostMintQuoteBitcreditRequest,
         PostMintQuoteBitcreditResponse,
         PostRequestToMintBitcreditRequest,
-        CheckBitcreditQuoteRequest,
         CheckBitcreditQuoteResponse,
         PostRequestToMintBitcreditResponse,
         PostMintQuoteBolt11Request,
@@ -184,7 +183,10 @@ fn app(mint: Mint) -> Router {
             "/v1/mint/request/bitcredit",
             post(post_request_to_mint_bitcredit),
         )
-        .route("/v1/quote/bitcredit/check", get(check_bitcredit_quote))
+        .route(
+            "/v1/quote/bitcredit/check/:bill_id/:node_id",
+            get(check_bitcredit_quote),
+        )
         .route("/v1/mint/quote/bolt11/:quote", get(get_mint_quote_bolt11))
         .route(
             "/v1/mint/quote/bitcredit/:quote",

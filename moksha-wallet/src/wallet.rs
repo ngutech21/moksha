@@ -23,7 +23,9 @@ use crate::{
     secret::DeterministicSecret,
 };
 use lightning_invoice::Bolt11Invoice as LNInvoice;
-use moksha_core::primitives::{CheckBitcreditQuoteResponse, PostMintQuoteBitcreditResponse, PostRequestToMintBitcreditResponse};
+use moksha_core::primitives::{
+    CheckBitcreditQuoteResponse, PostMintQuoteBitcreditResponse, PostRequestToMintBitcreditResponse,
+};
 use std::{
     collections::{HashMap, HashSet},
     str::FromStr,
