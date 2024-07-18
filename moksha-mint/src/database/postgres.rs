@@ -9,7 +9,7 @@ use moksha_core::{
 };
 
 use crate::{config::DatabaseConfig, error::MokshaMintError, model::Invoice};
-use moksha_core::primitives::{BitcreditMintQuote, BitcreditRequestToMint};
+use moksha_core::primitives::{BitcreditMintQuote, BitcreditQuoteCheck, BitcreditRequestToMint};
 use sqlx::postgres::PgPoolOptions;
 use tracing::instrument;
 use uuid::Uuid;
@@ -180,6 +180,29 @@ impl Database for PostgresDB {
         })
         .fetch_one(&mut **tx)
         .await?;
+        Ok(quote)
+    }
+
+    #[instrument(level = "debug", skip(self), err)]
+    async fn check_bitcredit_quote(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        quote_check: &BitcreditQuoteCheck,
+    ) -> Result<BitcreditMintQuote, MokshaMintError> {
+        let quote: BitcreditMintQuote = sqlx::query!(
+            "SELECT id, bill_id, node_id, sent, amount FROM bitcredit_mint_quotes WHERE bill_id = $1 AND node_id = $2",
+            quote_check.bill_id,
+            quote_check.node_id,
+        )
+            .map(|row| BitcreditMintQuote {
+                quote_id: row.id,
+                bill_id: row.bill_id,
+                node_id: row.node_id,
+                sent: row.sent,
+                amount: row.amount as u64,
+            })
+            .fetch_one(&mut **tx)
+            .await?;
         Ok(quote)
     }
 

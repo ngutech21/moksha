@@ -7,7 +7,7 @@ use moksha_core::{
         PostMeltBolt11Response, PostMeltBtcOnchainResponse, PostMeltQuoteBolt11Response,
         PostMeltQuoteBtcOnchainResponse, PostMintBitcreditResponse, PostMintBolt11Response,
         PostMintBtcOnchainResponse, PostMintQuoteBitcreditResponse, PostMintQuoteBolt11Response,
-        PostMintQuoteBtcOnchainResponse, PostBitcreditRequestToMintResponse, PostSwapResponse,
+        PostMintQuoteBtcOnchainResponse, PostRequestToMintBitcreditResponse, PostSwapResponse,
     },
     proof::Proofs,
 };
@@ -20,6 +20,7 @@ pub mod crossplatform;
 
 #[cfg(test)]
 use mockall::automock;
+use moksha_core::primitives::CheckBitcreditQuoteResponse;
 
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
@@ -109,7 +110,14 @@ pub trait CashuClient {
         mint_url: &Url,
         bill_id: String,
         bill_key: String,
-    ) -> Result<PostBitcreditRequestToMintResponse, MokshaWalletError>;
+    ) -> Result<PostRequestToMintBitcreditResponse, MokshaWalletError>;
+
+    async fn check_bitcredit_quote(
+        &self,
+        mint_url: &Url,
+        bill_id: String,
+        node_id: String,
+    ) -> Result<CheckBitcreditQuoteResponse, MokshaWalletError>;
 
     async fn get_info(&self, mint_url: &Url) -> Result<MintInfoResponse, MokshaWalletError>;
 

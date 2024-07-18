@@ -4,7 +4,7 @@ use crate::routes::btconchain::{
     post_mint_quote_btconchain,
 };
 use crate::routes::default::{
-    get_info, get_keys, get_keys_by_id, get_keysets, get_melt_quote_bolt11,
+    check_bitcredit_quote, get_info, get_keys, get_keys_by_id, get_keysets, get_melt_quote_bolt11,
     get_mint_quote_bitcredit, get_mint_quote_bolt11, post_melt_bolt11, post_melt_quote_bolt11,
     post_mint_bitcredit, post_mint_bolt11, post_mint_quote_bitcredit, post_mint_quote_bolt11,
     post_request_to_mint_bitcredit, post_swap,
@@ -27,15 +27,16 @@ use crate::mint::Mint;
 use moksha_core::blind::BlindedMessage;
 use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
-    CurrencyUnit, GetMeltBtcOnchainResponse, KeyResponse, KeysResponse, MintInfoResponse, Nut10,
-    Nut11, Nut12, Nut17, Nut18, Nut4, Nut5, Nut7, Nut8, Nut9, Nuts, PaymentMethod,
-    PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request,
-    PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse,
-    PostMintBitcreditRequest, PostMintBitcreditResponse, PostMintBolt11Request,
-    PostMintBolt11Response, PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse,
-    PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainRequest,
-    PostMintQuoteBtcOnchainResponse, PostRequestToMintBitcreditRequest,
-    PostBitcreditRequestToMintResponse, PostSwapRequest, PostSwapResponse,
+    CheckBitcreditQuoteRequest, CheckBitcreditQuoteResponse, CurrencyUnit,
+    GetMeltBtcOnchainResponse, KeyResponse, KeysResponse, MintInfoResponse, Nut10, Nut11, Nut12,
+    Nut17, Nut18, Nut4, Nut5, Nut7, Nut8, Nut9, Nuts, PaymentMethod, PostMeltBolt11Request,
+    PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
+    PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse, PostMintBitcreditRequest,
+    PostMintBitcreditResponse, PostMintBolt11Request, PostMintBolt11Response,
+    PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse, PostMintQuoteBolt11Request,
+    PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse,
+    PostRequestToMintBitcreditRequest, PostRequestToMintBitcreditResponse, PostSwapRequest,
+    PostSwapResponse,
 };
 
 use tower_http::services::ServeDir;
@@ -144,6 +145,8 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         PostMintQuoteBitcreditRequest,
         PostMintQuoteBitcreditResponse,
         PostRequestToMintBitcreditRequest,
+        CheckBitcreditQuoteRequest,
+        CheckBitcreditQuoteResponse,
         PostRequestToMintBitcreditResponse,
         PostMintQuoteBolt11Request,
         PostMintQuoteBolt11Response,
@@ -181,6 +184,7 @@ fn app(mint: Mint) -> Router {
             "/v1/mint/request/bitcredit",
             post(post_request_to_mint_bitcredit),
         )
+        .route("/v1/quote/bitcredit/check", get(check_bitcredit_quote))
         .route("/v1/mint/quote/bolt11/:quote", get(get_mint_quote_bolt11))
         .route(
             "/v1/mint/quote/bitcredit/:quote",

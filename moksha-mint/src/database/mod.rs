@@ -1,6 +1,6 @@
 use crate::{error::MokshaMintError, model::Invoice};
 use async_trait::async_trait;
-use moksha_core::primitives::{BitcreditMintQuote, BitcreditRequestToMint};
+use moksha_core::primitives::{BitcreditMintQuote, BitcreditQuoteCheck, BitcreditRequestToMint};
 use moksha_core::{
     primitives::{Bolt11MeltQuote, Bolt11MintQuote, BtcOnchainMeltQuote, BtcOnchainMintQuote},
     proof::Proofs,
@@ -82,6 +82,12 @@ pub trait Database {
         tx: &mut sqlx::Transaction<Self::DB>,
         request_to_mint: &BitcreditRequestToMint,
     ) -> Result<(), MokshaMintError>;
+
+    async fn check_bitcredit_quote(
+        &self,
+        tx: &mut sqlx::Transaction<Self::DB>,
+        quote_check: &BitcreditQuoteCheck,
+    ) -> Result<BitcreditMintQuote, MokshaMintError>;
 
     async fn get_bolt11_melt_quote(
         &self,

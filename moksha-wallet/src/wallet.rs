@@ -23,7 +23,7 @@ use crate::{
     secret::DeterministicSecret,
 };
 use lightning_invoice::Bolt11Invoice as LNInvoice;
-use moksha_core::primitives::{PostMintQuoteBitcreditResponse, PostBitcreditRequestToMintResponse};
+use moksha_core::primitives::{PostMintQuoteBitcreditResponse, PostRequestToMintBitcreditResponse};
 use std::{
     collections::{HashMap, HashSet},
     str::FromStr,
@@ -163,7 +163,7 @@ where
         mint_url: &Url,
         bill_id: String,
         bill_key: String,
-    ) -> Result<PostBitcreditRequestToMintResponse, MokshaWalletError> {
+    ) -> Result<PostRequestToMintBitcreditResponse, MokshaWalletError> {
         self.client
             .post_request_to_mint_bitcredit(mint_url, bill_id, bill_key)
             .await

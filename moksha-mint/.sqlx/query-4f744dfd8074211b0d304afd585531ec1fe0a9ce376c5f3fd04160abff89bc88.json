@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, bill_id, node_id, sent, amount FROM bitcredit_mint_quotes WHERE bill_id = $1 AND node_id = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "bill_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "node_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "sent",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "amount",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4f744dfd8074211b0d304afd585531ec1fe0a9ce376c5f3fd04160abff89bc88"
+}
