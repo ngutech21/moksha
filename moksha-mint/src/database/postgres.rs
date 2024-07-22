@@ -168,7 +168,7 @@ impl Database for PostgresDB {
         id: &Uuid,
     ) -> Result<BitcreditMintQuote, MokshaMintError> {
         let quote: BitcreditMintQuote = sqlx::query!(
-            "SELECT id, bill_id, node_id, sent, amount FROM bitcredit_mint_quotes WHERE id = $1",
+            "SELECT id, bill_id, node_id, sent, amount, endorsed FROM bitcredit_mint_quotes WHERE id = $1",
             id
         )
         .map(|row| BitcreditMintQuote {
@@ -177,6 +177,7 @@ impl Database for PostgresDB {
             node_id: row.node_id,
             sent: row.sent,
             amount: row.amount as u64,
+            endorsed: row.endorsed,
         })
         .fetch_one(&mut **tx)
         .await?;
@@ -190,7 +191,7 @@ impl Database for PostgresDB {
         quote_check: &BitcreditQuoteCheck,
     ) -> Result<BitcreditMintQuote, MokshaMintError> {
         let quote: BitcreditMintQuote = sqlx::query!(
-            "SELECT id, bill_id, node_id, sent, amount FROM bitcredit_mint_quotes WHERE bill_id = $1 AND node_id = $2",
+            "SELECT id, bill_id, node_id, sent, amount, endorsed FROM bitcredit_mint_quotes WHERE bill_id = $1 AND node_id = $2",
             quote_check.bill_id,
             quote_check.node_id,
         )
@@ -200,6 +201,7 @@ impl Database for PostgresDB {
                 node_id: row.node_id,
                 sent: row.sent,
                 amount: row.amount as u64,
+                endorsed: row.endorsed,
             })
             .fetch_one(&mut **tx)
             .await?;
@@ -247,8 +249,9 @@ impl Database for PostgresDB {
         quote: &BitcreditMintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
-            "UPDATE bitcredit_mint_quotes SET sent = $1 WHERE id = $2",
+            "UPDATE bitcredit_mint_quotes SET sent = $1, endorsed = $2 WHERE id = $3",
             quote.sent,
+            quote.endorsed,
             quote.quote_id
         )
         .execute(&mut **tx)
@@ -278,12 +281,13 @@ impl Database for PostgresDB {
         quote: &BitcreditMintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
-            "INSERT INTO bitcredit_mint_quotes (id, bill_id, node_id, sent, amount) VALUES ($1, $2, $3, $4, $5)",
+            "INSERT INTO bitcredit_mint_quotes (id, bill_id, node_id, sent, amount, endorsed) VALUES ($1, $2, $3, $4, $5, $6)",
             quote.quote_id,
             quote.bill_id,
             quote.node_id,
             quote.sent,
             quote.amount as i64,
+            quote.endorsed,
         )
         .execute(&mut **tx)
         .await?;

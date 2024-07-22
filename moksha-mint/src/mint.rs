@@ -152,11 +152,16 @@ where
                 .await?;
 
             let is_sent = quote.sent;
+            let mut endorsed = quote.endorsed;
             let quote_amount = quote.amount;
 
             let mut amount = 0;
             for blinded_message in outputs {
                 amount += blinded_message.amount;
+            }
+
+            if !endorsed {
+                endorsed = Self::am_i_holder(quote.bill_id).await;
             }
 
             if return_error || is_sent {
@@ -165,8 +170,23 @@ where
             if !quote_amount.eq(&amount) {
                 return Err(MokshaMintError::BitcreditQuoteIncorrectAmount);
             }
+            if !endorsed {
+                return Err(MokshaMintError::BitcreditQuoteMintNotHolder);
+            }
         }
         self.create_blinded_signatures(outputs, keyset)
+    }
+
+    async fn am_i_holder(id: String) -> bool {
+        let request_url = format!("http://localhost:8000/bill/holder/{id}", id = id);
+        let am_i_holder: bool = reqwest::get(&request_url)
+            .await
+            .expect("Failed to send request")
+            .json()
+            .await
+            .expect("Failed to read response");
+
+        am_i_holder
     }
 
     fn has_duplicate_pubkeys(outputs: &[BlindedMessage]) -> bool {

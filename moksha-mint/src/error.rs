@@ -53,6 +53,9 @@ pub enum MokshaMintError {
     #[error("You try to mint incorrect amount.")]
     BitcreditQuoteIncorrectAmount,
 
+    #[error("Mint is not a current holder.")]
+    BitcreditQuoteMintNotHolder,
+
     #[error("BTC-Onchain not paid yet.")]
     BtcOnchainNotPaidYet,
 
