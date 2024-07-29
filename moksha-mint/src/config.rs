@@ -2,7 +2,7 @@ use std::{env, net::SocketAddr, path::PathBuf, str::FromStr};
 
 use clap::Parser;
 use moksha_core::primitives::{
-    ContactInfoResponse, CurrencyUnit, Nut18, Nut19, PaymentMethod, PaymentMethodConfigBtcOnchain,
+    ContactInfoResponse, CurrencyUnit, Nut18, Nut19, PaymentMethod, PaymentMethodConfigBtcOnchainMelt, PaymentMethodConfigBtcOnchainMint
 };
 use serde::{Deserialize, Serialize};
 
@@ -213,11 +213,12 @@ impl From<BtcOnchainConfig> for Nut18 {
     fn from(settings: BtcOnchainConfig) -> Self {
         Self {
             supported: true,
-            payment_methods: vec![PaymentMethodConfigBtcOnchain {
+            payment_methods: vec![PaymentMethodConfigBtcOnchainMint {
                 payment_method: PaymentMethod::BtcOnchain,
                 unit: CurrencyUnit::Sat,
                 min_amount: settings.min_amount,
                 max_amount: settings.max_amount,
+                min_confirmations: settings.min_confirmations,
             }],
         }
     }
@@ -227,7 +228,7 @@ impl From<BtcOnchainConfig> for Nut19 {
     fn from(settings: BtcOnchainConfig) -> Self {
         Self {
             supported: true,
-            payment_methods: vec![PaymentMethodConfigBtcOnchain {
+            payment_methods: vec![PaymentMethodConfigBtcOnchainMelt {
                 payment_method: PaymentMethod::BtcOnchain,
                 unit: CurrencyUnit::Sat,
                 min_amount: settings.min_amount,

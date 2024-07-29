@@ -554,7 +554,7 @@ pub struct Nut17 {
 pub struct Nut18 {
     pub supported: bool,
     #[serde(rename = "methods")]
-    pub payment_methods: Vec<PaymentMethodConfigBtcOnchain>,
+    pub payment_methods: Vec<PaymentMethodConfigBtcOnchainMint>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
@@ -567,7 +567,17 @@ pub struct PaymentMethodConfig {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
-pub struct PaymentMethodConfigBtcOnchain {
+pub struct PaymentMethodConfigBtcOnchainMint {
+    #[serde(rename = "method")]
+    pub payment_method: PaymentMethod,
+    pub unit: CurrencyUnit,
+    pub min_amount: u64,
+    pub max_amount: u64,
+    pub min_confirmations: u8,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
+pub struct PaymentMethodConfigBtcOnchainMelt {
     #[serde(rename = "method")]
     pub payment_method: PaymentMethod,
     pub unit: CurrencyUnit,
@@ -579,11 +589,12 @@ impl Default for Nut18 {
     fn default() -> Self {
         Self {
             supported: true,
-            payment_methods: vec![PaymentMethodConfigBtcOnchain {
+            payment_methods: vec![PaymentMethodConfigBtcOnchainMint {
                 payment_method: PaymentMethod::BtcOnchain,
                 unit: CurrencyUnit::Sat,
                 min_amount: 10_000,
                 max_amount: 1_000_000,
+                min_confirmations: 3,
             }],
         }
     }
@@ -593,14 +604,14 @@ impl Default for Nut18 {
 pub struct Nut19 {
     pub supported: bool,
     #[serde(rename = "methods")]
-    pub payment_methods: Vec<PaymentMethodConfigBtcOnchain>,
+    pub payment_methods: Vec<PaymentMethodConfigBtcOnchainMelt>,
 }
 
 impl Default for Nut19 {
     fn default() -> Self {
         Self {
             supported: true,
-            payment_methods: vec![PaymentMethodConfigBtcOnchain {
+            payment_methods: vec![PaymentMethodConfigBtcOnchainMelt {
                 payment_method: PaymentMethod::BtcOnchain,
                 unit: CurrencyUnit::Sat,
                 min_amount: 10_000,
