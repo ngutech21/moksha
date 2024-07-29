@@ -285,8 +285,8 @@ async fn main() -> anyhow::Result<()> {
                 amount,
                 quote.fee,
                 amount + quote.fee,
-                address)
-            )?;
+                address
+            ))?;
 
             let pay_confirmed = Confirm::new().with_prompt("Confirm payment?").interact()?;
 

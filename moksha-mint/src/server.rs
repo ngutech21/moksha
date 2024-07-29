@@ -25,7 +25,15 @@ use crate::mint::Mint;
 use moksha_core::blind::BlindedMessage;
 use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
-    ContactInfoResponse, CurrencyUnit, GetMeltBtcOnchainResponse, KeyResponse, KeysResponse, MintInfoResponse, Nut10, Nut11, Nut12, Nut13, Nut14, Nut15, Nut16, Nut17, Nut18, Nut19, Nut4, Nut5, Nut7, Nut8, Nut9, Nuts, PaymentMethod, PaymentMethodConfig, PaymentMethodConfigBtcOnchainMelt, PaymentMethodConfigBtcOnchainMint, PostMeltBolt11Request, PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse, PostMintBolt11Request, PostMintBolt11Response, PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse, PostSwapRequest, PostSwapResponse
+    ContactInfoResponse, CurrencyUnit, GetMeltBtcOnchainResponse, KeyResponse, KeysResponse,
+    MintInfoResponse, Nut10, Nut11, Nut12, Nut13, Nut14, Nut15, Nut16, Nut17, Nut18, Nut19, Nut4,
+    Nut5, Nut7, Nut8, Nut9, Nuts, PaymentMethod, PaymentMethodConfig,
+    PaymentMethodConfigBtcOnchainMelt, PaymentMethodConfigBtcOnchainMint, PostMeltBolt11Request,
+    PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
+    PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse, PostMintBolt11Request,
+    PostMintBolt11Response, PostMintQuoteBolt11Request, PostMintQuoteBolt11Response,
+    PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse, PostSwapRequest,
+    PostSwapResponse,
 };
 
 use tower_http::services::ServeDir;
@@ -154,7 +162,6 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         PaymentMethodConfig,
         PaymentMethodConfigBtcOnchainMint,
         PaymentMethodConfigBtcOnchainMelt
-
     ))
 )]
 struct ApiDoc;

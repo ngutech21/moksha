@@ -548,8 +548,6 @@ pub struct Nut17 {
     pub supported: bool,
 }
 
-
-
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct Nut18 {
     pub supported: bool,

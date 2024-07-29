@@ -2,7 +2,8 @@ use std::{env, net::SocketAddr, path::PathBuf, str::FromStr};
 
 use clap::Parser;
 use moksha_core::primitives::{
-    ContactInfoResponse, CurrencyUnit, Nut18, Nut19, PaymentMethod, PaymentMethodConfigBtcOnchainMelt, PaymentMethodConfigBtcOnchainMint
+    ContactInfoResponse, CurrencyUnit, Nut18, Nut19, PaymentMethod,
+    PaymentMethodConfigBtcOnchainMelt, PaymentMethodConfigBtcOnchainMint,
 };
 use serde::{Deserialize, Serialize};
 
