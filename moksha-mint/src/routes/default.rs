@@ -364,8 +364,8 @@ fn get_nuts(cfg: &MintConfig) -> Nuts {
     let default_config = BtcOnchainConfig::default();
     let config = cfg.btconchain_backend.as_ref().unwrap_or(&default_config);
     Nuts {
-        nut17: Some(config.to_owned().into()),
         nut18: Some(config.to_owned().into()),
+        nut19: Some(config.to_owned().into()),
         ..Nuts::default()
     }
 }

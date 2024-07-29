@@ -394,13 +394,33 @@ pub struct Nuts {
     /// DLEQ proofs
     pub nut12: Option<Nut12>,
 
+    #[serde(rename = "13", skip_serializing_if = "Option::is_none")]
+    /// deterministic secrets
+    pub nut13: Option<Nut13>,
+
+    #[serde(rename = "14", skip_serializing_if = "Option::is_none")]
+    /// Hashed Timelock Contracts
+    pub nut14: Option<Nut14>,
+
+    #[serde(rename = "15", skip_serializing_if = "Option::is_none")]
+    /// Partial multi-path payments
+    pub nut15: Option<Nut15>,
+
+    #[serde(rename = "16", skip_serializing_if = "Option::is_none")]
+    /// Partial multi-path payments
+    pub nut16: Option<Nut16>,
+
     #[serde(rename = "17", skip_serializing_if = "Option::is_none")]
-    /// minting tokens btc onchain
+    /// WebSockets
     pub nut17: Option<Nut17>,
 
     #[serde(rename = "18", skip_serializing_if = "Option::is_none")]
-    /// melting tokens btc onchain
+    /// minting tokens btc onchain
     pub nut18: Option<Nut18>,
+
+    #[serde(rename = "19", skip_serializing_if = "Option::is_none")]
+    /// melting tokens btc onchain
+    pub nut19: Option<Nut19>,
 }
 
 impl Default for Nuts {
@@ -414,8 +434,13 @@ impl Default for Nuts {
             nut10: Some(Nut10 { supported: false }),
             nut11: Some(Nut11 { supported: false }),
             nut12: Some(Nut12 { supported: false }),
+            nut13: Some(Nut13::default()),
+            nut14: Some(Nut14::default()),
+            nut15: Some(Nut15::default()),
+            nut16: Some(Nut16::default()),
             nut17: Some(Nut17::default()),
             nut18: Some(Nut18::default()),
+            nut19: Some(Nut19::default()),
         }
     }
 }
@@ -498,8 +523,35 @@ pub struct Nut12 {
     pub supported: bool,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
+pub struct Nut13 {
+    pub supported: bool,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
+pub struct Nut14 {
+    pub supported: bool,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
+pub struct Nut15 {
+    pub supported: bool,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
+pub struct Nut16 {
+    pub supported: bool,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
 pub struct Nut17 {
+    pub supported: bool,
+}
+
+
+
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
+pub struct Nut18 {
     pub supported: bool,
     #[serde(rename = "methods")]
     pub payment_methods: Vec<PaymentMethodConfigBtcOnchain>,
@@ -523,7 +575,7 @@ pub struct PaymentMethodConfigBtcOnchain {
     pub max_amount: u64,
 }
 
-impl Default for Nut17 {
+impl Default for Nut18 {
     fn default() -> Self {
         Self {
             supported: true,
@@ -538,13 +590,13 @@ impl Default for Nut17 {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
-pub struct Nut18 {
+pub struct Nut19 {
     pub supported: bool,
     #[serde(rename = "methods")]
     pub payment_methods: Vec<PaymentMethodConfigBtcOnchain>,
 }
 
-impl Default for Nut18 {
+impl Default for Nut19 {
     fn default() -> Self {
         Self {
             supported: true,

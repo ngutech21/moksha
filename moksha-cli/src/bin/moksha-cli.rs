@@ -264,7 +264,7 @@ async fn main() -> anyhow::Result<()> {
 
             let info = wallet.get_mint_info(&mint_url).await?;
 
-            if info.nuts.nut18.map_or(true, |nut18| !nut18.supported) {
+            if info.nuts.nut19.map_or(true, |nut18| !nut18.supported) {
                 term.write_line("Error: onchain-payments are not supported by this mint")?;
                 return Ok(());
             }
@@ -319,7 +319,7 @@ async fn main() -> anyhow::Result<()> {
 
             let info = wallet.get_mint_info(&mint_url).await?;
 
-            let payment_method = info.nuts.nut17.as_ref().map_or_else(
+            let payment_method = info.nuts.nut18.as_ref().map_or_else(
                 || {
                     term.write_line("Only bolt11 minting is supported")
                         .expect("write_line failed");
@@ -346,7 +346,7 @@ async fn main() -> anyhow::Result<()> {
 
             let quote = match payment_method {
                 PaymentMethod::BtcOnchain => {
-                    let nut17 = info.nuts.nut17.expect("nut17 is None");
+                    let nut17 = info.nuts.nut18.expect("nut17 is None");
                     let payment_method = nut17.payment_methods.first().expect("no payment methods");
 
                     if amount < payment_method.min_amount {
