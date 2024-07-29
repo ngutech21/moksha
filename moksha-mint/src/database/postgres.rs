@@ -364,14 +364,14 @@ impl Database for PostgresDB {
         &self,
         tx: &mut sqlx::Transaction<Self::DB>,
         key: &Uuid,
-    ) -> Result<BtcOnchainMeltQuote, MokshaMintError> {
+    ) -> Result<BtcOnchainMeltQuote, MokshaMintError> { 
         let quote: BtcOnchainMeltQuote = sqlx::query!(
             "SELECT id, amount,address, fee_total, fee_sat_per_vbyte, expiry, paid, description  FROM onchain_melt_quotes WHERE id = $1",
             key
         )
         .map(|row| BtcOnchainMeltQuote {
             quote_id: row.id,
-            address: row.address,
+            address: row.address, 
             amount: row.amount as u64,
             fee_total: row.fee_total as u64,
             fee_sat_per_vbyte: row.fee_sat_per_vbyte as u32,

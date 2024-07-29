@@ -211,7 +211,7 @@ pub async fn post_melt_quote_btconchain(
         fee_sat_per_vbyte: fee_response.sat_per_vbyte,
         expiry: quote_onchain_expiry(),
         paid: false,
-        description: format!("{} sat per vbyte", fee_response.sat_per_vbyte),
+        description: Some(format!("{} sat per vbyte", fee_response.sat_per_vbyte)),
     };
 
     let mut tx = mint.db.begin_tx().await?;

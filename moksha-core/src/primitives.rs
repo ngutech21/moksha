@@ -284,7 +284,7 @@ pub struct BtcOnchainMeltQuote {
     pub fee_sat_per_vbyte: u32,
     pub expiry: u64,
     pub paid: bool,
-    pub description: String,
+    pub description: Option<String>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
@@ -323,7 +323,7 @@ pub struct PostMeltQuoteBtcOnchainRequest {
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMeltQuoteBtcOnchainResponse {
     pub quote: String,
-    pub description: String,
+    pub description: Option<String>,
     pub amount: u64,
     pub fee: u64,
     pub paid: bool,
