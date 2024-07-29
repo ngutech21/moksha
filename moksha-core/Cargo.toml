@@ -17,7 +17,7 @@ base64 = { workspace = true }
 bitcoin_hashes = "0.14.0"
 secp256k1 = { workspace = true, default-features = true, features = ["rand", "serde"] }
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
+serde_json = { workspace = true, features = ["preserve_order"] }
 hex = { workspace = true }
 serde_with = { workspace = true }
 thiserror = { workspace = true }
