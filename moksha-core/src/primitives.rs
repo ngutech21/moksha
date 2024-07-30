@@ -339,7 +339,7 @@ pub struct PostMeltBtcOnchainRequest {
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMeltBtcOnchainResponse {
     pub paid: bool,
-    pub txid: String,
+    pub txid: Option<String>,
 }
 
 impl From<BtcOnchainMeltQuote> for PostMeltQuoteBtcOnchainResponse {

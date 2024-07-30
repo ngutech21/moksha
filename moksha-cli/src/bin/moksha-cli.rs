@@ -296,7 +296,9 @@ async fn main() -> anyhow::Result<()> {
 
             let PostMeltBtcOnchainResponse { paid, txid } =
                 wallet.pay_onchain(wallet_keyset, quote).await?;
-            term.write_line(&format!("Created transaction: {}\n", &txid))?;
+            if let Some(txid) = txid.clone() {
+                term.write_line(&format!("Created transaction: {}\n", &txid))?;
+            }
 
             let progress_bar = cli::progress_bar()?;
             progress_bar.set_message("Waiting for payment confirmation ...");
@@ -304,7 +306,9 @@ async fn main() -> anyhow::Result<()> {
             loop {
                 tokio::time::sleep(std::time::Duration::from_millis(2_000)).await;
 
-                if paid || wallet.is_onchain_tx_paid(&mint_url, txid.clone()).await? {
+                let txid = txid.clone();
+
+                if paid || txid.as_ref().is_some() && wallet.is_onchain_tx_paid(&mint_url, txid.expect("invalid txid")).await? {
                     progress_bar.finish_with_message("\nTokens melted successfully\n");
                     cli::show_total_balance(&wallet).await?;
                     break;

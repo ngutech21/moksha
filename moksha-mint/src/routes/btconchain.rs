@@ -286,7 +286,7 @@ pub async fn post_melt_btconchain(
         .await?;
     tx.commit().await?;
 
-    Ok(Json(PostMeltBtcOnchainResponse { paid, txid }))
+    Ok(Json(PostMeltBtcOnchainResponse { paid, txid:Some(txid) }))
 }
 
 #[utoipa::path(

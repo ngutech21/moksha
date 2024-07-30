@@ -114,7 +114,9 @@ async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
     assert!(!result.paid);
     btc_client.mine_blocks(1).await?;
 
-    let is_tx_paid = wallet.is_onchain_tx_paid(&mint_url, result.txid).await?;
+    let txid = result.txid.expect("No txid returned from mint");
+
+    let is_tx_paid = wallet.is_onchain_tx_paid(&mint_url, txid).await?;
     assert!(is_tx_paid);
 
     Ok(())
