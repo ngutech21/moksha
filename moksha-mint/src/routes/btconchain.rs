@@ -3,10 +3,10 @@ use axum::{
     Json,
 };
 use moksha_core::primitives::{
-    BtcOnchainMeltQuote, BtcOnchainMintQuote, CurrencyUnit, GetMeltBtcOnchainResponse,
-    PaymentMethod, PostMeltBtcOnchainRequest, PostMeltBtcOnchainResponse,
-    PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse, PostMintBtcOnchainRequest,
-    PostMintBtcOnchainResponse, PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse,
+    BtcOnchainMeltQuote, BtcOnchainMintQuote, CurrencyUnit, PaymentMethod,
+    PostMeltBtcOnchainRequest, PostMeltBtcOnchainResponse, PostMeltQuoteBtcOnchainRequest,
+    PostMeltQuoteBtcOnchainResponse, PostMintBtcOnchainRequest, PostMintBtcOnchainResponse,
+    PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse,
 };
 use tracing::{info, instrument};
 use uuid::Uuid;
@@ -286,33 +286,10 @@ pub async fn post_melt_btconchain(
         .await?;
     tx.commit().await?;
 
-    Ok(Json(PostMeltBtcOnchainResponse { paid, txid:Some(txid) }))
-}
-
-#[utoipa::path(
-        get,
-        path = "/v1/melt/btconchain/{tx_id}",
-        responses(
-            (status = 200, description = "is transaction paid", body = [GetMeltOnchainResponse])
-        ),
-        params(
-            ("tx_id" = String, Path, description = "Bitcoin onchain transaction-id"),
-        )
-    )]
-#[instrument(name = "get_melt_btconchain", skip(mint), err)]
-pub async fn get_melt_btconchain(
-    Path(tx_id): Path<String>,
-    State(mint): State<Mint>,
-) -> Result<Json<GetMeltBtcOnchainResponse>, MokshaMintError> {
-    info!("is transaction paid: {}", tx_id);
-    let paid = mint
-        .onchain
-        .as_ref()
-        .expect("onchain not set")
-        .is_transaction_paid(&tx_id)
-        .await?;
-
-    Ok(Json(GetMeltBtcOnchainResponse { paid }))
+    Ok(Json(PostMeltBtcOnchainResponse {
+        paid,
+        txid: Some(txid),
+    }))
 }
 
 async fn is_onchain_paid(

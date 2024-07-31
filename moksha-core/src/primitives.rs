@@ -355,11 +355,6 @@ impl From<BtcOnchainMeltQuote> for PostMeltQuoteBtcOnchainResponse {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
-pub struct GetMeltBtcOnchainResponse {
-    pub paid: bool,
-}
-
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct Nuts {
     /// Minting tokens

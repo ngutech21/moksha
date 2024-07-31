@@ -306,9 +306,11 @@ async fn main() -> anyhow::Result<()> {
             loop {
                 tokio::time::sleep(std::time::Duration::from_millis(2_000)).await;
 
-                let txid = txid.clone();
-
-                if paid || txid.as_ref().is_some() && wallet.is_onchain_tx_paid(&mint_url, txid.expect("invalid txid")).await? {
+                if paid
+                    || wallet
+                        .is_onchain_paid(&mint_url, quote.quote.clone())
+                        .await?
+                {
                     progress_bar.finish_with_message("\nTokens melted successfully\n");
                     cli::show_total_balance(&wallet).await?;
                     break;

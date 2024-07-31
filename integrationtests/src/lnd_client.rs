@@ -111,6 +111,21 @@ impl LndClient {
         Ok(amount_in_sat as u64)
     }
 
+    pub async fn is_transaction_paid(&self, txid: &str) -> anyhow::Result<bool> {
+        let request = ListUnspentRequest {
+            min_confs: 0,
+            max_confs: i32::MAX,
+            ..Default::default()
+        };
+
+        let response = self.wallet_lock().await?.list_unspent(request).await?;
+
+        Ok(response.get_ref().utxos.iter().any(|utxo| {
+            utxo.outpoint.clone().expect("No outpoint found").txid_str == txid
+                && utxo.confirmations > 0
+        }))
+    }
+
     pub async fn connect_to_peer(&self, peer_pubkey: &str, host_port: &str) -> anyhow::Result<()> {
         self.wait_for_node_sync().await?;
         let mut client = self.client_lock().await?;

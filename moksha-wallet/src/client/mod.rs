@@ -3,10 +3,10 @@ use moksha_core::{
     blind::BlindedMessage,
     keyset::Keysets,
     primitives::{
-        CurrencyUnit, GetMeltBtcOnchainResponse, KeysResponse, MintInfoResponse,
-        PostMeltBolt11Response, PostMeltBtcOnchainResponse, PostMeltQuoteBolt11Response,
-        PostMeltQuoteBtcOnchainResponse, PostMintBolt11Response, PostMintBtcOnchainResponse,
-        PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainResponse, PostSwapResponse,
+        CurrencyUnit, KeysResponse, MintInfoResponse, PostMeltBolt11Response,
+        PostMeltBtcOnchainResponse, PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainResponse,
+        PostMintBolt11Response, PostMintBtcOnchainResponse, PostMintQuoteBolt11Response,
+        PostMintQuoteBtcOnchainResponse, PostSwapResponse,
     },
     proof::Proofs,
 };
@@ -125,10 +125,4 @@ pub trait CashuClient {
         mint_url: &Url,
         quote: String,
     ) -> Result<PostMeltQuoteBtcOnchainResponse, MokshaWalletError>;
-
-    async fn get_melt_onchain(
-        &self,
-        mint_url: &Url,
-        txid: String,
-    ) -> Result<GetMeltBtcOnchainResponse, MokshaWalletError>;
 }

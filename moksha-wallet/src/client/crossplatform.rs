@@ -4,12 +4,12 @@ use moksha_core::{
     blind::BlindedMessage,
     keyset::Keysets,
     primitives::{
-        CurrencyUnit, GetMeltBtcOnchainResponse, KeysResponse, MintInfoResponse,
-        PostMeltBolt11Request, PostMeltBolt11Response, PostMeltBtcOnchainRequest,
-        PostMeltBtcOnchainResponse, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
-        PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse, PostMintBolt11Request,
-        PostMintBolt11Response, PostMintBtcOnchainRequest, PostMintBtcOnchainResponse,
-        PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainRequest,
+        CurrencyUnit, KeysResponse, MintInfoResponse, PostMeltBolt11Request,
+        PostMeltBolt11Response, PostMeltBtcOnchainRequest, PostMeltBtcOnchainResponse,
+        PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainRequest,
+        PostMeltQuoteBtcOnchainResponse, PostMintBolt11Request, PostMintBolt11Response,
+        PostMintBtcOnchainRequest, PostMintBtcOnchainResponse, PostMintQuoteBolt11Request,
+        PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainRequest,
         PostMintQuoteBtcOnchainResponse, PostSwapRequest, PostSwapResponse,
     },
     proof::Proofs,
@@ -201,15 +201,6 @@ impl CashuClient for CrossPlatformHttpClient {
         quote: String,
     ) -> Result<PostMeltQuoteBtcOnchainResponse, MokshaWalletError> {
         self.do_get(&mint_url.join(&format!("/v1/melt/quote/btconchain/{quote}"))?)
-            .await
-    }
-
-    async fn get_melt_onchain(
-        &self,
-        mint_url: &Url,
-        txid: String,
-    ) -> Result<GetMeltBtcOnchainResponse, MokshaWalletError> {
-        self.do_get(&mint_url.join(&format!("/v1/melt/btconchain/{txid}"))?)
             .await
     }
 }

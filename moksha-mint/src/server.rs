@@ -1,7 +1,6 @@
 use crate::routes::btconchain::{
-    get_melt_btconchain, get_melt_quote_btconchain, get_mint_quote_btconchain,
-    post_melt_btconchain, post_melt_quote_btconchain, post_mint_btconchain,
-    post_mint_quote_btconchain,
+    get_melt_quote_btconchain, get_mint_quote_btconchain, post_melt_btconchain,
+    post_melt_quote_btconchain, post_mint_btconchain, post_mint_quote_btconchain,
 };
 use crate::routes::default::{
     get_info, get_keys, get_keys_by_id, get_keysets, get_melt_quote_bolt11, get_mint_quote_bolt11,
@@ -25,15 +24,14 @@ use crate::mint::Mint;
 use moksha_core::blind::BlindedMessage;
 use moksha_core::blind::BlindedSignature;
 use moksha_core::primitives::{
-    ContactInfoResponse, CurrencyUnit, GetMeltBtcOnchainResponse, KeyResponse, KeysResponse,
-    MintInfoResponse, Nut10, Nut11, Nut12, Nut13, Nut14, Nut15, Nut16, Nut17, Nut18, Nut19, Nut4,
-    Nut5, Nut7, Nut8, Nut9, Nuts, PaymentMethod, PaymentMethodConfig,
-    PaymentMethodConfigBtcOnchainMelt, PaymentMethodConfigBtcOnchainMint, PostMeltBolt11Request,
-    PostMeltBolt11Response, PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response,
-    PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse, PostMintBolt11Request,
-    PostMintBolt11Response, PostMintQuoteBolt11Request, PostMintQuoteBolt11Response,
-    PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse, PostSwapRequest,
-    PostSwapResponse,
+    ContactInfoResponse, CurrencyUnit, KeyResponse, KeysResponse, MintInfoResponse, Nut10, Nut11,
+    Nut12, Nut13, Nut14, Nut15, Nut16, Nut17, Nut18, Nut19, Nut4, Nut5, Nut7, Nut8, Nut9, Nuts,
+    PaymentMethod, PaymentMethodConfig, PaymentMethodConfigBtcOnchainMelt,
+    PaymentMethodConfigBtcOnchainMint, PostMeltBolt11Request, PostMeltBolt11Response,
+    PostMeltQuoteBolt11Request, PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainRequest,
+    PostMeltQuoteBtcOnchainResponse, PostMintBolt11Request, PostMintBolt11Response,
+    PostMintQuoteBolt11Request, PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainRequest,
+    PostMintQuoteBtcOnchainResponse, PostSwapRequest, PostSwapResponse,
 };
 
 use tower_http::services::ServeDir;
@@ -112,7 +110,6 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         crate::routes::btconchain::post_melt_quote_btconchain,
         crate::routes::btconchain::get_melt_quote_btconchain,
         crate::routes::btconchain::post_melt_btconchain,
-        crate::routes::btconchain::get_melt_btconchain
     ),
     components(schemas(
         MintInfoResponse,
@@ -157,7 +154,6 @@ pub async fn run_server(mint: Mint) -> anyhow::Result<()> {
         PostMintQuoteBtcOnchainResponse,
         PostMeltQuoteBtcOnchainRequest,
         PostMeltQuoteBtcOnchainResponse,
-        GetMeltBtcOnchainResponse,
         ContactInfoResponse,
         PaymentMethodConfig,
         PaymentMethodConfigBtcOnchainMint,
@@ -201,7 +197,6 @@ fn app(mint: Mint) -> Router {
                 get(get_melt_quote_btconchain),
             )
             .route("/v1/melt/btconchain", post(post_melt_btconchain))
-            .route("/v1/melt/btconchain/:txid", get(get_melt_btconchain))
     } else {
         Router::new()
     };

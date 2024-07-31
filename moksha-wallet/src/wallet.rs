@@ -180,14 +180,6 @@ where
             .paid)
     }
 
-    pub async fn is_onchain_tx_paid(
-        &self,
-        mint_url: &Url,
-        txid: String,
-    ) -> Result<bool, MokshaWalletError> {
-        Ok(self.client.get_melt_onchain(mint_url, txid).await?.paid)
-    }
-
     pub async fn get_wallet_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
         let mut tx = self.localstore.begin_tx().await?;
         let keysets = self.localstore.get_keysets(&mut tx).await?;
