@@ -4,7 +4,7 @@ use moksha_core::{
     dhke::Dhke,
     keyset::KeysetId,
     primitives::{
-        CurrencyUnit, MintInfoResponse, PaymentMethod, PostMeltBolt11Response,
+        CurrencyUnit, MeltBtcOnchainState, MintInfoResponse, PaymentMethod, PostMeltBolt11Response,
         PostMeltBtcOnchainResponse, PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainResponse,
         PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainResponse,
     },
@@ -173,11 +173,13 @@ where
         mint_url: &Url,
         quote: String,
     ) -> Result<bool, MokshaWalletError> {
+        // FIXME add method get_onchain_state
         Ok(self
             .client
             .get_melt_quote_onchain(mint_url, quote)
             .await?
-            .paid)
+            .state
+            == MeltBtcOnchainState::Paid)
     }
 
     pub async fn get_wallet_keysets(&self) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
@@ -478,7 +480,7 @@ where
             )
             .await?;
 
-        if melt_response.paid {
+        if melt_response.state == MeltBtcOnchainState::Paid {
             self.localstore
                 .delete_proofs(&mut tx, &total_proofs)
                 .await?;

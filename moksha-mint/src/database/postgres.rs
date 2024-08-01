@@ -1,9 +1,12 @@
 #![allow(clippy::blocks_in_conditions)]
+use std::str::FromStr;
+
 use async_trait::async_trait;
 use moksha_core::{
     dhke,
     primitives::{
         Bolt11MeltQuote, Bolt11MintQuote, BtcOnchainMeltQuote, BtcOnchainMintQuote, CurrencyUnit,
+        MeltBtcOnchainState,
     },
     proof::{Proof, Proofs},
 };
@@ -366,7 +369,7 @@ impl Database for PostgresDB {
         key: &Uuid,
     ) -> Result<BtcOnchainMeltQuote, MokshaMintError> {
         let quote: BtcOnchainMeltQuote = sqlx::query!(
-            "SELECT id, amount,address, fee_total, fee_sat_per_vbyte, expiry, paid, description  FROM onchain_melt_quotes WHERE id = $1",
+            "SELECT id, amount,address, fee_total, fee_sat_per_vbyte, expiry, state, description  FROM onchain_melt_quotes WHERE id = $1",
             key
         )
         .map(|row| BtcOnchainMeltQuote {
@@ -376,7 +379,7 @@ impl Database for PostgresDB {
             fee_total: row.fee_total as u64,
             fee_sat_per_vbyte: row.fee_sat_per_vbyte as u32,
             expiry: row.expiry as u64,
-            paid: row.paid,
+            state: MeltBtcOnchainState::from_str(&row.state).expect("invalid state in melt quote"),
             description: row.description
         })
         .fetch_one(&mut **tx)
@@ -392,14 +395,14 @@ impl Database for PostgresDB {
         quote: &BtcOnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
-            "INSERT INTO onchain_melt_quotes (id, amount, address, fee_total, fee_sat_per_vbyte, expiry, paid, description) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+            "INSERT INTO onchain_melt_quotes (id, amount, address, fee_total, fee_sat_per_vbyte, expiry, state, description) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
             quote.quote_id,
             quote.amount as i64,
             quote.address,
             quote.fee_total as i64,
             quote.fee_sat_per_vbyte as i64,
             quote.expiry as i64,
-            quote.paid,
+            quote.state.to_string(),
             quote.description
         )
         .execute(&mut **tx)
@@ -414,8 +417,8 @@ impl Database for PostgresDB {
         quote: &BtcOnchainMeltQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
-            "UPDATE onchain_melt_quotes SET paid = $1 WHERE id = $2",
-            quote.paid,
+            "UPDATE onchain_melt_quotes SET state = $1 WHERE id = $2",
+            quote.state.to_string(),
             quote.quote_id
         )
         .execute(&mut **tx)

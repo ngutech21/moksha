@@ -3,7 +3,7 @@ use axum::{
     Json,
 };
 use moksha_core::primitives::{
-    BtcOnchainMeltQuote, BtcOnchainMintQuote, CurrencyUnit, PaymentMethod,
+    BtcOnchainMeltQuote, BtcOnchainMintQuote, CurrencyUnit, MeltBtcOnchainState, PaymentMethod,
     PostMeltBtcOnchainRequest, PostMeltBtcOnchainResponse, PostMeltQuoteBtcOnchainRequest,
     PostMeltQuoteBtcOnchainResponse, PostMintBtcOnchainRequest, PostMintBtcOnchainResponse,
     PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse,
@@ -210,7 +210,7 @@ pub async fn post_melt_quote_btconchain(
         fee_total: fee_response.fee_in_sat,
         fee_sat_per_vbyte: fee_response.sat_per_vbyte,
         expiry: quote_onchain_expiry(),
-        paid: false,
+        state: MeltBtcOnchainState::Unpaid,
         description: Some(format!("{} sat per vbyte", fee_response.sat_per_vbyte)),
     };
 
@@ -244,19 +244,25 @@ pub async fn get_melt_quote_btconchain(
         .await?;
 
     let paid = is_onchain_paid(&mint, &quote).await?;
+
+    let state = match paid {
+        true => MeltBtcOnchainState::Paid,
+        false => MeltBtcOnchainState::Unpaid,
+    };
+
     if paid {
         mint.db
             .update_onchain_melt_quote(
                 &mut tx,
                 &BtcOnchainMeltQuote {
-                    paid,
+                    state: state.clone(),
                     ..quote.clone()
                 },
             )
             .await?;
     }
 
-    Ok(Json(BtcOnchainMeltQuote { paid, ..quote }.into()))
+    Ok(Json(BtcOnchainMeltQuote { state, ..quote }.into()))
 }
 
 #[utoipa::path(
@@ -281,13 +287,25 @@ pub async fn post_melt_btconchain(
     let txid = mint.melt_onchain(&quote, &melt_request.inputs).await?;
     let paid = is_onchain_paid(&mint, &quote).await?;
 
+    // FIXME  compute correct state
+    let state = match paid {
+        true => MeltBtcOnchainState::Paid,
+        false => MeltBtcOnchainState::Unpaid,
+    };
+
     mint.db
-        .update_onchain_melt_quote(&mut tx, &BtcOnchainMeltQuote { paid, ..quote })
+        .update_onchain_melt_quote(
+            &mut tx,
+            &BtcOnchainMeltQuote {
+                state: state.clone(),
+                ..quote
+            },
+        )
         .await?;
     tx.commit().await?;
 
     Ok(Json(PostMeltBtcOnchainResponse {
-        paid,
+        state,
         txid: Some(txid),
     }))
 }

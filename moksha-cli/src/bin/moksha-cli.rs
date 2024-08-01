@@ -2,8 +2,8 @@ use clap::{Parser, Subcommand};
 use console::{style, Term};
 use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 use moksha_core::primitives::{
-    CurrencyUnit, PaymentMethod, PostMeltBtcOnchainResponse, PostMintQuoteBolt11Response,
-    PostMintQuoteBtcOnchainResponse,
+    CurrencyUnit, MeltBtcOnchainState, PaymentMethod, PostMeltBtcOnchainResponse,
+    PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainResponse,
 };
 use moksha_core::token::TokenV3;
 use moksha_wallet::client::CashuClient;
@@ -294,7 +294,7 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            let PostMeltBtcOnchainResponse { paid, txid } =
+            let PostMeltBtcOnchainResponse { state, txid } =
                 wallet.pay_onchain(wallet_keyset, quote).await?;
             if let Some(txid) = txid.clone() {
                 term.write_line(&format!("Created transaction: {}\n", &txid))?;
@@ -306,7 +306,8 @@ async fn main() -> anyhow::Result<()> {
             loop {
                 tokio::time::sleep(std::time::Duration::from_millis(2_000)).await;
 
-                if paid
+                // FIXME
+                if state == MeltBtcOnchainState::Paid
                     || wallet
                         .is_onchain_paid(&mint_url, quote.quote.clone())
                         .await?

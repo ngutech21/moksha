@@ -1,7 +1,7 @@
 //! This module contains all the request and response objects that are used for interacting between the Mint and Wallet in Cashu.
 //! All of these structs are serializable and deserializable using serde.
 
-use std::{collections::HashMap, fmt::Display};
+use std::{collections::HashMap, fmt::Display, str::FromStr};
 
 use secp256k1::PublicKey;
 use serde::{Deserialize, Serialize};
@@ -283,7 +283,7 @@ pub struct BtcOnchainMeltQuote {
     pub fee_total: u64,
     pub fee_sat_per_vbyte: u32,
     pub expiry: u64,
-    pub paid: bool,
+    pub state: MeltBtcOnchainState,
     pub description: Option<String>,
 }
 
@@ -326,7 +326,7 @@ pub struct PostMeltQuoteBtcOnchainResponse {
     pub description: Option<String>,
     pub amount: u64,
     pub fee: u64,
-    pub paid: bool,
+    pub state: MeltBtcOnchainState,
     pub expiry: u64,
 }
 
@@ -338,8 +338,44 @@ pub struct PostMeltBtcOnchainRequest {
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMeltBtcOnchainResponse {
-    pub paid: bool,
+    pub state: MeltBtcOnchainState,
     pub txid: Option<String>,
+}
+
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq, Clone, ToSchema)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum MeltBtcOnchainState {
+    /// initial state. No payment received from the wallet yet
+    Unpaid,
+
+    /// the mint received the payment from the wallet, but did not broadcast the transaction yet
+    Pending,
+
+    /// the mint broadcasted the btc onchain transaction
+    Paid,
+}
+
+impl Display for MeltBtcOnchainState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MeltBtcOnchainState::Unpaid => write!(f, "UNPAID"),
+            MeltBtcOnchainState::Pending => write!(f, "PENDING"),
+            MeltBtcOnchainState::Paid => write!(f, "PAID"),
+        }
+    }
+}
+
+impl FromStr for MeltBtcOnchainState {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "UNPAID" => Ok(MeltBtcOnchainState::Unpaid),
+            "PENDING" => Ok(MeltBtcOnchainState::Pending),
+            "PAID" => Ok(MeltBtcOnchainState::Paid),
+            _ => Err(()),
+        }
+    }
 }
 
 impl From<BtcOnchainMeltQuote> for PostMeltQuoteBtcOnchainResponse {
@@ -349,7 +385,7 @@ impl From<BtcOnchainMeltQuote> for PostMeltQuoteBtcOnchainResponse {
             amount: quote.amount,
             fee: quote.fee_total,
             expiry: quote.expiry,
-            paid: quote.paid,
+            state: quote.state,
             description: quote.description,
         }
     }
