@@ -3,10 +3,10 @@ use axum::{
     Json,
 };
 use moksha_core::primitives::{
-    BtcOnchainMeltQuote, BtcOnchainMintQuote, CurrencyUnit, MeltBtcOnchainState, PaymentMethod,
-    PostMeltBtcOnchainRequest, PostMeltBtcOnchainResponse, PostMeltQuoteBtcOnchainRequest,
-    PostMeltQuoteBtcOnchainResponse, PostMintBtcOnchainRequest, PostMintBtcOnchainResponse,
-    PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse,
+    BtcOnchainMeltQuote, BtcOnchainMintQuote, CurrencyUnit, MeltBtcOnchainState,
+    MintBtcOnchainState, PaymentMethod, PostMeltBtcOnchainRequest, PostMeltBtcOnchainResponse,
+    PostMeltQuoteBtcOnchainRequest, PostMeltQuoteBtcOnchainResponse, PostMintBtcOnchainRequest,
+    PostMintBtcOnchainResponse, PostMintQuoteBtcOnchainRequest, PostMintQuoteBtcOnchainResponse,
 };
 use tracing::{info, instrument};
 use uuid::Uuid;
@@ -63,7 +63,7 @@ pub async fn post_mint_quote_btconchain(
         unit: request.unit,
         amount: request.amount,
         expiry: quote_onchain_expiry(),
-        paid: false,
+        state: MintBtcOnchainState::Unpaid,
     };
 
     let mut tx = mint.db.begin_tx().await?;
@@ -109,7 +109,13 @@ pub async fn get_mint_quote_btconchain(
         .is_paid(&quote.address, quote.amount, min_confs)
         .await?;
 
-    Ok(Json(BtcOnchainMintQuote { paid, ..quote }.into()))
+    // FIXME compute correct state
+    let state = match paid {
+        true => MintBtcOnchainState::Paid,
+        false => MintBtcOnchainState::Unpaid,
+    };
+
+    Ok(Json(BtcOnchainMintQuote { state, ..quote }.into()))
 }
 
 #[utoipa::path(
@@ -146,7 +152,7 @@ pub async fn post_mint_btconchain(
         .update_onchain_mint_quote(
             &mut tx,
             &BtcOnchainMintQuote {
-                paid: true,
+                state: MintBtcOnchainState::Issued,
                 ..old_quote.clone()
             },
         )

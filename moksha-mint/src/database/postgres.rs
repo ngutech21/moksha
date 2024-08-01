@@ -6,7 +6,7 @@ use moksha_core::{
     dhke,
     primitives::{
         Bolt11MeltQuote, Bolt11MintQuote, BtcOnchainMeltQuote, BtcOnchainMintQuote, CurrencyUnit,
-        MeltBtcOnchainState,
+        MeltBtcOnchainState, MintBtcOnchainState,
     },
     proof::{Proof, Proofs},
 };
@@ -295,14 +295,14 @@ impl Database for PostgresDB {
         key: &Uuid,
     ) -> Result<BtcOnchainMintQuote, MokshaMintError> {
         let quote: BtcOnchainMintQuote = sqlx::query!(
-            "SELECT id, address, amount, expiry, paid  FROM onchain_mint_quotes WHERE id = $1",
+            "SELECT id, address, amount, expiry, state  FROM onchain_mint_quotes WHERE id = $1",
             key
         )
         .map(|row| BtcOnchainMintQuote {
             quote_id: row.id,
             address: row.address,
             expiry: row.expiry as u64,
-            paid: row.paid,
+            state: MintBtcOnchainState::from_str(&row.state).expect("invalid state in mint quote"),
             amount: row.amount as u64,
             unit: CurrencyUnit::Sat,
         })
@@ -319,12 +319,12 @@ impl Database for PostgresDB {
         quote: &BtcOnchainMintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
-            "INSERT INTO onchain_mint_quotes (id, address, amount, expiry, paid) VALUES ($1, $2, $3, $4, $5)",
+            "INSERT INTO onchain_mint_quotes (id, address, amount, expiry, state) VALUES ($1, $2, $3, $4, $5)",
             quote.quote_id,
             quote.address,
             quote.amount as i64,
             quote.expiry as i64,
-            quote.paid,
+            quote.state.to_string(),
         )
         .execute(&mut **tx)
         .await?;
@@ -338,8 +338,8 @@ impl Database for PostgresDB {
         quote: &BtcOnchainMintQuote,
     ) -> Result<(), MokshaMintError> {
         sqlx::query!(
-            "UPDATE onchain_mint_quotes SET paid = $1 WHERE id = $2",
-            quote.paid,
+            "UPDATE onchain_mint_quotes SET state = $1 WHERE id = $2",
+            quote.state.to_string(),
             quote.quote_id
         )
         .execute(&mut **tx)

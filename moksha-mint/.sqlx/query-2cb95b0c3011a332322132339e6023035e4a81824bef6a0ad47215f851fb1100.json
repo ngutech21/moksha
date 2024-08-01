@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO onchain_mint_quotes (id, address, amount, expiry, paid) VALUES ($1, $2, $3, $4, $5)",
+  "query": "INSERT INTO onchain_mint_quotes (id, address, amount, expiry, state) VALUES ($1, $2, $3, $4, $5)",
   "describe": {
     "columns": [],
     "parameters": {
@@ -9,10 +9,10 @@
         "Text",
         "Int8",
         "Int8",
-        "Bool"
+        "Text"
       ]
     },
     "nullable": []
   },
-  "hash": "999dd087d936d0fe235a5cffa7c9ee71eb2c9d1035b738cc08804f434d3d7445"
+  "hash": "2cb95b0c3011a332322132339e6023035e4a81824bef6a0ad47215f851fb1100"
 }

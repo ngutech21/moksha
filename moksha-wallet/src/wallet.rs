@@ -4,9 +4,10 @@ use moksha_core::{
     dhke::Dhke,
     keyset::KeysetId,
     primitives::{
-        CurrencyUnit, MeltBtcOnchainState, MintInfoResponse, PaymentMethod, PostMeltBolt11Response,
-        PostMeltBtcOnchainResponse, PostMeltQuoteBolt11Response, PostMeltQuoteBtcOnchainResponse,
-        PostMintQuoteBolt11Response, PostMintQuoteBtcOnchainResponse,
+        CurrencyUnit, MeltBtcOnchainState, MintBtcOnchainState, MintInfoResponse, PaymentMethod,
+        PostMeltBolt11Response, PostMeltBtcOnchainResponse, PostMeltQuoteBolt11Response,
+        PostMeltQuoteBtcOnchainResponse, PostMintQuoteBolt11Response,
+        PostMintQuoteBtcOnchainResponse,
     },
     proof::{Proof, Proofs},
     token::TokenV3,
@@ -160,10 +161,13 @@ where
             }
 
             PaymentMethod::BtcOnchain => {
-                self.client
-                    .get_mint_quote_onchain(mint_url, quote)
-                    .await?
-                    .paid
+                matches!(
+                    self.client
+                        .get_mint_quote_onchain(mint_url, quote)
+                        .await?
+                        .state,
+                    MintBtcOnchainState::Paid | MintBtcOnchainState::Issued
+                )
             }
         })
     }
