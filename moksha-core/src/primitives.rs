@@ -613,9 +613,7 @@ pub struct Nut16 {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Default, ToSchema)]
-pub struct Nut17 {
-    pub supported: bool,
-}
+pub struct Nut17 {}
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, ToSchema)]
 pub struct Nut18 {
@@ -749,6 +747,16 @@ mod tests {
         assert!(info.is_ok());
         let info = info?;
         assert_eq!("Nutshell/0.15.0", info.version.unwrap());
+        Ok(())
+    }
+
+    #[test]
+    fn test_deserialize_nustash_v_0_16_0_mint_info() -> anyhow::Result<()> {
+        let mint_info = read_fixture("nutshell_mint_info_v0.16.0.json")?;
+        let info = serde_json::from_str::<MintInfoResponse>(&mint_info);
+        assert!(info.is_ok());
+        let info = info?;
+        assert_eq!("Nutshell/0.16.0", info.version.unwrap());
         Ok(())
     }
 

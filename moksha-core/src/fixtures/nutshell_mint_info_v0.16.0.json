@@ -1,0 +1,42 @@
+{
+  "name": "nutshell",
+  "pubkey": "0296d0aa13b6a31cf0cd974249f28c7b7176d7274712c95a41c7d8066d3f29d679",
+  "version": "Nutshell/0.16.0",
+  "contact": [],
+  "nuts": {
+    "4": {
+      "methods": [
+        { "method": "bolt11", "unit": "sat" },
+        { "method": "bolt11", "unit": "usd" }
+      ],
+      "disabled": false
+    },
+    "5": {
+      "methods": [
+        { "method": "bolt11", "unit": "sat" },
+        { "method": "bolt11", "unit": "usd" }
+      ],
+      "disabled": false
+    },
+    "7": { "supported": true },
+    "8": { "supported": true },
+    "9": { "supported": true },
+    "10": { "supported": true },
+    "11": { "supported": true },
+    "12": { "supported": true },
+    "17": {
+      "supported": [
+        {
+          "method": "bolt11",
+          "unit": "sat",
+          "commands": ["bolt11_melt_quote", "proof_state", "bolt11_mint_quote"]
+        },
+        {
+          "method": "bolt11",
+          "unit": "usd",
+          "commands": ["bolt11_melt_quote", "proof_state", "bolt11_mint_quote"]
+        }
+      ]
+    }
+  }
+}
