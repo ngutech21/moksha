@@ -2,16 +2,22 @@
 //!
 //! The `Token` struct represents a token, with an optional `mint` field for the URL of the Mint and a `proofs` field for the proofs associated with the token.
 
-use std::str::FromStr;
+use std::{io::Cursor, str::FromStr};
 
 use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::skip_serializing_none;
 use url::Url;
 
-use crate::{error::MokshaCoreError, primitives::CurrencyUnit, proof::Proofs};
+use crate::{
+    error::MokshaCoreError,
+    keyset::KeysetId,
+    primitives::CurrencyUnit,
+    proof::{ProofV4, Proofs},
+};
 
 const TOKEN_PREFIX_V3: &str = "cashuA";
+const TOKEN_PREFIX_V4: &str = "cashuB";
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -179,6 +185,68 @@ impl From<(Url, CurrencyUnit, Proofs)> for TokenV3 {
     }
 }
 
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct TokenV4 {
+    #[serde(rename = "m")]
+    pub mint: Url,
+
+    #[serde(rename = "u")]
+    pub currency_unit: CurrencyUnit,
+
+    #[serde(rename = "d")]
+    pub memo: Option<String>,
+
+    #[serde(rename = "t")]
+    pub tokens: Vec<InnerTokenV4>,
+}
+
+impl TokenV4 {
+    pub fn serialize(&self) -> Result<String, MokshaCoreError> {
+        let json = serde_json::to_string(&self)?;
+        Ok(format!(
+            "{}{}",
+            TOKEN_PREFIX_V4,
+            general_purpose::URL_SAFE.encode(json.as_bytes())
+        ))
+    }
+
+    pub fn deserialize(data: impl Into<String>) -> Result<Self, MokshaCoreError> {
+        let data = data.into();
+        let token = data
+            .strip_prefix(TOKEN_PREFIX_V4)
+            .ok_or(MokshaCoreError::InvalidTokenPrefix)?;
+
+        let json = general_purpose::URL_SAFE_NO_PAD
+            .decode(token.as_bytes())
+            .or_else(|_| general_purpose::URL_SAFE.decode(token.as_bytes()))
+            .map_err(|_| MokshaCoreError::InvalidToken)?;
+
+        use ciborium::de::from_reader;
+        let cursor = Cursor::new(&json);
+        let t: Self = from_reader(cursor).unwrap();
+
+        Ok(t)
+    }
+}
+
+impl FromStr for TokenV4 {
+    type Err = MokshaCoreError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::deserialize(s)
+    }
+}
+
+#[skip_serializing_none]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct InnerTokenV4 {
+    #[serde(rename = "i")]
+    pub keyset_id: KeysetId,
+    #[serde(rename = "p")]
+    pub proofs: Vec<ProofV4>,
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -191,7 +259,7 @@ mod tests {
         fixture::read_fixture,
         primitives::CurrencyUnit,
         proof::Proof,
-        token::{Token, TokenV3},
+        token::{Token, TokenV3, TokenV4},
     };
     use pretty_assertions::assert_eq;
 
@@ -341,6 +409,16 @@ mod tests {
         let tokens = TokenV3::empty();
         assert!(tokens.tokens.is_empty());
         assert!(tokens.memo.is_none());
+        Ok(())
+    }
+
+    #[test]
+    fn test_tokens_v4_deserialize() -> anyhow::Result<()> {
+        let input = read_fixture("token_v4.cashu")?;
+        let tokens = TokenV4::from_str(&input)?;
+        println!("{:?}", tokens);
+        assert_eq!(tokens.mint, Url::parse("http://localhost:3338")?,);
+        assert_eq!(tokens.tokens.len(), 1);
         Ok(())
     }
 }

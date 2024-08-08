@@ -11,7 +11,7 @@
 //! The module also defines a `generate_hash` function for generating a random hash, and several helper functions for deriving keys and keyset IDs.
 
 use hex::ToHex;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::{collections::HashMap, fmt::Display};
 use utoipa::ToSchema;
 
@@ -79,7 +79,7 @@ impl Keysets {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, ToSchema)]
 pub struct KeysetId(KeysetIdType, String);
 
 impl KeysetId {
@@ -111,9 +111,38 @@ impl Display for KeysetId {
     }
 }
 
+use std::convert::TryFrom;
+
+impl TryFrom<Vec<u8>> for KeysetId {
+    type Error = MokshaCoreError;
+
+    fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
+        if bytes.is_empty() {
+            return Err(MokshaCoreError::InvalidKeysetid);
+        }
+
+        let keyset_type_byte = bytes[0];
+        let keyset_type = match keyset_type_byte {
+            0 => KeysetIdType::V1,
+            _ => return Err(MokshaCoreError::InvalidKeysetid),
+        };
+
+        Ok(Self(keyset_type, hex::encode(&bytes[1..])))
+    }
+}
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum KeysetIdType {
     V1,
+}
+
+impl<'de> Deserialize<'de> for KeysetId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let bytes = Vec::<u8>::deserialize(deserializer)?;
+        KeysetId::try_from(bytes).map_err(serde::de::Error::custom)
+    }
 }
 
 impl From<String> for KeysetIdType {
