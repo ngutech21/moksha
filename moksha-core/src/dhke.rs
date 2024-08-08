@@ -74,7 +74,7 @@ impl Dhke {
 
     /// The domain separator is b"Secp256k1_HashToCurve_Cashu_" or
     /// bytes.fromhex("536563703235366b315f48617368546f43757276655f43617368755f").
-    fn hash_to_curve(message: &[u8]) -> Result<PublicKey, MokshaCoreError> {
+    pub fn hash_to_curve(message: &[u8]) -> Result<PublicKey, MokshaCoreError> {
         let msg_to_hash = sha256::Hash::hash(&[b"Secp256k1_HashToCurve_Cashu_", message].concat());
         (0..2u32.pow(16))
             .map(|counter| sha256::Hash::hash(&[&msg_to_hash[..], &counter.to_le_bytes()].concat()))

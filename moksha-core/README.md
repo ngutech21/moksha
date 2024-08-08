@@ -10,3 +10,11 @@ To use Moksha Core in your Rust project, simply add it as a dependency in your `
 [dependencies]
 moksha-core = "0.2.1"
 ```
+
+## Benchmarks
+
+To run the DHKE benchmarks:
+
+```sh
+cargo bench -p moksha-core
+```
