@@ -24,7 +24,8 @@ use crate::{
 };
 use lightning_invoice::Bolt11Invoice as LNInvoice;
 use moksha_core::primitives::{
-    CheckBitcreditQuoteResponse, PostMintQuoteBitcreditResponse, PostRequestToMintBitcreditResponse,
+    BillKeys, CheckBitcreditQuoteResponse, PostMintQuoteBitcreditResponse,
+    PostRequestToMintBitcreditResponse,
 };
 use std::{
     collections::{HashMap, HashSet},
@@ -175,10 +176,10 @@ where
         &self,
         mint_url: &Url,
         bill_id: String,
-        bill_key: String,
+        bill_keys: BillKeys,
     ) -> Result<PostRequestToMintBitcreditResponse, MokshaWalletError> {
         self.client
-            .post_request_to_mint_bitcredit(mint_url, bill_id, bill_key)
+            .post_request_to_mint_bitcredit(mint_url, bill_id, bill_keys)
             .await
     }
 

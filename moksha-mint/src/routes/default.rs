@@ -12,6 +12,8 @@ use moksha_core::{
         PostSwapRequest, PostSwapResponse,
     },
 };
+use std::fs::File;
+use std::io::Write;
 use tracing::{debug, instrument};
 use uuid::Uuid;
 
@@ -23,9 +25,9 @@ use crate::{
 };
 use chrono::{Duration, Utc};
 use moksha_core::primitives::{
-    BitcreditMintQuote, BitcreditQuoteCheck, BitcreditRequestToMint, CheckBitcreditQuoteResponse,
-    ParamsBitcreditQuoteCheck, PostMintBitcreditRequest, PostMintBitcreditResponse,
-    PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse,
+    BillKeys, BitcreditMintQuote, BitcreditQuoteCheck, BitcreditRequestToMint,
+    CheckBitcreditQuoteResponse, ParamsBitcreditQuoteCheck, PostMintBitcreditRequest,
+    PostMintBitcreditResponse, PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse,
     PostRequestToMintBitcreditRequest, PostRequestToMintBitcreditResponse,
 };
 use std::str::FromStr;
@@ -190,9 +192,15 @@ pub async fn post_request_to_mint_bitcredit(
     //TODO: correct response
 ) -> Result<Json<PostRequestToMintBitcreditResponse>, MokshaMintError> {
     let request_to_mint = BitcreditRequestToMint {
-        bill_key: request.bill_key,
-        bill_id: request.bill_id,
+        bill_key: request.bill_keys.private_key_pem.clone(),
+        bill_id: request.bill_id.clone(),
     };
+
+    write_bill_keys_to_file(
+        request.bill_id,
+        request.bill_keys.private_key_pem,
+        request.bill_keys.public_key_pem,
+    );
 
     let mut tx = mint.db.begin_tx().await?;
     mint.db
@@ -200,6 +208,22 @@ pub async fn post_request_to_mint_bitcredit(
         .await?;
     tx.commit().await?;
     Ok(Json(request_to_mint.into()))
+}
+
+fn write_bill_keys_to_file(bill_name: String, private_key: String, public_key: String) {
+    let keys: BillKeys = BillKeys {
+        private_key_pem: private_key,
+        public_key_pem: public_key,
+    };
+
+    //TODO: this static path only for testing. Remove it
+    let output_path = "/home/mtbitcr/RustroverProjects/E-Bills/bills_keys_test".to_string()
+        + "/"
+        + bill_name.as_str()
+        + ".json";
+    let mut file = File::create(output_path.clone()).unwrap();
+    file.write(serde_json::to_string_pretty(&keys).unwrap().as_bytes())
+        .unwrap();
 }
 
 #[utoipa::path(

@@ -166,7 +166,7 @@ impl From<BitcreditMintQuote> for PostMintQuoteBitcreditResponse {
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostRequestToMintBitcreditRequest {
     pub bill_id: String,
-    pub bill_key: String,
+    pub bill_keys: BillKeys,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -225,6 +225,12 @@ pub struct PostMintBitcreditRequest {
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
 pub struct PostMintBitcreditResponse {
     pub signatures: Vec<BlindedSignature>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
+pub struct BillKeys {
+    pub private_key_pem: String,
+    pub public_key_pem: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]
