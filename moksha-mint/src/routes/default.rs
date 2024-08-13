@@ -321,7 +321,7 @@ pub async fn post_melt_quote_bolt11(
         .decode_invoice(melt_request.request.clone())
         .await?;
     let amount = invoice.amount_milli_satoshis().ok_or_else(|| {
-        crate::error::MokshaMintError::InvalidAmount("invalid invoice".to_owned())
+        MokshaMintError::InvalidAmount("invalid invoice".to_owned())
     })?;
     let fee_reserve = mint.fee_reserve_msat(amount) / 1_000; // FIXME check if this is correct
     debug!("fee_reserve: {}", fee_reserve);
