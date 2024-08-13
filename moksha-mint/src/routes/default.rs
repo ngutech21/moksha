@@ -210,22 +210,6 @@ pub async fn post_request_to_mint_bitcredit(
     Ok(Json(request_to_mint.into()))
 }
 
-fn write_bill_keys_to_file(bill_name: String, private_key: String, public_key: String) {
-    let keys: BillKeys = BillKeys {
-        private_key_pem: private_key,
-        public_key_pem: public_key,
-    };
-
-    //TODO: this static path only for testing. Remove it
-    let output_path = "/home/mtbitcr/RustroverProjects/E-Bills/bills_keys_test".to_string()
-        + "/"
-        + bill_name.as_str()
-        + ".json";
-    let mut file = File::create(output_path.clone()).unwrap();
-    file.write(serde_json::to_string_pretty(&keys).unwrap().as_bytes())
-        .unwrap();
-}
-
 #[utoipa::path(
         post,
         path = "/v1/mint/bolt11/{quote_id}",
@@ -570,4 +554,20 @@ fn get_nuts(cfg: &MintConfig) -> Nuts {
         nut18: Some(config.to_owned().into()),
         ..Nuts::default()
     }
+}
+
+fn write_bill_keys_to_file(bill_name: String, private_key: String, public_key: String) {
+    let keys: BillKeys = BillKeys {
+        private_key_pem: private_key,
+        public_key_pem: public_key,
+    };
+
+    //TODO: this static path only for testing. Remove it
+    let output_path = "/home/mtbitcr/RustroverProjects/E-Bills/bills_keys".to_string()
+        + "/"
+        + bill_name.as_str()
+        + ".json";
+    let mut file = File::create(output_path.clone()).unwrap();
+    file.write(serde_json::to_string_pretty(&keys).unwrap().as_bytes())
+        .unwrap();
 }
