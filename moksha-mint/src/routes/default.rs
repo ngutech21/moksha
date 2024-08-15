@@ -568,6 +568,6 @@ fn write_bill_keys_to_file(bill_name: String, private_key: String, public_key: S
         + bill_name.as_str()
         + ".json";
     let mut file = File::create(output_path.clone()).unwrap();
-    file.write(serde_json::to_string_pretty(&keys).unwrap().as_bytes())
+    file.write_all(serde_json::to_string_pretty(&keys).unwrap().as_bytes())
         .unwrap();
 }
