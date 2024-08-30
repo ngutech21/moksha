@@ -52,7 +52,7 @@ jobs:
     needs: build-and-push
     steps:
       - name: DigitalOcean App Platform deployment
-        uses: digitalocean/app_action@v2
+        uses: digitalocean/app_action/deploy@v2
         with:
           app_name: moksha-mint
           token: ${{ secrets.DO_TOKEN }}
