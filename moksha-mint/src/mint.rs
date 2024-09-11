@@ -160,9 +160,9 @@ where
                 amount += blinded_message.amount;
             }
 
-            if !endorsed {
-                endorsed = Self::am_i_holder(quote.bill_id).await;
-            }
+            // if !endorsed {
+            //     endorsed = Self::am_i_holder(quote.bill_id).await;
+            // }
 
             if return_error || is_sent {
                 return Err(MokshaMintError::BitcreditQuoteAlreadySent);

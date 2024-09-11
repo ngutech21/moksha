@@ -25,15 +25,21 @@ use moksha_core::primitives::{BillKeys, CheckBitcreditQuoteResponse};
 #[cfg_attr(test, automock)]
 #[async_trait(?Send)]
 pub trait CashuClient {
-    async fn get_keys(&self, mint_url: &Url) -> Result<KeysResponse, MokshaWalletError>;
+    async fn get_keys(
+        &self,
+        mint_url: &Url,
+        unit: String,
+    ) -> Result<KeysResponse, MokshaWalletError>;
 
     async fn get_keys_by_id(
         &self,
         mint_url: &Url,
         keyset_id: String,
+        unit: String,
     ) -> Result<KeysResponse, MokshaWalletError>;
 
-    async fn get_keysets(&self, mint_url: &Url) -> Result<Keysets, MokshaWalletError>;
+    async fn get_keysets(&self, mint_url: &Url, unit: String)
+        -> Result<Keysets, MokshaWalletError>;
 
     async fn post_swap(
         &self,

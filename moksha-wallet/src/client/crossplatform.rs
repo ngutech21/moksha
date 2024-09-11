@@ -27,21 +27,32 @@ use super::CashuClient;
 
 #[async_trait(?Send)]
 impl CashuClient for CrossPlatformHttpClient {
-    async fn get_keys(&self, mint_url: &Url) -> Result<KeysResponse, MokshaWalletError> {
-        self.do_get(&mint_url.join("v1/keys")?).await
+    async fn get_keys(
+        &self,
+        mint_url: &Url,
+        unit: String,
+    ) -> Result<KeysResponse, MokshaWalletError> {
+        self.do_get(&mint_url.join(&format!("v1/keys/{}", unit))?)
+            .await
     }
 
     async fn get_keys_by_id(
         &self,
         mint_url: &Url,
         keyset_id: String,
+        unit: String,
     ) -> Result<KeysResponse, MokshaWalletError> {
-        self.do_get(&mint_url.join(&format!("v1/keys/{}", keyset_id))?)
+        self.do_get(&mint_url.join(&format!("v1/keys/{}/{}", keyset_id, unit))?)
             .await
     }
 
-    async fn get_keysets(&self, mint_url: &Url) -> Result<Keysets, MokshaWalletError> {
-        self.do_get(&mint_url.join("v1/keysets")?).await
+    async fn get_keysets(
+        &self,
+        mint_url: &Url,
+        unit: String,
+    ) -> Result<Keysets, MokshaWalletError> {
+        self.do_get(&mint_url.join(&format!("v1/keysets/{}", unit))?)
+            .await
     }
 
     async fn post_swap(
