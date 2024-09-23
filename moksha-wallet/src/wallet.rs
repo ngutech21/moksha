@@ -248,19 +248,20 @@ where
     pub async fn add_mint_keysets(
         &self,
         mint_url: &Url,
+        unit: String,
     ) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
         if !self.client.is_v1_supported(mint_url).await? {
             return Err(MokshaWalletError::UnsupportedApiVersion);
         }
 
-        let mint_keysets = self.client.get_keysets(mint_url, "sat".to_string()).await?;
+        let mint_keysets = self.client.get_keysets(mint_url, unit.clone()).await?;
 
         let mut tx = self.localstore.begin_tx().await?;
         let mut result = vec![];
         for keyset in mint_keysets.keysets.iter() {
             let keysets = self
                 .client
-                .get_keys_by_id(mint_url, keyset.id.clone(), "sat".to_string())
+                .get_keys_by_id(mint_url, keyset.id.clone(), unit.clone())
                 .await;
 
             let public_keys = match keysets {
