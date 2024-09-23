@@ -253,14 +253,14 @@ where
             return Err(MokshaWalletError::UnsupportedApiVersion);
         }
 
-        let mint_keysets = self.client.get_keysets(mint_url).await?;
+        let mint_keysets = self.client.get_keysets(mint_url, "sat".to_string()).await?;
 
         let mut tx = self.localstore.begin_tx().await?;
         let mut result = vec![];
         for keyset in mint_keysets.keysets.iter() {
             let keysets = self
                 .client
-                .get_keys_by_id(mint_url, keyset.id.clone())
+                .get_keys_by_id(mint_url, keyset.id.clone(), "sat".to_string())
                 .await;
 
             let public_keys = match keysets {
@@ -942,13 +942,13 @@ mod tests {
         let mut client = MockCashuClient::default();
         client
             .expect_get_keys()
-            .returning(move |_| Ok(keys_response.clone()));
+            .returning(move |_, _| Ok(keys_response.clone()));
         client
             .expect_get_keysets()
-            .returning(move |_| Ok(keysets.clone()));
+            .returning(move |_, _| Ok(keysets.clone()));
         client
             .expect_get_keys_by_id()
-            .returning(move |_, _| Ok(keys_by_id_response.clone()));
+            .returning(move |_, _, _| Ok(keys_by_id_response.clone()));
         client.expect_is_v1_supported().returning(move |_| Ok(true));
         client
     }

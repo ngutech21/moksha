@@ -26,9 +26,10 @@ use crate::{
 use chrono::{Duration, Utc};
 use moksha_core::primitives::{
     BillKeys, BitcreditMintQuote, BitcreditQuoteCheck, BitcreditRequestToMint,
-    CheckBitcreditQuoteResponse, ParamsBitcreditQuoteCheck, PostMintBitcreditRequest,
-    PostMintBitcreditResponse, PostMintQuoteBitcreditRequest, PostMintQuoteBitcreditResponse,
-    PostRequestToMintBitcreditRequest, PostRequestToMintBitcreditResponse,
+    CheckBitcreditQuoteResponse, ParamsBitcreditQuoteCheck, ParamsGetKeys,
+    PostMintBitcreditRequest, PostMintBitcreditResponse, PostMintQuoteBitcreditRequest,
+    PostMintQuoteBitcreditResponse, PostRequestToMintBitcreditRequest,
+    PostRequestToMintBitcreditResponse,
 };
 use std::str::FromStr;
 
@@ -56,17 +57,23 @@ pub async fn post_swap(
 
 #[utoipa::path(
         get,
-        path = "/v1/keys",
+        path = "/v1/keys/{unit}",
         responses(
             (status = 200, description = "get keys", body = [KeysResponse])
+        ),
+        params(
+            ("unit"  = String, Path, description = "keyset unit"),
         )
     )]
 #[instrument(skip(mint), err)]
-pub async fn get_keys(State(mint): State<Mint>) -> Result<Json<KeysResponse>, MokshaMintError> {
+pub async fn get_keys(
+    Path(unit): Path<String>,
+    State(mint): State<Mint>,
+) -> Result<Json<KeysResponse>, MokshaMintError> {
     Ok(Json(KeysResponse {
         keysets: vec![KeyResponse {
             id: mint.keyset.keyset_id.clone(),
-            unit: CurrencyUnit::Sat,
+            unit: CurrencyUnit::from(unit),
             keys: mint.keyset.public_keys,
         }],
     }))
@@ -74,27 +81,28 @@ pub async fn get_keys(State(mint): State<Mint>) -> Result<Json<KeysResponse>, Mo
 
 #[utoipa::path(
         get,
-        path = "/v1/keys/{id}",
+        path = "/v1/keys/{id}/{unit}",
         responses(
             (status = 200, description = "get keys by id", body = [KeysResponse])
         ),
         params(
             ("id" = String, Path, description = "keyset id"),
+            ("unit"  = String, Path, description = "keyset unit"),
         )
     )]
 #[instrument(skip(mint), err)]
 pub async fn get_keys_by_id(
-    Path(id): Path<String>,
+    params: Path<ParamsGetKeys>,
     State(mint): State<Mint>,
 ) -> Result<Json<KeysResponse>, MokshaMintError> {
-    if id != mint.keyset.keyset_id {
-        return Err(MokshaMintError::KeysetNotFound(id));
+    if params.id != mint.keyset.keyset_id {
+        return Err(MokshaMintError::KeysetNotFound(params.id.clone()));
     }
 
     Ok(Json(KeysResponse {
         keysets: vec![KeyResponse {
             id: mint.keyset.keyset_id.clone(),
-            unit: CurrencyUnit::Sat,
+            unit: CurrencyUnit::from(params.unit.clone()),
             keys: mint.keyset.public_keys,
         }],
     }))
@@ -102,16 +110,22 @@ pub async fn get_keys_by_id(
 
 #[utoipa::path(
         get,
-        path = "/v1/keysets",
+        path = "/v1/keysets/{unit}",
         responses(
             (status = 200, description = "get keysets", body = [Keysets])
         ),
+        params(
+            ("unit"  = String, Path, description = "keyset unit"),
+        )
     )]
 #[instrument(skip(mint), err)]
-pub async fn get_keysets(State(mint): State<Mint>) -> Result<Json<Keysets>, MokshaMintError> {
+pub async fn get_keysets(
+    Path(unit): Path<String>,
+    State(mint): State<Mint>,
+) -> Result<Json<Keysets>, MokshaMintError> {
     Ok(Json(Keysets::new(
         mint.keyset.keyset_id,
-        CurrencyUnit::Sat,
+        CurrencyUnit::from(unit),
         true,
     )))
 }
@@ -151,7 +165,7 @@ pub async fn post_mint_quote_bolt11(
     path = "/v1/mint/quote/bitcredit",
     request_body = PostMintQuoteBitcreditRequest,
     responses(
-    (status = 200, description = "post mint quote", body = [PostMintQuoteBitcreditResponse])
+        (status = 200, description = "post mint quote", body = [PostMintQuoteBitcreditResponse])
     ),
 )]
 #[instrument(name = "post_mint_quote_bitcredit", skip(mint), err)]
@@ -182,7 +196,7 @@ pub async fn post_mint_quote_bitcredit(
     path = "/v1/mint/request/bitcredit",
     request_body = PostRequestToMintBitcreditRequest,
     responses(
-    (status = 200, description = "post request to mint", body = [PostRequestToMintBitcreditResponse])
+        (status = 200, description = "post request to mint", body = [PostRequestToMintBitcreditResponse])
     ),
 )]
 #[instrument(name = "post_request_to_mint_bitcredit", skip(mint), err)]
@@ -261,7 +275,7 @@ pub async fn post_mint_bolt11(
     path = "/v1/mint/bitcredit/{quote_id}",
     request_body = PostMintBitcreditRequest,
     responses(
-    (status = 200, description = "post mint quote bitcredit", body = [PostMintBitcreditResponse])
+        (status = 200, description = "post mint quote bitcredit", body = [PostMintBitcreditResponse])
     ),
     params(
     ("quote_id" = String, Path, description = "quote id"),
@@ -320,9 +334,9 @@ pub async fn post_melt_quote_bolt11(
         .lightning
         .decode_invoice(melt_request.request.clone())
         .await?;
-    let amount = invoice.amount_milli_satoshis().ok_or_else(|| {
-        MokshaMintError::InvalidAmount("invalid invoice".to_owned())
-    })?;
+    let amount = invoice
+        .amount_milli_satoshis()
+        .ok_or_else(|| MokshaMintError::InvalidAmount("invalid invoice".to_owned()))?;
     let fee_reserve = mint.fee_reserve_msat(amount) / 1_000; // FIXME check if this is correct
     debug!("fee_reserve: {}", fee_reserve);
 
@@ -428,8 +442,12 @@ pub async fn get_mint_quote_bolt11(
     get,
     path = "/v1/quote/bitcredit/check/{bill_id}/{node_id}",
     responses(
-    (status = 200, description = "check bitcredit quote", body = [CheckBitcreditQuoteResponse])
+        (status = 200, description = "check bitcredit quote", body = [CheckBitcreditQuoteResponse])
     ),
+    params(
+        ("node_id"  = String, Path, description = "node id"),
+        ("bill_id"  = String, Path, description = "bill id"),
+    )
 )]
 #[instrument(name = "check_bitcredit_quote", skip(mint), err)]
 pub async fn check_bitcredit_quote(

@@ -59,10 +59,10 @@ async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
 
     let client = CrossPlatformHttpClient::new();
     let mint_url = Url::parse("http://127.0.0.1:8686")?;
-    let keys = client.get_keys(&mint_url).await;
+    let keys = client.get_keys(&mint_url, "sat".to_string()).await;
     assert!(keys.is_ok());
 
-    let keysets = client.get_keysets(&mint_url).await;
+    let keysets = client.get_keysets(&mint_url, "sat".to_string()).await;
     assert!(keysets.is_ok());
 
     // create wallet
@@ -150,10 +150,10 @@ async fn test_bolt11_mint() -> anyhow::Result<()> {
 
     let client = CrossPlatformHttpClient::new();
     let mint_url = Url::parse("http://127.0.0.1:8686")?;
-    let keys = client.get_keys(&mint_url).await;
+    let keys = client.get_keys(&mint_url, "sat".to_string()).await;
     assert!(keys.is_ok());
 
-    let keysets = client.get_keysets(&mint_url).await;
+    let keysets = client.get_keysets(&mint_url, "sat".to_string()).await;
     assert!(keysets.is_ok());
 
     // create wallet
@@ -245,10 +245,10 @@ async fn test_bolt11_send() -> anyhow::Result<()> {
 
     let client = CrossPlatformHttpClient::new();
     let mint_url = Url::parse("http://127.0.0.1:8686")?;
-    let keys = client.get_keys(&mint_url).await;
+    let keys = client.get_keys(&mint_url, "sat".to_string()).await;
     assert!(keys.is_ok());
 
-    let keysets = client.get_keysets(&mint_url).await;
+    let keysets = client.get_keysets(&mint_url, "sat".to_string()).await;
     assert!(keysets.is_ok());
 
     // create wallet

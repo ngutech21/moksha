@@ -75,14 +75,16 @@ pub enum CurrencyUnit {
     Sat,
     MSat,
     Usd,
+    CrSat,
 }
 
 impl From<String> for CurrencyUnit {
     fn from(unit: String) -> Self {
         match unit.to_lowercase().as_str() {
             "sat" => Self::Sat,
-            "msat" => Self::Sat,
+            "msat" => Self::MSat,
             "usd" => Self::Usd,
+            "cr-sat" => Self::CrSat,
             _ => panic!("Unknown currency unit: {}", unit),
         }
     }
@@ -94,6 +96,7 @@ impl Display for CurrencyUnit {
             Self::Sat => write!(f, "sat"),
             Self::MSat => write!(f, "msat"),
             Self::Usd => write!(f, "usd"),
+            Self::CrSat => write!(f, "cr-sat"),
         }
     }
 }
@@ -179,6 +182,12 @@ pub struct BitcreditQuoteCheck {
 pub struct ParamsBitcreditQuoteCheck {
     pub node_id: String,
     pub bill_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ParamsGetKeys {
+    pub id: String,
+    pub unit: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, ToSchema)]

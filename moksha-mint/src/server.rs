@@ -174,9 +174,9 @@ struct ApiDoc;
 fn app(mint: Mint) -> Router {
     let default_routes = Router::new()
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-        .route("/v1/keys", get(get_keys))
-        .route("/v1/keys/:id", get(get_keys_by_id))
-        .route("/v1/keysets", get(get_keysets))
+        .route("/v1/keys/:unit", get(get_keys))
+        .route("/v1/keys/:id/:unit", get(get_keys_by_id))
+        .route("/v1/keysets/:unit", get(get_keysets))
         .route("/v1/mint/quote/bolt11", post(post_mint_quote_bolt11))
         .route("/v1/mint/quote/bitcredit", post(post_mint_quote_bitcredit))
         .route(
@@ -331,7 +331,7 @@ mod tests {
 
         let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
-            .oneshot(Request::builder().uri("/v1/keys").body(Body::empty())?)
+            .oneshot(Request::builder().uri("/v1/keys/sat").body(Body::empty())?)
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
@@ -349,7 +349,11 @@ mod tests {
 
         let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
-            .oneshot(Request::builder().uri("/v1/keysets").body(Body::empty())?)
+            .oneshot(
+                Request::builder()
+                    .uri("/v1/keysets/sat")
+                    .body(Body::empty())?,
+            )
             .await?;
         assert_eq!(response.status(), StatusCode::OK);
         let body = response.into_body().collect().await?.to_bytes();
@@ -407,7 +411,7 @@ mod tests {
 
         let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
-            .oneshot(Request::builder().uri("/v1/keys").body(Body::empty())?)
+            .oneshot(Request::builder().uri("/v1/keys/sat").body(Body::empty())?)
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
@@ -429,7 +433,11 @@ mod tests {
 
         let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
-            .oneshot(Request::builder().uri("/v1/keysets").body(Body::empty())?)
+            .oneshot(
+                Request::builder()
+                    .uri("/v1/keysets/sat")
+                    .body(Body::empty())?,
+            )
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
@@ -448,7 +456,7 @@ mod tests {
 
         let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
-            .oneshot(Request::builder().uri("/v1/keys").body(Body::empty())?)
+            .oneshot(Request::builder().uri("/v1/keys/sat").body(Body::empty())?)
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
@@ -472,7 +480,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/v1/keys/unknownkeyset")
+                    .uri("/v1/keys/unknownkeyset/sat")
                     .body(Body::empty())?,
             )
             .await?;
@@ -491,7 +499,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/v1/keys/00f545318e4fad2b")
+                    .uri("/v1/keys/00f545318e4fad2b/sat")
                     .body(Body::empty())?,
             )
             .await?;
@@ -519,7 +527,11 @@ mod tests {
 
         let app = app(create_mock_mint(Default::default(), node.get_host_port_ipv4(5432)).await?);
         let response = app
-            .oneshot(Request::builder().uri("/v1/keysets").body(Body::empty())?)
+            .oneshot(
+                Request::builder()
+                    .uri("/v1/keysets/sat")
+                    .body(Body::empty())?,
+            )
             .await?;
 
         assert_eq!(response.status(), StatusCode::OK);
