@@ -116,7 +116,7 @@ impl LocalStore for SqliteLocalStore {
     ) -> Result<Vec<WalletKeyset>, MokshaWalletError> {
         let rows = sqlx::query!("SELECT id, mint_url, keyset_id, currency_unit, active, last_index, public_keys FROM keysets;")
             .fetch_all(&mut **tx)
-            .await?; 
+            .await?;
 
         Ok(rows
             .iter()
