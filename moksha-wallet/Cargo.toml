@@ -15,7 +15,7 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = { workspace = true, features = ["backtrace"] }
-secp256k1 = { version = "0.29.0", default-features = false, features = ["serde"] }
+secp256k1 = { version = "0.29.1", default-features = false, features = ["serde"] }
 moksha-core = { version = "0.2.1", path = "../moksha-core" }
 serde_json = { workspace = true }
 serde = { workspace = true }
