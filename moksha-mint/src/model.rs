@@ -32,8 +32,12 @@ pub struct PayInvoiceResult {
 pub struct CreateInvoiceParams {
     pub amount: u64,
     pub unit: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub memo: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub expiry: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub webhook: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub internal: Option<bool>,
 }
