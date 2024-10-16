@@ -31,11 +31,11 @@
           pkgs.wasm-pack
           pkgs.wasm-bindgen-cli
           pkgs.binaryen
-	  pkgs.clang
-	];
-      in
-      {
+          pkgs.clang
+        ];
+      in {
         defaultPackage = pkgs.rustPlatform.buildRustPackage {
+          name = "moksha";
           src = ./.;
 
           cargoLock = {
