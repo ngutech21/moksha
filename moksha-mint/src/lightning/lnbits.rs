@@ -170,17 +170,12 @@ impl LNBitsClient {
         &self,
         params: &CreateInvoiceParams,
     ) -> Result<CreateInvoiceResult, LightningError> {
-        // Add out: true to the params
-        let params = serde_json::json!({
-            "out": false,
-            "amount": params.amount,
-            "unit": params.unit,
-            "memo": params.memo,
-            "webhook": params.webhook,
-            "internal": params.internal,
-            "expiry": params.expiry,
-        });
+        let mut params = serde_json::to_value(&params)?;
 
+        // Add out: false to the params
+        if let serde_json::Value::Object(ref mut map) = params {
+            map.insert("out".to_string(), serde_json::Value::Bool(false));
+        }
         let body = self
             .make_post("api/v1/payments", &serde_json::to_string(&params)?)
             .await?;
