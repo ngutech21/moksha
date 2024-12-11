@@ -19,9 +19,9 @@ use std::str::FromStr;
 #[utoipa::path(
         post,
         path = "/v1/mint/quote/btconchain",
-        request_body = PostMintQuoteOnchainRequest,
+        request_body = PostMintQuoteBtcOnchainRequest,
         responses(
-            (status = 200, description = "post mint quote", body = [PostMintQuoteOnchainResponse])
+            (status = 200, description = "post mint quote", body = [PostMintQuoteBtcOnchainResponse])
         ),
     )]
 #[instrument(name = "post_mint_quote_btconchain", skip(mint), err)]
@@ -76,7 +76,7 @@ pub async fn post_mint_quote_btconchain(
         get,
         path = "/v1/mint/quote/btconchain/{quote_id}",
         responses(
-            (status = 200, description = "get mint quote by id", body = [PostMintQuoteOnchainResponse])
+            (status = 200, description = "get mint quote by id", body = [PostMintQuoteBtcOnchainResponse])
         ),
         params(
             ("quote_id" = String, Path, description = "quote id"),
@@ -121,9 +121,9 @@ pub async fn get_mint_quote_btconchain(
 #[utoipa::path(
         post,
         path = "/v1/mint/btconchain",
-        request_body = PostMintOnchainRequest,
+        request_body = PostMintBtcOnchainRequest,
         responses(
-            (status = 200, description = "post mint", body = [PostMintOnchainResponse])
+            (status = 200, description = "post mint", body = [PostMintBtcOnchainResponse])
         ),
     )]
 #[instrument(name = "post_mint_btconchain", skip(mint), err)]
@@ -164,9 +164,9 @@ pub async fn post_mint_btconchain(
 #[utoipa::path(
         post,
         path = "/v1/melt/quote/btconchain",
-        request_body = PostMeltQuoteOnchainRequest,
+        request_body = PostMeltQuoteBtcOnchainRequest,
         responses(
-            (status = 200, description = "post mint quote", body = [Vec<PostMeltQuoteOnchainResponse>])
+            (status = 200, description = "post mint quote", body = [Vec<PostMeltQuoteBtcOnchainResponse>])
         ),
     )]
 #[instrument(name = "post_melt_quote_btconchain", skip(mint), err)]
@@ -231,7 +231,7 @@ pub async fn post_melt_quote_btconchain(
         get,
         path = "/v1/melt/quote/btconchain/{quote_id}",
         responses(
-            (status = 200, description = "post mint quote", body = [PostMeltQuoteOnchainResponse])
+            (status = 200, description = "post mint quote", body = [PostMeltQuoteBtcOnchainResponse])
         ),
         params(
             ("quote_id" = String, Path, description = "quote id"),
@@ -274,9 +274,9 @@ pub async fn get_melt_quote_btconchain(
 #[utoipa::path(
         post,
         path = "/v1/melt/btconchain",
-        request_body = PostMeltOnchainRequest,
+        request_body = PostMeltBtcOnchainRequest,
         responses(
-            (status = 200, description = "post melt", body = [PostMeltOnchainResponse])
+            (status = 200, description = "post melt", body = [PostMeltBtcOnchainResponse])
         ),
     )]
 #[instrument(name = "post_melt_btconchain", skip(mint), err)]
