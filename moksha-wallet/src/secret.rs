@@ -43,7 +43,7 @@ impl DeterministicSecret {
         let mut rng = rand::thread_rng();
         let entropy: [u8; 16] = rng.gen(); // 16 bytes for 12 words mnemonic
         let mnemonic = Mnemonic::from_entropy(&entropy)?;
-        Ok(mnemonic.word_iter().collect::<Vec<&str>>().join(" "))
+        Ok(mnemonic.words().collect::<Vec<&str>>().join(" "))
     }
 
     fn derive_private_key(
