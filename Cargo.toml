@@ -124,3 +124,5 @@ zeroize = { opt-level = 3 }
 subtle = { opt-level = 3 }
 ring = { opt-level = 3 }
 sqlx-macros = { opt-level = 3 }
+
+
