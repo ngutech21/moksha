@@ -19,18 +19,21 @@ use mokshamint::{
 };
 use reqwest::Url;
 
-use testcontainers::{clients, RunnableImage};
+use testcontainers::runners::AsyncRunner;
+use testcontainers::ImageExt;
 use testcontainers_modules::postgres::Postgres;
 use tokio::time::{sleep_until, Instant};
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
     // create postgres container that will be destroyed after the test is done
-    let docker = clients::Cli::default();
-    let node = Postgres::default().with_host_auth();
-    let img = RunnableImage::from(node).with_tag("16.2-alpine");
-    let node = docker.run(img);
-    let host_port = node.get_host_port_ipv4(5432);
+
+    let node = Postgres::default()
+        .with_host_auth()
+        .with_tag("16.6-alpine")
+        .start()
+        .await?;
+    let host_port = node.get_host_port_ipv4(5432).await?;
 
     fund_mint_lnd(2_000_000).await?;
 
@@ -129,11 +132,12 @@ async fn test_btc_onchain_mint_melt() -> anyhow::Result<()> {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_bolt11_mint() -> anyhow::Result<()> {
     // create postgres container that will be destroyed after the test is done
-    let docker = clients::Cli::default();
-    let node = Postgres::default().with_host_auth();
-    let img = RunnableImage::from(node).with_tag("16.2-alpine");
-    let node = docker.run(img);
-    let host_port = node.get_host_port_ipv4(5432);
+    let node = Postgres::default()
+        .with_host_auth()
+        .with_tag("16.6-alpine")
+        .start()
+        .await?;
+    let host_port = node.get_host_port_ipv4(5432).await?;
 
     fund_mint_lnd(2_000_000).await?;
     open_channel_with_wallet(500_000).await?;
@@ -224,11 +228,12 @@ async fn test_bolt11_mint() -> anyhow::Result<()> {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_bolt11_send() -> anyhow::Result<()> {
     // create postgres container that will be destroyed after the test is done
-    let docker = clients::Cli::default();
-    let node = Postgres::default().with_host_auth();
-    let img = RunnableImage::from(node).with_tag("16.2-alpine");
-    let node = docker.run(img);
-    let host_port = node.get_host_port_ipv4(5432);
+    let node = Postgres::default()
+        .with_host_auth()
+        .with_tag("16.6-alpine")
+        .start()
+        .await?;
+    let host_port = node.get_host_port_ipv4(5432).await?;
 
     fund_mint_lnd(2_000_000).await?;
     open_channel_with_wallet(500_000).await?;

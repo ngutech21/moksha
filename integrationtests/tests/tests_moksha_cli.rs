@@ -6,16 +6,19 @@ use itests::{
     setup::{fund_mint_lnd, start_mint},
 };
 use mokshamint::lightning::{lnd::LndLightningSettings, LightningType};
-use testcontainers::{clients, RunnableImage};
+
+use testcontainers::runners::AsyncRunner;
+use testcontainers::ImageExt;
 use testcontainers_modules::postgres::Postgres;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_cli() -> anyhow::Result<()> {
-    let docker = clients::Cli::default();
-    let node = Postgres::default().with_host_auth();
-    let img = RunnableImage::from(node).with_tag("16.2-alpine");
-    let node = docker.run(img);
-    let host_port = node.get_host_port_ipv4(5432);
+    let node = Postgres::default()
+        .with_host_auth()
+        .with_tag("16.6-alpine")
+        .start()
+        .await?;
+    let host_port = node.get_host_port_ipv4(5432).await?;
 
     fund_mint_lnd(2_000_000).await?;
 
