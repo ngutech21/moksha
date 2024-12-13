@@ -459,18 +459,16 @@ mod tests {
     use pretty_assertions::assert_eq;
     use std::str::FromStr;
     use std::sync::Arc;
-    use testcontainers::clients::Cli;
-    use testcontainers::RunnableImage;
+    use testcontainers::runners::AsyncRunner;
+    use testcontainers::{ContainerAsync, ImageExt};
     use testcontainers_modules::postgres::Postgres;
 
     #[tokio::test]
     async fn test_fee_reserve() -> anyhow::Result<()> {
-        let docker = Cli::default();
-        let image = create_postgres_image();
-        let node = docker.run(image);
+        let node = create_postgres_image().await?;
 
         let mint = create_mint_from_mocks(
-            create_mock_db_empty(node.get_host_port_ipv4(5432)).await?,
+            create_mock_db_empty(node.get_host_port_ipv4(5432).await?).await?,
             None,
         )
         .await?;
@@ -481,12 +479,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_blindsignatures() -> anyhow::Result<()> {
-        let docker = Cli::default();
-        let image = create_postgres_image();
-        let node = docker.run(image);
+        let node = create_postgres_image().await?;
 
         let mint = create_mint_from_mocks(
-            create_mock_db_empty(node.get_host_port_ipv4(5432)).await?,
+            create_mock_db_empty(node.get_host_port_ipv4(5432).await?).await?,
             None,
         )
         .await?;
@@ -514,14 +510,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_mint_empty() -> anyhow::Result<()> {
-        let docker = Cli::default();
-        let image = create_postgres_image();
-        let node = docker.run(image);
-
+        let node = create_postgres_image().await?;
         let mut lightning = MockLightning::new();
         lightning.expect_is_invoice_paid().returning(|_| Ok(true));
         let mint = create_mint_from_mocks(
-            create_mock_db_pending_invoice(node.get_host_port_ipv4(5432)).await?,
+            create_mock_db_pending_invoice(node.get_host_port_ipv4(5432).await?).await?,
             Some(lightning),
         )
         .await?;
@@ -544,14 +537,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_mint_valid() -> anyhow::Result<()> {
-        let docker = Cli::default();
-        let image = create_postgres_image();
-        let node = docker.run(image);
+        let node = create_postgres_image().await?;
 
         let mut lightning = MockLightning::new();
         lightning.expect_is_invoice_paid().returning(|_| Ok(true));
         let mint = create_mint_from_mocks(
-            create_mock_db_pending_invoice(node.get_host_port_ipv4(5432)).await?,
+            create_mock_db_pending_invoice(node.get_host_port_ipv4(5432).await?).await?,
             Some(lightning),
         )
         .await?;
@@ -574,13 +565,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_swap_zero() -> anyhow::Result<()> {
-        let docker = Cli::default();
-        let image = create_postgres_image();
-        let node = docker.run(image);
-
+        let node = create_postgres_image().await?;
         let blinded_messages = vec![];
         let mint = create_mint_from_mocks(
-            create_mock_db_empty(node.get_host_port_ipv4(5432)).await?,
+            create_mock_db_empty(node.get_host_port_ipv4(5432).await?).await?,
             None,
         )
         .await?;
@@ -594,12 +582,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_swap_64_in_20() -> anyhow::Result<()> {
-        let docker = Cli::default();
-        let image = create_postgres_image();
-        let node = docker.run(image);
-
+        let node = create_postgres_image().await?;
         let mint = create_mint_from_mocks(
-            create_mock_db_empty(node.get_host_port_ipv4(5432)).await?,
+            create_mock_db_empty(node.get_host_port_ipv4(5432).await?).await?,
             None,
         )
         .await?;
@@ -620,11 +605,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_swap_duplicate_key() -> anyhow::Result<()> {
-        let docker = Cli::default();
-        let image = create_postgres_image();
-        let node = docker.run(image);
+        let node = create_postgres_image().await?;
         let mint = create_mint_from_mocks(
-            create_mock_db_empty(node.get_host_port_ipv4(5432)).await?,
+            create_mock_db_empty(node.get_host_port_ipv4(5432).await?).await?,
             None,
         )
         .await?;
@@ -641,10 +624,7 @@ mod tests {
     /// melt 20 sats with 60 tokens and receive 40 tokens as change
     async fn test_melt_overpay() -> anyhow::Result<()> {
         use lightning_invoice::Bolt11Invoice as LNInvoice;
-        let docker = Cli::default();
-        let image = create_postgres_image();
-        let node = docker.run(image);
-
+        let node = create_postgres_image().await?;
         let mut lightning = MockLightning::new();
 
         lightning.expect_decode_invoice().returning(|_| {
@@ -661,7 +641,7 @@ mod tests {
             .map_err(|_err: LightningError| MokshaMintError::InvoiceNotFound("".to_string()))
         });
 
-        let db = create_mock_db_empty(node.get_host_port_ipv4(5432)).await?;
+        let db = create_mock_db_empty(node.get_host_port_ipv4(5432).await?).await?;
 
         let mint = Mint::new(
             // "TEST_PRIVATE_KEY".to_string(),
@@ -750,8 +730,11 @@ mod tests {
         Ok(db)
     }
 
-    fn create_postgres_image() -> RunnableImage<Postgres> {
-        let node = Postgres::default().with_host_auth();
-        RunnableImage::from(node).with_tag("16.2-alpine")
+    async fn create_postgres_image() -> anyhow::Result<ContainerAsync<Postgres>> {
+        Ok(Postgres::default()
+            .with_host_auth()
+            .with_tag("16.6-alpine")
+            .start()
+            .await?)
     }
 }

@@ -9,18 +9,21 @@ use moksha_wallet::wallet::WalletBuilder;
 use mokshamint::lightning::{lnbits::LnbitsLightningSettings, LightningType};
 use reqwest::Url;
 use std::time::Duration;
-use testcontainers::{clients, RunnableImage};
+use testcontainers::runners::AsyncRunner;
+use testcontainers::ImageExt;
 use testcontainers_modules::postgres::Postgres;
 use tokio::time::{sleep_until, Instant};
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 pub async fn test_bolt11_lnbitsmock() -> anyhow::Result<()> {
     // create postgres container that will be destroyed after the test is done
-    let docker = clients::Cli::default();
-    let node = Postgres::default().with_host_auth();
-    let img = RunnableImage::from(node).with_tag("16.2-alpine");
-    let node = docker.run(img);
-    let host_port = node.get_host_port_ipv4(5432);
+
+    let node = Postgres::default()
+        .with_host_auth()
+        .with_tag("16.6-alpine")
+        .start()
+        .await?;
+    let host_port = node.get_host_port_ipv4(5432).await?;
 
     // start lnbits
     let _lnbits_thread = tokio::spawn(async {
