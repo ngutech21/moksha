@@ -334,7 +334,7 @@ impl BuildParams {
 
     pub fn full_version(&self) -> String {
         format!(
-            "{}-{}",
+            "moksha-mint/{}-{}",
             self.cargo_pkg_version
                 .as_ref()
                 .unwrap_or(&"unknown".to_string()),
