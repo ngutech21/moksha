@@ -1,6 +1,6 @@
 # build backend
 FROM rust:1.83.0-slim-bullseye as rust-builder
-RUN apt update && apt install -y musl-tools musl-dev make clang pkg-config protobuf-compiler
+RUN apt update && apt install -y musl-tools musl-dev make clang pkg-config protobuf-compiler curl
 RUN update-ca-certificates
 RUN rustup target add x86_64-unknown-linux-musl
 

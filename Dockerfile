@@ -1,6 +1,6 @@
 # build backend
 FROM rust:1.83.0-slim-bullseye as rust-builder
-RUN apt update && apt install -y make clang pkg-config protobuf-compiler
+RUN apt update && apt install -y make clang pkg-config protobuf-compiler curl
 
 WORKDIR /rust-app
 COPY . /rust-app  
